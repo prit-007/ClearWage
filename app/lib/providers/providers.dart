@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api_client.dart';
+import '../core/app_config.dart';
 import '../services/auth_service.dart';
 import '../services/staff_service.dart';
 import '../services/attendance_service.dart';
@@ -9,7 +10,7 @@ import '../services/shift_service.dart';
 import '../services/report_service.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
-  return ApiClient(baseUrl: 'http://127.0.0.1:8081');
+  return ApiClient(baseUrl: AppConfig.apiBaseUrl);
 });
 
 final tokenProvider = StateProvider<String?>((ref) => null);

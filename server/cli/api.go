@@ -72,6 +72,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			r.Route("/api/v1/auth", func(r chi.Router) {
 				r.Post("/request-otp", authCtrl.RequestOTP)
 				r.Post("/verify-otp", authCtrl.VerifyOTP)
+				r.Post("/register", authCtrl.Register)
 			})
 
 		uploadCtrl := ctrl.NewUploadController(services.NewStaffService(querier), logger, cfg)

@@ -18,7 +18,7 @@ class ApiClient {
       'Accept': 'application/json',
     };
     if (_token != null) {
-      h['Cookie'] = 'auth_token=$_token';
+      h['Authorization'] = 'Bearer $_token';
     }
     return h;
   }

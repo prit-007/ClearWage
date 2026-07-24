@@ -41,6 +41,13 @@ type verifyOTPRequest struct {
 	OTP   string `json:"otp"`
 }
 
+type registerRequest struct {
+	Name        string `json:"name"`
+	Phone       string `json:"phone"`
+	FactoryName string `json:"factory_name"`
+	OTP         string `json:"otp"`
+}
+
 // RequestOTP generates a 6-digit OTP and sends it to the provided phone number.
 // In development environments the OTP is also logged to stdout for testing convenience.
 // The OTP expires after 5 minutes and can only be used once.
@@ -109,7 +116,45 @@ func (ctrl *AuthController) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 	})
 
 	utils.JSONSuccess(w, http.StatusOK, map[string]string{
-		"tenant_id": token.TenantID,
-		"role":      token.Role,
+		"access_token": token.Token,
+		"tenant_id":    token.TenantID,
+		"role":         token.Role,
+	})
+}
+
+func (ctrl *AuthController) Register(w http.ResponseWriter, r *http.Request) {
+	var req registerRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.Phone == "" || req.OTP == "" || req.Name == "" || req.FactoryName == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "name, phone, factory_name, and otp are required")
+		return
+	}
+	token, err := ctrl.authService.Register(r.Context(), services.RegisterParams{
+		Name:        req.Name,
+		Phone:       req.Phone,
+		FactoryName: req.FactoryName,
+		OTP:         req.OTP,
+	})
+	if err != nil {
+		ctrl.logger.Error().Err(err).Msg("registration failed")
+		utils.JSONFail(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    token.Token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   !ctrl.config.IsDevelopment,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   86400,
+	})
+	utils.JSONSuccess(w, http.StatusOK, map[string]string{
+		"access_token": token.Token,
+		"tenant_id":    token.TenantID,
+		"role":         token.Role,
 	})
 }

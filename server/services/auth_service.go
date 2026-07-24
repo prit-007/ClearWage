@@ -95,6 +95,42 @@ func NewAuthService(cfg config.AppConfig, otpStore OTPProvider, querier reposito
 	}
 }
 
+type RegisterParams struct {
+	Name        string
+	Phone       string
+	FactoryName string
+	OTP         string
+}
+
+func (s *AuthService) Register(ctx context.Context, params RegisterParams) (VerifyResult, error) {
+	if !s.otpStore.VerifyOTP(params.Phone, params.OTP) {
+		return VerifyResult{}, fmt.Errorf("invalid or expired OTP")
+	}
+	tenant, err := s.queries.CreateTenant(ctx, repositories.CreateTenantParams{
+		Name:  params.FactoryName,
+		Phone: params.Phone,
+	})
+	if err != nil {
+		return VerifyResult{}, fmt.Errorf("failed to create tenant: %w", err)
+	}
+	emp, err := s.queries.CreateEmployee(ctx, repositories.CreateEmployeeParams{
+		TenantID:   tenant.ID,
+		Name:       params.Name,
+		Phone:      params.Phone,
+		WageType:   "daily",
+		WageAmount: 0,
+		Role:       "owner",
+	})
+	if err != nil {
+		return VerifyResult{}, fmt.Errorf("failed to create owner: %w", err)
+	}
+	token, err := pkg.GenerateToken(s.cfg, tenant.ID, emp.ID, "owner", 24*time.Hour)
+	if err != nil {
+		return VerifyResult{}, fmt.Errorf("failed to generate token: %w", err)
+	}
+	return VerifyResult{Token: token, TenantID: tenant.ID, Role: "owner"}, nil
+}
+
 func (s *AuthService) RequestOTP(phone string) (string, error) {
 	return s.otpStore.GenerateOTP(phone)
 }

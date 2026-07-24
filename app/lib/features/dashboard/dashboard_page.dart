@@ -110,7 +110,6 @@ class _AttendanceOverviewCard extends StatelessWidget {
     return Card(
       color: cs.primaryContainer,
       child: Container(
-        width: 260,
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,7 +123,7 @@ class _AttendanceOverviewCard extends StatelessWidget {
                 )),
               ],
             ),
-            const Spacer(),
+            const SizedBox(height: 16),
             Text('Attendance', style: tt.bodyMedium?.copyWith(
               color: cs.onPrimaryContainer.withValues(alpha: 0.8),
             )),

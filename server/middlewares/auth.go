@@ -16,13 +16,27 @@ const ClaimsKey contextKey = "claims"
 func AuthMiddleware(cfg config.AppConfig) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			cookie, err := r.Cookie("auth_token")
-			if err != nil {
-				utils.JSONFail(w, http.StatusUnauthorized, "missing auth cookie")
+			tokenStr := ""
+
+			if auth := r.Header.Get("Authorization"); auth != "" {
+				if len(auth) > 7 && auth[:7] == "Bearer " {
+					tokenStr = auth[7:]
+				}
+			}
+
+			if tokenStr == "" {
+				cookie, err := r.Cookie("auth_token")
+				if err == nil {
+					tokenStr = cookie.Value
+				}
+			}
+
+			if tokenStr == "" {
+				utils.JSONFail(w, http.StatusUnauthorized, "missing auth token")
 				return
 			}
 
-			claims, err := pkg.ValidateToken(cfg, cookie.Value)
+			claims, err := pkg.ValidateToken(cfg, tokenStr)
 			if err != nil {
 				utils.JSONFail(w, http.StatusUnauthorized, "invalid or expired token")
 				return

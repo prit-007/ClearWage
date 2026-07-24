@@ -17,18 +17,21 @@
   <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.18.2/swagger-ui-bundle.js" crossorigin></script>
   <script>
     window.onload = function() {
-      const ui = SwaggerUIBundle({
-        url: "/swagger.json",
-        dom_id: '#swagger-ui',
-        deepLinking: true,
-        presets: [
-          SwaggerUIBundle.presets.apis
-        ],
-        defaultModelsExpandDepth: 1,
-        tryItOutEnabled: true,
-        validatorUrl: null
-      });
-      window.ui = ui;
+      fetch("/swagger.json")
+        .then(r => r.json())
+        .then(spec => {
+          spec.servers = [{ url: window.location.origin, description: "This server" }];
+          const ui = SwaggerUIBundle({
+            spec: spec,
+            dom_id: '#swagger-ui',
+            deepLinking: true,
+            presets: [SwaggerUIBundle.presets.apis],
+            defaultModelsExpandDepth: 1,
+            tryItOutEnabled: true,
+            validatorUrl: null
+          });
+          window.ui = ui;
+        });
     };
   </script>
 </body>

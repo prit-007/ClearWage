@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'features/attendance/screen_18_daily_roster.dart' as roster;
-import 'features/dashboard/screen_13_dashboard.dart';
-import 'features/staff/screen_17_staff_directory.dart';
-import 'features/ledger/screen_12_ledger_list.dart';
-import 'features/reports/screen_8_reports_hub.dart';
+import 'features/attendance/daily_roster_page.dart' as roster;
+import 'features/dashboard/dashboard_page.dart';
+import 'features/staff/staff_directory_page.dart';
+import 'features/ledger/ledger_list_page.dart';
+import 'features/reports/reports_hub_page.dart';
 
 void main() {
-  runApp(const FactoryWorkforceApp());
+  runApp(const ProviderScope(child: FactoryWorkforceApp()));
 }
 
-class FactoryWorkforceApp extends StatelessWidget {
+class FactoryWorkforceApp extends ConsumerWidget {
   const FactoryWorkforceApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'Factory Workforce',
       debugShowCheckedModeBanner: false,

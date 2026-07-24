@@ -1,0 +1,23 @@
+linters-settings:
+  errcheck:
+    check-blank: true
+  misspell:
+    locale: US
+  govet:
+    check-shadowing: true
+  gosimple:
+    checks: ["all"]
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - gosimple
+    - ineffassign
+    - misspell
+
+run:
+  timeout: 5m
+  tests: true

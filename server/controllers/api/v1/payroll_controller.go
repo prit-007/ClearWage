@@ -1,0 +1,119 @@
+package v1
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/rs/zerolog"
+	"github.com/vivek-app/vivek_app/config"
+	"github.com/vivek-app/vivek_app/middlewares"
+	"github.com/vivek-app/vivek_app/services"
+	"github.com/vivek-app/vivek_app/utils"
+)
+
+type PayrollController struct {
+	payrollService *services.PayrollService
+	logger         *zerolog.Logger
+	config         config.AppConfig
+}
+
+func NewPayrollController(payrollService *services.PayrollService, logger *zerolog.Logger, cfg config.AppConfig) *PayrollController {
+	return &PayrollController{
+		payrollService: payrollService,
+		logger:         logger,
+		config:         cfg,
+	}
+}
+
+type payrollRequest struct {
+	StartDate string `json:"start_date"`
+	EndDate   string `json:"end_date"`
+}
+
+func (c *PayrollController) Calculate(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var req payrollRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+	if req.StartDate == "" || req.EndDate == "" {
+		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date are required")
+		return
+	}
+
+	result, err := c.payrollService.Calculate(r.Context(), tenantID, req.StartDate, req.EndDate)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to calculate payroll")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to calculate payroll")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, result)
+}
+
+type payslipRequest struct {
+	EmployeeID string `json:"employee_id"`
+	StartDate  string `json:"start_date"`
+	EndDate    string `json:"end_date"`
+}
+
+func (c *PayrollController) GeneratePayslip(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var req payslipRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+	if req.EmployeeID == "" || req.StartDate == "" || req.EndDate == "" {
+		utils.JSONError(w, http.StatusBadRequest, "employee_id, start_date, and end_date are required")
+		return
+	}
+
+	pdfData, filename, err := c.payrollService.GeneratePayslip(r.Context(), tenantID, req.EmployeeID, req.StartDate, req.EndDate)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to generate payslip")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to generate payslip")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+	w.Write(pdfData)
+}
+
+func (c *PayrollController) LockMonth(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var req payrollRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+	if req.StartDate == "" || req.EndDate == "" {
+		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date are required")
+		return
+	}
+
+	if err := c.payrollService.LockMonth(r.Context(), tenantID, req.StartDate, req.EndDate); err != nil {
+		c.logger.Error().Err(err).Msg("failed to lock attendance month")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to lock month")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, map[string]string{"message": "month locked"})
+}

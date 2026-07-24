@@ -1,0 +1,224 @@
+package services
+
+import (
+	"context"
+	"time"
+
+	"github.com/vivek-app/vivek_app/repositories"
+)
+
+type ReportService struct {
+	querier repositories.Querier
+}
+
+type DailySummary struct {
+	Date       string `json:"date"`
+	TotalStaff int    `json:"total_staff"`
+	Present    int    `json:"present"`
+	Absent     int    `json:"absent"`
+	OnLeave    int    `json:"on_leave"`
+}
+
+type EmployeeMonthlyReport struct {
+	Employee   repositories.Employee   `json:"employee"`
+	Attendance []repositories.Attendance `json:"attendance"`
+	Ledger     []repositories.Ledger     `json:"ledger"`
+}
+
+type WageBillTrend struct {
+	Month      string  `json:"month"`
+	TotalWages float64 `json:"total_wages"`
+	Headcount  int     `json:"headcount"`
+}
+
+type Defaulter struct {
+	EmployeeID          string  `json:"employee_id"`
+	Name                string  `json:"name"`
+	Phone               string  `json:"phone"`
+	OutstandingBalance  float64 `json:"outstanding_balance"`
+	MonthlyWage         float64 `json:"monthly_wage"`
+}
+
+func NewReportService(querier repositories.Querier) *ReportService {
+	return &ReportService{querier: querier}
+}
+
+func (s *ReportService) DailySummary(ctx context.Context, tenantID, date string) (DailySummary, error) {
+	employees, err := s.querier.ListEmployeesByTenant(ctx, repositories.ListEmployeesByTenantParams{
+		TenantID: tenantID,
+		Limit:    10000,
+		Offset:   0,
+	})
+	if err != nil {
+		return DailySummary{}, err
+	}
+
+	attendance, err := s.querier.ListAttendanceByDate(ctx, repositories.ListAttendanceByDateParams{
+		TenantID: tenantID,
+		Date:     date,
+	})
+	if err != nil {
+		return DailySummary{}, err
+	}
+
+	present := 0
+	absent := 0
+	onLeave := 0
+
+	for _, a := range attendance {
+		switch a.Status {
+		case "present":
+			present++
+		case "absent":
+			absent++
+		case "on_leave":
+			onLeave++
+		}
+	}
+
+	idleStaff := len(employees) - len(attendance)
+
+	return DailySummary{
+		Date:       date,
+		TotalStaff: len(employees),
+		Present:    present,
+		Absent:     absent + idleStaff,
+		OnLeave:    onLeave,
+	}, nil
+}
+
+func (s *ReportService) EmployeeMonthly(ctx context.Context, tenantID, employeeID, startDate, endDate string) (EmployeeMonthlyReport, error) {
+	emp, err := s.querier.FindEmployeeByID(ctx, repositories.FindEmployeeByIDParams{
+		ID:       employeeID,
+		TenantID: tenantID,
+	})
+	if err != nil {
+		return EmployeeMonthlyReport{}, err
+	}
+
+	attendance, err := s.querier.ListAttendanceByEmployeeMonth(ctx, repositories.ListAttendanceByEmployeeMonthParams{
+		EmployeeID: employeeID,
+		TenantID:   tenantID,
+		StartDate:  startDate,
+		EndDate:    endDate,
+	})
+	if err != nil {
+		return EmployeeMonthlyReport{}, err
+	}
+
+	ledger, err := s.querier.ListLedgerByEmployeeMonth(ctx, repositories.ListLedgerByEmployeeMonthParams{
+		EmployeeID: employeeID,
+		TenantID:   tenantID,
+		StartDate:  startDate,
+		EndDate:    endDate,
+	})
+	if err != nil {
+		return EmployeeMonthlyReport{}, err
+	}
+
+	return EmployeeMonthlyReport{
+		Employee:   emp,
+		Attendance: attendance,
+		Ledger:     ledger,
+	}, nil
+}
+
+func (s *ReportService) WageBillTrends(ctx context.Context, tenantID string, months int) ([]WageBillTrend, error) {
+	now := time.Now()
+	var trends []WageBillTrend
+
+	employees, err := s.querier.ListEmployeesByTenant(ctx, repositories.ListEmployeesByTenantParams{
+		TenantID: tenantID,
+		Limit:    10000,
+		Offset:   0,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	wageMap := make(map[string]float64)
+	wageTypeMap := make(map[string]string)
+	for _, e := range employees {
+		wageMap[e.ID] = e.WageAmount
+		wageTypeMap[e.ID] = e.WageType
+	}
+
+	for i := months - 1; i >= 0; i-- {
+		month := now.AddDate(0, -i, 0)
+		startDate := time.Date(month.Year(), month.Month(), 1, 0, 0, 0, 0, time.UTC)
+		endDate := startDate.AddDate(0, 1, 0)
+
+		start := startDate.Format("2006-01-02")
+		end := endDate.Format("2006-01-02")
+		label := month.Format("2006-01")
+
+		attendance, err := s.querier.ListAttendanceByDateRange(ctx, tenantID, start, end)
+		if err != nil {
+			return nil, err
+		}
+
+		totalWages := 0.0
+		presentSet := make(map[string]bool)
+		for _, a := range attendance {
+			if a.Status == "present" {
+				presentSet[a.EmployeeID] = true
+			}
+		}
+
+		for empID := range presentSet {
+			if wt, ok := wageTypeMap[empID]; ok && wt == "monthly" {
+				totalWages += wageMap[empID]
+			} else if wt == "daily" {
+				totalWages += wageMap[empID]
+			}
+		}
+
+		trends = append(trends, WageBillTrend{
+			Month:      label,
+			TotalWages: totalWages,
+			Headcount:  len(presentSet),
+		})
+	}
+
+	return trends, nil
+}
+
+func (s *ReportService) DefaultersList(ctx context.Context, tenantID string) ([]Defaulter, error) {
+	employees, err := s.querier.ListEmployeesByTenant(ctx, repositories.ListEmployeesByTenantParams{
+		TenantID: tenantID,
+		Limit:    10000,
+		Offset:   0,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var defaulters []Defaulter
+	for _, e := range employees {
+		balance, err := s.querier.GetBalanceByEmployee(ctx, repositories.GetBalanceByEmployeeParams{
+			EmployeeID: e.ID,
+			TenantID:   tenantID,
+		})
+		if err != nil {
+			continue
+		}
+
+		bal := float64(balance)
+		monthlyWage := e.WageAmount
+		if e.WageType == "daily" {
+			monthlyWage = e.WageAmount * 26
+		}
+
+		if bal > monthlyWage {
+			defaulters = append(defaulters, Defaulter{
+				EmployeeID:          e.ID,
+				Name:                e.Name,
+				Phone:               e.Phone,
+				OutstandingBalance:  bal,
+				MonthlyWage:         monthlyWage,
+			})
+		}
+	}
+
+	return defaulters, nil
+}

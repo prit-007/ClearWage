@@ -5,8 +5,10 @@ import 'features/attendance/daily_roster_page.dart' as roster;
 import 'features/dashboard/dashboard_page.dart';
 import 'features/staff/staff_directory_page.dart';
 import 'features/ledger/ledger_list_page.dart';
+import 'features/ledger/new_ledger_entry_page.dart';
 import 'features/reports/reports_hub_page.dart';
 import 'features/auth/login_page.dart';
+import 'features/onboarding/onboarding_wizard.dart';
 import 'providers/providers.dart';
 
 void main() {
@@ -52,6 +54,8 @@ class FactoryWorkforceApp extends ConsumerWidget {
       home: const AuthGate(),
       routes: {
         '/home': (_) => const MainShell(),
+        '/onboarding': (_) => const OnboardingWizard(),
+        '/new_ledger': (_) => const NewLedgerEntryScreen(),
       },
     );
   }

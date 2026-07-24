@@ -145,7 +145,7 @@ class _AttendanceCard extends StatelessWidget {
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: cs.primary.withOpacity(0.1),
+                    backgroundColor: cs.primary.withValues(alpha: 0.1),
                     child: Text(attendance.employeeName.isNotEmpty
                         ? attendance.employeeName[0] : '?',
                         style: TextStyle(color: cs.primary)),

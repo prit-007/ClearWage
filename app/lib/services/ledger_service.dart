@@ -5,14 +5,20 @@ class LedgerService {
   final ApiClient _client;
   LedgerService(this._client);
 
-  Future<List<LedgerEntry>> listByTenant() async {
-    final res = await _client.get('/api/v1/ledger');
+  Future<List<LedgerEntry>> listByTenant({String? startDate, String? endDate}) async {
+    final query = <String, String>{};
+    if (startDate != null) query['start_date'] = startDate;
+    if (endDate != null) query['end_date'] = endDate;
+    final res = await _client.get('/api/v1/ledger', query: query.isNotEmpty ? query : null);
     final list = (res['data'] as List<dynamic>?) ?? [];
     return list.map((e) => LedgerEntry.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  Future<List<LedgerEntry>> listByEmployee(String employeeId) async {
-    final res = await _client.get('/api/v1/ledger/$employeeId');
+  Future<List<LedgerEntry>> listByEmployee(String employeeId, {String? startDate, String? endDate}) async {
+    final query = <String, String>{};
+    if (startDate != null) query['start_date'] = startDate;
+    if (endDate != null) query['end_date'] = endDate;
+    final res = await _client.get('/api/v1/ledger/$employeeId', query: query.isNotEmpty ? query : null);
     final list = (res['data'] as List<dynamic>?) ?? [];
     return list.map((e) => LedgerEntry.fromJson(e as Map<String, dynamic>)).toList();
   }

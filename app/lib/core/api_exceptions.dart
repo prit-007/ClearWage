@@ -7,9 +7,9 @@ class ApiException implements Exception {
 }
 
 class AuthException extends ApiException {
-  AuthException([String message = 'Unauthorized']) : super(message);
+  AuthException([super.message = 'Unauthorized']);
 }
 
 class ServerException extends ApiException {
-  ServerException([String message = 'Server error']) : super(message);
+  ServerException([super.message = 'Server error']);
 }

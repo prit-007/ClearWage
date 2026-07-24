@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:intl/intl.dart';
 
 class NewLedgerEntryScreen extends StatefulWidget {
   const NewLedgerEntryScreen({super.key});
@@ -8,8 +11,9 @@ class NewLedgerEntryScreen extends StatefulWidget {
 
 class _NewLedgerEntryScreenState extends State<NewLedgerEntryScreen> {
   bool _isJama = true;
-  final _amountController = TextEditingController(text: '0');
+  final _amountController = TextEditingController();
   final _noteController = TextEditingController();
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void dispose() {
@@ -18,90 +22,330 @@ class _NewLedgerEntryScreenState extends State<NewLedgerEntryScreen> {
     super.dispose();
   }
 
+  void _toggleType(bool isJama) {
+    if (_isJama == isJama) return;
+    HapticFeedback.lightImpact();
+    setState(() => _isJama = isJama);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+
+    final activeColor = _isJama
+        ? const Color(0xFF10B981)
+        : const Color(0xFFEF4444);
+    final surfaceColor = activeColor.withValues(alpha: 0.05);
+
     return Scaffold(
+      backgroundColor: cs.surface,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
+          icon: Icon(PhosphorIconsRegular.x, color: cs.onSurface),
+          onPressed: () {
+            HapticFeedback.selectionClick();
+            Navigator.pop(context);
+          },
         ),
-        title: const Text('New Entry'),
+        title: Text('New Entry',
+            style: tt.titleLarge
+                ?.copyWith(fontWeight: FontWeight.w700)),
+        centerTitle: true,
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-        children: [
-          SegmentedButton<bool>(
-            segments: const [
-              ButtonSegment(value: true, label: Text('Jama')),
-              ButtonSegment(value: false, label: Text('Udhaar')),
-            ],
-            selected: {_isJama},
-            onSelectionChanged: (v) => setState(() => _isJama = v.first),
-          ),
-          const SizedBox(height: 32),
-          Text('Amount', style: tt.labelMedium?.copyWith(
-            color: cs.onSurface.withValues(alpha: 0.6),
-          )),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.fastOutSlowIn,
+        color: surfaceColor,
+        child: SafeArea(
+          child: Column(
             children: [
-              Text('₹', style: tt.displayLarge?.copyWith(
-                color: cs.onSurface,
-              )),
-              const SizedBox(width: 8),
               Expanded(
-                child: TextField(
-                  controller: _amountController,
-                  keyboardType: TextInputType.number,
-                  style: tt.displayLarge?.copyWith(
-                    color: _isJama ? cs.primary : cs.error,
+                child: ListView(
+                  padding:
+                      const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerHighest
+                            .withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _PremiumToggle(
+                              title: 'Give Advance',
+                              subtitle: 'Jama',
+                              isActive: _isJama,
+                              activeColor:
+                                  const Color(0xFF10B981),
+                              icon:
+                                  PhosphorIconsFill.arrowUpRight,
+                              onTap: () => _toggleType(true),
+                            ),
+                          ),
+                          Expanded(
+                            child: _PremiumToggle(
+                              title: 'Deduct',
+                              subtitle: 'Udhaar',
+                              isActive: !_isJama,
+                              activeColor:
+                                  const Color(0xFFEF4444),
+                              icon:
+                                  PhosphorIconsFill.arrowDownLeft,
+                              onTap: () => _toggleType(false),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                    Center(
+                      child: Text('Amount',
+                          style: tt.labelLarge?.copyWith(
+                              color: cs.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.0)),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.center,
+                      children: [
+                        Text('₹',
+                            style: tt.displayLarge?.copyWith(
+                                color: activeColor
+                                    .withValues(alpha: 0.5),
+                                fontWeight: FontWeight.w400)),
+                        const SizedBox(width: 8),
+                        IntrinsicWidth(
+                          child: TextField(
+                            controller: _amountController,
+                            keyboardType: TextInputType.number,
+                            autofocus: true,
+                            textAlign: TextAlign.center,
+                            style: tt.displayLarge?.copyWith(
+                              color: activeColor,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -2.0,
+                            ),
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              filled: false,
+                              hintText: '0',
+                              hintStyle:
+                                  TextStyle(color: Colors.black12),
+                            ),
+                            onChanged: (_) =>
+                                HapticFeedback.selectionClick(),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 48),
+                    _PremiumDatePicker(
+                      cs: cs,
+                      date: _selectedDate,
+                      onTap: () async {
+                        HapticFeedback.selectionClick();
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDate,
+                          firstDate: DateTime(2024),
+                          lastDate: DateTime.now(),
+                          builder: (context, child) => Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme:
+                                  cs.copyWith(primary: activeColor),
+                            ),
+                            child: child!,
+                          ),
+                        );
+                        if (picked != null) {
+                          setState(() => _selectedDate = picked);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _noteController,
+                      style: tt.titleMedium,
+                      decoration: InputDecoration(
+                        labelText: 'Notes (Optional)',
+                        prefixIcon: Icon(
+                            PhosphorIconsRegular.textAa,
+                            color: cs.onSurfaceVariant),
+                        filled: true,
+                        fillColor: cs.surface,
+                        border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(16),
+                            borderSide: BorderSide.none),
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.fromLTRB(24, 16, 24,
+                    MediaQuery.of(context).padding.bottom + 16),
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  boxShadow: [
+                    BoxShadow(
+                        color: cs.shadow.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -5))
+                  ],
+                ),
+                child: FilledButton(
+                  onPressed: () {
+                    HapticFeedback.heavyImpact();
+                    Navigator.pop(context);
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: activeColor,
+                    minimumSize: const Size.fromHeight(60),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
                   ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    filled: false,
-                  ),
+                  child: const Text('Save Entry',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5)),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 32),
-          Text('Date', style: tt.labelMedium?.copyWith(
-            color: cs.onSurface.withValues(alpha: 0.6),
-          )),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: () async {
-              await showDatePicker(
-                context: context,
-                firstDate: DateTime(2024),
-                lastDate: DateTime(2027),
-              );
-            },
-            icon: const Icon(Icons.calendar_today, size: 18),
-            label: const Text('24 Oct 2026'),
-          ),
-          const SizedBox(height: 24),
-          TextField(
-            controller: _noteController,
-            decoration: const InputDecoration(
-              labelText: 'Notes (optional)',
-              hintText: 'Add a description...',
+        ),
+      ),
+    );
+  }
+}
+
+class _PremiumToggle extends StatelessWidget {
+  final String title, subtitle;
+  final bool isActive;
+  final Color activeColor;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _PremiumToggle(
+      {required this.title,
+      required this.subtitle,
+      required this.isActive,
+      required this.activeColor,
+      required this.icon,
+      required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color:
+              isActive ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4))
+                ]
+              : [],
+        ),
+        child: Column(
+          children: [
+            Icon(icon,
+                color: isActive ? activeColor : Colors.grey,
+                size: 24),
+            const SizedBox(height: 4),
+            Text(title,
+                style: TextStyle(
+                    fontSize: 11,
+                    color: isActive ? activeColor : Colors.grey,
+                    fontWeight: FontWeight.w600)),
+            Text(subtitle,
+                style: TextStyle(
+                    fontSize: 14,
+                    color: isActive
+                        ? Colors.black
+                        : Colors.grey,
+                    fontWeight: FontWeight.w800)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PremiumDatePicker extends StatelessWidget {
+  final ColorScheme cs;
+  final DateTime date;
+  final VoidCallback onTap;
+
+  const _PremiumDatePicker(
+      {required this.cs,
+      required this.date,
+      required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isToday = date.day == DateTime.now().day &&
+        date.month == DateTime.now().month &&
+        date.year == DateTime.now().year;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(PhosphorIconsRegular.calendarBlank,
+                color: cs.onSurfaceVariant),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Transaction Date',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant)),
+                const SizedBox(height: 2),
+                Text(
+                    isToday
+                        ? 'Today, ${DateFormat('MMM d').format(date)}'
+                        : DateFormat('dd MMM yyyy').format(date),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface,
+                        fontSize: 16)),
+              ],
             ),
-            maxLines: 3,
-          ),
-          const SizedBox(height: 32),
-          FilledButton(
-            onPressed: () => Navigator.pop(context),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(52),
-            ),
-            child: const Text('Save Entry'),
-          ),
-        ],
+            const Spacer(),
+            Icon(PhosphorIconsRegular.caretDown,
+                color: cs.onSurfaceVariant, size: 16),
+          ],
+        ),
       ),
     );
   }

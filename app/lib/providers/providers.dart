@@ -10,7 +10,8 @@ import '../services/shift_service.dart';
 import '../services/report_service.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
-  return ApiClient(baseUrl: AppConfig.apiBaseUrl);
+  final url = ref.watch(serverUrlProvider);
+  return ApiClient(baseUrl: url);
 });
 
 final tokenProvider = StateProvider<String?>((ref) => null);

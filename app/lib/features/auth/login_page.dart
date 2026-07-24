@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/app_config.dart';
 import '../../providers/providers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -28,7 +29,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(authServiceProvider).requestOtp(_phoneCtrl.text.trim());
       setState(() { _sentOtp = true; _loading = false; });
     } catch (e) {
-      setState(() { _error = e.toString(); _loading = false; });
+      setState(() { _error = 'Cannot reach server.\nTap the server icon above to set the correct IP address.\n\n$e'; _loading = false; });
     }
   }
 
@@ -46,16 +47,52 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  void _showServerDialog() {
+    final urlCtrl = TextEditingController(text: ref.read(serverUrlProvider));
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Server Address'),
+        content: TextField(
+          controller: urlCtrl,
+          decoration: const InputDecoration(
+            labelText: 'http://IP:PORT',
+            hintText: 'e.g. http://192.168.1.100:8081',
+          ),
+          keyboardType: TextInputType.url,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(onPressed: () {
+            ref.read(serverUrlProvider.notifier).state = urlCtrl.text.trim();
+            Navigator.pop(context);
+          }, child: const Text('Save')),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final serverUrl = ref.watch(serverUrlProvider);
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Sign In'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.dns_outlined),
+            tooltip: 'Server: $serverUrl',
+            onPressed: _showServerDialog,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            const SizedBox(height: 60),
+            const SizedBox(height: 40),
             Icon(Icons.factory_outlined, size: 72, color: cs.primary),
             const SizedBox(height: 16),
             Text('Factory Workforce', style: tt.headlineMedium?.copyWith(
@@ -64,7 +101,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SizedBox(height: 8),
             Text('Sign in to manage your workforce',
                 style: tt.bodyMedium?.copyWith(color: cs.onSurface.withValues(alpha: 0.6))),
-            const SizedBox(height: 48),
+            const SizedBox(height: 12),
+            Center(
+              child: Text(serverUrl, style: tt.labelSmall?.copyWith(
+                color: cs.onSurface.withValues(alpha: 0.3),
+              )),
+            ),
+            const SizedBox(height: 36),
             TextField(
               controller: _phoneCtrl,
               keyboardType: TextInputType.phone,

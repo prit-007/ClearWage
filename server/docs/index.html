@@ -22,15 +22,9 @@
         dom_id: '#swagger-ui',
         deepLinking: true,
         presets: [
-          SwaggerUIBundle.presets.apis,
-          SwaggerUIBundle.SwaggerUIStandalonePreset
+          SwaggerUIBundle.presets.apis
         ],
-        plugins: [
-          SwaggerUIBundle.plugins.DownloadUrl
-        ],
-        layout: "StandaloneLayout",
         defaultModelsExpandDepth: 1,
-        defaultModelExpandDepth: 1,
         tryItOutEnabled: true,
         validatorUrl: null
       });

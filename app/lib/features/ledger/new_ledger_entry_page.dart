@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
+import '../../providers/providers.dart';
 
-class NewLedgerEntryScreen extends StatefulWidget {
+class NewLedgerEntryScreen extends ConsumerStatefulWidget {
   const NewLedgerEntryScreen({super.key});
   @override
-  State<NewLedgerEntryScreen> createState() => _NewLedgerEntryScreenState();
+  ConsumerState<NewLedgerEntryScreen> createState() => _NewLedgerEntryScreenState();
 }
 
-class _NewLedgerEntryScreenState extends State<NewLedgerEntryScreen> {
+class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
   bool _isJama = true;
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
+  final _employeeCtrl = TextEditingController();
   DateTime _selectedDate = DateTime.now();
+  bool _saving = false;
 
   @override
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
+    _employeeCtrl.dispose();
     super.dispose();
   }
 
@@ -26,6 +31,28 @@ class _NewLedgerEntryScreenState extends State<NewLedgerEntryScreen> {
     if (_isJama == isJama) return;
     HapticFeedback.lightImpact();
     setState(() => _isJama = isJama);
+  }
+
+  Future<void> _save() async {
+    if (_employeeCtrl.text.trim().isEmpty || _amountController.text.trim().isEmpty) return;
+    HapticFeedback.heavyImpact();
+    setState(() => _saving = true);
+    try {
+      final dateStr = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
+      await ref.read(ledgerServiceProvider).create({
+        'employee_id': _employeeCtrl.text.trim(),
+        'date': dateStr,
+        'type': _isJama ? 'jama' : 'udhaar',
+        'amount': double.tryParse(_amountController.text) ?? 0,
+        'note': _noteController.text.trim(),
+      });
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+        setState(() => _saving = false);
+      }
+    }
   }
 
   @override
@@ -173,6 +200,23 @@ class _NewLedgerEntryScreenState extends State<NewLedgerEntryScreen> {
                     ),
                     const SizedBox(height: 16),
                     TextField(
+                      controller: _employeeCtrl,
+                      style: tt.titleMedium,
+                      decoration: InputDecoration(
+                        labelText: 'Employee ID *',
+                        prefixIcon: Icon(
+                            PhosphorIconsRegular.identificationBadge,
+                            color: cs.onSurfaceVariant),
+                        filled: true,
+                        fillColor: cs.surface,
+                        border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(16),
+                            borderSide: BorderSide.none),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
                       controller: _noteController,
                       style: tt.titleMedium,
                       decoration: InputDecoration(
@@ -205,10 +249,7 @@ class _NewLedgerEntryScreenState extends State<NewLedgerEntryScreen> {
                   ],
                 ),
                 child: FilledButton(
-                  onPressed: () {
-                    HapticFeedback.heavyImpact();
-                    Navigator.pop(context);
-                  },
+                  onPressed: _saving ? null : _save,
                   style: FilledButton.styleFrom(
                     backgroundColor: activeColor,
                     minimumSize: const Size.fromHeight(60),
@@ -216,11 +257,13 @@ class _NewLedgerEntryScreenState extends State<NewLedgerEntryScreen> {
                         borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
                   ),
-                  child: const Text('Save Entry',
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5)),
+                  child: _saving
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Save Entry',
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5)),
                 ),
               ),
             ],

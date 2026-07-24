@@ -1,27 +1,59 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../providers/providers.dart';
 
-class EmployeeProfileScreen extends StatefulWidget {
+class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
   const EmployeeProfileScreen(
       {super.key, required this.employeeId});
   @override
-  State<EmployeeProfileScreen> createState() =>
+  ConsumerState<EmployeeProfileScreen> createState() =>
       _EmployeeProfileScreenState();
 }
 
 class _EmployeeProfileScreenState
-    extends State<EmployeeProfileScreen>
+    extends ConsumerState<EmployeeProfileScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
+  Map<String, dynamic>? _profile;
+  List<Map<String, dynamic>>? _attendance;
+  List<Map<String, dynamic>>? _ledger;
+  double? _balance;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 3, vsync: this);
     _tabCtrl.addListener(() => HapticFeedback.selectionClick());
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final data = await ref.read(staffServiceProvider).getProfile(widget.employeeId);
+      final emp = await ref.read(staffServiceProvider).get(widget.employeeId);
+      final now = DateTime.now();
+      final start = '${now.year}-01-01';
+      final end = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final attList = await ref.read(attendanceServiceProvider).listByEmployee(widget.employeeId);
+      final ledgerList = await ref.read(ledgerServiceProvider).listByEmployee(widget.employeeId, startDate: start, endDate: end);
+      final bal = await ref.read(ledgerServiceProvider).getBalance(widget.employeeId);
+      if (mounted) {
+        setState(() {
+          _profile = {...data, ...emp.toJson()};
+          _attendance = attList.map((a) => a.toJson()).toList();
+          _ledger = ledgerList.map((l) => l.toJson()).toList();
+          _balance = bal;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -34,6 +66,27 @@ class _EmployeeProfileScreenState
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: cs.surfaceContainerLowest,
+        appBar: AppBar(
+          backgroundColor: cs.surfaceContainerLowest,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final name = _profile?['name'] as String? ?? 'Employee';
+    final role = _profile?['role'] as String? ?? '';
+    final designation = _profile?['designation'] as String? ?? role;
+    final phone = _profile?['phone'] as String? ?? '';
+    final initials = name.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase();
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
@@ -63,7 +116,7 @@ class _EmployeeProfileScreenState
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 24, vertical: 8),
-                  child: _EditorialProfileHeader(cs: cs, tt: tt),
+                  child: _EditorialProfileHeader(cs: cs, tt: tt, name: name, initials: initials, designation: designation, phone: phone),
                 ),
               ),
               SliverPersistentHeader(
@@ -98,9 +151,9 @@ class _EmployeeProfileScreenState
               controller: _tabCtrl,
               physics: const BouncingScrollPhysics(),
               children: [
-                _InfoTab(cs: cs, tt: tt),
-                _AttendanceTab(cs: cs, tt: tt),
-                _LedgerTab(cs: cs, tt: tt),
+                _InfoTab(cs: cs, tt: tt, profile: _profile),
+                _AttendanceTab(cs: cs, tt: tt, attendanceList: _attendance),
+                _LedgerTab(cs: cs, tt: tt, ledgerList: _ledger, balance: _balance),
               ],
             ),
           ),
@@ -126,8 +179,16 @@ class _EmployeeProfileScreenState
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () =>
-                              HapticFeedback.lightImpact(),
+                          onPressed: () async {
+                            HapticFeedback.lightImpact();
+                            try {
+                              await ref.read(ledgerServiceProvider).settleAccount(widget.employeeId);
+                              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account settled')));
+                              _loadProfile();
+                            } catch (e) {
+                              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+                            }
+                          },
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                                 vertical: 16),
@@ -145,8 +206,18 @@ class _EmployeeProfileScreenState
                       const SizedBox(width: 16),
                       Expanded(
                         child: FilledButton(
-                          onPressed: () =>
-                              HapticFeedback.heavyImpact(),
+                          onPressed: () async {
+                            HapticFeedback.heavyImpact();
+                            try {
+                              final now = DateTime.now();
+                              final start = '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
+                              final end = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+                              await ref.read(payrollServiceProvider).generatePayslip(employeeId: widget.employeeId, startDate: start, endDate: end);
+                              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payslip generated')));
+                            } catch (e) {
+                              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+                            }
+                          },
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                                 vertical: 16),
@@ -174,8 +245,12 @@ class _EmployeeProfileScreenState
 class _EditorialProfileHeader extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  const _EditorialProfileHeader(
-      {required this.cs, required this.tt});
+  final String name, initials, designation, phone;
+  const _EditorialProfileHeader({
+    required this.cs, required this.tt,
+    required this.name, required this.initials,
+    required this.designation, required this.phone,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -192,19 +267,19 @@ class _EditorialProfileHeader extends StatelessWidget {
           child: CircleAvatar(
             radius: 48,
             backgroundColor: cs.primaryContainer,
-            child: Text('RS',
+            child: Text(initials,
                 style: tt.headlineMedium?.copyWith(
                     color: cs.onPrimaryContainer,
                     fontWeight: FontWeight.w800)),
           ),
         ),
         const SizedBox(height: 16),
-        Text('Rahul Sharma',
+        Text(name,
             style: tt.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.5)),
         const SizedBox(height: 4),
-        Text('Operator · Production',
+        Text(designation,
             style: tt.bodyMedium?.copyWith(
                 color: cs.onSurfaceVariant,
                 fontWeight: FontWeight.w500)),
@@ -296,10 +371,17 @@ class _PremiumTabBarDelegate
 class _InfoTab extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  const _InfoTab({required this.cs, required this.tt});
+  final Map<String, dynamic>? profile;
+  const _InfoTab({required this.cs, required this.tt, this.profile});
 
   @override
   Widget build(BuildContext context) {
+    final wageType = profile?['wage_type'] as String? ?? '';
+    final wageAmount = profile?['wage_amount'] as String? ?? profile?['wage_amount']?.toString() ?? '0';
+    final designation = profile?['designation'] as String? ?? profile?['role'] as String? ?? '';
+    final manager = profile?['manager_name'] as String? ?? 'Not assigned';
+    final shiftName = profile?['shift_name'] as String? ?? 'Not assigned';
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
       physics: const NeverScrollableScrollPhysics(),
@@ -309,18 +391,17 @@ class _InfoTab extends StatelessWidget {
             tt: tt,
             title: 'Employment Details',
             data: {
-              'Employee ID': 'EMP-042',
-              'Department': 'Production',
-              'Date of Joining': '12 Mar 2023',
+              'Designation': designation,
+              'Shift': shiftName,
+              'Manager': manager,
             }),
         _EditorialInfoBlock(
             cs: cs,
             tt: tt,
             title: 'Financial Config',
             data: {
-              'Wage Type': 'Daily Wage',
-              'Base Rate': '₹450 / day',
-              'Bank Account': 'XXXX-XXXX-4821',
+              'Wage Type': wageType == 'daily' ? 'Daily Wage' : wageType == 'monthly' ? 'Monthly' : wageType,
+              'Base Rate': '₹$wageAmount${wageType == 'daily' ? ' / day' : ''}',
             }),
       ],
     );
@@ -398,10 +479,19 @@ class _EditorialInfoBlock extends StatelessWidget {
 class _AttendanceTab extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  const _AttendanceTab({required this.cs, required this.tt});
+  final List<Map<String, dynamic>>? attendanceList;
+  const _AttendanceTab({required this.cs, required this.tt, this.attendanceList});
 
   @override
   Widget build(BuildContext context) {
+    final list = attendanceList ?? [];
+    final present = list.where((a) => a['status'] == 'present').length;
+    final absent = list.where((a) => a['status'] == 'absent').length;
+    final halfDay = list.where((a) => a['status'] == 'half_day').length;
+    final total = list.isNotEmpty ? list.length : 1;
+    final pct = total > 0 ? present / total : 0.0;
+    final recent = list.take(5).toList();
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
       physics: const NeverScrollableScrollPhysics(),
@@ -412,27 +502,27 @@ class _AttendanceTab extends StatelessWidget {
             _AttMacroStat(
                 tt: tt,
                 label: 'Present',
-                value: '22',
+                value: '$present',
                 color: const Color(0xFF10B981)),
             _AttMacroStat(
                 tt: tt,
                 label: 'Absent',
-                value: '2',
+                value: '$absent',
                 color: const Color(0xFFEF4444)),
             _AttMacroStat(
                 tt: tt,
                 label: 'Half',
-                value: '1',
+                value: '$halfDay',
                 color: const Color(0xFFF59E0B)),
           ],
         ),
         const SizedBox(height: 24),
         TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0, end: 22 / 26),
+          tween: Tween(begin: 0, end: pct),
           duration: const Duration(milliseconds: 1000),
           curve: Curves.easeOutExpo,
           builder: (context, val, _) => LinearProgressIndicator(
-            value: val,
+            value: val.clamp(0.0, 1.0),
             backgroundColor: cs.surfaceContainerHighest,
             color: const Color(0xFF10B981),
             minHeight: 8,
@@ -446,12 +536,13 @@ class _AttendanceTab extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.0)),
         const SizedBox(height: 16),
-        ...List.generate(
-            5,
-            (i) => _TimelineRow(
-                cs: cs,
-                isPresent: i < 4,
-                date: '${24 - i} Oct 2026')),
+        if (recent.isEmpty)
+          Text('No attendance records', style: TextStyle(color: cs.onSurfaceVariant))
+        else
+          ...recent.map((a) => _TimelineRow(
+              cs: cs,
+              isPresent: a['status'] == 'present',
+              date: a['date'] as String? ?? '')),
       ],
     );
   }
@@ -536,10 +627,16 @@ class _TimelineRow extends StatelessWidget {
 class _LedgerTab extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  const _LedgerTab({required this.cs, required this.tt});
+  final List<Map<String, dynamic>>? ledgerList;
+  final double? balance;
+  const _LedgerTab({required this.cs, required this.tt, this.ledgerList, this.balance});
 
   @override
   Widget build(BuildContext context) {
+    final list = ledgerList ?? [];
+    final bal = balance ?? 0;
+    final recent = list.take(5).toList();
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
       physics: const NeverScrollableScrollPhysics(),
@@ -550,7 +647,7 @@ class _LedgerTab extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.0)),
         const SizedBox(height: 8),
-        Text('₹27,300',
+        Text('₹${bal.toStringAsFixed(0)}',
             style: tt.displayMedium?.copyWith(
                 fontWeight: FontWeight.w900,
                 color: cs.primary,
@@ -562,13 +659,14 @@ class _LedgerTab extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.0)),
         const SizedBox(height: 16),
-        ...List.generate(
-            5,
-            (i) => _LedgerEntryRow(
-                cs: cs,
-                isJama: i.isEven,
-                amount: i.isEven ? 450 : 1500,
-                date: '${24 - i} Oct 2026')),
+        if (recent.isEmpty)
+          Text('No ledger entries', style: TextStyle(color: cs.onSurfaceVariant))
+        else
+          ...recent.map((e) => _LedgerEntryRow(
+              cs: cs,
+              isJama: e['type'] == 'jama',
+              amount: (e['amount'] as num?)?.toInt() ?? 0,
+              date: e['date'] as String? ?? '')),
       ],
     );
   }

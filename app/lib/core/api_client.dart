@@ -44,6 +44,15 @@ class ApiClient {
         await http.put(uri, headers: _headers, body: jsonEncode(body)));
   }
 
+  Future<List<int>> getRaw(String path, {Map<String, String>? query}) async {
+    final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
+    final res = await http.get(uri, headers: _headers);
+    if (res.statusCode >= 200 && res.statusCode < 300) return res.bodyBytes;
+    final json = jsonDecode(res.body) as Map<String, dynamic>;
+    final msg = json['message'] as String? ?? 'Unknown error';
+    throw ApiException(msg, statusCode: res.statusCode);
+  }
+
   Future<Map<String, dynamic>> delete(String path) async {
     final uri = Uri.parse('$baseUrl$path');
     return _handle(await http.delete(uri, headers: _headers));

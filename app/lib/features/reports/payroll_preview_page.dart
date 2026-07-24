@@ -1,27 +1,73 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../providers/providers.dart';
 
-class PayrollPreviewScreen extends StatefulWidget {
+class PayrollPreviewScreen extends ConsumerStatefulWidget {
   const PayrollPreviewScreen({super.key});
   @override
-  State<PayrollPreviewScreen> createState() => _PayrollPreviewScreenState();
+  ConsumerState<PayrollPreviewScreen> createState() => _PayrollPreviewScreenState();
 }
 
-class _PayrollPreviewScreenState extends State<PayrollPreviewScreen> {
-  final List<Map<String, String>> employees = [
-    {'name': 'Rahul Sharma', 'gross': '₹12,600', 'net': '11700'},
-    {'name': 'Sunita Devi', 'gross': '₹9,800', 'net': '9200'},
-    {'name': 'Vijay Kumar', 'gross': '₹14,200', 'net': '13500'},
-    {'name': 'Amit Singh', 'gross': '₹8,400', 'net': '7800'},
-    {'name': 'Priya Patel', 'gross': '₹11,200', 'net': '10900'},
-  ];
+class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
+  late DateTime _start, _end;
+  bool _locking = false;
+  bool _loading = true;
+  Map<String, dynamic>? _data;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _start = DateTime(now.year, now.month, 1);
+    _end = DateTime(now.year, now.month + 1, 0);
+    _loadData();
+  }
+
+  String get _startStr => '${_start.year}-${_start.month.toString().padLeft(2, '0')}-${_start.day.toString().padLeft(2, '0')}';
+  String get _endStr => '${_end.year}-${_end.month.toString().padLeft(2, '0')}-${_end.day.toString().padLeft(2, '0')}';
+
+  Future<void> _loadData() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final data = await ref.read(payrollServiceProvider).calculate(startDate: _startStr, endDate: _endStr);
+      if (mounted) setState(() { _data = data; _loading = false; });
+    } catch (e) {
+      if (mounted) setState(() { _error = '$e'; _loading = false; });
+    }
+  }
+
+  Future<void> _lockPayroll() async {
+    HapticFeedback.heavyImpact();
+    setState(() => _locking = true);
+    try {
+      await ref.read(payrollServiceProvider).lockMonth(startDate: _startStr, endDate: _endStr);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payroll locked successfully')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => _locking = false);
+    }
+  }
+
+  Future<void> _pickDates() async {
+    if (!mounted) return;
+    final start = await showDatePicker(context: context, initialDate: _start, firstDate: DateTime(2024), lastDate: DateTime.now());
+    if (start == null || !mounted) return;
+    final end = await showDatePicker(context: context, initialDate: _end, firstDate: start, lastDate: DateTime.now());
+    if (end == null || !mounted) return;
+    setState(() { _start = start; _end = end; });
+    _loadData();
+  }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final monthLabel = '${_start.year}-${_start.month.toString().padLeft(2, '0')}';
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
@@ -42,43 +88,80 @@ class _PayrollPreviewScreenState extends State<PayrollPreviewScreen> {
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                  child: _PayrollSummaryGlassCard(cs: cs, tt: tt),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Final Adjustments', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
-                        child: Text('Oct 2026', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                  child: InkWell(
+                    onTap: _pickDates,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
                       ),
-                    ],
+                      child: Row(
+                        children: [
+                          Icon(PhosphorIconsFill.calendarBlank, color: cs.primary),
+                          const SizedBox(width: 12),
+                          Text('$_start to $_end', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                          const Spacer(),
+                          Icon(PhosphorIconsRegular.caretDown, color: cs.onSurfaceVariant, size: 18),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final emp = employees[index];
-                      return _EditablePayrollRow(
-                        cs: cs, tt: tt,
-                        name: emp['name']!,
-                        gross: emp['gross']!,
-                        initialNet: emp['net']!,
-                      );
-                    },
-                    childCount: employees.length,
+              if (_loading)
+                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+              else if (_error != null)
+                SliverFillRemaining(child: Center(child: Text(_error!, style: TextStyle(color: cs.error))))
+              else ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    child: _PayrollSummaryGlassCard(cs: cs, tt: tt,
+                      gross: (_data?['total_gross'] as num?)?.toDouble() ?? 0,
+                      udhaar: (_data?['total_udhaar'] as num?)?.toDouble() ?? 0,
+                      net: (_data?['total_net'] as num?)?.toDouble() ?? 0,
+                    ),
                   ),
                 ),
-              ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Employee Breakdown', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+                          child: Text(monthLabel, style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final emps = (_data?['employees'] as List<dynamic>?) ?? [];
+                        final emp = emps[index] as Map<String, dynamic>;
+                        return _EditablePayrollRow(
+                          cs: cs, tt: tt,
+                          name: emp['name'] as String? ?? '',
+                          gross: '₹${(emp['gross'] as num?)?.toStringAsFixed(0) ?? '0'}',
+                          initialNet: (emp['net'] as num?)?.toStringAsFixed(0) ?? '0',
+                        );
+                      },
+                      childCount: ((_data?['employees'] as List<dynamic>?) ?? []).length,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           Positioned(
@@ -93,17 +176,17 @@ class _PayrollPreviewScreenState extends State<PayrollPreviewScreen> {
                     border: Border(top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3))),
                   ),
                   child: FilledButton.icon(
-                    onPressed: () {
-                      HapticFeedback.heavyImpact();
-                    },
+                    onPressed: _locking ? null : _lockPayroll,
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
                       minimumSize: const Size.fromHeight(60),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 0,
                     ),
-                    icon: const Icon(PhosphorIconsBold.lockKey, color: Colors.white),
-                    label: const Text('Lock & Generate Slips', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    icon: _locking
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(PhosphorIconsBold.lockKey, color: Colors.white),
+                    label: Text(_locking ? 'Locking...' : 'Lock & Generate Slips', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                   ),
                 ),
               ),
@@ -118,8 +201,9 @@ class _PayrollPreviewScreenState extends State<PayrollPreviewScreen> {
 class _PayrollSummaryGlassCard extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
+  final double gross, udhaar, net;
 
-  const _PayrollSummaryGlassCard({required this.cs, required this.tt});
+  const _PayrollSummaryGlassCard({required this.cs, required this.tt, required this.gross, required this.udhaar, required this.net});
 
   @override
   Widget build(BuildContext context) {
@@ -136,9 +220,9 @@ class _PayrollSummaryGlassCard extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             child: Row(
               children: [
-                Expanded(child: _PayStat(cs: cs, label: 'Gross Pay', value: '₹2,85,400', color: cs.onSurface)),
+                Expanded(child: _PayStat(cs: cs, label: 'Gross Pay', value: '₹${gross.toStringAsFixed(0)}', color: cs.onSurface)),
                 Container(width: 1, height: 40, color: cs.outlineVariant),
-                Expanded(child: _PayStat(cs: cs, label: 'Udhaar Deducted', value: '-₹42,600', color: const Color(0xFFEF4444))),
+                Expanded(child: _PayStat(cs: cs, label: 'Udhaar Deducted', value: '-₹${udhaar.toStringAsFixed(0)}', color: const Color(0xFFEF4444))),
               ],
             ),
           ),
@@ -152,7 +236,7 @@ class _PayrollSummaryGlassCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('NET PAYABLE', style: tt.labelMedium?.copyWith(color: const Color(0xFF10B981), fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-                Text('₹2,42,800', style: tt.headlineMedium?.copyWith(color: const Color(0xFF10B981), fontWeight: FontWeight.w900, letterSpacing: -1.0)),
+                Text('₹${net.toStringAsFixed(0)}', style: tt.headlineMedium?.copyWith(color: const Color(0xFF10B981), fontWeight: FontWeight.w900, letterSpacing: -1.0)),
               ],
             ),
           ),

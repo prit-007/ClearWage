@@ -5,6 +5,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/employee_model.dart';
 import '../../providers/providers.dart';
 import 'employee_profile_page.dart';
+import 'add_employee_page.dart';
 
 final staffListProvider = FutureProvider.autoDispose<List<Employee>>((ref) {
   return ref.watch(staffServiceProvider).list();
@@ -111,6 +112,7 @@ class StaffDirectoryScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           HapticFeedback.lightImpact();
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEmployeeScreen()));
         },
         backgroundColor: cs.primary,
         elevation: 4,

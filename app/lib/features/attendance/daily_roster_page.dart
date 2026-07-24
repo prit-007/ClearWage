@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/attendance_model.dart';
 import '../../providers/providers.dart';
+import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/widgets/tactile_toggle.dart';
 
-enum AttendanceStatus { present, absent, halfDay, weekOff }
+enum _AttStatus { present, absent, halfDay }
 
 final todayAttendanceProvider = FutureProvider.autoDispose<List<Attendance>>((ref) {
   final now = DateTime.now();
@@ -18,10 +22,37 @@ class AttendanceRosterPage extends ConsumerStatefulWidget {
 }
 
 class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
-  int selectedShift = 0;
+  int _selectedShift = 0;
 
-  void _markAllPresent() {
-    // TODO: bulk update via attendance service
+  Future<void> _markRemainingPresent() async {
+    HapticFeedback.heavyImpact();
+    final list = ref.read(todayAttendanceProvider).valueOrNull;
+    if (list == null || list.isEmpty) return;
+    final now = DateTime.now();
+    final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final records = list
+        .where((a) => a.status != 'present')
+        .map((a) => {'employee_id': a.employeeId, 'date': date, 'shift_id': a.shiftId, 'status': 'present'})
+        .toList();
+    if (records.isEmpty) return;
+    try {
+      await ref.read(attendanceServiceProvider).bulkUpsert(records);
+      ref.invalidate(todayAttendanceProvider);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Remaining marked as present')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  Future<void> _updateAttendance(Attendance att, _AttStatus newStatus, double ot) async {
+    try {
+      final statusMap = {_AttStatus.present: 'present', _AttStatus.absent: 'absent', _AttStatus.halfDay: 'half_day'};
+      await ref.read(attendanceServiceProvider).update(att.id, {
+        'status': statusMap[newStatus],
+        'overtime_hours': ot,
+      });
+      ref.invalidate(todayAttendanceProvider);
+    } catch (_) {}
   }
 
   @override
@@ -29,83 +60,106 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final async = ref.watch(todayAttendanceProvider);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Factory Workforce',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.sync)),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.account_circle_outlined)),
-        ],
-      ),
-      body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Text('$e', style: TextStyle(color: cs.error), textAlign: TextAlign.center),
-          ),
-        ),
-        data: (attendanceList) => Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  ActionChip(
-                    avatar: const Icon(Icons.calendar_today, size: 16),
-                    label: Text(_today()),
-                    onPressed: () {},
-                  ),
-                  const Spacer(),
-                  Text('${attendanceList.length} records',
-                      style: TextStyle(color: Colors.grey)),
-                ],
+      backgroundColor: cs.surfaceContainerLowest,
+      body: SafeArea(
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              backgroundColor: cs.surfaceContainerLowest.withValues(alpha: 0.95),
+              pinned: true,
+              elevation: 0,
+              leading: IconButton(
+                icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+                onPressed: () => Navigator.pop(context),
               ),
+              title: Text('Daily Roster', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: Icon(PhosphorIconsRegular.arrowsClockwise, color: cs.onSurfaceVariant),
+                  onPressed: () => HapticFeedback.lightImpact(),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SegmentedButton<int>(
-                  segments: const [
-                    ButtonSegment(value: 0, label: Text('All'),
-                        icon: Icon(Icons.wb_sunny_outlined)),
-                    ButtonSegment(value: 1, label: Text('Shift A'),
-                        icon: Icon(Icons.wb_twilight)),
-                    ButtonSegment(value: 2, label: Text('Night'),
-                        icon: Icon(Icons.bedtime_outlined)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(PhosphorIconsFill.calendarBlank, color: cs.primary),
+                              const SizedBox(width: 12),
+                              Text(_today(), style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                            ],
+                          ),
+                          async.when(data: (list) => Text('${list.length} Staff', style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)), loading: () => const SizedBox(), error: (_, _) => const SizedBox()),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      child: Row(
+                        children: [
+                          _ShiftPill(cs: cs, label: 'All Shifts', icon: PhosphorIconsFill.list, isSelected: _selectedShift == 0, onTap: () => setState(() => _selectedShift = 0)),
+                          _ShiftPill(cs: cs, label: 'General', icon: PhosphorIconsFill.sun, isSelected: _selectedShift == 1, onTap: () => setState(() => _selectedShift = 1)),
+                          _ShiftPill(cs: cs, label: 'Night', icon: PhosphorIconsFill.moon, isSelected: _selectedShift == 2, onTap: () => setState(() => _selectedShift = 2)),
+                        ],
+                      ),
+                    ),
                   ],
-                  selected: {selectedShift},
-                  onSelectionChanged: (v) => setState(() => selectedShift = v.first),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: FilledButton.icon(
-                onPressed: _markAllPresent,
-                icon: const Icon(Icons.done_all),
-                label: const Text('Mark All Present'),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            async.when(
+              loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
+              error: (e, _) => SliverFillRemaining(child: Center(child: Text('$e'))),
+              data: (list) => SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      return FluidSlideIn(
+                        delay: (index * 50).clamp(0, 400),
+                        child: _PremiumAttendanceCard(cs: cs, tt: tt, attendance: list[index], onUpdate: _updateAttendance),
+                      );
+                    },
+                    childCount: list.length,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: attendanceList.length,
-                itemBuilder: (_, i) {
-                  final a = attendanceList[i];
-                  return _AttendanceCard(cs: cs, tt: tt, attendance: a);
-                },
               ),
             ),
           ],
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: FilledButton.icon(
+          onPressed: () => _markRemainingPresent(),
+          icon: const Icon(PhosphorIconsBold.checks),
+          label: const Text('Mark Remaining as Present', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(56),
+            backgroundColor: cs.primary,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 4,
+          ),
         ),
       ),
     );
@@ -113,82 +167,161 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
 
   String _today() {
     final d = DateTime.now();
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
 }
 
-class _AttendanceCard extends StatelessWidget {
+class _ShiftPill extends StatelessWidget {
   final ColorScheme cs;
-  final TextTheme tt;
-  final Attendance attendance;
-  const _AttendanceCard({required this.cs, required this.tt, required this.attendance});
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ShiftPill({required this.cs, required this.label, required this.icon, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final statusMap = {
-      'present': AttendanceStatus.present,
-      'absent': AttendanceStatus.absent,
-      'half_day': AttendanceStatus.halfDay,
-      'week_off': AttendanceStatus.weekOff,
-    };
-    final current = statusMap[attendance.status] ?? AttendanceStatus.present;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(right: 12),
+      child: InkWell(
+        onTap: () { HapticFeedback.selectionClick(); onTap(); },
+        borderRadius: BorderRadius.circular(24),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? cs.primary : cs.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: isSelected ? cs.primary : cs.outlineVariant.withValues(alpha: 0.5)),
+          ),
+          child: Row(
             children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: cs.primary.withValues(alpha: 0.1),
-                    child: Text(attendance.employeeName.isNotEmpty
-                        ? attendance.employeeName[0] : '?',
-                        style: TextStyle(color: cs.primary)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(attendance.employeeName,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text(attendance.employeeId,
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.access_time, size: 20),
-                    onPressed: () {},
-                  )
-                ],
+              Icon(icon, size: 16, color: isSelected ? cs.onPrimary : cs.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Text(label, style: TextStyle(fontWeight: FontWeight.w700, color: isSelected ? cs.onPrimary : cs.onSurfaceVariant)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PremiumAttendanceCard extends StatefulWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final Attendance attendance;
+  final Future<void> Function(Attendance att, _AttStatus newStatus, double ot)? onUpdate;
+
+  const _PremiumAttendanceCard({required this.cs, required this.tt, required this.attendance, this.onUpdate});
+
+  @override
+  State<_PremiumAttendanceCard> createState() => _PremiumAttendanceCardState();
+}
+
+class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
+  late _AttStatus _status;
+  final _otCtrl = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _status = _mapStatus(widget.attendance.status);
+  }
+
+  @override
+  void dispose() {
+    _otCtrl.dispose();
+    super.dispose();
+  }
+
+  _AttStatus _mapStatus(String s) {
+    switch (s) {
+      case 'present': return _AttStatus.present;
+      case 'absent': return _AttStatus.absent;
+      case 'half_day': return _AttStatus.halfDay;
+      default: return _AttStatus.present;
+    }
+  }
+
+  void _updateStatus(_AttStatus s) {
+    if (_status == s || _saving) return;
+    HapticFeedback.lightImpact();
+    setState(() => _saving = true);
+    widget.onUpdate?.call(widget.attendance, s, double.tryParse(_otCtrl.text) ?? 0).then((_) {
+      if (mounted) {
+        setState(() {
+          _status = s;
+          _saving = false;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final initials = widget.attendance.employeeName
+        .split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: widget.cs.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: widget.cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: widget.cs.surfaceContainerHighest,
+                child: Text(initials, style: TextStyle(fontWeight: FontWeight.w800, color: widget.cs.onSurface, fontSize: 13)),
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: SegmentedButton<AttendanceStatus>(
-                  segments: const [
-                    ButtonSegment(value: AttendanceStatus.present, label: Text('P')),
-                    ButtonSegment(value: AttendanceStatus.absent, label: Text('A')),
-                    ButtonSegment(value: AttendanceStatus.halfDay, label: Text('HD')),
-                    ButtonSegment(value: AttendanceStatus.weekOff, label: Text('WO')),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.attendance.employeeName, style: widget.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    Text(widget.attendance.shiftId, style: widget.tt.labelSmall?.copyWith(color: widget.cs.onSurfaceVariant)),
                   ],
-                  selected: {current},
-                  onSelectionChanged: (_) {},
-                  style: ButtonStyle(
-                    visualDensity: VisualDensity.compact,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+              Container(
+                width: 70, height: 36,
+                decoration: BoxDecoration(color: widget.cs.surfaceContainerHighest.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(8)),
+                child: TextField(
+                  controller: _otCtrl,
+                  textAlign: TextAlign.center,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: 'OT Hrs',
+                    hintStyle: TextStyle(fontSize: 11, color: widget.cs.onSurfaceVariant),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                 ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: TactileToggle(label: 'P', color: const Color(0xFF10B981), isSelected: _status == _AttStatus.present, onTap: () => _updateStatus(_AttStatus.present))),
+              const SizedBox(width: 8),
+              Expanded(child: TactileToggle(label: 'A', color: const Color(0xFFEF4444), isSelected: _status == _AttStatus.absent, onTap: () => _updateStatus(_AttStatus.absent))),
+              const SizedBox(width: 8),
+              Expanded(child: TactileToggle(label: 'HD', color: const Color(0xFFF59E0B), isSelected: _status == _AttStatus.halfDay, onTap: () => _updateStatus(_AttStatus.halfDay))),
+            ],
+          ),
+        ],
       ),
     );
   }

@@ -12,12 +12,12 @@ class ReportsHubScreen extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
 
     final reports = [
-      _ReportConfig(icon: PhosphorIconsFill.calendarCheck, title: 'Daily Summary', subtitle: 'Attendance & wage overview', color: cs.primary, route: '/'),
-      _ReportConfig(icon: PhosphorIconsFill.usersThree, title: 'Employee Monthly', subtitle: 'Per-employee attendance & earnings', color: const Color(0xFF3B82F6), route: '/'),
-      _ReportConfig(icon: PhosphorIconsFill.trendUp, title: 'Wage Bill Trends', subtitle: 'Month-over-month wage analysis', color: const Color(0xFF8B5CF6), route: '/'),
-      _ReportConfig(icon: PhosphorIconsFill.warningCircle, title: 'Defaulters', subtitle: 'Employees with outstanding > wage', color: const Color(0xFFEF4444), route: '/'),
+      _ReportConfig(icon: PhosphorIconsFill.calendarCheck, title: 'Daily Summary', subtitle: 'Attendance & wage overview', color: cs.primary, route: '/reports/daily-summary'),
+      _ReportConfig(icon: PhosphorIconsFill.usersThree, title: 'Employee Monthly', subtitle: 'Per-employee attendance & earnings', color: const Color(0xFF3B82F6), route: '/reports/employee-monthly'),
+      _ReportConfig(icon: PhosphorIconsFill.trendUp, title: 'Wage Bill Trends', subtitle: 'Month-over-month wage analysis', color: const Color(0xFF8B5CF6), route: '/reports/wage-bill-trends'),
+      _ReportConfig(icon: PhosphorIconsFill.warningCircle, title: 'Defaulters', subtitle: 'Employees with outstanding > wage', color: const Color(0xFFEF4444), route: '/reports/defaulters'),
       _ReportConfig(icon: PhosphorIconsFill.wallet, title: 'Payroll Summary', subtitle: 'Monthly payroll breakdown', color: const Color(0xFF10B981), badge: 'Owner Access Only', route: '/reports/payroll'),
-      _ReportConfig(icon: PhosphorIconsFill.export, title: 'Export Data', subtitle: 'CSV export of any report', color: cs.onSurfaceVariant, route: '/'),
+      _ReportConfig(icon: PhosphorIconsFill.export, title: 'Export Data', subtitle: 'CSV export of any report', color: cs.onSurfaceVariant, route: '/reports/export'),
     ];
 
     return Scaffold(

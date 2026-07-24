@@ -4,11 +4,21 @@ import 'package:google_fonts/google_fonts.dart';
 import 'features/attendance/daily_roster_page.dart' as roster;
 import 'features/dashboard/dashboard_page.dart';
 import 'features/staff/staff_directory_page.dart';
+import 'features/staff/add_employee_page.dart';
 import 'features/ledger/ledger_list_page.dart';
 import 'features/ledger/new_ledger_entry_page.dart';
 import 'features/reports/reports_hub_page.dart';
+import 'features/reports/payroll_preview_page.dart';
+import 'features/reports/daily_summary_page.dart';
+import 'features/reports/defaulters_page.dart';
 import 'features/auth/login_page.dart';
 import 'features/onboarding/onboarding_wizard.dart';
+import 'features/shifts/shifts_management_page.dart';
+import 'features/holidays/holidays_page.dart';
+import 'features/advance_requests/advance_requests_page.dart';
+import 'features/leave_policy/leave_policy_page.dart';
+import 'features/settings/payroll_settings_page.dart';
+import 'features/profile/my_profile_page.dart';
 import 'providers/providers.dart';
 
 void main() {
@@ -56,6 +66,16 @@ class FactoryWorkforceApp extends ConsumerWidget {
         '/home': (_) => const MainShell(),
         '/onboarding': (_) => const OnboardingWizard(),
         '/new_ledger': (_) => const NewLedgerEntryScreen(),
+        '/add_employee': (_) => const AddEmployeeScreen(),
+        '/shifts': (_) => const ShiftsManagementScreen(),
+        '/holidays': (_) => const HolidaysScreen(),
+        '/advance-requests': (_) => const AdvanceRequestsScreen(),
+        '/leave-policy': (_) => const LeavePolicyScreen(),
+        '/reports/payroll': (_) => const PayrollPreviewScreen(),
+        '/reports/daily-summary': (_) => const DailySummaryScreen(),
+        '/reports/defaulters': (_) => const DefaultersScreen(),
+        '/payroll-settings': (_) => const PayrollSettingsScreen(),
+        '/my-profile': (_) => const MyProfileScreen(),
       },
     );
   }
@@ -83,41 +103,39 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(child: _buildPage()),
-        NavigationBar(
-          selectedIndex: _selectedIndex,
-          onDestinationSelected: (i) => setState(() => _selectedIndex = i),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.groups_outlined),
-              selectedIcon: Icon(Icons.groups),
-              label: 'Staff',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.event_available_outlined),
-              selectedIcon: Icon(Icons.event_available),
-              label: 'Attendance',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.account_balance_wallet_outlined),
-              selectedIcon: Icon(Icons.account_balance_wallet),
-              label: 'Ledger',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.analytics_outlined),
-              selectedIcon: Icon(Icons.analytics),
-              label: 'Reports',
-            ),
-          ],
-        ),
-      ],
+    return Scaffold(
+      body: _buildPage(),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.groups_outlined),
+            selectedIcon: Icon(Icons.groups),
+            label: 'Staff',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.event_available_outlined),
+            selectedIcon: Icon(Icons.event_available),
+            label: 'Attendance',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: Icon(Icons.account_balance_wallet),
+            label: 'Ledger',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.analytics_outlined),
+            selectedIcon: Icon(Icons.analytics),
+            label: 'Reports',
+          ),
+        ],
+      ),
     );
   }
 

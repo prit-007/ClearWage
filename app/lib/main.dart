@@ -6,6 +6,8 @@ import 'features/dashboard/dashboard_page.dart';
 import 'features/staff/staff_directory_page.dart';
 import 'features/ledger/ledger_list_page.dart';
 import 'features/reports/reports_hub_page.dart';
+import 'features/auth/login_page.dart';
+import 'providers/providers.dart';
 
 void main() {
   runApp(const ProviderScope(child: FactoryWorkforceApp()));
@@ -47,8 +49,22 @@ class FactoryWorkforceApp extends ConsumerWidget {
           indicatorColor: const Color(0xFF1E40AF).withValues(alpha: 0.12),
         ),
       ),
-      home: const MainShell(),
+      home: const AuthGate(),
+      routes: {
+        '/home': (_) => const MainShell(),
+      },
     );
+  }
+}
+
+class AuthGate extends ConsumerWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final token = ref.watch(tokenProvider);
+    if (token != null) return const MainShell();
+    return const LoginScreen();
   }
 }
 

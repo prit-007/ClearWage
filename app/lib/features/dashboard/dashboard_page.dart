@@ -1,113 +1,98 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/dashboard_model.dart';
+import '../../providers/providers.dart';
 
-class DashboardScreen extends StatelessWidget {
+final dashboardDataProvider = FutureProvider.autoDispose<DashboardData>((ref) {
+  return ref.watch(dashboardServiceProvider).get();
+});
+
+class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final async = ref.watch(dashboardDataProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Dashboard')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          SizedBox(
-            height: 160,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
+      body: async.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('$e', style: TextStyle(color: cs.error))),
+        data: (data) => ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          children: [
+            SizedBox(
+              height: 160,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  const SizedBox(width: 12),
+                  _AttendanceOverviewCard(cs: cs, tt: tt, data: data),
+                  const SizedBox(width: 12),
+                  _TonalStatCard(
+                    cs: cs, tt: tt,
+                    icon: Icons.people_outline,
+                    label: 'Total Staff',
+                    value: '${data.totalWorkforce}',
+                    color: cs.tertiary,
+                  ),
+                  const SizedBox(width: 12),
+                  _TonalStatCard(
+                    cs: cs, tt: tt,
+                    icon: Icons.payments_outlined,
+                    label: 'Payroll (MTD)',
+                    value: '\u20B9${data.totalJama.toStringAsFixed(0)}',
+                    color: cs.primary,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text('Quick Actions', style: tt.titleMedium),
+            const SizedBox(height: 12),
+            GridView.count(
+              crossAxisCount: 4,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.9,
               children: [
-                const SizedBox(width: 12),
-                _AttendanceOverviewCard(cs: cs, tt: tt),
-                const SizedBox(width: 12),
-                _TonalStatCard(
-                  cs: cs, tt: tt,
-                  icon: Icons.people_outline,
-                  label: 'Total Staff',
-                  value: '48',
-                  color: cs.tertiary,
-                ),
-                const SizedBox(width: 12),
-                _TonalStatCard(
-                  cs: cs, tt: tt,
-                  icon: Icons.payments_outlined,
-                  label: 'Payroll (MTD)',
-                  value: '₹2.4L',
-                  color: cs.primary,
-                ),
+                _QuickActionTile(cs: cs, tt: tt,
+                  icon: Icons.person_add_alt_1, label: 'Add Staff',
+                  onTap: () {}),
+                _QuickActionTile(cs: cs, tt: tt,
+                  icon: Icons.fact_check_outlined, label: 'Mark\nAttendance',
+                  onTap: () {}),
+                _QuickActionTile(cs: cs, tt: tt,
+                  icon: Icons.account_balance_outlined, label: 'Ledger',
+                  onTap: () {}),
+                _QuickActionTile(cs: cs, tt: tt,
+                  icon: Icons.assignment_outlined, label: 'Reports',
+                  onTap: () {}),
               ],
             ),
-          ),
-          const SizedBox(height: 24),
-          Text('Quick Actions', style: tt.titleMedium),
-          const SizedBox(height: 12),
-          GridView.count(
-            crossAxisCount: 4,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.9,
-            children: [
-              _QuickActionTile(
+            const SizedBox(height: 24),
+            Text('Recent Activity', style: tt.titleMedium),
+            const SizedBox(height: 12),
+            if (data.recentActivity.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text('No recent activity',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4))),
+              )
+            else
+              ...data.recentActivity.map((a) => _ActivityTile(
                 cs: cs, tt: tt,
-                icon: Icons.person_add_alt_1,
-                label: 'Add Staff',
-                onTap: () => context.push('/staff'),
-              ),
-              _QuickActionTile(
-                cs: cs, tt: tt,
-                icon: Icons.fact_check_outlined,
-                label: 'Mark\nAttendance',
-                onTap: () => context.push('/attendance/roster'),
-              ),
-              _QuickActionTile(
-                cs: cs, tt: tt,
-                icon: Icons.account_balance_outlined,
-                label: 'Ledger',
-                onTap: () => context.push('/ledger'),
-              ),
-              _QuickActionTile(
-                cs: cs, tt: tt,
-                icon: Icons.assignment_outlined,
-                label: 'Reports',
-                onTap: () => context.push('/reports'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text('Recent Activity', style: tt.titleMedium),
-          const SizedBox(height: 12),
-          _ActivityTile(
-            cs: cs, tt: tt,
-            icon: Icons.fingerprint,
-            color: cs.primary,
-            title: 'Rahul Sharma marked Present',
-            subtitle: '2 min ago',
-          ),
-          _ActivityTile(
-            cs: cs, tt: tt,
-            icon: Icons.arrow_upward,
-            color: cs.tertiary,
-            title: 'Ledger entry: Jama ₹500',
-            subtitle: '15 min ago',
-          ),
-          _ActivityTile(
-            cs: cs, tt: tt,
-            icon: Icons.person_off_outlined,
-            color: cs.error,
-            title: 'Sunita Devi marked Absent',
-            subtitle: '1 hour ago',
-          ),
-          _ActivityTile(
-            cs: cs, tt: tt,
-            icon: Icons.payments_outlined,
-            color: cs.secondary,
-            title: 'Payroll for Oct 2026 locked',
-            subtitle: '3 hours ago',
-          ),
-        ],
+                icon: Icons.circle,
+                color: cs.primary,
+                title: a.description,
+                subtitle: a.createdAt,
+              )),
+          ],
+        ),
       ),
     );
   }
@@ -116,10 +101,12 @@ class DashboardScreen extends StatelessWidget {
 class _AttendanceOverviewCard extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  const _AttendanceOverviewCard({required this.cs, required this.tt});
+  final DashboardData data;
+  const _AttendanceOverviewCard({required this.cs, required this.tt, required this.data});
 
   @override
   Widget build(BuildContext context) {
+    final pct = data.attendancePercentage;
     return Card(
       color: cs.primaryContainer,
       child: Container(
@@ -142,13 +129,13 @@ class _AttendanceOverviewCard extends StatelessWidget {
               color: cs.onPrimaryContainer.withValues(alpha: 0.8),
             )),
             const SizedBox(height: 4),
-            Text('90%', style: tt.headlineLarge?.copyWith(
+            Text('${pct.toStringAsFixed(0)}%', style: tt.headlineLarge?.copyWith(
               color: cs.onPrimaryContainer,
               fontWeight: FontWeight.bold,
             )),
             const SizedBox(height: 12),
             LinearProgressIndicator(
-              value: 0.9,
+              value: pct / 100,
               backgroundColor: cs.onPrimaryContainer.withValues(alpha: 0.18),
               color: cs.onPrimaryContainer,
               minHeight: 8,
@@ -157,9 +144,9 @@ class _AttendanceOverviewCard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                _DotLegend(cs.onPrimaryContainer, 'Present', cs),
+                _DotLegend(cs.onPrimaryContainer, '${data.presentToday} Present', cs),
                 const SizedBox(width: 12),
-                _DotLegend(cs.error, 'Absent', cs),
+                _DotLegend(cs.error, '${data.absentToday} Absent', cs),
               ],
             ),
           ],
@@ -282,10 +269,8 @@ class _DotLegend extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 8, height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
+        Container(width: 8, height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 4),
         Text(label, style: TextStyle(
           fontSize: 11, color: cs.onPrimaryContainer.withValues(alpha: 0.7),

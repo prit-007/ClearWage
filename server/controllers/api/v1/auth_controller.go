@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
@@ -27,9 +28,16 @@ type AuthController struct {
 func NewAuthController(querier repositories.Querier, logger *zerolog.Logger, cfg config.AppConfig) (*AuthController, error) {
 	var firebaseOpt option.ClientOption
 	if cfg.FirebaseCredBase64 != "" {
-		credsJSON, err := base64.StdEncoding.DecodeString(cfg.FirebaseCredBase64)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode FIREBASE_CRED_BASE64: %w", err)
+		var credsJSON []byte
+		if trimmed := strings.TrimSpace(cfg.FirebaseCredBase64); strings.HasPrefix(trimmed, "{") {
+			credsJSON = []byte(trimmed)
+		} else {
+			stripped := strings.NewReplacer("\n", "", "\r", "", " ", "", "\t", "").Replace(trimmed)
+			var err error
+			credsJSON, err = base64.StdEncoding.DecodeString(stripped)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode FIREBASE_CRED_BASE64: %w", err)
+			}
 		}
 		firebaseOpt = option.WithCredentialsJSON(credsJSON)
 	} else {

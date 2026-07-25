@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -32,9 +31,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 		Short: "To start api",
 		Long:  `To start api`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			connStr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?%s",
-				cfg.DB.Username, cfg.DB.Password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Db, cfg.DB.QueryString)
-			sqlDB, err := sql.Open("pgx", connStr)
+			sqlDB, err := sql.Open("pgx", cfg.DB.ConnectionString())
 			if err != nil {
 				return err
 			}

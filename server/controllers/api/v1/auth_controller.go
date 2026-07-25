@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -24,7 +25,17 @@ type AuthController struct {
 }
 
 func NewAuthController(querier repositories.Querier, logger *zerolog.Logger, cfg config.AppConfig) (*AuthController, error) {
-	firebaseApp, err := firebase.NewApp(context.Background(), nil, option.WithCredentialsFile(cfg.FirebaseCredentialsPath))
+	var firebaseOpt option.ClientOption
+	if cfg.FirebaseCredBase64 != "" {
+		credsJSON, err := base64.StdEncoding.DecodeString(cfg.FirebaseCredBase64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode FIREBASE_CRED_BASE64: %w", err)
+		}
+		firebaseOpt = option.WithCredentialsJSON(credsJSON)
+	} else {
+		firebaseOpt = option.WithCredentialsFile(cfg.FirebaseCredentialsPath)
+	}
+	firebaseApp, err := firebase.NewApp(context.Background(), nil, firebaseOpt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize Firebase app: %w", err)
 	}

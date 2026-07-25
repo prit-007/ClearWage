@@ -1,137 +1,246 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../providers/providers.dart';
 
-class PayrollPreviewScreen extends StatefulWidget {
+class PayrollPreviewScreen extends ConsumerStatefulWidget {
   const PayrollPreviewScreen({super.key});
   @override
-  State<PayrollPreviewScreen> createState() => _PayrollPreviewScreenState();
+  ConsumerState<PayrollPreviewScreen> createState() => _PayrollPreviewScreenState();
 }
 
-class _PayrollPreviewScreenState extends State<PayrollPreviewScreen> {
+class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
+  late DateTime _start, _end;
+  bool _locking = false;
+  bool _loading = true;
+  Map<String, dynamic>? _data;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _start = DateTime(now.year, now.month, 1);
+    _end = DateTime(now.year, now.month + 1, 0);
+    _loadData();
+  }
+
+  String get _startStr => '${_start.year}-${_start.month.toString().padLeft(2, '0')}-${_start.day.toString().padLeft(2, '0')}';
+  String get _endStr => '${_end.year}-${_end.month.toString().padLeft(2, '0')}-${_end.day.toString().padLeft(2, '0')}';
+
+  Future<void> _loadData() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final data = await ref.read(payrollServiceProvider).calculate(startDate: _startStr, endDate: _endStr);
+      if (mounted) setState(() { _data = data; _loading = false; });
+    } catch (e) {
+      if (mounted) setState(() { _error = '$e'; _loading = false; });
+    }
+  }
+
+  Future<void> _lockPayroll() async {
+    HapticFeedback.heavyImpact();
+    setState(() => _locking = true);
+    try {
+      await ref.read(payrollServiceProvider).lockMonth(startDate: _startStr, endDate: _endStr);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payroll locked successfully')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => _locking = false);
+    }
+  }
+
+  Future<void> _pickDates() async {
+    if (!mounted) return;
+    final start = await showDatePicker(context: context, initialDate: _start, firstDate: DateTime(2024), lastDate: DateTime.now());
+    if (start == null || !mounted) return;
+    final end = await showDatePicker(context: context, initialDate: _end, firstDate: start, lastDate: DateTime.now());
+    if (end == null || !mounted) return;
+    setState(() { _start = start; _end = end; });
+    _loadData();
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final monthLabel = '${_start.year}-${_start.month.toString().padLeft(2, '0')}';
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Payroll Preview')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      backgroundColor: cs.surfaceContainerLowest,
+      appBar: AppBar(
+        backgroundColor: cs.surfaceContainerLowest,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text('Lock Payroll', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+        centerTitle: true,
+      ),
+      body: Stack(
         children: [
-          Card(
-            color: cs.primaryContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Expanded(child: _PayStat(
-                    cs: cs, label: 'Gross Pay',
-                    value: '₹2,85,400',
-                    color: cs.onPrimaryContainer,
-                  )),
-                  Container(width: 1, height: 36,
-                    color: cs.onPrimaryContainer.withValues(alpha: 0.2),
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                  child: InkWell(
+                    onTap: _pickDates,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(PhosphorIconsFill.calendarBlank, color: cs.primary),
+                          const SizedBox(width: 12),
+                          Text('$_start to $_end', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                          const Spacer(),
+                          Icon(PhosphorIconsRegular.caretDown, color: cs.onSurfaceVariant, size: 18),
+                        ],
+                      ),
+                    ),
                   ),
-                  Expanded(child: _PayStat(
-                    cs: cs, label: 'Deductions',
-                    value: '₹42,600',
-                    color: cs.error,
-                  )),
-                  Container(width: 1, height: 36,
-                    color: cs.onPrimaryContainer.withValues(alpha: 0.2),
-                  ),
-                  Expanded(child: _PayStat(
-                    cs: cs, label: 'Net Payable',
-                    value: '₹2,42,800',
-                    color: cs.onPrimaryContainer,
-                  )),
-                ],
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Text('Employee Adjustments', style: tt.titleMedium),
-              const Spacer(),
-              Text('Oct 2026', style: tt.labelMedium?.copyWith(
-                color: cs.onSurface.withValues(alpha: 0.6),
-              )),
+              if (_loading)
+                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+              else if (_error != null)
+                SliverFillRemaining(child: Center(child: Text(_error!, style: TextStyle(color: cs.error))))
+              else ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    child: _PayrollSummaryGlassCard(cs: cs, tt: tt,
+                      gross: (_data?['total_gross'] as num?)?.toDouble() ?? 0,
+                      udhaar: (_data?['total_udhaar'] as num?)?.toDouble() ?? 0,
+                      net: (_data?['total_net'] as num?)?.toDouble() ?? 0,
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Employee Breakdown', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+                          child: Text(monthLabel, style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final emps = (_data?['employees'] as List<dynamic>?) ?? [];
+                        final emp = emps[index] as Map<String, dynamic>;
+                        return _EditablePayrollRow(
+                          cs: cs, tt: tt,
+                          name: emp['name'] as String? ?? '',
+                          gross: '₹${(emp['gross'] as num?)?.toStringAsFixed(0) ?? '0'}',
+                          initialNet: (emp['net'] as num?)?.toStringAsFixed(0) ?? '0',
+                        );
+                      },
+                      childCount: ((_data?['employees'] as List<dynamic>?) ?? []).length,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: 12),
-          _buildRow(cs: cs, tt: tt, name: 'Rahul Sharma', gross: '₹12,600', net: '₹11,700'),
-          _buildRow(cs: cs, tt: tt, name: 'Sunita Devi', gross: '₹9,800', net: '₹9,200'),
-          _buildRow(cs: cs, tt: tt, name: 'Vijay Kumar', gross: '₹14,200', net: '₹13,500'),
-          _buildRow(cs: cs, tt: tt, name: 'Amit Singh', gross: '₹8,400', net: '₹7,800'),
-          _buildRow(cs: cs, tt: tt, name: 'Priya Patel', gross: '₹11,200', net: '₹10,900'),
-          _buildRow(cs: cs, tt: tt, name: 'Ravi Verma', gross: '₹9,600', net: '₹5,200'),
-          _buildRow(cs: cs, tt: tt, name: 'Anita Gupta', gross: '₹10,100', net: '₹9,800'),
-          _buildRow(cs: cs, tt: tt, name: 'Suresh Rao', gross: '₹7,900', net: '₹7,400'),
-          const SizedBox(height: 24),
-          FilledButton(
-            onPressed: () {},
-            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-            child: const Text('Lock Payroll & Generate Payslips'),
+          Positioned(
+            bottom: 0, left: 0, right: 0,
+            child: ClipRRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: Container(
+                  padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 16),
+                  decoration: BoxDecoration(
+                    color: cs.surface.withValues(alpha: 0.8),
+                    border: Border(top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3))),
+                  ),
+                  child: FilledButton.icon(
+                    onPressed: _locking ? null : _lockPayroll,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      minimumSize: const Size.fromHeight(60),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    icon: _locking
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(PhosphorIconsBold.lockKey, color: Colors.white),
+                    label: Text(_locking ? 'Locking...' : 'Lock & Generate Slips', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildRow({
-    required ColorScheme cs, required TextTheme tt,
-    required String name, required String gross, required String net,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: cs.surfaceContainerHigh,
-                child: Text(
-                  name.split(' ').map((e) => e[0]).take(2).join(),
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
-                      color: cs.onSurface),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: Text(name, style: tt.bodyMedium),
-              ),
-              Expanded(
-                child: Text(gross, style: tt.bodySmall?.copyWith(
-                  color: cs.onSurface.withValues(alpha: 0.6),
-                ), textAlign: TextAlign.right),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 90,
-                child: TextField(
-                  controller: TextEditingController(text: net),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: cs.primary,
-                  ),
-                  textAlign: TextAlign.right,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: cs.outline),
-                    ),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-            ],
+class _PayrollSummaryGlassCard extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final double gross, udhaar, net;
+
+  const _PayrollSummaryGlassCard({required this.cs, required this.tt, required this.gross, required this.udhaar, required this.net});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 8))],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                Expanded(child: _PayStat(cs: cs, label: 'Gross Pay', value: '₹${gross.toStringAsFixed(0)}', color: cs.onSurface)),
+                Container(width: 1, height: 40, color: cs.outlineVariant),
+                Expanded(child: _PayStat(cs: cs, label: 'Udhaar Deducted', value: '-₹${udhaar.toStringAsFixed(0)}', color: const Color(0xFFEF4444))),
+              ],
+            ),
           ),
-        ),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withValues(alpha: 0.1),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('NET PAYABLE', style: tt.labelMedium?.copyWith(color: const Color(0xFF10B981), fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+                Text('₹${net.toStringAsFixed(0)}', style: tt.headlineMedium?.copyWith(color: const Color(0xFF10B981), fontWeight: FontWeight.w900, letterSpacing: -1.0)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -141,22 +250,114 @@ class _PayStat extends StatelessWidget {
   final ColorScheme cs;
   final String label, value;
   final Color color;
-  const _PayStat({
-    required this.cs,
-    required this.label, required this.value,
-    required this.color,
-  });
+
+  const _PayStat({required this.cs, required this.label, required this.value, required this.color});
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: TextStyle(
-          fontWeight: FontWeight.bold, color: color, fontSize: 15,
-        )),
-        Text(label, style: TextStyle(
-          fontSize: 11, color: color.withValues(alpha: 0.7),
-        )),
+        Text(value, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 18, letterSpacing: -0.5)),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
       ],
+    );
+  }
+}
+
+class _EditablePayrollRow extends StatefulWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final String name, gross, initialNet;
+
+  const _EditablePayrollRow({required this.cs, required this.tt, required this.name, required this.gross, required this.initialNet});
+
+  @override
+  State<_EditablePayrollRow> createState() => _EditablePayrollRowState();
+}
+
+class _EditablePayrollRowState extends State<_EditablePayrollRow> {
+  late final TextEditingController _ctrl;
+  final FocusNode _focus = FocusNode();
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.initialNet);
+    _focus.addListener(() {
+      setState(() => _isFocused = _focus.hasFocus);
+      if (_isFocused) HapticFeedback.selectionClick();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final initials = widget.name.split(' ').map((e) => e[0]).take(2).join();
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: _isFocused ? widget.cs.primary.withValues(alpha: 0.05) : widget.cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _isFocused ? widget.cs.primary : widget.cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: widget.cs.surfaceContainerHighest,
+              child: Text(initials, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: widget.cs.onSurface)),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.name, style: widget.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 2),
+                  Text('Gross: ${widget.gross}', style: widget.tt.labelSmall?.copyWith(color: widget.cs.onSurfaceVariant)),
+                ],
+              ),
+            ),
+            Container(
+              width: 100,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: _isFocused ? widget.cs.surface : widget.cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _isFocused ? widget.cs.primary.withValues(alpha: 0.5) : Colors.transparent),
+              ),
+              child: Row(
+                children: [
+                  Text('₹', style: TextStyle(color: _isFocused ? widget.cs.primary : widget.cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                  Expanded(
+                    child: TextField(
+                      controller: _ctrl,
+                      focusNode: _focus,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: widget.cs.primary),
+                      decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.symmetric(vertical: 10)),
+                      onChanged: (_) => HapticFeedback.selectionClick(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

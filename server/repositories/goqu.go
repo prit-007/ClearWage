@@ -32,7 +32,7 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 	excluded := func(col string) exp.Expression { return goqu.L("EXCLUDED." + col) }
 	var items []Attendance
 	err := q.db.Insert("attendance").Rows(row).
-		OnConflict(goqu.DoUpdate("", goqu.Record{
+		OnConflict(goqu.DoUpdate("(tenant_id, employee_id, date)", goqu.Record{
 			"shift_id":                goqu.L("COALESCE(?, shift_id)", excluded("shift_id")),
 			"status":                  excluded("status"),
 			"overtime_hours":          excluded("overtime_hours"),
@@ -216,6 +216,20 @@ func (q *GoquQuerier) FindEmployeeByPhone(ctx context.Context, arg FindEmployeeB
 	found, err := q.db.From("employees").Where(
 		goqu.C("phone").Eq(arg.Phone),
 		goqu.C("tenant_id").Eq(arg.TenantID),
+	).ScanStructContext(ctx, &e)
+	if err != nil {
+		return Employee{}, err
+	}
+	if !found {
+		return Employee{}, ErrNotFound
+	}
+	return e, nil
+}
+
+func (q *GoquQuerier) FindEmployeeByPhoneOnly(ctx context.Context, phone string) (Employee, error) {
+	var e Employee
+	found, err := q.db.From("employees").Where(
+		goqu.C("phone").Eq(phone),
 	).ScanStructContext(ctx, &e)
 	if err != nil {
 		return Employee{}, err

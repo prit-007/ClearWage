@@ -1,17 +1,45 @@
-# vivek_app
+# Factory Workforce App (Flutter)
 
-A new Flutter project.
+Mobile frontend for the Factory Workforce Management SaaS.
 
-## Getting Started
+## Tech Stack
 
-This project is a starting point for a Flutter application.
+- **Framework**: Flutter + Riverpod (state management)
+- **Auth**: Firebase Phone Auth (`firebase_core` + `firebase_auth`)
+- **UI**: Material Design 3, `google_fonts` (Inter), `phosphoricons_flutter`
+- **HTTP**: `package:http` via custom `ApiClient`
+- **OTP Input**: `pinput`
+- **Charts**: `fl_chart`
 
-A few resources to get you started if this is your first Flutter project:
+## Firebase Setup
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+1. Create a Firebase project with Phone Auth enabled
+2. Download config files and place them:
+   - `android/app/google-services.json`
+   - `ios/Runner/GoogleService-Info.plist`
+3. These files are in `.gitignore` — never commit them
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Auth Flow
+
+1. User enters phone number → `FirebaseAuth.verifyPhoneNumber()`
+2. SMS sent by Firebase — two paths:
+   - **Auto-retrieval**: `verificationCompleted` fires → silent sign-in
+   - **Manual**: user types 6-digit OTP → `PhoneAuthProvider.credential()`
+3. `FirebaseAuth.signInWithCredential()` → Firebase ID token obtained
+4. ID token sent to backend via `POST /api/v1/auth/firebase-login`
+5. Backend verifies token via Admin SDK, returns app JWT
+6. App JWT stored in Riverpod `tokenProvider`, sent as `Authorization: Bearer`
+
+## Run
+
+```bash
+flutter pub get
+flutter run
+```
+
+## Build
+
+```bash
+flutter build apk --release
+flutter build ios --release
+```

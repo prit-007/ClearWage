@@ -11,8 +11,11 @@ class AttendanceService {
     return list.map((e) => Attendance.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  Future<List<Attendance>> listByEmployee(String employeeId) async {
-    final res = await _client.get('/api/v1/attendance/$employeeId');
+  Future<List<Attendance>> listByEmployee(String employeeId, {String? startDate, String? endDate}) async {
+    final query = <String, String>{};
+    if (startDate != null) query['start_date'] = startDate;
+    if (endDate != null) query['end_date'] = endDate;
+    final res = await _client.get('/api/v1/attendance/$employeeId', query: query.isNotEmpty ? query : null);
     final list = (res['data'] as List<dynamic>?) ?? [];
     return list.map((e) => Attendance.fromJson(e as Map<String, dynamic>)).toList();
   }
@@ -30,7 +33,7 @@ class AttendanceService {
     await _client.post('/api/v1/attendance/bulk', body: {'records': records});
   }
 
-  Future<void> lockMonth(String month) async {
-    await _client.post('/api/v1/attendance/lock', body: {'month': month});
+  Future<void> lockMonth({required String startDate, required String endDate}) async {
+    await _client.post('/api/v1/attendance/lock', body: {'start_date': startDate, 'end_date': endDate});
   }
 }

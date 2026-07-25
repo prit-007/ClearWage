@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"time"
@@ -48,7 +49,10 @@ func payrollMonth(startDate string) string {
 }
 
 func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, endDate string) (PayrollResult, error) {
-	tc, _ := s.querier.GetTenantConfig(ctx, tenantID)
+	tc, err := s.querier.GetTenantConfig(ctx, tenantID)
+	if err != nil && !errors.Is(err, repositories.ErrNotFound) {
+		return PayrollResult{}, fmt.Errorf("get tenant config: %w", err)
+	}
 	if tc.WageBasis == "" {
 		tc.WageBasis = "attendance"
 	}

@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -32,9 +31,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 		Short: "To start api",
 		Long:  `To start api`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			connStr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?%s",
-				cfg.DB.Username, cfg.DB.Password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Db, cfg.DB.QueryString)
-			sqlDB, err := sql.Open("pgx", connStr)
+			sqlDB, err := sql.Open("pgx", cfg.DB.ConnectionString())
 			if err != nil {
 				return err
 			}
@@ -68,10 +65,11 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			http.ServeFile(w, r, "./docs/swagger.json")
 		})
 
-		authCtrl := ctrl.NewAuthController(querier, logger, cfg)
+		authCtrl, err := ctrl.NewAuthController(querier, logger, cfg)
+			if err != nil {return err}
 			r.Route("/api/v1/auth", func(r chi.Router) {
-				r.Post("/request-otp", authCtrl.RequestOTP)
-				r.Post("/verify-otp", authCtrl.VerifyOTP)
+				r.Post("/firebase-login", authCtrl.LoginWithFirebase)
+				r.Post("/register", authCtrl.Register)
 			})
 
 		uploadCtrl := ctrl.NewUploadController(services.NewStaffService(querier), logger, cfg)

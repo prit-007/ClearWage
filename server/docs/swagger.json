@@ -8,8 +8,8 @@
   },
   "servers": [
     {
-      "url": "http://localhost:8080",
-      "description": "Local development server"
+      "url": "http://localhost:8081",
+      "description": "Local development"
     }
   ],
   "paths": {
@@ -34,24 +34,19 @@
         }
       }
     },
-    "/api/v1/auth/request-otp": {
+    "/api/v1/auth/firebase-login": {
       "post": {
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
         "tags": [
           "auth"
         ],
-        "summary": "Request OTP",
-        "description": "Accepts a phone number and generates a 6-digit OTP.",
+        "summary": "Firebase phone auth login",
+        "description": "Accepts a Firebase ID token from phone auth, verifies it, and returns an app JWT.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RequestOTPRequest"
+                "$ref": "#/components/schemas/FirebaseLoginRequest"
               }
             }
           }
@@ -62,13 +57,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "$ref": "#/components/schemas/LoginResponseData"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Bad request — missing id_token",
             "content": {
               "application/json": {
                 "schema": {
@@ -77,8 +72,8 @@
               }
             }
           },
-          "500": {
-            "description": "Internal server error",
+          "401": {
+            "description": "Unauthorized — invalid token or unregistered phone",
             "content": {
               "application/json": {
                 "schema": {
@@ -90,24 +85,19 @@
         }
       }
     },
-    "/api/v1/auth/verify-otp": {
+    "/api/v1/auth/register": {
       "post": {
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
         "tags": [
           "auth"
         ],
-        "summary": "Verify OTP & login",
-        "description": "Verifies OTP and returns JWT token.",
+        "summary": "Register new factory owner",
+        "description": "Accepts a Firebase ID token, name, and factory name. Creates a tenant + owner employee, returns app JWT.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/VerifyOTPRequest"
+                "$ref": "#/components/schemas/RegisterRequest"
               }
             }
           }
@@ -118,13 +108,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/VerifyOTPResponseData"
+                  "$ref": "#/components/schemas/LoginResponseData"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Bad request — missing required fields",
             "content": {
               "application/json": {
                 "schema": {
@@ -133,8 +123,8 @@
               }
             }
           },
-          "500": {
-            "description": "Internal server error",
+          "401": {
+            "description": "Unauthorized — invalid Firebase token",
             "content": {
               "application/json": {
                 "schema": {
@@ -3114,36 +3104,41 @@
           }
         }
       },
-      "RequestOTPRequest": {
+      "FirebaseLoginRequest": {
         "type": "object",
         "required": [
-          "phone"
+          "id_token"
         ],
         "properties": {
-          "phone": {
+          "id_token": {
             "type": "string",
-            "example": "+91-9876543210"
+            "description": "Firebase ID token obtained after phone auth signInWithCredential"
           }
         }
       },
-      "VerifyOTPRequest": {
+      "RegisterRequest": {
         "type": "object",
         "required": [
-          "phone",
-          "otp"
+          "name",
+          "factory_name",
+          "id_token"
         ],
         "properties": {
-          "phone": {
+          "name": {
             "type": "string",
-            "example": "+91-9876543210"
+            "description": "Owner's full name"
           },
-          "otp": {
+          "factory_name": {
             "type": "string",
-            "example": "123456"
+            "description": "Name of the factory / tenant"
+          },
+          "id_token": {
+            "type": "string",
+            "description": "Firebase ID token obtained after phone auth signInWithCredential"
           }
         }
       },
-      "VerifyOTPResponseData": {
+      "LoginResponseData": {
         "type": "object",
         "properties": {
           "status": {
@@ -3156,6 +3151,9 @@
                 "type": "string"
               },
               "tenant_id": {
+                "type": "string"
+              },
+              "employee_id": {
                 "type": "string"
               },
               "role": {

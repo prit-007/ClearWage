@@ -1,117 +1,162 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class ReportsHubScreen extends StatelessWidget {
   const ReportsHubScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+
+    final reports = [
+      _ReportConfig(icon: PhosphorIconsFill.calendarCheck, title: 'Daily Summary', subtitle: 'Attendance & wage overview', color: cs.primary, route: '/reports/daily-summary'),
+      _ReportConfig(icon: PhosphorIconsFill.warningCircle, title: 'Defaulters', subtitle: 'Employees with outstanding > wage', color: const Color(0xFFEF4444), route: '/reports/defaulters'),
+      _ReportConfig(icon: PhosphorIconsFill.wallet, title: 'Payroll Summary', subtitle: 'Monthly payroll breakdown', color: const Color(0xFF10B981), badge: 'Owner Access Only', route: '/reports/payroll'),
+    ];
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Reports')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          _ReportCard(
-            cs: cs, tt: tt,
-            icon: Icons.summarize_outlined,
-            title: 'Daily Summary',
-            subtitle: 'Attendance & wage overview',
-            onTap: () {},
-          ),
-          _ReportCard(
-            cs: cs, tt: tt,
-            icon: Icons.person_search_outlined,
-            title: 'Employee Monthly',
-            subtitle: 'Per-employee attendance & earnings',
-            onTap: () {},
-          ),
-          _ReportCard(
-            cs: cs, tt: tt,
-            icon: Icons.trending_up_outlined,
-            title: 'Wage Bill Trends',
-            subtitle: 'Month-over-month wage analysis',
-            onTap: () {},
-          ),
-          _ReportCard(
-            cs: cs, tt: tt,
-            icon: Icons.warning_amber_outlined,
-            title: 'Defaulters',
-            subtitle: 'Employees with outstanding > wage',
-            onTap: () {},
-          ),
-          _ReportCard(
-            cs: cs, tt: tt,
-            icon: Icons.payments_outlined,
-            title: 'Payroll Summary',
-            subtitle: 'Monthly payroll breakdown',
-            badge: 'Owner Access Only',
-            onTap: () => context.push('/reports/payroll'),
-          ),
-          _ReportCard(
-            cs: cs, tt: tt,
-            icon: Icons.file_download_outlined,
-            title: 'Export Data',
-            subtitle: 'CSV export of any report',
-            onTap: () {},
-          ),
-        ],
+      backgroundColor: cs.surface,
+      body: SafeArea(
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              backgroundColor: cs.surface.withValues(alpha: 0.95),
+              pinned: true,
+              elevation: 0,
+              leading: IconButton(
+                icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: Text('Reports & Analytics', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+              centerTitle: true,
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final report = reports[index];
+                    return _FluidSlideIn(
+                      delay: index * 100,
+                      child: _PremiumReportCard(cs: cs, tt: tt, config: report),
+                    );
+                  },
+                  childCount: reports.length,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _ReportCard extends StatelessWidget {
-  final ColorScheme cs;
-  final TextTheme tt;
+class _ReportConfig {
   final IconData icon;
   final String title, subtitle;
-  final String? badge;
-  final VoidCallback onTap;
-  const _ReportCard({
-    required this.cs, required this.tt,
-    required this.icon, required this.title,
-    required this.subtitle, this.badge,
-    required this.onTap,
-  });
+  final String? badge, route;
+  final Color color;
+
+  _ReportConfig({required this.icon, required this.title, required this.subtitle, this.badge, this.route, required this.color});
+}
+
+class _PremiumReportCard extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final _ReportConfig config;
+
+  const _PremiumReportCard({required this.cs, required this.tt, required this.config});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 48, height: 48,
-          decoration: BoxDecoration(
-            color: cs.primaryContainer,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: cs.onPrimaryContainer),
-        ),
-        title: Row(
-          children: [
-            Text(title, style: tt.bodyLarge),
-            if (badge != null) ...[
-              const SizedBox(width: 8),
-              Chip(
-                label: Text(badge!, style: TextStyle(
-                  fontSize: 10, color: cs.onSecondaryContainer,
-                )),
-                backgroundColor: cs.secondaryContainer,
-                side: BorderSide.none,
-                visualDensity: VisualDensity.compact,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-              ),
-            ],
-          ],
-        ),
-        subtitle: Text(subtitle, style: tt.bodySmall),
-        trailing: Icon(Icons.chevron_right,
-            color: cs.onSurface.withValues(alpha: 0.4)),
-        onTap: onTap,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(color: cs.shadow.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            if (config.route != null) Navigator.pushNamed(context, config.route!);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  width: 56, height: 56,
+                  decoration: BoxDecoration(
+                    color: config.color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(config.icon, color: config.color, size: 28),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(child: Text(config.title, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.3))),
+                          if (config.badge != null) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: cs.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(config.badge!, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: cs.primary)),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(config.subtitle, style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+                Icon(PhosphorIconsRegular.caretRight, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FluidSlideIn extends StatelessWidget {
+  final Widget child;
+  final int delay;
+  const _FluidSlideIn({required this.child, this.delay = 0});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 600 + delay),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value.clamp(0.0, 1.0),
+          child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child),
+        );
+      },
+      child: child,
     );
   }
 }

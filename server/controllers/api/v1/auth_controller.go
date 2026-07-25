@@ -1,103 +1,85 @@
 package v1
 
 import (
+	"context"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"github.com/rs/zerolog"
+	"google.golang.org/api/option"
+
 	"github.com/vivek-app/vivek_app/config"
 	"github.com/vivek-app/vivek_app/repositories"
 	"github.com/vivek-app/vivek_app/services"
 	"github.com/vivek-app/vivek_app/utils"
 )
 
-// AuthController handles OTP-based phone authentication.
-// It delegates OTP generation and verification to AuthService,
-// and returns JWT access tokens on successful verification.
 type AuthController struct {
 	authService *services.AuthService
 	logger      *zerolog.Logger
 	config      config.AppConfig
 }
 
-// NewAuthController wires up an AuthController with its service dependencies.
-// The queries parameter is retained for forward compatibility with tenant auto-creation.
-func NewAuthController(querier repositories.Querier, logger *zerolog.Logger, cfg config.AppConfig) *AuthController {
-	otpStore := services.NewMemoryOTPStore()
-	authSvc := services.NewAuthService(cfg, otpStore, querier)
+func NewAuthController(querier repositories.Querier, logger *zerolog.Logger, cfg config.AppConfig) (*AuthController, error) {
+	var firebaseOpt option.ClientOption
+	if cfg.FirebaseCredBase64 != "" {
+		credsJSON, err := base64.StdEncoding.DecodeString(cfg.FirebaseCredBase64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode FIREBASE_CRED_BASE64: %w", err)
+		}
+		firebaseOpt = option.WithCredentialsJSON(credsJSON)
+	} else {
+		firebaseOpt = option.WithCredentialsFile(cfg.FirebaseCredentialsPath)
+	}
+	firebaseApp, err := firebase.NewApp(context.Background(), nil, firebaseOpt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize Firebase app: %w", err)
+	}
+	firebaseAuth, err := firebaseApp.Auth(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Firebase auth client: %w", err)
+	}
+	authSvc := services.NewAuthService(cfg, firebaseAuth, querier)
 	return &AuthController{
 		authService: authSvc,
 		logger:      logger,
 		config:      cfg,
-	}
+	}, nil
 }
 
-type requestOTPRequest struct {
-	Phone string `json:"phone"`
+type loginWithFirebaseRequest struct {
+	IDToken string `json:"id_token"`
 }
 
-type verifyOTPRequest struct {
-	Phone string `json:"phone"`
-	OTP   string `json:"otp"`
+type registerRequest struct {
+	Name        string `json:"name"`
+	FactoryName string `json:"factory_name"`
+	IDToken     string `json:"id_token"`
 }
 
-// RequestOTP generates a 6-digit OTP and sends it to the provided phone number.
-// In development environments the OTP is also logged to stdout for testing convenience.
-// The OTP expires after 5 minutes and can only be used once.
-//
-// Request body: requestOTPRequest{phone: string}
-// Success (200): utils.Response{status:"success", data: map[string]string}
-// Failure (400): utils.Response{status:"fail"}  — missing or empty phone
-// Failure (500): utils.Response{status:"error"} — internal OTP generation error
-func (ctrl *AuthController) RequestOTP(w http.ResponseWriter, r *http.Request) {
-	var req requestOTPRequest
+func (ctrl *AuthController) LoginWithFirebase(w http.ResponseWriter, r *http.Request) {
+	var req loginWithFirebaseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.JSONFail(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	if req.Phone == "" {
-		utils.JSONFail(w, http.StatusBadRequest, "phone is required")
+	if req.IDToken == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "id_token is required")
 		return
 	}
 
-	otp, err := ctrl.authService.RequestOTP(req.Phone)
-	if err != nil {
-		ctrl.logger.Error().Err(err).Str("phone", req.Phone).Msg("failed to generate OTP")
-		utils.JSONError(w, http.StatusInternalServerError, "failed to generate OTP")
-		return
-	}
-
-	ctrl.logger.Info().Str("phone", req.Phone).Str("otp", otp).Msg("OTP generated")
-	utils.JSONSuccess(w, http.StatusOK, map[string]string{"message": "OTP sent"})
-}
-
-// VerifyOTP verifies the OTP sent to the user's phone and returns a JWT access token on success.
-// The client must call RequestOTP first to obtain a valid OTP.
-// OTPs expire after 5 minutes and are single-use.
-//
-// Request body: verifyOTPRequest{phone: string, otp: string}
-// Success (200): utils.Response{status:"success", data: verifyOTPResponse{access_token, tenant_id, role}}
-// Failure (400): utils.Response{status:"fail"}  — missing phone/otp or invalid JSON
-// Failure (401): utils.Response{status:"fail"}  — invalid, expired, or already-used OTP
-func (ctrl *AuthController) VerifyOTP(w http.ResponseWriter, r *http.Request) {
-	var req verifyOTPRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONFail(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	if req.Phone == "" || req.OTP == "" {
-		utils.JSONFail(w, http.StatusBadRequest, "phone and otp are required")
-		return
-	}
-
-	token, err := ctrl.authService.VerifyOTP(r.Context(), req.Phone, req.OTP)
+	token, err := ctrl.authService.LoginWithFirebase(r.Context(), req.IDToken)
 	if err != nil {
 		utils.JSONFail(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
+	maxAge := int(ctrl.authService.TokenTTL().Seconds())
 	http.SetCookie(w, &http.Cookie{
 		Name:     "auth_token",
 		Value:    token.Token,
@@ -105,11 +87,54 @@ func (ctrl *AuthController) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		Secure:   !ctrl.config.IsDevelopment,
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   86400,
+		MaxAge:   maxAge,
 	})
 
 	utils.JSONSuccess(w, http.StatusOK, map[string]string{
-		"tenant_id": token.TenantID,
-		"role":      token.Role,
+		"access_token": token.Token,
+		"tenant_id":    token.TenantID,
+		"employee_id":  token.EmployeeID,
+		"role":         token.Role,
 	})
 }
+
+func (ctrl *AuthController) Register(w http.ResponseWriter, r *http.Request) {
+	var req registerRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.IDToken == "" || req.Name == "" || req.FactoryName == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "name, factory_name, and id_token are required")
+		return
+	}
+	token, err := ctrl.authService.Register(r.Context(), services.RegisterParams{
+		Name:        req.Name,
+		FactoryName: req.FactoryName,
+		IDToken:     req.IDToken,
+	})
+	if err != nil {
+		ctrl.logger.Error().Err(err).Msg("registration failed")
+		utils.JSONFail(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	maxAge := int(ctrl.authService.TokenTTL().Seconds())
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    token.Token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   !ctrl.config.IsDevelopment,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   maxAge,
+	})
+	utils.JSONSuccess(w, http.StatusOK, map[string]string{
+		"access_token": token.Token,
+		"tenant_id":    token.TenantID,
+		"employee_id":  token.EmployeeID,
+		"role":         token.Role,
+	})
+}
+
+// compile-time assertion ensures *auth.Client satisfies TokenVerifier
+var _ services.TokenVerifier = (*auth.Client)(nil)

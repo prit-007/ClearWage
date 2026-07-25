@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/attendance_model.dart';
 import '../../providers/providers.dart';
@@ -59,8 +61,11 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
       final start = '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
       final end = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
       final client = ref.read(apiClientProvider);
-      await client.getRaw('/api/v1/me/payslip', query: {'start_date': start, 'end_date': end});
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payslip downloaded')));
+      final bytes = await client.getRaw('/api/v1/me/payslip', query: {'start_date': start, 'end_date': end});
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/payslip_$start.pdf');
+      await file.writeAsBytes(bytes);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved: ${file.path}')));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
     }
@@ -226,7 +231,7 @@ class _ProfileTab extends ConsumerWidget {
             onPressed: () async {
               await ref.read(authServiceProvider).logout();
               ref.read(tokenProvider.notifier).state = null;
-              if (context.mounted) Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
+              if (context.mounted) Navigator.of(context).popUntil((route) => route.isFirst);
             },
             icon: const Icon(PhosphorIconsRegular.signOut),
             label: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w700)),

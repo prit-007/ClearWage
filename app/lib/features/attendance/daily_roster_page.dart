@@ -132,25 +132,20 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
             async.when(
               loading: () => const ShimmerLoading(itemCount: 6, height: 160),
               error: (e, _) => SliverFillRemaining(child: Center(child: Text('$e'))),
-              data: (list) {
-                final filtered = _selectedShift == 0
-                    ? list
-                    : list.where((a) => a.shiftId == (_selectedShift == 1 ? 'General' : 'Night')).toList();
-                return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        return FluidSlideIn(
-                          delay: (index * 50).clamp(0, 400),
-                          child: _PremiumAttendanceCard(cs: cs, tt: tt, attendance: filtered[index], onUpdate: _updateAttendance),
-                        );
-                      },
-                      childCount: filtered.length,
-                    ),
+              data: (list) => SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      return FluidSlideIn(
+                        delay: (index * 50).clamp(0, 400),
+                        child: _PremiumAttendanceCard(cs: cs, tt: tt, attendance: list[index], onUpdate: _updateAttendance),
+                      );
+                    },
+                    childCount: list.length,
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ],
         ),

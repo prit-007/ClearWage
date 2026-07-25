@@ -32,7 +32,7 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 	excluded := func(col string) exp.Expression { return goqu.L("EXCLUDED." + col) }
 	var items []Attendance
 	err := q.db.Insert("attendance").Rows(row).
-		OnConflict(goqu.DoUpdate("", goqu.Record{
+		OnConflict(goqu.DoUpdate("(tenant_id, employee_id, date)", goqu.Record{
 			"shift_id":                goqu.L("COALESCE(?, shift_id)", excluded("shift_id")),
 			"status":                  excluded("status"),
 			"overtime_hours":          excluded("overtime_hours"),

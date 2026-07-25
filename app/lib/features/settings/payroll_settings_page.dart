@@ -30,6 +30,14 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
   bool _saving = false;
 
   @override
+  void initState() {
+    super.initState();
+    ref.listen(payrollSettingsProvider, (_, next) {
+      next.whenData(_initFromData);
+    });
+  }
+
+  @override
   void dispose() {
     _otTriggerCtrl.dispose();
     _otMultiplierCtrl.dispose();
@@ -84,8 +92,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final async = ref.watch(payrollSettingsProvider);
-    async.whenData(_initFromData);
+    ref.watch(payrollSettingsProvider);
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,

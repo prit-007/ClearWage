@@ -51,7 +51,9 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    await FirebaseAuth.instance.signOut();
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (_) {}
     _client.setToken(null);
   }
 }

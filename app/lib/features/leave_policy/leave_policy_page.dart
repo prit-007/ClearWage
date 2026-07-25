@@ -30,6 +30,14 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
   bool _loaded = false;
 
   @override
+  void initState() {
+    super.initState();
+    ref.listen(leavePolicyProvider, (_, next) {
+      next.whenData(_initFromData);
+    });
+  }
+
+  @override
   void dispose() {
     _paidCtrl.dispose();
     _unpaidCtrl.dispose();
@@ -82,8 +90,7 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final async = ref.watch(leavePolicyProvider);
-    async.whenData((d) => _initFromData(d));
+    ref.watch(leavePolicyProvider);
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,

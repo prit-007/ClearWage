@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../core/widgets/validated_field.dart';
 
 class OnboardingWizard extends StatefulWidget {
   const OnboardingWizard({super.key});
@@ -13,16 +13,25 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
   int _currentStep = 0;
   final int _totalSteps = 4;
   final _companyNameCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
+  final _contactCtrl = TextEditingController();
   final _pageCtrl = PageController();
 
   @override
   void dispose() {
     _companyNameCtrl.dispose();
+    _addressCtrl.dispose();
+    _contactCtrl.dispose();
     _pageCtrl.dispose();
     super.dispose();
   }
 
   void _nextStep() {
+    if (_currentStep == 0 && _companyNameCtrl.text.trim().isEmpty) {
+      HapticFeedback.vibrate();
+      setState(() {});
+      return;
+    }
     HapticFeedback.lightImpact();
     if (_currentStep < _totalSteps - 1) {
       FocusScope.of(context).unfocus();
@@ -32,7 +41,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
       setState(() => _currentStep++);
     } else {
       HapticFeedback.heavyImpact();
-              context.go('/home');
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
     }
   }
 
@@ -65,7 +74,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
           TextButton(
             onPressed: () {
               HapticFeedback.lightImpact();
-      context.go('/home');
+              Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
             },
             style: TextButton.styleFrom(
                 foregroundColor: cs.onSurfaceVariant),
@@ -94,7 +103,10 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                     step: 0,
                     currentStep: _currentStep,
                     child: _StepProfile(
-                        cs: cs, tt: tt, ctrl: _companyNameCtrl)),
+                        cs: cs, tt: tt,
+                        companyCtrl: _companyNameCtrl,
+                        addressCtrl: _addressCtrl,
+                        contactCtrl: _contactCtrl)),
                 _AnimatedStepWrapper(
                     step: 1,
                     currentStep: _currentStep,
@@ -109,7 +121,9 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                     child: _StepReview(
                         cs: cs,
                         tt: tt,
-                        companyName: _companyNameCtrl)),
+                        companyName: _companyNameCtrl,
+                        addressCtrl: _addressCtrl,
+                        contactCtrl: _contactCtrl)),
               ],
             ),
           ),
@@ -279,25 +293,14 @@ class _AnimatedStepWrapper extends StatelessWidget {
   }
 }
 
-InputDecoration _premiumInputDeco(
-    ColorScheme cs, String label, String hint, IconData icon) {
-  return InputDecoration(
-    labelText: label,
-    hintText: hint,
-    prefixIcon: Icon(icon, color: cs.onSurfaceVariant),
-    filled: true,
-    fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-    border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-  );
-}
-
 class _StepProfile extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  final TextEditingController ctrl;
+  final TextEditingController companyCtrl;
+  final TextEditingController addressCtrl;
+  final TextEditingController contactCtrl;
   const _StepProfile(
-      {required this.cs, required this.tt, required this.ctrl});
+      {required this.cs, required this.tt, required this.companyCtrl, required this.addressCtrl, required this.contactCtrl});
 
   @override
   Widget build(BuildContext context) {
@@ -312,58 +315,25 @@ class _StepProfile extends StatelessWidget {
             style: tt.bodyLarge
                 ?.copyWith(color: cs.onSurfaceVariant)),
         const SizedBox(height: 40),
-        Center(
-          child: Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color:
-                      cs.primaryContainer.withValues(alpha: 0.3),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                      color: cs.primary.withValues(alpha: 0.2),
-                      width: 2),
-                ),
-                child: PhosphorIcon(PhosphorIconsDuotone.image,
-                    size: 40,
-                    color: cs.primary.withValues(alpha: 0.6)),
-              ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                    color: cs.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: cs.surface, width: 3)),
-                child: Icon(PhosphorIconsBold.plus,
-                    size: 16, color: cs.onPrimary),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 40),
-        TextField(
-          controller: ctrl,
-          style: tt.titleMedium,
-          decoration: _premiumInputDeco(cs, 'Company Name',
-              'e.g. ABC Fabrics Pvt. Ltd.', PhosphorIconsRegular.buildings),
+        ValidatedField(
+          controller: companyCtrl,
+          label: 'Company Name',
+          prefixIcon: PhosphorIconsRegular.buildings,
+          validator: (v) => v == null || v.trim().isEmpty ? 'Enter your company name' : null,
         ),
         const SizedBox(height: 16),
-        TextField(
-          style: tt.titleMedium,
-          decoration: _premiumInputDeco(cs, 'Factory Address',
-              'e.g. Industrial Area, Phase 2', PhosphorIconsRegular.mapPin),
+        ValidatedField(
+          controller: addressCtrl,
+          label: 'Factory Address',
+          prefixIcon: PhosphorIconsRegular.mapPin,
           maxLines: 2,
         ),
         const SizedBox(height: 16),
-        TextField(
-          style: tt.titleMedium,
+        ValidatedField(
+          controller: contactCtrl,
+          label: 'Contact Number',
+          prefixIcon: PhosphorIconsRegular.phone,
           keyboardType: TextInputType.phone,
-          decoration: _premiumInputDeco(
-              cs, 'Contact Number', 'e.g. +91 98765 43210', PhosphorIconsRegular.phone),
         ),
       ],
     );
@@ -715,16 +685,22 @@ class _StepReview extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final TextEditingController companyName;
+  final TextEditingController addressCtrl;
+  final TextEditingController contactCtrl;
   const _StepReview(
       {required this.cs,
       required this.tt,
-      required this.companyName});
+      required this.companyName,
+      required this.addressCtrl,
+      required this.contactCtrl});
 
   @override
   Widget build(BuildContext context) {
     final cName = companyName.text.trim().isEmpty
         ? "Your Factory"
         : companyName.text.trim();
+    final address = addressCtrl.text.trim();
+    final contact = contactCtrl.text.trim();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -743,6 +719,8 @@ class _StepReview extends StatelessWidget {
             title: 'Profile',
             items: [
               'Name: $cName',
+              if (address.isNotEmpty) 'Address: $address',
+              if (contact.isNotEmpty) 'Contact: $contact',
               'Shifts: 2 Active (General, Night)'
             ]),
         const SizedBox(height: 16),

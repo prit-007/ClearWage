@@ -40,21 +40,34 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
   void _initFromData(Map<String, dynamic> data) {
     if (_loaded || data.isEmpty) return;
     _loaded = true;
-    _otTriggerCtrl.text = (data['ot_trigger_hours'] as num? ?? 8).toString();
-    _otMultiplierCtrl.text = (data['ot_multiplier'] as num? ?? 1.5).toString();
-    _roundingCtrl.text = (data['rounding'] as num? ?? 0).toString();
+    _otTriggerCtrl.text = (data['ot_threshold_hours'] as num? ?? 8).toString();
+    _otMultiplierCtrl.text = (data['ot_multiplier_default'] as num? ?? 1.5).toString();
+    _roundingCtrl.text = (data['ot_rounding'] as num? ?? 0).toString();
     _wageBasis = data['wage_basis'] as String? ?? 'daily';
   }
 
+  bool _validate() {
+    if (double.tryParse(_otTriggerCtrl.text) == null) return false;
+    if (double.tryParse(_otMultiplierCtrl.text) == null) return false;
+    return true;
+  }
+
   Future<void> _save() async {
+    if (!_validate()) {
+      HapticFeedback.vibrate();
+      setState(() {});
+      return;
+    }
     HapticFeedback.mediumImpact();
     setState(() => _saving = true);
     try {
       await ref.read(settingsServiceProvider).upsertPayrollSettings({
-        'ot_trigger_hours': double.tryParse(_otTriggerCtrl.text) ?? 8,
-        'ot_multiplier': double.tryParse(_otMultiplierCtrl.text) ?? 1.5,
-        'rounding': int.tryParse(_roundingCtrl.text) ?? 0,
+        'ot_trigger': 'after_shift_end',
+        'ot_threshold_hours': double.tryParse(_otTriggerCtrl.text) ?? 8,
+        'ot_multiplier_default': double.tryParse(_otMultiplierCtrl.text) ?? 1.5,
+        'ot_rounding': int.tryParse(_roundingCtrl.text) ?? 0,
         'wage_basis': _wageBasis,
+        'week_off_paid': false,
       });
       if (mounted) {
         HapticFeedback.heavyImpact();

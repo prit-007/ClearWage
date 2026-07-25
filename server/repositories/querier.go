@@ -299,6 +299,7 @@ type Querier interface {
 	DeleteShift(ctx context.Context, arg DeleteShiftParams) error
 	FindEmployeeByID(ctx context.Context, arg FindEmployeeByIDParams) (Employee, error)
 	FindEmployeeByPhone(ctx context.Context, arg FindEmployeeByPhoneParams) (Employee, error)
+	FindEmployeeByPhoneOnly(ctx context.Context, phone string) (Employee, error)
 	FindShiftByID(ctx context.Context, arg FindShiftByIDParams) (Shift, error)
 	FindSyncEventByEventID(ctx context.Context, arg FindSyncEventByEventIDParams) (SyncQueue, error)
 	FindTenantByID(ctx context.Context, id string) (Tenant, error)

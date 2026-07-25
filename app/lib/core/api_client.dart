@@ -4,6 +4,7 @@ import 'api_exceptions.dart';
 
 class ApiClient {
   final String baseUrl;
+  static const _timeout = Duration(seconds: 30);
   String? _token;
 
   ApiClient({required this.baseUrl});
@@ -27,26 +28,26 @@ class ApiClient {
       {Map<String, String>? query}) async {
     final uri =
         Uri.parse('$baseUrl$path').replace(queryParameters: query);
-    return _handle(await http.get(uri, headers: _headers));
+    return _handle(await http.get(uri, headers: _headers).timeout(_timeout));
   }
 
   Future<Map<String, dynamic>> post(String path,
       {Map<String, dynamic>? body}) async {
     final uri = Uri.parse('$baseUrl$path');
     return _handle(
-        await http.post(uri, headers: _headers, body: jsonEncode(body)));
+        await http.post(uri, headers: _headers, body: jsonEncode(body)).timeout(_timeout));
   }
 
   Future<Map<String, dynamic>> put(String path,
       {Map<String, dynamic>? body}) async {
     final uri = Uri.parse('$baseUrl$path');
     return _handle(
-        await http.put(uri, headers: _headers, body: jsonEncode(body)));
+        await http.put(uri, headers: _headers, body: jsonEncode(body)).timeout(_timeout));
   }
 
   Future<List<int>> getRaw(String path, {Map<String, String>? query}) async {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
-    final res = await http.get(uri, headers: _headers);
+    final res = await http.get(uri, headers: _headers).timeout(_timeout);
     if (res.statusCode >= 200 && res.statusCode < 300) return res.bodyBytes;
     final json = jsonDecode(res.body) as Map<String, dynamic>;
     final msg = json['message'] as String? ?? 'Unknown error';
@@ -55,7 +56,7 @@ class ApiClient {
 
   Future<Map<String, dynamic>> delete(String path) async {
     final uri = Uri.parse('$baseUrl$path');
-    return _handle(await http.delete(uri, headers: _headers));
+    return _handle(await http.delete(uri, headers: _headers).timeout(_timeout));
   }
 
   Map<String, dynamic> _handle(http.Response response) {

@@ -24,7 +24,7 @@ final tokenProvider = StateProvider<String?>((ref) => null);
 final authServiceProvider = Provider<AuthService>((ref) {
   final client = ref.watch(apiClientProvider);
   final token = ref.watch(tokenProvider);
-  if (token != null) client.setToken(token);
+  client.setToken(token);
   return AuthService(client);
 });
 

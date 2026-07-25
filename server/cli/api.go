@@ -68,10 +68,10 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			http.ServeFile(w, r, "./docs/swagger.json")
 		})
 
-		authCtrl := ctrl.NewAuthController(querier, logger, cfg)
+		authCtrl, err := ctrl.NewAuthController(querier, logger, cfg)
+			if err != nil {return err}
 			r.Route("/api/v1/auth", func(r chi.Router) {
-				r.Post("/request-otp", authCtrl.RequestOTP)
-				r.Post("/verify-otp", authCtrl.VerifyOTP)
+				r.Post("/firebase-login", authCtrl.LoginWithFirebase)
 				r.Post("/register", authCtrl.Register)
 			})
 

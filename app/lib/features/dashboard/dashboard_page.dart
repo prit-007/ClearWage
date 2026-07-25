@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/dashboard_model.dart';
 import '../../providers/providers.dart';
+import '../staff/add_employee_page.dart';
+import '../attendance/daily_roster_page.dart' as roster;
+import '../reports/reports_hub_page.dart';
 
 final dashboardDataProvider = FutureProvider.autoDispose<DashboardData>((ref) {
   return ref.watch(dashboardServiceProvider).get();
@@ -116,25 +119,37 @@ class DashboardScreen extends ConsumerWidget {
                                 tt: tt,
                                 icon: PhosphorIconsRegular.userPlus,
                                 label: 'Add\nStaff',
-                                onTap: _hapticTap),
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEmployeeScreen()));
+                                }),
                             _QuickActionTile(
                                 cs: cs,
                                 tt: tt,
                                 icon: PhosphorIconsRegular.clipboardText,
                                 label: 'Mark\nRoster',
-                                onTap: _hapticTap),
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const roster.AttendanceRosterPage()));
+                                }),
                             _QuickActionTile(
                                 cs: cs,
                                 tt: tt,
                                 icon: PhosphorIconsRegular.bookOpenText,
                                 label: 'Ledger\nEntry',
-                                onTap: _hapticTap),
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  Navigator.pushNamed(context, '/new_ledger');
+                                }),
                             _QuickActionTile(
                                 cs: cs,
                                 tt: tt,
                                 icon: PhosphorIconsRegular.chartLineUp,
                                 label: 'Reports',
-                                onTap: _hapticTap),
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsHubScreen()));
+                                }),
                           ],
                         ),
                         const SizedBox(height: 40),
@@ -167,7 +182,7 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  void _hapticTap() => HapticFeedback.lightImpact();
+
 
   String _getGreeting() {
     final hour = DateTime.now().hour;

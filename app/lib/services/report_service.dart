@@ -4,19 +4,15 @@ class ReportService {
   final ApiClient _client;
   ReportService(this._client);
 
-  Future<Map<String, dynamic>> dailySummary({int? year, int? month, String? date}) async {
-    final query = <String, String>{};
-    if (year != null) query['year'] = year.toString();
-    if (month != null) query['month'] = month.toString();
-    if (date != null) query['date'] = date;
-    final res = await _client.get('/api/v1/reports/daily', query: query);
+  Future<Map<String, dynamic>> dailySummary({required String date}) async {
+    final res = await _client.get('/api/v1/reports/daily', query: {'date': date});
     return res['data'] as Map<String, dynamic>? ?? {};
   }
 
-  Future<Map<String, dynamic>> employeeMonthly(String employeeId, int year, int month) async {
+  Future<Map<String, dynamic>> employeeMonthly(String employeeId, {required String startDate, required String endDate}) async {
     final res = await _client.get(
       '/api/v1/reports/employee-monthly',
-      query: {'employee_id': employeeId, 'year': year.toString(), 'month': month.toString()},
+      query: {'employee_id': employeeId, 'start_date': startDate, 'end_date': endDate},
     );
     return res['data'] as Map<String, dynamic>? ?? {};
   }

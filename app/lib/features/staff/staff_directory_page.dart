@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../models/employee_model.dart';
 import '../../providers/providers.dart';
 import 'employee_profile_page.dart';
@@ -11,11 +12,17 @@ final staffListProvider = FutureProvider.autoDispose<List<Employee>>((ref) {
   return ref.watch(staffServiceProvider).list();
 });
 
-class StaffDirectoryScreen extends ConsumerWidget {
+class StaffDirectoryScreen extends ConsumerStatefulWidget {
   const StaffDirectoryScreen({super.key});
+  @override
+  ConsumerState<StaffDirectoryScreen> createState() => _StaffDirectoryScreenState();
+}
+
+class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
+  String _searchQuery = '';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final asyncData = ref.watch(staffListProvider);
@@ -23,8 +30,10 @@ class StaffDirectoryScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: cs.surface,
       body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
+        child: RefreshIndicator(
+          onRefresh: () => ref.refresh(staffListProvider.future),
+          child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverAppBar(
               backgroundColor: cs.surface.withValues(alpha: 0.95),
@@ -42,7 +51,7 @@ class StaffDirectoryScreen extends ConsumerWidget {
                   alignment: Alignment.bottomCenter,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 60),
-                    child: _PremiumSearchBar(cs: cs),
+                    child: _PremiumSearchBar(cs: cs, onChanged: (v) => setState(() => _searchQuery = v.toLowerCase())),
                   ),
                 ),
               ),
@@ -56,14 +65,19 @@ class StaffDirectoryScreen extends ConsumerWidget {
               ],
             ),
             asyncData.when(
-              loading: () => const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator())),
+              loading: () => const ShimmerLoading(itemCount: 8, height: 82),
               error: (e, _) => SliverFillRemaining(
                   child: Center(
                       child: Text('Error: $e',
                           style: TextStyle(color: cs.error)))),
               data: (employees) {
-                final grouped = _groupByLetter(employees);
+                final filtered = _searchQuery.isEmpty
+                    ? employees
+                    : employees.where((e) =>
+                        e.name.toLowerCase().contains(_searchQuery) ||
+                        (e.designation?.toLowerCase().contains(_searchQuery) ?? false) ||
+                        e.role.toLowerCase().contains(_searchQuery)).toList();
+                final grouped = _groupByLetter(filtered);
 
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
@@ -108,6 +122,7 @@ class StaffDirectoryScreen extends ConsumerWidget {
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -133,12 +148,26 @@ class StaffDirectoryScreen extends ConsumerWidget {
   }
 }
 
-class _PremiumSearchBar extends StatelessWidget {
+class _PremiumSearchBar extends StatefulWidget {
   final ColorScheme cs;
-  const _PremiumSearchBar({required this.cs});
+  final ValueChanged<String> onChanged;
+  const _PremiumSearchBar({required this.cs, required this.onChanged});
+  @override
+  State<_PremiumSearchBar> createState() => _PremiumSearchBarState();
+}
+
+class _PremiumSearchBarState extends State<_PremiumSearchBar> {
+  final _searchCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       height: 48,
       decoration: BoxDecoration(
@@ -148,16 +177,24 @@ class _PremiumSearchBar extends StatelessWidget {
             Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
       ),
       child: TextField(
+        controller: _searchCtrl,
         decoration: InputDecoration(
           hintText: 'Search by name or role...',
           hintStyle:
               TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
           prefixIcon: Icon(PhosphorIconsRegular.magnifyingGlass,
               color: cs.onSurfaceVariant, size: 20),
+          suffixIcon: _searchCtrl.text.isNotEmpty
+              ? IconButton(
+                  icon: Icon(PhosphorIconsRegular.x, size: 18, color: cs.onSurfaceVariant),
+                  onPressed: () { _searchCtrl.clear(); widget.onChanged(''); setState(() {}); },
+                )
+              : null,
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
+          onChanged: (v) { widget.onChanged(v); setState(() {}); },
       ),
     );
   }

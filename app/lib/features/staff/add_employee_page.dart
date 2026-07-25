@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/widgets/validated_field.dart';
 
 class AddEmployeeScreen extends ConsumerStatefulWidget {
   const AddEmployeeScreen({super.key});
@@ -29,8 +30,22 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     super.dispose();
   }
 
+  bool _validateAll() {
+    final name = _nameCtrl.text.trim();
+    final phone = _phoneCtrl.text.trim();
+    final wage = _wageCtrl.text.trim();
+    if (name.isEmpty) return false;
+    if (phone.isNotEmpty && phone.length < 10) return false;
+    if (wage.isNotEmpty && double.tryParse(wage) == null) return false;
+    return true;
+  }
+
   Future<void> _save() async {
-    if (_nameCtrl.text.trim().isEmpty) return;
+    if (!_validateAll()) {
+      setState(() {});
+      HapticFeedback.vibrate();
+      return;
+    }
     HapticFeedback.heavyImpact();
     setState(() => _saving = true);
     try {
@@ -94,9 +109,14 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-              FluidSlideIn(delay: 100, child: _PremiumField(label: 'Full Name', hint: 'Rahul Sharma', icon: PhosphorIconsRegular.user, ctrl: _nameCtrl)),
-              FluidSlideIn(delay: 200, child: _PremiumField(label: 'Phone Number', hint: '+91 98765 43210', icon: PhosphorIconsRegular.phone, ctrl: _phoneCtrl, keyboard: TextInputType.phone)),
-              FluidSlideIn(delay: 300, child: _PremiumField(label: 'Designation / Role', hint: 'Floor Operator', icon: PhosphorIconsRegular.briefcase, ctrl: _desigCtrl)),
+              FluidSlideIn(delay: 100, child: ValidatedField(controller: _nameCtrl, label: 'Full Name', prefixIcon: PhosphorIconsRegular.user, validator: (v) => v == null || v.trim().isEmpty ? 'Enter employee name' : null)),
+              FluidSlideIn(delay: 200, child: ValidatedField(controller: _phoneCtrl, label: 'Phone Number', prefixIcon: PhosphorIconsRegular.phone, keyboardType: TextInputType.phone, validator: (v) {
+                final p = v?.trim() ?? '';
+                if (p.isEmpty) return null;
+                if (p.length < 10) return 'Enter a valid phone number';
+                return null;
+              })),
+              FluidSlideIn(delay: 300, child: ValidatedField(controller: _desigCtrl, label: 'Designation / Role', prefixIcon: PhosphorIconsRegular.briefcase)),
               const SizedBox(height: 16),
               FluidSlideIn(
                 delay: 400,
@@ -114,7 +134,12 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              FluidSlideIn(delay: 600, child: _PremiumField(label: 'Wage Amount (₹)', hint: 'e.g. 450', icon: PhosphorIconsRegular.coins, ctrl: _wageCtrl, keyboard: TextInputType.number)),
+              FluidSlideIn(delay: 600, child: ValidatedField(controller: _wageCtrl, label: 'Wage Amount (₹)', prefixIcon: PhosphorIconsRegular.coins, keyboardType: TextInputType.number, validator: (v) {
+                if (v == null || v.trim().isEmpty) return null;
+                final amt = double.tryParse(v.trim());
+                if (amt == null || amt <= 0) return 'Enter a valid amount';
+                return null;
+              })),
             ],
           ),
           Positioned(
@@ -141,44 +166,6 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PremiumField extends StatelessWidget {
-  final String label, hint;
-  final IconData icon;
-  final TextEditingController ctrl;
-  final TextInputType? keyboard;
-
-  const _PremiumField({required this.label, required this.hint, required this.icon, required this.ctrl, this.keyboard});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: cs.onSurfaceVariant)),
-          const SizedBox(height: 8),
-          TextField(
-            controller: ctrl,
-            keyboardType: keyboard,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-            decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: cs.onSurfaceVariant, size: 20),
-              hintText: hint,
-              hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.5), fontWeight: FontWeight.w400),
-              filled: true,
-              fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
           ),
         ],

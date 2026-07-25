@@ -249,6 +249,21 @@ func (mr *MockQuerierMockRecorder) FindEmployeeByPhone(ctx, arg any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindEmployeeByPhone", reflect.TypeOf((*MockQuerier)(nil).FindEmployeeByPhone), ctx, arg)
 }
 
+// FindEmployeeByPhoneOnly mocks base method.
+func (m *MockQuerier) FindEmployeeByPhoneOnly(ctx context.Context, phone string) (repositories.Employee, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindEmployeeByPhoneOnly", ctx, phone)
+	ret0, _ := ret[0].(repositories.Employee)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindEmployeeByPhoneOnly indicates an expected call of FindEmployeeByPhoneOnly.
+func (mr *MockQuerierMockRecorder) FindEmployeeByPhoneOnly(ctx, phone any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindEmployeeByPhoneOnly", reflect.TypeOf((*MockQuerier)(nil).FindEmployeeByPhoneOnly), ctx, phone)
+}
+
 // FindShiftByID mocks base method.
 func (m *MockQuerier) FindShiftByID(ctx context.Context, arg repositories.FindShiftByIDParams) (repositories.Shift, error) {
 	m.ctrl.T.Helper()

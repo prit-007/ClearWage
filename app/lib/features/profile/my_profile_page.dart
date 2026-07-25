@@ -223,9 +223,10 @@ class _ProfileTab extends ConsumerWidget {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () {
+            onPressed: () async {
+              await ref.read(authServiceProvider).logout();
               ref.read(tokenProvider.notifier).state = null;
-              Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+              if (context.mounted) Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
             },
             icon: const Icon(PhosphorIconsRegular.signOut),
             label: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w700)),

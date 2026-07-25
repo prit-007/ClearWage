@@ -39,7 +39,7 @@ class _EmployeeProfileScreenState
       final now = DateTime.now();
       final start = '${now.year}-01-01';
       final end = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-      final attList = await ref.read(attendanceServiceProvider).listByEmployee(widget.employeeId);
+      final attList = await ref.read(attendanceServiceProvider).listByEmployee(widget.employeeId, startDate: start, endDate: end);
       final ledgerList = await ref.read(ledgerServiceProvider).listByEmployee(widget.employeeId, startDate: start, endDate: end);
       final bal = await ref.read(ledgerServiceProvider).getBalance(widget.employeeId);
       if (mounted) {

@@ -3,14 +3,16 @@
 ## Architecture Overview
 
 ```
-┌──────────────────────────┐       ┌─────────────────────────────┐
-│   Flutter App (Dart)     │       │   Go Backend (chi router)    │
-│                          │       │                              │
-│  ApiClient (http pkg)  ──┼─HTTP──┤  chi.Router  ──► Controllers │
-│  Riverpod Providers      │       │       │                      │
-│  Premium Screens         │       │   AuthMiddleware +           │
-│                          │       │   TenantMiddleware           │
-└──────────────────────────┘       └───────────┬──────────────────┘
+┌──────────────────────────┐       ┌─────────────────────────┐       ┌───────────┐
+│   Flutter App (Dart)     │       │   Go Backend (chi)      │       │ Firebase   │
+│                          │       │                          │       │ Auth       │
+│  FirebaseAuth.verifyPhone─┼─SMS──┤                          │       │           │
+│  signInWithCredential ───┼─ID───┤                          │       │           │
+│  ApiClient ──POST /auth──┼─HTTP─┤  chi.Router ─► Controllers │       │           │
+│  Riverpod Providers      │       │       │                  │       └───────────┘
+│  Premium Screens         │       │   AuthMiddleware +       │
+│                          │       │   TenantMiddleware       │
+└──────────────────────────┘       └───────────┬──────────────┘
                                                 │
                                         ┌───────▼──────┐
                                         │  PostgreSQL   │
@@ -21,14 +23,16 @@
 ### Server
 - **Framework**: `go-chi/chi/v5` router
 - **Database**: PostgreSQL via `pgx` driver + `goqu` query builder
-- **Auth**: HS256 JWT — token set as `auth_token` cookie (HttpOnly) **and** returned in JSON response body as `access_token`
+- **Auth**: Firebase Phone Auth (Google Admin SDK) + HS256 JWT — token set as `auth_token` cookie (HttpOnly) **and** returned in JSON response body as `access_token`
+- **Token expiry**: Configurable via `TOKEN_TTL` env var (default 30 days)
 - **Port**: `127.0.0.1:8081` (configurable)
 - **Response Envelope**: Every API response follows one of three shapes (see below)
 
 ### Frontend
 - **Framework**: Flutter + Riverpod + Material Design 3
+- **Auth**: Firebase Auth (`firebase_core` + `firebase_auth`) for phone verification
 - **HTTP Client**: Custom `ApiClient` class wrapping `package:http`
-- **Auth Flow**: JWT stored in Riverpod `tokenProvider` (StateProvider), sent as `Authorization: Bearer` header
+- **Auth Flow**: Firebase ID token exchanged for app JWT → stored in Riverpod `tokenProvider` (StateProvider), sent as `Authorization: Bearer` header
 - **Services Layer**: 12 service classes wrapping `ApiClient` calls
 - **Screens**: 19 feature screens with premium glassmorphism design
 
@@ -53,13 +57,35 @@ All JSON responses use a standard 3-status envelope:
 
 ## Authentication & Middleware
 
+### Auth Flow (Firebase Phone Auth)
+
+```
+LoginScreen
+  │
+  ├─ FirebaseAuth.verifyPhoneNumber(phone)
+  │   ├─ verificationCompleted (auto-retrieval) ──┐
+  │   └─ codeSent → user enters OTP ──────────────┤
+  │                                               ▼
+  │                                   signInWithCredential()
+  │                                               │
+  │                                   FirebaseAuth.currentUser.getIdToken()
+  │                                               │
+  └──── POST /api/v1/auth/firebase-login ─────{ id_token }────►
+                                                               │
+                    Go Backend: VerifyIDToken (Admin SDK)      │
+                    Extract phone_number from claims           │
+                    Lookup employee/tenant by phone            │
+                    Issue app JWT                              │
+                    ◄──── { access_token, tenant_id, role } ───┘
+```
+
 ### JWT Claims (stored in token)
 ```json
 {
   "tenant_id":   "uuid",   // The tenant (factory) the user belongs to
   "employee_id": "uuid",   // The employee record ID (empty for tenant owners)
   "role":        "owner" | "manager" | "employee",
-  "exp":         int64,    // Unix timestamp — token expires in 24h
+  "exp":         int64,    // Unix timestamp — token expires in TOKEN_TTL hours
   "iat":         int64     // Unix timestamp — issued at
 }
 ```
@@ -68,27 +94,31 @@ All JSON responses use a standard 3-status envelope:
 
 ```
 Request ──► RequestLogger ──► Recoverer ──► CORS ──► RouteHandler
+                                                       │
+                                            AuthMiddleware (if protected):
+                                              1. Read "Authorization: Bearer <token>"
+                                              2. Fallback: Read "auth_token" cookie
+                                              3. Validate HS256 JWT signature
+                                              4. Put Claims into context
                                                       │
-                                           AuthMiddleware (if protected):
-                                             1. Read "Authorization: Bearer <token>"
-                                             2. Fallback: Read "auth_token" cookie
-                                             3. Validate HS256 JWT signature
-                                             4. Put Claims into context
-                                                     │
-                                           TenantMiddleware (if protected):
-                                             1. Extract tenant_id from Claims
-                                             2. Put tenant_id into context
+                                            TenantMiddleware (if protected):
+                                              1. Extract tenant_id from Claims
+                                              2. Put tenant_id into context
 ```
 
 ### Frontend Auth Flow
 
 ```
-LoginScreen ──► POST /request-otp ──► POST /verify-otp ──► JWT returned
-       │                                                        │
-  tokenProvider.state = jwtString                           ApiClient.setToken(jwt)
-       │                                                        │
-  AuthGate rebuilds ──► MainShell (authenticated)        All subsequent requests
-                                                          include Authorization: Bearer
+LoginScreen ──► Firebase verifyPhoneNumber ──► signInWithCredential
+       │                                              │
+   getIdToken() ◄── FirebaseAuth.currentUser          │
+       │                                              │
+   POST /firebase-login {id_token}                    │
+       │                                              │
+   JWT returned ──► tokenProvider.state = jwt   ApiClient.setToken(jwt)
+       │                                              │
+   AuthGate rebuilds ──► MainShell (authenticated)    All subsequent requests
+                                                      include Authorization: Bearer
 ```
 
 ---
@@ -109,27 +139,13 @@ LoginScreen ──► POST /request-otp ──► POST /verify-otp ──► JWT
 
 ### 2. Auth (Public — No Auth)
 
-#### `POST /api/v1/auth/request-otp`
-Generates a 6-digit OTP. In dev mode, OTP is logged to stdout.
+#### `POST /api/v1/auth/firebase-login`
+Accepts a Firebase ID token (obtained after phone auth), verifies it via Firebase Admin SDK,
+looks up the user by phone number, and returns an app JWT.
 
 **Request:**
 ```json
-{ "phone": "+919876543210" }
-```
-**Success (200):** `{ "status": "success", "data": { "message": "OTP sent" } }`
-**Failure (400):** missing or empty `phone`
-**Failure (500):** OTP generation error
-
-**Frontend**: `AuthService.requestOtp()` → `POST /api/v1/auth/request-otp` → `LoginScreen`
-
----
-
-#### `POST /api/v1/auth/verify-otp`
-Verifies OTP (single-use, 5min expiry), returns JWT + sets `auth_token` cookie.
-
-**Request:**
-```json
-{ "phone": "+919876543210", "otp": "482916" }
+{ "id_token": "eyJhbGciOiJSUzI1NiIs..." }
 ```
 **Success (200):**
 ```json
@@ -138,33 +154,37 @@ Verifies OTP (single-use, 5min expiry), returns JWT + sets `auth_token` cookie.
   "data": {
     "access_token": "eyJhbG...",
     "tenant_id": "uuid",
+    "employee_id": "uuid",
     "role": "owner"
   }
 }
 ```
-**Failure (401):** invalid/expired OTP
+**Failure (400):** missing `id_token`
+**Failure (401):** invalid Firebase token or phone not registered
 
-**Frontend**: `AuthService.verifyOtp()` → reads `data.access_token`, calls `ApiClient.setToken()`, returns `AuthToken`. Used in `LoginScreen`.
+**Frontend**: `AuthService.signInWithFirebase()` → used in `LoginScreen` after Firebase phone auth
+completes. Calls `ApiClient.setToken()` with the app JWT on success.
 
 ---
 
 #### `POST /api/v1/auth/register`
 Creates a new tenant (factory) + first owner employee in one transaction.
+Uses Firebase ID token for phone verification.
 
 **Request:**
 ```json
 {
   "name": "Vivek",
-  "phone": "+919876543210",
   "factory_name": "Vivek Fabrics",
-  "otp": "482916"
+  "id_token": "eyJhbGciOiJSUzI1NiIs..."
 }
 ```
-**Success (200):** Same shape as verify-otp — `{ access_token, tenant_id, role }`
+**Success (200):** Same shape as firebase-login — `{ access_token, tenant_id, employee_id, role }`
 **Failure (400):** missing required fields
-**Failure (401):** invalid/expired OTP
+**Failure (401):** invalid Firebase token
 
-**Frontend**: `AuthService.register()` → reads `data.access_token`, calls `ApiClient.setToken()`, returns `AuthToken`. Used in `RegisterScreen`. On success, navigates to `/onboarding`.
+**Frontend**: `AuthService.register()` → used in `RegisterScreen`. Calls `ApiClient.setToken()` with
+the app JWT on success. Navigates to `/onboarding`.
 
 ---
 
@@ -921,7 +941,7 @@ Serves static files from `./uploads/` directory. The `{file}` param is the filen
 
 | Service File | Backend Group | Methods |
 |-------------|---------------|---------|
-| `auth_service.dart` | Auth | `requestOtp()`, `verifyOtp()`, `register()`, `logout()` |
+| `auth_service.dart` | Auth | `signInWithFirebase()`, `register()`, `logout()` |
 | `staff_service.dart` | Staff | `list()`, `get()`, `create()`, `update()`, `delete()`, `getProfile()`, `assignManager()` |
 | `attendance_service.dart` | Attendance | `listByDate()`, `listByEmployee()`, `create()`, `update()`, `bulkUpsert()`, `lockMonth()` |
 | `shift_service.dart` | Shifts | `list()`, `get()`, `create()`, `update()`, `delete()` |
@@ -940,8 +960,8 @@ Serves static files from `./uploads/` directory. The `{file}` param is the filen
 
 | Route | Screen | Backend Endpoint(s) | Status |
 |-------|--------|---------------------|--------|
-| `/` (root) | `AuthGate` → `LoginScreen` | `POST /request-otp`, `POST /verify-otp` | ✅ Wired |
-| `/register` | `RegisterScreen` | `POST /auth/register` | ✅ Wired |
+| `/` (root) | `AuthGate` → `LoginScreen` | Firebase Phone Auth → `POST /firebase-login` | ✅ Wired |
+| `/register` | `RegisterScreen` | Firebase Phone Auth → `POST /auth/register` | ✅ Wired |
 | `/home` | `MainShell` (bottom nav) | — | ✅ Built |
 | `/home` tab 0 | `DashboardScreen` | `GET /dashboard` | ✅ Wired |
 | `/home` tab 1 | `StaffDirectoryScreen` | `GET /staff` | ✅ Wired |

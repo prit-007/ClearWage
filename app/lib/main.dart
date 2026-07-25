@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'features/attendance/daily_roster_page.dart' as roster;
 import 'features/dashboard/dashboard_page.dart';
 import 'features/staff/staff_directory_page.dart';
@@ -21,7 +23,13 @@ import 'features/settings/payroll_settings_page.dart';
 import 'features/profile/my_profile_page.dart';
 import 'providers/providers.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    // Firebase initialization errors are handled gracefully at runtime
+  }
   runApp(const ProviderScope(child: FactoryWorkforceApp()));
 }
 
@@ -103,7 +111,31 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: cs.surface,
+        elevation: 0,
+        scrolledUnderElevation: 0.5,
+        title: Text('Factory Workforce', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+        actions: [
+          IconButton(
+            icon: PhosphorIcon(PhosphorIconsRegular.userCircle, color: cs.onSurfaceVariant),
+            onPressed: () => Navigator.pushNamed(context, '/my-profile'),
+          ),
+          PopupMenuButton<String>(
+            icon: PhosphorIcon(PhosphorIconsRegular.gear, color: cs.onSurfaceVariant),
+            onSelected: (route) => Navigator.pushNamed(context, route),
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: '/shifts', child: Text('Shift Timings')),
+              const PopupMenuItem(value: '/holidays', child: Text('Holidays')),
+              const PopupMenuItem(value: '/advance-requests', child: Text('Advance Requests')),
+              const PopupMenuItem(value: '/leave-policy', child: Text('Leave Policy')),
+              const PopupMenuItem(value: '/payroll-settings', child: Text('Payroll Settings')),
+            ],
+          ),
+        ],
+      ),
       body: _buildPage(),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,

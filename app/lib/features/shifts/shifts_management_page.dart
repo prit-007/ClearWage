@@ -5,6 +5,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/shift_model.dart';
 import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/widgets/validated_field.dart';
 
 final shiftsListProvider = FutureProvider.autoDispose<List<Shift>>((ref) {
   return ref.watch(shiftServiceProvider).list();
@@ -231,10 +232,23 @@ class _ShiftFormModalState extends ConsumerState<_ShiftFormModal> {
             const SizedBox(height: 24),
             Text(widget.shift != null ? 'Edit Shift' : 'Create New Shift', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
             const SizedBox(height: 24),
-            _ModalField(label: 'Shift Name', ctrl: _nameCtrl, hint: 'Morning Shift'),
-            _ModalField(label: 'Start Time (HH:MM)', ctrl: _startCtrl, hint: '08:00'),
-            _ModalField(label: 'End Time (HH:MM)', ctrl: _endCtrl, hint: '17:00'),
-            _ModalField(label: 'Grace Period (min)', ctrl: _graceCtrl, hint: '15', keyboard: TextInputType.number),
+            ValidatedField(controller: _nameCtrl, label: 'Shift Name', prefixIcon: PhosphorIconsRegular.clock, validator: (v) => v == null || v.trim().isEmpty ? 'Enter shift name' : null),
+            ValidatedField(controller: _startCtrl, label: 'Start Time (HH:MM)', prefixIcon: PhosphorIconsRegular.sun, validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Enter start time';
+              if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) return 'Use HH:MM format';
+              return null;
+            }),
+            ValidatedField(controller: _endCtrl, label: 'End Time (HH:MM)', prefixIcon: PhosphorIconsRegular.moon, validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Enter end time';
+              if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) return 'Use HH:MM format';
+              return null;
+            }),
+            ValidatedField(controller: _graceCtrl, label: 'Grace Period (min)', prefixIcon: PhosphorIconsRegular.hourglass, keyboardType: TextInputType.number, validator: (v) {
+              if (v == null || v.trim().isEmpty) return null;
+              final n = int.tryParse(v.trim());
+              if (n == null || n < 0) return 'Enter a valid number';
+              return null;
+            }),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -277,39 +291,6 @@ class _ShiftFormModalState extends ConsumerState<_ShiftFormModal> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ModalField extends StatelessWidget {
-  final String label, hint;
-  final TextEditingController ctrl;
-  final TextInputType? keyboard;
-
-  const _ModalField({required this.label, required this.ctrl, required this.hint, this.keyboard});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: ctrl,
-            keyboardType: keyboard,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              isDense: true,
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -5,7 +5,9 @@ import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
 final dailySummaryProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) {
-  return ref.watch(reportServiceProvider).dailySummary();
+  final now = DateTime.now();
+  final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  return ref.watch(reportServiceProvider).dailySummary(date: date);
 });
 
 class DailySummaryScreen extends ConsumerWidget {

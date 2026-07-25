@@ -226,6 +226,20 @@ func (q *GoquQuerier) FindEmployeeByPhone(ctx context.Context, arg FindEmployeeB
 	return e, nil
 }
 
+func (q *GoquQuerier) FindEmployeeByPhoneOnly(ctx context.Context, phone string) (Employee, error) {
+	var e Employee
+	found, err := q.db.From("employees").Where(
+		goqu.C("phone").Eq(phone),
+	).ScanStructContext(ctx, &e)
+	if err != nil {
+		return Employee{}, err
+	}
+	if !found {
+		return Employee{}, ErrNotFound
+	}
+	return e, nil
+}
+
 func (q *GoquQuerier) GetStaffProfile(ctx context.Context, arg GetStaffProfileParams) (StaffProfile, error) {
 	e := goqu.T("employees")
 	m := goqu.T("employees").As("m")

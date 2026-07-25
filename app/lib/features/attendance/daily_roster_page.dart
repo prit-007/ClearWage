@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../models/attendance_model.dart';
 import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
@@ -64,8 +65,10 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
       body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
+        child: RefreshIndicator(
+          onRefresh: () async { ref.invalidate(todayAttendanceProvider); await ref.read(todayAttendanceProvider.future); },
+          child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverAppBar(
               backgroundColor: cs.surfaceContainerLowest.withValues(alpha: 0.95),
@@ -127,24 +130,30 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
               ),
             ),
             async.when(
-              loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
+              loading: () => const ShimmerLoading(itemCount: 6, height: 160),
               error: (e, _) => SliverFillRemaining(child: Center(child: Text('$e'))),
-              data: (list) => SliverPadding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      return FluidSlideIn(
-                        delay: (index * 50).clamp(0, 400),
-                        child: _PremiumAttendanceCard(cs: cs, tt: tt, attendance: list[index], onUpdate: _updateAttendance),
-                      );
-                    },
-                    childCount: list.length,
+              data: (list) {
+                final filtered = _selectedShift == 0
+                    ? list
+                    : list.where((a) => a.shiftId == (_selectedShift == 1 ? 'General' : 'Night')).toList();
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return FluidSlideIn(
+                          delay: (index * 50).clamp(0, 400),
+                          child: _PremiumAttendanceCard(cs: cs, tt: tt, attendance: filtered[index], onUpdate: _updateAttendance),
+                        );
+                      },
+                      childCount: filtered.length,
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ],
+        ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -295,18 +304,28 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
               ),
               Container(
                 width: 70, height: 36,
-                decoration: BoxDecoration(color: widget.cs.surfaceContainerHighest.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: widget.cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _otCtrl.text.isNotEmpty && double.tryParse(_otCtrl.text) == null
+                        ? widget.cs.error.withValues(alpha: 0.5)
+                        : Colors.transparent,
+                    width: 1.5,
+                  ),
+                ),
                 child: TextField(
                   controller: _otCtrl,
                   textAlign: TextAlign.center,
                   keyboardType: TextInputType.number,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: _otCtrl.text.isNotEmpty && double.tryParse(_otCtrl.text) == null ? widget.cs.error : null),
                   decoration: InputDecoration(
                     hintText: 'OT Hrs',
                     hintStyle: TextStyle(fontSize: 11, color: widget.cs.onSurfaceVariant),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
+                  onChanged: (_) { if (mounted) setState(() {}); HapticFeedback.selectionClick(); },
                 ),
               ),
             ],

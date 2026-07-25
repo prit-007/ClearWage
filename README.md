@@ -11,17 +11,16 @@ vivek_app/
 ├── server/              # Golang REST API backend
 │   ├── cli/             # Cobra CLI commands (api, migrate)
 │   ├── config/          # Env config loading (envconfig)
-│   ├── constants/       # App-wide constants
 │   ├── controllers/api/v1/  # HTTP handlers
 │   ├── database/        # Goose migrations + test containers
 │   ├── middlewares/      # Auth, tenant, logging
 │   ├── mocks/           # Generated mocks (GoMock)
 │   ├── models/          # Domain models
 │   ├── repositories/    # goqu queries, querier interface
-│   ├── scripts/         # Seed/bootstrap scripts
 │   ├── services/        # Business logic layer
 │   ├── tests/           # Integration test helpers
 │   └── uploads/         # File storage directory
+├── app/                 # Flutter mobile app
 └── plan.md              # V1 architecture & page blueprint
 ```
 
@@ -36,16 +35,28 @@ vivek_app/
 | DB Query Builder | goqu v9 (type-safe SQL) |
 | Database | PostgreSQL 16 |
 | DB Migrations | pressly/goose v3 |
-| Auth | golang-jwt/jwt v5 |
+| Auth | Firebase Phone Auth + golang-jwt/jwt v5 |
+| Firebase Admin SDK | firebase.google.com/go/v4 |
 | Logging | rs/zerolog |
 | CLI | spf13/cobra |
 | Testing | testify, GoMock, testcontainers-go |
 | PDF | gofpdf |
 
+### Frontend
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Flutter + Riverpod |
+| Auth | firebase_core + firebase_auth |
+| UI | Material Design 3, google_fonts, phosphoricons_flutter |
+| OTP Input | pinput |
+| Charts | fl_chart |
+
 ### Patterns
 
 - **Clean architecture**: controllers → services → repositories → models
 - **Multi-tenancy**: JWT-based `tenant_id` scoping + Row-Level Security (RLS)
+- **Auth**: Firebase Phone Auth (OTP handled by Firebase, not our server)
 - **Offline sync**: Flutter `workmanager` flushes queued records to this API
 - **TDD-first**: unit tests + integration tests with ephemeral Postgres via testcontainers-go
 
@@ -63,16 +74,27 @@ vivek_app/
 | `DB_NAME` | Database name | `vivek_db` |
 | `DB_QUERYSTRING` | Extra DSN params | `sslmode=disable` |
 | `JWT_SECRET` | HMAC signing secret | *(required)* |
+| `TOKEN_TTL` | JWT expiry in hours | `720` (30 days) |
+| `FIREBASE_CREDENTIALS_PATH` | Path to Firebase Admin SDK JSON key | `firebase-credentials.json` |
+| `FIREBASE_PROJECT_ID` | Firebase project ID | `workforce-9b7de` |
 | `MIGRATION_DIR` | Migration path | `database/migrations` |
 
 Copy `.env.example` to `.env` and fill in the values.
+
+### Firebase Config Files
+
+Place these files in the project (they are in `.gitignore` and must not be committed):
+
+1. **`server/firebase-credentials.json`** — Firebase Admin SDK service account key (from Project Settings → Service accounts)
+2. **`app/android/app/google-services.json`** — Firebase Android config (from Project Settings → General → Your apps → Android)
+3. **`app/ios/Runner/GoogleService-Info.plist`** — Firebase iOS config (from Project Settings → General → Your apps → iOS)
 
 ## Database Schema
 
 Managed via Goose migrations:
 
-`# | Table | Purpose |
-|--------------|--------------|---------|
+| Table | Purpose |
+|--------------|---------|
 | `tenants` | Companies/tenants |
 | `employees` | Staff with wage config, default shift, KYC |
 | `shifts` | Configurable factory shifts (start/end time, grace period) |
@@ -122,7 +144,7 @@ Base path: `/api/v1`
 
 | Resource | Controller |
 |----------|-----------|
-| Auth (OTP / JWT) | `auth_controller.go` |
+| Auth (Firebase / JWT) | `auth_controller.go` |
 | Staff / Employees | `staff_controller.go` |
 | Attendance | `attendance_controller.go` |
 | Shifts | `shift_controller.go` |
@@ -138,6 +160,20 @@ Base path: `/api/v1`
 | Me / Profile | `me_controller.go` |
 
 Swagger UI: `http://localhost:8080/swagger` (auto-generated via annotations in `app.go`).
+Full API docs: `API_DOCS.md`
+
+### Auth Endpoints (Public)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/v1/auth/firebase-login` | Firebase ID token → app JWT |
+| `POST` | `/api/v1/auth/register` | Firebase ID token + name + factory → create tenant + owner |
+
+Auth uses Firebase Phone Auth. The flow is:
+1. Flutter calls `FirebaseAuth.verifyPhoneNumber()` → SMS sent
+2. User enters OTP → Flutter calls `signInWithCredential()` → Firebase ID token obtained
+3. Flutter sends ID token to backend via `/firebase-login` or `/register`
+4. Backend verifies ID token via Firebase Admin SDK, looks up/creates user, issues app JWT
 
 ## Setup
 
@@ -146,6 +182,7 @@ Swagger UI: `http://localhost:8080/swagger` (auto-generated via annotations in `
 - Go 1.26+
 - PostgreSQL 16 (or Docker)
 - Docker & Docker Compose (for local DB)
+- Firebase project with Phone Auth enabled (see Firebase Console)
 
 ### 1. Clone & Install
 
@@ -156,7 +193,21 @@ cp .env.example .env
 go mod download
 ```
 
-### 2. Start PostgreSQL
+### 2. Place Firebase Config Files
+
+```bash
+# Download from Firebase Console → Project Settings → Service accounts
+# Save as:
+cp ~/Downloads/workforce-firebase-adminsdk-xxxxx.json server/firebase-credentials.json
+
+# Download from Firebase Console → Project Settings → General → Your apps
+# Android:
+cp ~/Downloads/google-services.json app/android/app/
+# iOS:
+cp ~/Downloads/GoogleService-Info.plist app/ios/Runner/
+```
+
+### 3. Start PostgreSQL
 
 ```bash
 # Option A: Docker Compose (from repo root)
@@ -166,19 +217,27 @@ docker compose up -d postgresdb
 #   CREATE DATABASE vivek_db;
 ```
 
-### 3. Run Migrations
+### 4. Run Migrations
 
 ```bash
 make migrate-up
 ```
 
-### 4. Start Server
+### 5. Start Server
 
 ```bash
 make start-api
 ```
 
 Server listens on `http://127.0.0.1:8081` (configurable).
+
+### 6. Run Flutter App
+
+```bash
+cd app
+flutter pub get
+flutter run
+```
 
 ## Testing
 
@@ -216,6 +275,8 @@ PR merges are blocked unless all jobs pass.
 
 - **No ORM bloat**: `goqu` generates type-safe SQL from Go structs, matching `sqlc` philosophy
 - **Multi-tenant isolation**: `tenant_id` is scoped at the JWT + middleware layer
+- **Firebase Auth**: OTP is handled by Firebase — no OTP secrets stored on our server, no SMS costs
+- **Long-lived sessions**: JWT tokens expire after 30 days (configurable via `TOKEN_TTL`)
 - **Offline-first**: `sync_queue` table + `workmanager` background sync architecture
 - **Financial accuracy**: TDD enforced ledger + payroll services with decimal precision
 - **Zero vendor lock-in**: All software is open-source; deploys to any Linux host via Docker

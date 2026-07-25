@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
+import '../../core/widgets/validated_field.dart';
 import '../../providers/providers.dart';
 
 class NewLedgerEntryScreen extends ConsumerStatefulWidget {
@@ -34,7 +35,12 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
   }
 
   Future<void> _save() async {
-    if (_employeeCtrl.text.trim().isEmpty || _amountController.text.trim().isEmpty) return;
+    final amount = double.tryParse(_amountController.text.trim());
+    if (_employeeCtrl.text.trim().isEmpty || amount == null || amount <= 0) {
+      setState(() {});
+      HapticFeedback.vibrate();
+      return;
+    }
     HapticFeedback.heavyImpact();
     setState(() => _saving = true);
     try {
@@ -198,22 +204,11 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                         }
                       },
                     ),
-                    const SizedBox(height: 16),
-                    TextField(
+                    ValidatedField(
                       controller: _employeeCtrl,
-                      style: tt.titleMedium,
-                      decoration: InputDecoration(
-                        labelText: 'Employee ID *',
-                        prefixIcon: Icon(
-                            PhosphorIconsRegular.identificationBadge,
-                            color: cs.onSurfaceVariant),
-                        filled: true,
-                        fillColor: cs.surface,
-                        border: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(16),
-                            borderSide: BorderSide.none),
-                      ),
+                      label: 'Employee ID',
+                      prefixIcon: PhosphorIconsRegular.identificationBadge,
+                      validator: (v) => v == null || v.trim().isEmpty ? 'Enter employee ID' : null,
                     ),
                     const SizedBox(height: 16),
                     TextField(

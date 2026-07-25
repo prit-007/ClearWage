@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class ReportsHubScreen extends StatelessWidget {
@@ -13,11 +12,8 @@ class ReportsHubScreen extends StatelessWidget {
 
     final reports = [
       _ReportConfig(icon: PhosphorIconsFill.calendarCheck, title: 'Daily Summary', subtitle: 'Attendance & wage overview', color: cs.primary, route: '/reports/daily-summary'),
-      _ReportConfig(icon: PhosphorIconsFill.usersThree, title: 'Employee Monthly', subtitle: 'Per-employee attendance & earnings', color: const Color(0xFF3B82F6), route: '/reports/employee-monthly'),
-      _ReportConfig(icon: PhosphorIconsFill.trendUp, title: 'Wage Bill Trends', subtitle: 'Month-over-month wage analysis', color: const Color(0xFF8B5CF6), route: '/reports/wage-bill-trends'),
       _ReportConfig(icon: PhosphorIconsFill.warningCircle, title: 'Defaulters', subtitle: 'Employees with outstanding > wage', color: const Color(0xFFEF4444), route: '/reports/defaulters'),
       _ReportConfig(icon: PhosphorIconsFill.wallet, title: 'Payroll Summary', subtitle: 'Monthly payroll breakdown', color: const Color(0xFF10B981), badge: 'Owner Access Only', route: '/reports/payroll'),
-      _ReportConfig(icon: PhosphorIconsFill.export, title: 'Export Data', subtitle: 'CSV export of any report', color: cs.onSurfaceVariant, route: '/reports/export'),
     ];
 
     return Scaffold(
@@ -93,7 +89,7 @@ class _PremiumReportCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           onTap: () {
             HapticFeedback.lightImpact();
-            if (config.route != '/') context.push(config.route!);
+            if (config.route != null) Navigator.pushNamed(context, config.route!);
           },
           child: Padding(
             padding: const EdgeInsets.all(20),

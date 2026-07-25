@@ -1,8 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pinput/pinput.dart';
 import '../../core/app_config.dart';
+import '../../core/widgets/validated_field.dart';
 import '../../providers/providers.dart';
 import 'register_page.dart';
 
@@ -21,6 +23,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   bool _sentOtp = false;
   bool _loading = false;
   String? _error;
+  String? _verificationId;
 
   late AnimationController _logoAnim;
   late Animation<double> _logoScale;
@@ -53,36 +56,76 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     return 'Good Evening,';
   }
 
-  Future<void> _requestOtp() async {
-    HapticFeedback.mediumImpact();
-    setState(() { _loading = true; _error = null; });
-    try {
-      await ref.read(authServiceProvider).requestOtp(_phoneCtrl.text.trim());
-      setState(() { _sentOtp = true; _loading = false; });
-      Future.delayed(
-          const Duration(milliseconds: 300), () => _otpFocusNode.requestFocus());
-    } catch (e) {
-      HapticFeedback.vibrate();
-      setState(() {
-        _error = 'Cannot reach server. Check your connection or server address.';
-        _loading = false;
-      });
-    }
+  void _onAutoSignIn(PhoneAuthCredential credential) {
+    _handleFirebaseCredential(credential, isLogin: true);
   }
 
-  Future<void> _verifyOtp() async {
-    HapticFeedback.lightImpact();
+  Future<void> _handleFirebaseCredential(PhoneAuthCredential credential, {required bool isLogin}) async {
+    if (!mounted) return;
     setState(() { _loading = true; _error = null; });
     try {
-      final token = await ref.read(authServiceProvider).verifyOtp(
-        _phoneCtrl.text.trim(),
-        _otpCtrl.text.trim(),
-      );
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception('Failed to get Firebase user');
+      final idToken = await user.getIdToken();
+      if (idToken == null) throw Exception('Failed to get Firebase ID token');
+      final token = await ref.read(authServiceProvider).signInWithFirebase(idToken);
       ref.read(tokenProvider.notifier).state = token.token;
       HapticFeedback.heavyImpact();
       if (mounted) Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
+      if (!mounted) return;
+      setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
+  Future<void> _requestOtp() async {
+    HapticFeedback.mediumImpact();
+    final phone = _phoneCtrl.text.trim();
+    if (phone.isEmpty || phone == '+91') {
+      setState(() => _error = 'Please enter a valid phone number');
+      return;
+    }
+    setState(() { _loading = true; _error = null; _verificationId = null; });
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: _phoneCtrl.text.trim(),
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: _onAutoSignIn,
+        verificationFailed: (e) {
+          if (!mounted) return;
+          setState(() { _error = e.message ?? 'Verification failed'; _loading = false; });
+        },
+        codeSent: (verificationId, _) {
+          if (!mounted) return;
+          setState(() { _verificationId = verificationId; _sentOtp = true; _loading = false; });
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (mounted) _otpFocusNode.requestFocus();
+          });
+        },
+        codeAutoRetrievalTimeout: (verificationId) {
+          _verificationId = verificationId;
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() { _error = 'Cannot reach server. Check your connection.'; _loading = false; });
+    }
+  }
+
+  Future<void> _verifyOtp() async {
+    if (_verificationId == null) return;
+    HapticFeedback.lightImpact();
+    setState(() { _loading = true; _error = null; });
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
+        smsCode: _otpCtrl.text.trim(),
+      );
+      await _handleFirebaseCredential(credential, isLogin: true);
+    } catch (e) {
       HapticFeedback.vibrate();
+      if (!mounted) return;
       setState(() { _error = e.toString(); _loading = false; });
     }
   }
@@ -215,23 +258,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   curve: Curves.fastOutSlowIn,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextField(
+                      children: [
+                      ValidatedField(
                         controller: _phoneCtrl,
+                        label: 'Phone Number',
+                        prefixIcon: Icons.phone_rounded,
                         keyboardType: TextInputType.phone,
                         enabled: !_sentOtp,
-                        style: tt.titleMedium,
-                        decoration: InputDecoration(
-                          labelText: 'Phone Number',
-                          prefixIcon: Icon(Icons.phone_rounded,
-                              color: cs.onSurfaceVariant),
-                          filled: true,
-                          fillColor:
-                              cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none),
-                        ),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty || v.trim() == '+91') return 'Enter a valid phone number';
+                          return null;
+                        },
                       ),
                       if (_sentOtp) ...[
                         const SizedBox(height: 24),

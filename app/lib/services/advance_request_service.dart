@@ -18,8 +18,8 @@ class AdvanceRequestService {
     return AdvanceRequest.fromJson(res['data'] as Map<String, dynamic>? ?? {});
   }
 
-  Future<void> approve(String id) async {
-    await _client.put('/api/v1/advance-requests/$id/approve');
+  Future<void> approve(String id, {required String date}) async {
+    await _client.put('/api/v1/advance-requests/$id/approve', body: {'date': date});
   }
 
   Future<void> deny(String id) async {

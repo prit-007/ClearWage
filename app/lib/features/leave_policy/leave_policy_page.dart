@@ -48,7 +48,18 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
     }
   }
 
+  bool _validate() {
+    if (int.tryParse(_paidCtrl.text) == null) return false;
+    if (int.tryParse(_unpaidCtrl.text) == null) return false;
+    return true;
+  }
+
   Future<void> _save() async {
+    if (!_validate()) {
+      HapticFeedback.vibrate();
+      setState(() {});
+      return;
+    }
     HapticFeedback.mediumImpact();
     setState(() => _saving = true);
     try {

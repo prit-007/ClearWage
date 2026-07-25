@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
+import '../../core/widgets/validated_field.dart';
 import '../../models/holiday_model.dart';
 import '../../providers/providers.dart';
 
@@ -185,11 +186,25 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
   final _nameCtrl = TextEditingController();
   DateTime? _selectedDate;
   bool _recurring = false;
+  String? _dateError;
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     super.dispose();
+  }
+
+  bool _validate() {
+    bool valid = true;
+    if (_nameCtrl.text.trim().isEmpty) valid = false;
+    if (_selectedDate == null) {
+      setState(() => _dateError = 'Select a date');
+      valid = false;
+    } else {
+      setState(() => _dateError = null);
+    }
+    setState(() {});
+    return valid;
   }
 
   @override
@@ -215,18 +230,11 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
               Text('Mark Factory Holiday', style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
               const SizedBox(height: 32),
 
-              Text('Holiday Name', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: cs.onSurfaceVariant)),
-              const SizedBox(height: 8),
-              TextField(
+              ValidatedField(
                 controller: _nameCtrl,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-                decoration: InputDecoration(
-                  prefixIcon: Icon(PhosphorIconsRegular.sparkle, color: cs.onSurfaceVariant),
-                  hintText: 'e.g. Diwali / Eid',
-                  filled: true,
-                  fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                ),
+                label: 'Holiday Name',
+                prefixIcon: PhosphorIconsRegular.sparkle,
+                validator: (v) => v == null || v.trim().isEmpty ? 'Enter holiday name' : null,
               ),
               const SizedBox(height: 24),
 
@@ -237,19 +245,23 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
                   HapticFeedback.selectionClick();
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate: DateTime.now(),
+                    initialDate: _selectedDate ?? DateTime.now(),
                     firstDate: DateTime(2023),
                     lastDate: DateTime(2028),
                   );
-                  if (picked != null) setState(() => _selectedDate = picked);
+                  if (picked != null) setState(() { _selectedDate = picked; _dateError = null; });
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(16)),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _dateError != null ? cs.error.withValues(alpha: 0.5) : Colors.transparent, width: 2),
+                  ),
                   child: Row(
                     children: [
-                      Icon(PhosphorIconsRegular.calendarBlank, color: cs.onSurfaceVariant),
+                      Icon(PhosphorIconsRegular.calendarBlank, color: _dateError != null ? cs.error : cs.onSurfaceVariant),
                       const SizedBox(width: 16),
                       Text(
                         _selectedDate == null ? 'Select Date' : DateFormat('dd MMM yyyy').format(_selectedDate!),
@@ -259,6 +271,17 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
                   ),
                 ),
               ),
+              if (_dateError != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 16, top: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline_rounded, size: 14, color: cs.error),
+                      const SizedBox(width: 6),
+                      Text(_dateError!, style: tt.bodySmall?.copyWith(color: cs.error, fontWeight: FontWeight.w600, fontSize: 12)),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 24),
 
               Row(
@@ -282,7 +305,7 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
 
               FilledButton(
                 onPressed: () {
-                  if (_nameCtrl.text.trim().isEmpty || _selectedDate == null) return;
+                  if (!_validate()) return;
                   HapticFeedback.heavyImpact();
                   Navigator.pop(context, {
                     'name': _nameCtrl.text.trim(),

@@ -153,7 +153,9 @@ Future<void> _handleActionSheet(BuildContext context, WidgetRef ref, AdvanceRequ
   try {
     if (action == 'approve') {
       HapticFeedback.heavyImpact();
-      await ref.read(advanceRequestServiceProvider).approve(req.id);
+      final now = DateTime.now();
+      final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      await ref.read(advanceRequestServiceProvider).approve(req.id, date: date);
     } else {
       HapticFeedback.selectionClick();
       await ref.read(advanceRequestServiceProvider).deny(req.id);

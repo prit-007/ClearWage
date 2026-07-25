@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pinput/pinput.dart';
+import '../../core/widgets/validated_field.dart';
 import '../../providers/providers.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -21,6 +23,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   bool _sentOtp = false;
   bool _loading = false;
   String? _error;
+  String? _verificationId;
 
   late AnimationController _iconAnim;
   late Animation<double> _iconScale;
@@ -48,6 +51,33 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     super.dispose();
   }
 
+  void _onAutoSignIn(PhoneAuthCredential credential) {
+    _handleFirebaseCredential(credential);
+  }
+
+  Future<void> _handleFirebaseCredential(PhoneAuthCredential credential) async {
+    if (!mounted) return;
+    setState(() { _loading = true; _error = null; });
+    try {
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception('Failed to get Firebase user');
+      final idToken = await user.getIdToken();
+      if (idToken == null) throw Exception('Failed to get Firebase ID token');
+      final token = await ref.read(authServiceProvider).register(
+        name: _nameCtrl.text.trim(),
+        factoryName: _factoryCtrl.text.trim(),
+        idToken: idToken,
+      );
+      ref.read(tokenProvider.notifier).state = token.token;
+      HapticFeedback.heavyImpact();
+      if (mounted) Navigator.of(context).pushNamedAndRemoveUntil('/onboarding', (_) => false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
   Future<void> _requestOtp() async {
     HapticFeedback.mediumImpact();
     if (_nameCtrl.text.trim().isEmpty) {
@@ -58,36 +88,46 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       setState(() => _error = 'Please enter your factory name');
       return;
     }
-    setState(() { _loading = true; _error = null; });
+    setState(() { _loading = true; _error = null; _verificationId = null; });
     try {
-      await ref.read(authServiceProvider).requestOtp(_phoneCtrl.text.trim());
-      setState(() { _sentOtp = true; _loading = false; });
-      Future.delayed(
-          const Duration(milliseconds: 300), () => _otpFocusNode.requestFocus());
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: _phoneCtrl.text.trim(),
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: _onAutoSignIn,
+        verificationFailed: (e) {
+          if (!mounted) return;
+          setState(() { _error = e.message ?? 'Verification failed'; _loading = false; });
+        },
+        codeSent: (verificationId, _) {
+          if (!mounted) return;
+          setState(() { _verificationId = verificationId; _sentOtp = true; _loading = false; });
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (mounted) _otpFocusNode.requestFocus();
+          });
+        },
+        codeAutoRetrievalTimeout: (verificationId) {
+          _verificationId = verificationId;
+        },
+      );
     } catch (e) {
-      HapticFeedback.vibrate();
-      setState(() {
-        _error = 'Cannot reach server. Check your connection.';
-        _loading = false;
-      });
+      if (!mounted) return;
+      setState(() { _error = 'Cannot reach server. Check your connection.'; _loading = false; });
     }
   }
 
   Future<void> _register() async {
+    if (_verificationId == null) return;
     HapticFeedback.lightImpact();
     setState(() { _loading = true; _error = null; });
     try {
-      final token = await ref.read(authServiceProvider).register(
-        name: _nameCtrl.text.trim(),
-        phone: _phoneCtrl.text.trim(),
-        factoryName: _factoryCtrl.text.trim(),
-        otp: _otpCtrl.text.trim(),
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
+        smsCode: _otpCtrl.text.trim(),
       );
-      ref.read(tokenProvider.notifier).state = token.token;
-      HapticFeedback.heavyImpact();
-      if (mounted) Navigator.of(context).pushNamedAndRemoveUntil('/onboarding', (_) => false);
+      await _handleFirebaseCredential(credential);
     } catch (e) {
       HapticFeedback.vibrate();
+      if (!mounted) return;
       setState(() { _error = e.toString(); _loading = false; });
     }
   }
@@ -109,20 +149,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       ),
     );
 
-    InputDecoration premiumInputDeco(String label, IconData icon) {
-      return InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: cs.onSurfaceVariant),
-        filled: true,
-        fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-      );
-    }
-
-    return Scaffold(
+        return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -176,26 +203,36 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           ignoring: _sentOtp,
                           child: Column(
                             children: [
-                              TextField(
+                              ValidatedField(
                                 controller: _nameCtrl,
-                                style: tt.titleMedium,
-                                decoration: premiumInputDeco(
-                                    'Your Name', Icons.person_rounded),
+                                label: 'Your Name',
+                                prefixIcon: Icons.person_rounded,
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) return 'Enter your name';
+                                  if (v.trim().length < 2) return 'Name is too short';
+                                  return null;
+                                },
                               ),
                               const SizedBox(height: 16),
-                              TextField(
+                              ValidatedField(
                                 controller: _phoneCtrl,
+                                label: 'Phone Number',
+                                prefixIcon: Icons.phone_rounded,
                                 keyboardType: TextInputType.phone,
-                                style: tt.titleMedium,
-                                decoration: premiumInputDeco(
-                                    'Phone Number', Icons.phone_rounded),
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty || v.trim() == '+91') return 'Enter a valid phone number';
+                                  return null;
+                                },
                               ),
                               const SizedBox(height: 16),
-                              TextField(
+                              ValidatedField(
                                 controller: _factoryCtrl,
-                                style: tt.titleMedium,
-                                decoration: premiumInputDeco(
-                                    'Factory Name', Icons.domain_rounded),
+                                label: 'Factory Name',
+                                prefixIcon: Icons.domain_rounded,
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) return 'Enter your factory name';
+                                  return null;
+                                },
                               ),
                             ],
                           ),

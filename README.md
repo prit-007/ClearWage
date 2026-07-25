@@ -62,24 +62,45 @@ vivek_app/
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `APP_PORT` | Server bind address | `127.0.0.1:8081` |
-| `APP_ENV` | Environment (local/prod) | `local` |
+### Database (choose one)
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DATABASE_URL` | Full connection string (overrides individual fields) | No* |
+| `DB_HOST` | Postgres host | No* |
+| `DB_PORT` | Postgres port | No* |
+| `DB_USERNAME` | DB user | No* |
+| `DB_PASSWORD` | DB password | No* |
+| `DB_NAME` | Database name | No* |
+| `DB_QUERYSTRING` | Extra DSN params | No* |
 | `DB_DIALECT` | Driver name | `postgres` |
-| `DB_HOST` | Postgres host | `localhost` |
-| `DB_PORT` | Postgres port | `5432` |
-| `DB_USERNAME` | DB user | `vivek` |
-| `DB_PASSWORD` | DB password | `vivek_password` |
-| `DB_NAME` | Database name | `vivek_db` |
-| `DB_QUERYSTRING` | Extra DSN params | `sslmode=disable` |
-| `JWT_SECRET` | HMAC signing secret | *(required)* |
-| `TOKEN_TTL` | JWT expiry in hours | `720` (30 days) |
-| `FIREBASE_CREDENTIALS_PATH` | Path to Firebase Admin SDK JSON key | `firebase-credentials.json` |
-| `FIREBASE_PROJECT_ID` | Firebase project ID | `workforce-9b7de` |
 | `MIGRATION_DIR` | Migration path | `database/migrations` |
 
-Copy `.env.example` to `.env` and fill in the values.
+\* Either `DATABASE_URL` **or** the individual `DB_*` fields must be set.
+
+### Firebase Auth
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `FIREBASE_CRED_BASE64` | Base64-encoded Firebase Admin SDK JSON (or raw JSON) | No* |
+| `FIREBASE_CREDENTIALS_PATH` | Path to Firebase Admin SDK JSON file | No* |
+| `FIREBASE_PROJECT_ID` | Firebase project ID | No |
+
+\* Either `FIREBASE_CRED_BASE64` **or** `FIREBASE_CREDENTIALS_PATH` must be set. If `FIREBASE_CRED_BASE64` starts with `{`, it's treated as raw JSON directly. Base64 strings with newlines/whitespace are handled automatically.
+
+### General
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `APP_PORT` | Server bind address | `:8080` |
+| `APP_ENV` | Environment (local/prod) | `local` |
+| `IS_DEVELOPMENT` | Disables Secure cookies when true | `false` |
+| `DEBUG` | Enables verbose logging | `false` |
+| `JWT_SECRET` | HMAC signing secret | *(required)* |
+| `TOKEN_TTL` | JWT expiry in minutes | `720` (12h) |
+| `UPLOAD_DIR` | Upload directory | `./uploads` |
+
+Copy `.env.example` to `.env` and fill in the values for local development.
 
 ### Firebase Config Files
 
@@ -88,6 +109,47 @@ Place these files in the project (they are in `.gitignore` and must not be commi
 1. **`server/firebase-credentials.json`** — Firebase Admin SDK service account key (from Project Settings → Service accounts)
 2. **`app/android/app/google-services.json`** — Firebase Android config (from Project Settings → General → Your apps → Android)
 3. **`app/ios/Runner/GoogleService-Info.plist`** — Firebase iOS config (from Project Settings → General → Your apps → iOS)
+
+For production, use `FIREBASE_CRED_BASE64` instead of the file path (see **Production Deployment** below).
+
+---
+
+## Production Deployment
+
+### Recommended: Render (or Koyeb, Railway, Fly.io)
+
+**Root directory:** `server`
+
+| Setting | Value |
+|---------|-------|
+| **Build Command** | `go build -o vivek-app` |
+| **Start Command** | `./vivek-app api` |
+
+**Environment variables to set:**
+
+```env
+JWT_SECRET=<a-strong-random-secret>
+DATABASE_URL=postgresql://user:password@host:5432/db?sslmode=require
+FIREBASE_CRED_BASE64=<base64-of-firebase-credentials.json>
+MIGRATION_DIR=database/migrations
+DB_DIALECT=postgres
+```
+
+**Firebase credentials (no file on disk):**
+
+```bash
+# On your local machine, encode the credentials
+base64 -i firebase-credentials.json | tr -d '\n'
+# Paste the output into the FIREBASE_CRED_BASE64 env var on Render
+```
+
+You can also paste the raw JSON content directly — the server auto-detects JSON vs base64.
+
+**Run migrations:**
+
+```bash
+DATABASE_URL="<your-neon-url>" FIREBASE_CREDENTIALS_PATH=dummy.json go run ./app.go migrate up
+```
 
 ## Database Schema
 

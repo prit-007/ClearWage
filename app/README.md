@@ -19,6 +19,8 @@ Mobile frontend for the Factory Workforce Management SaaS.
    - `ios/Runner/GoogleService-Info.plist`
 3. These files are in `.gitignore` — never commit them
 
+> These are public-facing config files (client IDs, API keys) — technically safe to commit to private repos, but still best practice to keep them out of version control.
+
 ## Auth Flow
 
 1. User enters phone number → `FirebaseAuth.verifyPhoneNumber()`

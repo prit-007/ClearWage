@@ -17,7 +17,7 @@ func NewStaffService(querier repositories.Querier) *StaffService {
 
 func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, wageType, wageAmount, tenantID, employeeID string, dailyTargetUnits *int32) (repositories.Employee, error) {
 	wageAmt, _ := strconv.ParseFloat(wageAmount, 64)
-	return s.querier.CreateEmployee(ctx, repositories.CreateEmployeeParams{
+	emp, err := s.querier.CreateEmployee(ctx, repositories.CreateEmployeeParams{
 		TenantID:         tenantID,
 		Name:             name,
 		Phone:            phone,
@@ -26,6 +26,10 @@ func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, wageType
 		DailyTargetUnits: dailyTargetUnits,
 		Role:             "employee",
 	})
+	if err == nil {
+		logActivity(ctx, s.querier, tenantID, employeeID, "created_employee", "employee", &emp.ID, nil)
+	}
+	return emp, err
 }
 
 func (s *StaffService) GetEmployee(ctx context.Context, employeeID, tenantID string) (repositories.Employee, error) {
@@ -41,7 +45,7 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 		desig = &designation
 	}
 	wageAmt, _ := strconv.ParseFloat(wageAmount, 64)
-	return s.querier.UpdateEmployee(ctx, repositories.UpdateEmployeeParams{
+	emp, err := s.querier.UpdateEmployee(ctx, repositories.UpdateEmployeeParams{
 		ID:               employeeID,
 		TenantID:         tenantID,
 		Name:             name,
@@ -51,6 +55,10 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 		WageAmount:       wageAmt,
 		DailyTargetUnits: dailyTargetUnits,
 	})
+	if err == nil {
+		logActivity(ctx, s.querier, tenantID, employeeID, "updated_employee", "employee", &employeeID, nil)
+	}
+	return emp, err
 }
 
 func (s *StaffService) ListEmployees(ctx context.Context, tenantID string, limit, offset int32, query, status string) ([]repositories.Employee, error) {
@@ -95,8 +103,12 @@ func (s *StaffService) AssignManager(ctx context.Context, employeeID, tenantID s
 }
 
 func (s *StaffService) DeleteEmployee(ctx context.Context, employeeID, tenantID string) error {
-	return s.querier.SoftDeleteEmployee(ctx, repositories.SoftDeleteEmployeeParams{
+	err := s.querier.SoftDeleteEmployee(ctx, repositories.SoftDeleteEmployeeParams{
 		ID:       employeeID,
 		TenantID: tenantID,
 	})
+	if err == nil {
+		logActivity(ctx, s.querier, tenantID, employeeID, "deleted_employee", "employee", &employeeID, nil)
+	}
+	return err
 }

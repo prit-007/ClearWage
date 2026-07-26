@@ -1,10 +1,14 @@
+import 'dart:async';
+import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:pinput/pinput.dart';
 import '../../core/app_config.dart';
-import '../../core/widgets/validated_field.dart';
+import '../../core/token_storage.dart';
+import '../../core/widgets/firebase_phone_field.dart';
 import '../../providers/providers.dart';
 import 'register_page.dart';
 
@@ -16,7 +20,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
-  final _phoneCtrl = TextEditingController(text: '+91');
+  final _phoneCtrl = TextEditingController();
   final _otpCtrl = TextEditingController();
   final _otpFocusNode = FocusNode();
 
@@ -24,6 +28,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   bool _loading = false;
   String? _error;
   String? _verificationId;
+
+  // Countdown timer for OTP resend
+  Timer? _timer;
+  int _secondsRemaining = 60;
+  bool _canResend = false;
 
   late AnimationController _logoAnim;
   late Animation<double> _logoScale;
@@ -42,11 +51,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   @override
   void dispose() {
+    _timer?.cancel();
     _logoAnim.dispose();
     _phoneCtrl.dispose();
     _otpCtrl.dispose();
     _otpFocusNode.dispose();
     super.dispose();
+  }
+
+  void _startResendTimer() {
+    _timer?.cancel();
+    setState(() {
+      _secondsRemaining = 60;
+      _canResend = false;
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining > 0) {
+        setState(() => _secondsRemaining--);
+      } else {
+        setState(() => _canResend = true);
+        timer.cancel();
+      }
+    });
   }
 
   String _getGreeting() {
@@ -71,34 +97,43 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       if (idToken == null) throw Exception('Failed to get Firebase ID token');
       final token = await ref.read(authServiceProvider).signInWithFirebase(idToken);
       ref.read(tokenProvider.notifier).state = token.token;
+      TokenStorage.save(token.token);
       HapticFeedback.heavyImpact();
       if (mounted) Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
       if (!mounted) return;
+      HapticFeedback.vibrate();
       setState(() { _error = e.toString(); _loading = false; });
     }
   }
 
   Future<void> _requestOtp() async {
     HapticFeedback.mediumImpact();
-    final phone = _phoneCtrl.text.trim();
-    if (phone.isEmpty || phone == '+91') {
-      setState(() => _error = 'Please enter a valid phone number');
+    final raw = _phoneCtrl.text.trim();
+    if (raw.isEmpty || raw.length != 10) {
+      setState(() => _error = 'Please enter a valid 10-digit phone number');
       return;
     }
+    final phone = '+91$raw';
     setState(() { _loading = true; _error = null; _verificationId = null; });
     try {
       await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: _phoneCtrl.text.trim(),
+        phoneNumber: phone,
         timeout: const Duration(seconds: 60),
         verificationCompleted: _onAutoSignIn,
         verificationFailed: (e) {
           if (!mounted) return;
+          HapticFeedback.vibrate();
           setState(() { _error = e.message ?? 'Verification failed'; _loading = false; });
         },
         codeSent: (verificationId, _) {
           if (!mounted) return;
-          setState(() { _verificationId = verificationId; _sentOtp = true; _loading = false; });
+          setState(() {
+            _verificationId = verificationId;
+            _sentOtp = true;
+            _loading = false;
+          });
+          _startResendTimer();
           Future.delayed(const Duration(milliseconds: 300), () {
             if (mounted) _otpFocusNode.requestFocus();
           });
@@ -109,6 +144,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       );
     } catch (e) {
       if (!mounted) return;
+      HapticFeedback.vibrate();
       setState(() { _error = 'Cannot reach server. Check your connection.'; _loading = false; });
     }
   }
@@ -126,7 +162,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     } catch (e) {
       HapticFeedback.vibrate();
       if (!mounted) return;
-      setState(() { _error = e.toString(); _loading = false; });
+      setState(() { _error = 'Invalid verification code. Please try again.'; _loading = false; });
     }
   }
 
@@ -147,25 +183,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Server Configuration',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(PhosphorIconsFill.gear, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 12),
+                  Text('Server Configuration',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                ],
+              ),
+              const SizedBox(height: 20),
               TextField(
                 controller: urlCtrl,
+                style: const TextStyle(fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
                   labelText: 'Server Address',
                   hintText: 'http://192.168.1.100:8081',
                   filled: true,
+                  prefixIcon: Icon(PhosphorIconsRegular.globe, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
                   ),
                 ),
@@ -175,16 +217,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               FilledButton(
                 onPressed: () {
                   HapticFeedback.selectionClick();
-                  ref.read(serverUrlProvider.notifier).state =
-                      urlCtrl.text.trim();
+                  ref.read(serverUrlProvider.notifier).state = urlCtrl.text.trim();
                   Navigator.pop(context);
                 },
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(56),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                child: const Text('Save Configuration'),
+                child: const Text('Save Configuration', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -199,32 +239,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final tt = Theme.of(context).textTheme;
 
     final defaultPinTheme = PinTheme(
-      width: 56,
-      height: 60,
-      textStyle: tt.headlineSmall
-          ?.copyWith(fontWeight: FontWeight.w700, color: cs.primary),
+      width: 52,
+      height: 58,
+      textStyle: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: cs.primary),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.transparent),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
       ),
     );
 
     return Scaffold(
-      backgroundColor: cs.surface,
+      backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.settings_outlined, color: cs.onSurfaceVariant),
-            onPressed: _showServerDialog,
+            icon: Icon(PhosphorIconsRegular.gear, color: cs.onSurfaceVariant),
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              _showServerDialog();
+            },
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -233,48 +277,67 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 ScaleTransition(
                   scale: _logoScale,
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: cs.primaryContainer.withValues(alpha: 0.5),
+                      color: cs.primaryContainer.withValues(alpha: 0.4),
                       shape: BoxShape.circle,
+                      border: Border.all(color: cs.primary.withValues(alpha: 0.2), width: 2),
                     ),
-                    child: Icon(Icons.factory_rounded, size: 48, color: cs.primary),
+                    child: Icon(PhosphorIconsFill.factory, size: 44, color: cs.primary),
                   ),
                 ),
                 const SizedBox(height: 32),
                 Text(_getGreeting(),
-                    style: tt.titleMedium?.copyWith(
-                        color: cs.primary, fontWeight: FontWeight.w600)),
+                    style: tt.titleMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                Text('Sign In',
-                    style: tt.displaySmall?.copyWith(
-                        fontWeight: FontWeight.w800, letterSpacing: -1.0)),
+                Text('Workforce Portal',
+                    style: tt.displaySmall?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -1.0)),
                 const SizedBox(height: 8),
-                Text('Enter your details to manage your workforce.',
-                    style: tt.bodyLarge?.copyWith(color: cs.onSurfaceVariant)),
+                Text(
+                  _sentOtp
+                      ? 'Enter the 6-digit code sent to +91${_phoneCtrl.text}'
+                      : 'Enter your phone number to securely access your workspace.',
+                  style: tt.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+                ),
                 const SizedBox(height: 40),
+
                 AnimatedSize(
                   duration: const Duration(milliseconds: 400),
                   curve: Curves.fastOutSlowIn,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                      ValidatedField(
+                    children: [
+                      FirebasePhoneField(
                         controller: _phoneCtrl,
-                        label: 'Phone Number',
-                        prefixIcon: Icons.phone_rounded,
-                        keyboardType: TextInputType.phone,
+                        label: 'Mobile Number',
                         enabled: !_sentOtp,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty || v.trim() == '+91') return 'Enter a valid phone number';
-                          return null;
-                        },
                       ),
+
+                      // OTP Code Section
                       if (_sentOtp) ...[
-                        const SizedBox(height: 24),
-                        Text('One-Time Password',
-                            style: tt.labelLarge
-                                ?.copyWith(color: cs.onSurfaceVariant)),
+                        const SizedBox(height: 28),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('SECURITY CODE',
+                                style: tt.labelSmall?.copyWith(
+                                  color: cs.primary,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.0,
+                                )),
+                            TextButton(
+                              onPressed: () {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  _sentOtp = false;
+                                  _otpCtrl.clear();
+                                  _error = null;
+                                });
+                              },
+                              child: const Text('Change Phone', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 12),
                         Center(
                           child: Pinput(
@@ -288,8 +351,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 color: cs.surface,
                                 boxShadow: [
                                   BoxShadow(
-                                      color: cs.primary.withValues(alpha: 0.1),
-                                      blurRadius: 8,
+                                      color: cs.primary.withValues(alpha: 0.15),
+                                      blurRadius: 12,
                                       spreadRadius: 2)
                                 ],
                               ),
@@ -297,24 +360,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             onCompleted: (pin) => _verifyOtp(),
                           ),
                         ),
+                        const SizedBox(height: 16),
+
+                        // Resend OTP Counter
+                        Center(
+                          child: _canResend
+                              ? TextButton.icon(
+                                  onPressed: _loading ? null : _requestOtp,
+                                  icon: Icon(PhosphorIconsRegular.arrowsClockwise, size: 16, color: cs.primary),
+                                  label: Text('Resend Code', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold)),
+                                )
+                              : Text(
+                                  'Resend code in $_secondsRemaining',
+                                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
+                                ),
+                        ),
                       ],
+
+                      // Error Alert Box
                       if (_error != null) ...[
                         const SizedBox(height: 24),
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                              color: cs.errorContainer.withValues(alpha: 0.8),
-                              borderRadius: BorderRadius.circular(16)),
+                            color: cs.errorContainer.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: cs.error.withValues(alpha: 0.3)),
+                          ),
                           child: Row(
                             children: [
-                              Icon(Icons.error_outline_rounded,
-                                  color: cs.onErrorContainer),
+                              Icon(PhosphorIconsFill.warningCircle, color: cs.onErrorContainer, size: 22),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Text(_error!,
-                                    style: tt.bodyMedium?.copyWith(
-                                        color: cs.onErrorContainer,
-                                        fontWeight: FontWeight.w500)),
+                                child: Text(
+                                  _error!,
+                                  style: tt.bodyMedium?.copyWith(
+                                    color: cs.onErrorContainer,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -323,28 +407,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 40),
                 FilledButton(
-                  onPressed:
-                      _loading ? null : (_sentOtp ? _verifyOtp : _requestOtp),
+                  onPressed: _loading ? null : (_sentOtp ? _verifyOtp : _requestOtp),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(60),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
                   ),
                   child: _loading
                       ? const SizedBox(
                           height: 24,
                           width: 24,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 3, color: Colors.white))
+                          child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
                       : Text(
-                          _sentOtp ? 'Secure Login' : 'Continue',
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5),
+                          _sentOtp ? 'Verify & Authenticate' : 'Continue with Phone',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                         ),
                 ),
                 const SizedBox(height: 24),
@@ -353,25 +432,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text("Don't have an account? ",
-                          style: tt.bodyMedium
-                              ?.copyWith(color: cs.onSurfaceVariant)),
+                          style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
                       TextButton(
                         onPressed: () {
                           HapticFeedback.selectionClick();
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                                builder: (_) => const RegisterScreen()),
+                            MaterialPageRoute(builder: (_) => const RegisterScreen()),
                           );
                         },
-                        style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 8)),
-                        child: const Text('Create Account',
-                            style: TextStyle(fontWeight: FontWeight.w700)),
+                        style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                        child: const Text('Create Account', style: TextStyle(fontWeight: FontWeight.w800)),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 24),
               ],
             ),
           ),

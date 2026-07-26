@@ -84,6 +84,7 @@ func (s *AuthService) Register(ctx context.Context, params RegisterParams) (Veri
 	if err != nil {
 		return VerifyResult{}, fmt.Errorf("failed to create owner: %w", err)
 	}
+	logActivity(ctx, s.queries, tenant.ID, emp.ID, "registered_owner", "employee", &emp.ID, nil)
 	jwtToken, err := pkg.GenerateToken(s.cfg, tenant.ID, emp.ID, "owner", s.tokenTTL())
 	if err != nil {
 		return VerifyResult{}, fmt.Errorf("failed to generate token: %w", err)

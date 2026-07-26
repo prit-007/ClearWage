@@ -39,6 +39,8 @@ class LedgerService {
   }
 
   Future<void> settleAccount(String employeeId) async {
-    await _client.post('/api/v1/ledger/$employeeId/settle');
+    final now = DateTime.now();
+    final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    await _client.post('/api/v1/ledger/$employeeId/settle', body: {'date': date});
   }
 }

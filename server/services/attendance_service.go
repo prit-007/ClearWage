@@ -33,7 +33,7 @@ func (s *AttendanceService) resolveShiftID(ctx context.Context, tenantID, employ
 func (s *AttendanceService) CreateAttendance(ctx context.Context, tenantID, employeeID, date, shiftID, status string, checkIn, checkOut *time.Time, overtimeHours, overtimeRate string, unitsProduced *int32, editedBy string) (repositories.Attendance, error) {
 	otHours, _ := strconv.ParseFloat(overtimeHours, 64)
 	otRate, _ := strconv.ParseFloat(overtimeRate, 64)
-	return s.querier.CreateAttendance(ctx, repositories.CreateAttendanceParams{
+	att, err := s.querier.CreateAttendance(ctx, repositories.CreateAttendanceParams{
 		TenantID:               tenantID,
 		EmployeeID:             employeeID,
 		Date:                   date,
@@ -45,6 +45,10 @@ func (s *AttendanceService) CreateAttendance(ctx context.Context, tenantID, empl
 		OvertimeRateMultiplier: otRate,
 		UnitsProduced:          unitsProduced,
 	})
+	if err == nil {
+		logActivity(ctx, s.querier, tenantID, editedBy, "marked_attendance", "attendance", &att.ID, nil)
+	}
+	return att, err
 }
 
 func (s *AttendanceService) ListByDate(ctx context.Context, tenantID, date string) ([]repositories.Attendance, error) {
@@ -74,7 +78,7 @@ func (s *AttendanceService) UpdateAttendance(ctx context.Context, id, tenantID, 
 	if editedBy != "" {
 		eb = &editedBy
 	}
-	return s.querier.UpdateAttendance(ctx, repositories.UpdateAttendanceParams{
+	att, err := s.querier.UpdateAttendance(ctx, repositories.UpdateAttendanceParams{
 		ID:                     id,
 		TenantID:               tenantID,
 		ShiftID:                sID,
@@ -86,6 +90,10 @@ func (s *AttendanceService) UpdateAttendance(ctx context.Context, id, tenantID, 
 		UnitsProduced:          unitsProduced,
 		EditedBy:               eb,
 	})
+	if err == nil {
+		logActivity(ctx, s.querier, tenantID, editedBy, "updated_attendance", "attendance", &id, nil)
+	}
+	return att, err
 }
 
 func (s *AttendanceService) BulkUpsert(ctx context.Context, tenantID, employeeID, date, shiftID, status string, overtimeHours, overtimeRate string, unitsProduced *int32) ([]repositories.Attendance, error) {

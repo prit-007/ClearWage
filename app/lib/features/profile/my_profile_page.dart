@@ -4,32 +4,27 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../core/token_storage.dart';
 import '../../models/attendance_model.dart';
 import '../../providers/providers.dart';
+import '../../core/helpers.dart';
 
-final myProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
-  final client = ref.watch(apiClientProvider);
-  final res = await client.get('/api/v1/me');
-  return res['data'] as Map<String, dynamic>? ?? {};
+final myProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) {
+  return ref.watch(profileServiceProvider).getProfile();
 });
 
-final myAttendanceProvider = FutureProvider.autoDispose<List<Attendance>>((ref) async {
+final myAttendanceProvider = FutureProvider.autoDispose<List<Attendance>>((ref) {
   final now = DateTime.now();
   final start = '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
   final end = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-  final client = ref.watch(apiClientProvider);
-  final res = await client.get('/api/v1/me/attendance', query: {'start_date': start, 'end_date': end});
-  final list = (res['data'] as List<dynamic>?) ?? [];
-  return list.map((e) => Attendance.fromJson(e as Map<String, dynamic>)).toList();
+  return ref.watch(profileServiceProvider).getAttendance(start: start, end: end);
 });
 
-final myLedgerProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+final myLedgerProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) {
   final now = DateTime.now();
   final start = '${now.year}-01-01';
   final end = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-  final client = ref.watch(apiClientProvider);
-  final res = await client.get('/api/v1/me/ledger', query: {'start_date': start, 'end_date': end});
-  return res['data'] as Map<String, dynamic>? ?? {};
+  return ref.watch(profileServiceProvider).getLedger(start: start, end: end);
 });
 
 class MyProfileScreen extends ConsumerStatefulWidget {
@@ -94,7 +89,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
         data: (data) {
           final name = data['name'] as String? ?? 'User';
           final role = data['role'] as String? ?? '';
-          final initials = name.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase();
+          final initials = getInitials(name);
 
           return NestedScrollView(
             physics: const BouncingScrollPhysics(),
@@ -231,6 +226,7 @@ class _ProfileTab extends ConsumerWidget {
             onPressed: () async {
               await ref.read(authServiceProvider).logout();
               ref.read(tokenProvider.notifier).state = null;
+              TokenStorage.clear();
               if (context.mounted) Navigator.of(context).popUntil((route) => route.isFirst);
             },
             icon: const Icon(PhosphorIconsRegular.signOut),

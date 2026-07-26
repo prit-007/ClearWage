@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/advance_request_model.dart';
 import '../../providers/providers.dart';
+import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/helpers.dart';
 
 final advanceRequestsProvider = FutureProvider.autoDispose<List<AdvanceRequest>>((ref) {
   return ref.watch(advanceRequestServiceProvider).list();
@@ -59,7 +61,7 @@ class AdvanceRequestsScreen extends ConsumerWidget {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final req = requests[index];
-                            return _FluidSlideIn(
+                            return FluidSlideIn(
                               delay: index * 80,
                               child: _AdvanceRequestCard(cs: cs, tt: tt, request: req, onAction: () => _handleActionSheet(context, ref, req)),
                             );
@@ -96,7 +98,7 @@ Future<void> _handleActionSheet(BuildContext context, WidgetRef ref, AdvanceRequ
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2))),
+              sheetHandle(cs),
               const SizedBox(height: 24),
               CircleAvatar(radius: 32, backgroundColor: cs.primaryContainer, child: PhosphorIcon(PhosphorIconsDuotone.handCoins, size: 32, color: cs.primary)),
               const SizedBox(height: 16),
@@ -162,7 +164,7 @@ Future<void> _handleActionSheet(BuildContext context, WidgetRef ref, AdvanceRequ
     }
     ref.invalidate(advanceRequestsProvider);
   } catch (e) {
-    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    showError(context, e);
   }
 }
 
@@ -246,24 +248,4 @@ class _AdvanceRequestCard extends StatelessWidget {
   }
 }
 
-class _FluidSlideIn extends StatelessWidget {
-  final Widget child;
-  final int delay;
-  const _FluidSlideIn({required this.child, this.delay = 0});
 
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 600 + delay),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value.clamp(0.0, 1.0),
-          child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child),
-        );
-      },
-      child: child,
-    );
-  }
-}

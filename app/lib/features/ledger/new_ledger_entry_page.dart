@@ -5,6 +5,10 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../providers/providers.dart';
+import '../../models/employee_model.dart';
+import '../../services/staff_service.dart';
+import 'ledger_list_page.dart';
+import '../../core/helpers.dart';
 
 class NewLedgerEntryScreen extends ConsumerStatefulWidget {
   const NewLedgerEntryScreen({super.key});
@@ -16,15 +20,15 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
   bool _isJama = true;
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
-  final _employeeCtrl = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   bool _saving = false;
+  String? _selectedEmployeeId;
+  String? _selectedEmployeeName;
 
   @override
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
-    _employeeCtrl.dispose();
     super.dispose();
   }
 
@@ -36,7 +40,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
 
   Future<void> _save() async {
     final amount = double.tryParse(_amountController.text.trim());
-    if (_employeeCtrl.text.trim().isEmpty || amount == null || amount <= 0) {
+    if (_selectedEmployeeId == null || amount == null || amount <= 0) {
       setState(() {});
       HapticFeedback.vibrate();
       return;
@@ -46,19 +50,133 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
     try {
       final dateStr = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
       await ref.read(ledgerServiceProvider).create({
-        'employee_id': _employeeCtrl.text.trim(),
+        'employee_id': _selectedEmployeeId!,
         'date': dateStr,
         'type': _isJama ? 'jama' : 'udhaar',
         'amount': double.tryParse(_amountController.text) ?? 0,
         'note': _noteController.text.trim(),
       });
+      ref.invalidate(ledgerListProvider);
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+        showError(context, e);
         setState(() => _saving = false);
       }
     }
+  }
+
+  void _showEmployeePicker(BuildContext context, ColorScheme cs) {
+    final searchCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx, setSheetState) {
+          final asyncData = ref.watch(employeeListProvider);
+          return DraggableScrollableSheet(
+            initialChildSize: 0.75,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            expand: false,
+            builder: (_, scrollCtrl) {
+              return Padding(
+                padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    Container(
+                      width: 40, height: 4,
+                      decoration: BoxDecoration(
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: TextField(
+                        controller: searchCtrl,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          hintText: 'Search employees...',
+                          prefixIcon: Icon(PhosphorIconsRegular.magnifyingGlass, color: cs.onSurfaceVariant),
+                          filled: true,
+                          fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        onChanged: (_) => setSheetState(() {}),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: asyncData.when(
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (e, _) => Center(child: Text('$e')),
+                        data: (employees) {
+                          final query = searchCtrl.text.toLowerCase().trim();
+                          final filtered = query.isEmpty
+                              ? employees
+                              : employees.where((e) =>
+                                  e.name.toLowerCase().contains(query)).toList();
+                          if (filtered.isEmpty) {
+                            return Center(
+                              child: Text('No employees found',
+                                  style: TextStyle(color: cs.onSurfaceVariant)),
+                            );
+                          }
+                          return ListView.separated(
+                            controller: scrollCtrl,
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            itemCount: filtered.length,
+                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            itemBuilder: (_, i) {
+                              final emp = filtered[i];
+                              final isSelected = emp.id == _selectedEmployeeId;
+                              return ListTile(
+                                selected: isSelected,
+                                selectedTileColor: cs.primaryContainer.withValues(alpha: 0.3),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                leading: CircleAvatar(
+                                  backgroundColor: cs.primaryContainer,
+                                  child: Text(
+                                    emp.name.isNotEmpty ? emp.name[0].toUpperCase() : '?',
+                                    style: TextStyle(fontWeight: FontWeight.w700, color: cs.primary),
+                                  ),
+                                ),
+                                title: Text(emp.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                subtitle: emp.designation != null ? Text(emp.designation!) : null,
+                                trailing: isSelected
+                                    ? Icon(PhosphorIconsFill.checkCircle, color: cs.primary)
+                                    : null,
+                                onTap: () {
+                                  setState(() {
+                                    _selectedEmployeeId = emp.id;
+                                    _selectedEmployeeName = emp.name;
+                                  });
+                                  HapticFeedback.selectionClick();
+                                  Navigator.pop(ctx);
+                                },
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        });
+      },
+    );
   }
 
   @override
@@ -204,11 +322,40 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                         }
                       },
                     ),
-                    ValidatedField(
-                      controller: _employeeCtrl,
-                      label: 'Employee ID',
-                      prefixIcon: PhosphorIconsRegular.identificationBadge,
-                      validator: (v) => v == null || v.trim().isEmpty ? 'Enter employee ID' : null,
+                    InkWell(
+                      onTap: () => _showEmployeePicker(context, cs),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: cs.surface,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(PhosphorIconsRegular.identificationBadge, color: cs.onSurfaceVariant),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Employee',
+                                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _selectedEmployeeName ?? 'Select Employee',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: _selectedEmployeeName != null ? cs.onSurface : cs.onSurfaceVariant,
+                                        fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(PhosphorIconsRegular.caretDown, color: cs.onSurfaceVariant, size: 16),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextField(

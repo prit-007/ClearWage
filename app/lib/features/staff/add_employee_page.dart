@@ -4,11 +4,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
+import '../../models/employee_model.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/validated_field.dart';
+import '../../core/helpers.dart';
 
 class AddEmployeeScreen extends ConsumerStatefulWidget {
-  const AddEmployeeScreen({super.key});
+  final Employee? employee;
+  const AddEmployeeScreen({super.key, this.employee});
   @override
   ConsumerState<AddEmployeeScreen> createState() => _AddEmployeeScreenState();
 }
@@ -18,8 +21,23 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   final _phoneCtrl = TextEditingController();
   final _desigCtrl = TextEditingController();
   final _wageCtrl = TextEditingController();
-  String _wageType = 'daily';
+  late String _wageType;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.employee;
+    if (e != null) {
+      _nameCtrl.text = e.name;
+      _phoneCtrl.text = e.phone;
+      _desigCtrl.text = e.designation ?? '';
+      _wageCtrl.text = e.wageAmount == 0 ? '' : e.wageAmount.toStringAsFixed(0);
+      _wageType = e.wageType;
+    } else {
+      _wageType = 'daily';
+    }
+  }
 
   @override
   void dispose() {
@@ -49,18 +67,23 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     HapticFeedback.heavyImpact();
     setState(() => _saving = true);
     try {
-      await ref.read(staffServiceProvider).create({
+      final body = {
         'name': _nameCtrl.text.trim(),
         'phone': _phoneCtrl.text.trim(),
         'designation': _desigCtrl.text.trim(),
         'wage_type': _wageType,
-        'wage_amount': double.tryParse(_wageCtrl.text) ?? 0,
-      });
+        'wage_amount': _wageCtrl.text.trim().isEmpty ? '0' : _wageCtrl.text.trim(),
+      };
+      final e = widget.employee;
+      if (e != null) {
+        await ref.read(staffServiceProvider).update(e.id, body);
+      } else {
+        await ref.read(staffServiceProvider).create(body);
+      }
+      ref.invalidate(employeeListProvider);
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-      }
+      showError(context, e);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -85,7 +108,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
           icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Onboard Staff', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+        title: Text(widget.employee != null ? 'Edit Employee' : 'Onboard Staff', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
         centerTitle: true,
       ),
       body: Stack(

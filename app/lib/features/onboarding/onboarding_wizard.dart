@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/widgets/validated_field.dart';
+import '../../providers/providers.dart';
 
-class OnboardingWizard extends StatefulWidget {
+class OnboardingWizard extends ConsumerStatefulWidget {
   const OnboardingWizard({super.key});
   @override
-  State<OnboardingWizard> createState() => _OnboardingWizardState();
+  ConsumerState<OnboardingWizard> createState() => _OnboardingWizardState();
 }
 
-class _OnboardingWizardState extends State<OnboardingWizard> {
+class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   int _currentStep = 0;
   final int _totalSteps = 4;
   final _companyNameCtrl = TextEditingController();
@@ -24,6 +26,14 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
     _contactCtrl.dispose();
     _pageCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _createDefaultShifts() async {
+    try {
+      final svc = ref.read(shiftServiceProvider);
+      await svc.create({'name': 'General Shift', 'start_time': '08:00', 'end_time': '17:00', 'grace_minutes': 15, 'is_default': true});
+      await svc.create({'name': 'Night Shift', 'start_time': '22:00', 'end_time': '06:00', 'crosses_midnight': true, 'grace_minutes': 15, 'is_default': false});
+    } catch (_) {}
   }
 
   void _nextStep() {
@@ -41,7 +51,9 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
       setState(() => _currentStep++);
     } else {
       HapticFeedback.heavyImpact();
-      Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+      _createDefaultShifts().then((_) {
+        if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+      });
     }
   }
 

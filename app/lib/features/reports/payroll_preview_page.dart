@@ -1,9 +1,11 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
+import '../../core/helpers.dart';
+import '../../core/widgets/bottom_blur_bar.dart';
+import '../../core/widgets/loading_button.dart';
 
 class PayrollPreviewScreen extends ConsumerStatefulWidget {
   const PayrollPreviewScreen({super.key});
@@ -47,7 +49,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
       await ref.read(payrollServiceProvider).lockMonth(startDate: _startStr, endDate: _endStr);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payroll locked successfully')));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      showError(context, e);
     } finally {
       if (mounted) setState(() => _locking = false);
     }
@@ -164,33 +166,8 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
               ],
             ],
           ),
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 16),
-                  decoration: BoxDecoration(
-                    color: cs.surface.withValues(alpha: 0.8),
-                    border: Border(top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3))),
-                  ),
-                  child: FilledButton.icon(
-                    onPressed: _locking ? null : _lockPayroll,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
-                      minimumSize: const Size.fromHeight(60),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
-                    ),
-                    icon: _locking
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(PhosphorIconsBold.lockKey, color: Colors.white),
-                    label: Text(_locking ? 'Locking...' : 'Lock & Generate Slips', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                  ),
-                ),
-              ),
-            ),
+          BottomBlurBar(
+            child: LoadingButton(loading: _locking, onPressed: _lockPayroll, label: 'Lock & Generate Slips', icon: PhosphorIconsBold.lockKey, backgroundColor: const Color(0xFF10B981)),
           ),
         ],
       ),
@@ -236,7 +213,10 @@ class _PayrollSummaryGlassCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('NET PAYABLE', style: tt.labelMedium?.copyWith(color: const Color(0xFF10B981), fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-                Text('₹${net.toStringAsFixed(0)}', style: tt.headlineMedium?.copyWith(color: const Color(0xFF10B981), fontWeight: FontWeight.w900, letterSpacing: -1.0)),
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: Text('₹${net.toStringAsFixed(0)}', overflow: TextOverflow.ellipsis, style: tt.headlineMedium?.copyWith(color: const Color(0xFF10B981), fontWeight: FontWeight.w900, letterSpacing: -1.0)),
+                ),
               ],
             ),
           ),
@@ -257,7 +237,10 @@ class _PayStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 18, letterSpacing: -0.5)),
+        Flexible(
+          fit: FlexFit.loose,
+          child: Text(value, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 18, letterSpacing: -0.5)),
+        ),
         const SizedBox(height: 4),
         Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
       ],
@@ -300,7 +283,7 @@ class _EditablePayrollRowState extends State<_EditablePayrollRow> {
 
   @override
   Widget build(BuildContext context) {
-    final initials = widget.name.split(' ').map((e) => e[0]).take(2).join();
+    final initials = getInitials(widget.name);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -331,7 +314,7 @@ class _EditablePayrollRowState extends State<_EditablePayrollRow> {
               ),
             ),
             Container(
-              width: 100,
+              constraints: const BoxConstraints(maxWidth: 100),
               padding: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
                 color: _isFocused ? widget.cs.surface : widget.cs.surfaceContainerHighest.withValues(alpha: 0.3),

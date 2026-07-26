@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/helpers.dart';
 
 final defaultersProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   return ref.watch(reportServiceProvider).defaulters();
@@ -97,7 +98,7 @@ class _DefaulterCard extends StatelessWidget {
     final name = data['name'] as String? ?? data['employee_name'] as String? ?? 'Unknown';
     final outstanding = (data['outstanding'] as num?)?.toDouble() ?? 0;
     final wage = (data['wage'] as num?)?.toDouble() ?? data['wage_amount'] as num? ?? 0;
-    final initials = name.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase();
+    final initials = getInitials(name);
     const dangerColor = Color(0xFFEF4444);
 
     return Container(

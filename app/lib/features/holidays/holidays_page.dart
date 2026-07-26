@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../models/holiday_model.dart';
 import '../../providers/providers.dart';
+import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/helpers.dart';
 
 final holidaysListProvider = FutureProvider.autoDispose<List<Holiday>>((ref) {
   return ref.watch(holidayServiceProvider).list();
@@ -64,7 +66,7 @@ class HolidaysScreen extends ConsumerWidget {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final h = holidays[index];
-                            return _FluidSlideIn(
+                            return FluidSlideIn(
                               delay: index * 80,
                               child: _PremiumHolidayCard(cs: cs, tt: tt, holiday: h, onDelete: () => _deleteHoliday(context, ref, h.id)),
                             );
@@ -94,7 +96,7 @@ Future<void> _showHolidaySheet(BuildContext context, WidgetRef ref) async {
       await ref.read(holidayServiceProvider).create(result);
       ref.invalidate(holidaysListProvider);
     } catch (e) {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      showError(context, e);
     }
   }
 }
@@ -225,7 +227,7 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2)))),
+              Center(child: sheetHandle(cs)),
               const SizedBox(height: 24),
               Text('Mark Factory Holiday', style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
               const SizedBox(height: 32),
@@ -328,24 +330,4 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
   }
 }
 
-class _FluidSlideIn extends StatelessWidget {
-  final Widget child;
-  final int delay;
-  const _FluidSlideIn({required this.child, this.delay = 0});
 
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 600 + delay),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value.clamp(0.0, 1.0),
-          child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child),
-        );
-      },
-      child: child,
-    );
-  }
-}

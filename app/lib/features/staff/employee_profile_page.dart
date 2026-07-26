@@ -1,9 +1,12 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
+import '../../models/employee_model.dart';
+import '../../core/helpers.dart';
+import '../../core/widgets/bottom_blur_bar.dart';
+import 'add_employee_page.dart';
 
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -33,26 +36,41 @@ class _EmployeeProfileScreenState
   }
 
   Future<void> _loadProfile() async {
+    final now = DateTime.now();
+    final start = '${now.year}-01-01';
+    final end = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    Map<String, dynamic>? data;
+    Map<String, dynamic>? empJson;
     try {
-      final data = await ref.read(staffServiceProvider).getProfile(widget.employeeId);
-      final emp = await ref.read(staffServiceProvider).get(widget.employeeId);
-      final now = DateTime.now();
-      final start = '${now.year}-01-01';
-      final end = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-      final attList = await ref.read(attendanceServiceProvider).listByEmployee(widget.employeeId, startDate: start, endDate: end);
-      final ledgerList = await ref.read(ledgerServiceProvider).listByEmployee(widget.employeeId, startDate: start, endDate: end);
-      final bal = await ref.read(ledgerServiceProvider).getBalance(widget.employeeId);
-      if (mounted) {
-        setState(() {
-          _profile = {...data, ...emp.toJson()};
-          _attendance = attList.map((a) => a.toJson()).toList();
-          _ledger = ledgerList.map((l) => l.toJson()).toList();
-          _balance = bal;
-          _loading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      data = await ref.read(staffServiceProvider).getProfile(widget.employeeId);
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
+    try {
+      empJson = (await ref.read(staffServiceProvider).get(widget.employeeId)).toJson();
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
+    List<Map<String, dynamic>>? attList;
+    try {
+      final list = await ref.read(attendanceServiceProvider).listByEmployee(widget.employeeId, startDate: start, endDate: end);
+      attList = list.map((a) => a.toJson()).toList();
+    } catch (_) {}
+    List<Map<String, dynamic>>? ledgerList;
+    try {
+      final list = await ref.read(ledgerServiceProvider).listByEmployee(widget.employeeId, startDate: start, endDate: end);
+      ledgerList = list.map((l) => l.toJson()).toList();
+    } catch (_) {}
+    double? bal;
+    try { bal = await ref.read(ledgerServiceProvider).getBalance(widget.employeeId); } catch (_) {}
+    if (mounted) {
+      setState(() {
+        _profile = data != null ? {...data, ...?empJson} : empJson;
+        _attendance = attList;
+        _ledger = ledgerList;
+        _balance = bal;
+        _loading = false;
+      });
     }
   }
 
@@ -86,7 +104,7 @@ class _EmployeeProfileScreenState
     final role = _profile?['role'] as String? ?? '';
     final designation = _profile?['designation'] as String? ?? role;
     final phone = _profile?['phone'] as String? ?? '';
-    final initials = name.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase();
+    final initials = getInitials(name);
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
@@ -108,7 +126,19 @@ class _EmployeeProfileScreenState
                   IconButton(
                     icon: Icon(PhosphorIconsRegular.pencilSimple,
                         color: cs.onSurfaceVariant),
-                    onPressed: () {},
+                    onPressed: () async {
+                      final emp = _profile;
+                      if (emp == null || emp['id'] == null) return;
+                      final result = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AddEmployeeScreen(
+                            employee: Employee.fromJson(emp),
+                          ),
+                        ),
+                      );
+                      if (result == true && mounted) _loadProfile();
+                    },
                   ),
                 ],
               ),
@@ -157,25 +187,8 @@ class _EmployeeProfileScreenState
               ],
             ),
           ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter:
-                    ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(24, 16, 24,
-                      MediaQuery.of(context).padding.bottom + 16),
-                  decoration: BoxDecoration(
-                    color: cs.surface.withValues(alpha: 0.8),
-                    border: Border(
-                        top: BorderSide(
-                            color: cs.outlineVariant
-                                .withValues(alpha: 0.3))),
-                  ),
-                  child: Row(
+          BottomBlurBar(
+            child: Row(
                     children: [
                       Expanded(
                         child: OutlinedButton(
@@ -186,7 +199,7 @@ class _EmployeeProfileScreenState
                               if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account settled')));
                               _loadProfile();
                             } catch (e) {
-                              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+                              showError(context, e);
                             }
                           },
                           style: OutlinedButton.styleFrom(
@@ -215,7 +228,7 @@ class _EmployeeProfileScreenState
                               await ref.read(payrollServiceProvider).generatePayslip(employeeId: widget.employeeId, startDate: start, endDate: end);
                               if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payslip generated')));
                             } catch (e) {
-                              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+                              showError(context, e);
                             }
                           },
                           style: FilledButton.styleFrom(
@@ -229,12 +242,9 @@ class _EmployeeProfileScreenState
                               style: TextStyle(
                                   fontWeight: FontWeight.w700)),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+                    ),
+                  ],
+                                  ),
           ),
         ],
       ),
@@ -377,7 +387,7 @@ class _InfoTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wageType = profile?['wage_type'] as String? ?? '';
-    final wageAmount = profile?['wage_amount'] as String? ?? profile?['wage_amount']?.toString() ?? '0';
+    final wageAmount = profile?['wage_amount']?.toString() ?? '0';
     final designation = profile?['designation'] as String? ?? profile?['role'] as String? ?? '';
     final manager = profile?['manager_name'] as String? ?? 'Not assigned';
     final shiftName = profile?['shift_name'] as String? ?? 'Not assigned';

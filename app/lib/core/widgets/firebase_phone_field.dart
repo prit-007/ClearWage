@@ -1,37 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class ValidatedField extends StatefulWidget {
+class FirebasePhoneField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
-  final String? hint;
-  final IconData? prefixIcon;
-  final TextInputType? keyboardType;
   final bool enabled;
-  final bool obscureText;
-  final int? maxLines;
-  final String? Function(String?)? validator;
-  final ValueChanged<String>? onChanged;
 
-  const ValidatedField({
+  const FirebasePhoneField({
     super.key,
     required this.controller,
     required this.label,
-    this.hint,
-    this.prefixIcon,
-    this.keyboardType,
     this.enabled = true,
-    this.obscureText = false,
-    this.maxLines,
-    this.validator,
-    this.onChanged,
   });
 
   @override
-  State<ValidatedField> createState() => _ValidatedFieldState();
+  State<FirebasePhoneField> createState() => _FirebasePhoneFieldState();
 }
 
-class _ValidatedFieldState extends State<ValidatedField> {
+class _FirebasePhoneFieldState extends State<FirebasePhoneField> {
   final FocusNode _focusNode = FocusNode();
   bool _isFocused = false;
 
@@ -59,14 +45,18 @@ class _ValidatedFieldState extends State<ValidatedField> {
       padding: const EdgeInsets.only(bottom: 24),
       child: FormField<String>(
         initialValue: widget.controller.text,
-        validator: widget.validator,
+        validator: (value) {
+          final text = widget.controller.text.trim();
+          if (text.isEmpty) return 'Enter your mobile number';
+          if (text.length != 10) return 'Number must be exactly 10 digits';
+          return null;
+        },
         builder: (FormFieldState<String> state) {
           final hasError = state.hasError;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. External, Static Label (Premium SaaS Standard)
               Text(
                 widget.label,
                 style: TextStyle(
@@ -76,8 +66,6 @@ class _ValidatedFieldState extends State<ValidatedField> {
                 ),
               ),
               const SizedBox(height: 8),
-
-              // 2. Animated Container for Tactile Focus States
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeOutCubic,
@@ -106,50 +94,71 @@ class _ValidatedFieldState extends State<ValidatedField> {
                         ]
                       : [],
                 ),
-                child: TextField(
-                  controller: widget.controller,
-                  focusNode: _focusNode,
-                  keyboardType: widget.keyboardType,
-                  enabled: widget.enabled,
-                  obscureText: widget.obscureText,
-                  maxLines: widget.maxLines,
-                  style: tt.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: widget.enabled ? cs.onSurface : cs.onSurfaceVariant,
-                  ),
-                  onChanged: (val) {
-                    state.didChange(val);
-                    if (widget.onChanged != null) widget.onChanged!(val);
-                  },
-                  decoration: InputDecoration(
-                    hintText: widget.hint,
-                    hintStyle: TextStyle(
-                      color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                      fontWeight: FontWeight.w400,
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                        borderRadius: const BorderRadius.horizontal(left: Radius.circular(15)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('\u{1F1EE}\u{1F1F3}', style: TextStyle(fontSize: 18)),
+                          const SizedBox(width: 8),
+                          Text(
+                            '+91',
+                            style: tt.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    errorBorder: InputBorder.none,
-                    focusedErrorBorder: InputBorder.none,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    prefixIcon: widget.prefixIcon != null
-                        ? Icon(
-                            widget.prefixIcon,
-                            size: 20,
-                            color: hasError
-                                ? cs.error
-                                : _isFocused
-                                    ? cs.primary
-                                    : cs.onSurfaceVariant,
-                          )
-                        : null,
-                  ),
+                    Expanded(
+                      child: TextField(
+                        controller: widget.controller,
+                        focusNode: _focusNode,
+                        keyboardType: TextInputType.phone,
+                        enabled: widget.enabled,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(10),
+                        ],
+                        style: tt.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.5,
+                          color: widget.enabled ? cs.onSurface : cs.onSurfaceVariant,
+                        ),
+                        onChanged: (val) {
+                          state.didChange(val);
+                          if (val.length == 10) {
+                            HapticFeedback.lightImpact();
+                            _focusNode.unfocus();
+                          }
+                        },
+                        decoration: InputDecoration(
+                          hintText: '98765 43210',
+                          hintStyle: TextStyle(
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.4),
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0,
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          focusedErrorBorder: InputBorder.none,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-
-              // 3. Clean Error State Display
               if (hasError)
                 Padding(
                   padding: const EdgeInsets.only(top: 8, left: 4),

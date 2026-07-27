@@ -21,40 +21,48 @@ class AttendanceRosterPage extends ConsumerStatefulWidget {
 
 class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   DateTime _selectedDate = DateTime.now();
-  int _selectedShift = 0;
+  bool _saving = false;
 
   String get _dateStr => DateFormat('yyyy-MM-dd').format(_selectedDate);
 
   Future<void> _markRemainingPresent() async {
+    if (_saving) return;
+    setState(() => _saving = true);
     HapticFeedback.heavyImpact();
     final employees = ref.read(employeeListProvider).valueOrNull ?? [];
     final attendanceList = ref.read(attendanceByDateProvider(_dateStr)).valueOrNull ?? [];
-    final now = DateTime.now();
     final date = _dateStr;
     final unmarked = employees.where((emp) => !attendanceList.any((a) => a.employeeId == emp.id)).toList();
     final noShift = unmarked.where((e) => e.defaultShiftId == null || e.defaultShiftId!.isEmpty).toList();
-    if (noShift.isNotEmpty) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${noShift.length} employee(s) have no shift. Assign one in Staff > Profile.')));
+    final withShift = unmarked.where((e) => e.defaultShiftId != null && e.defaultShiftId!.isNotEmpty).toList();
+    if (unmarked.isEmpty) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('All employees already marked')));
+      setState(() => _saving = false);
       return;
     }
-    final records = unmarked.map((emp) => ({
+    final records = withShift.map((emp) => ({
       'employee_id': emp.id,
       'date': date,
       'shift_id': emp.defaultShiftId!,
       'status': 'present',
       'overtime_hours': '0',
     })).toList();
-    if (records.isEmpty && noShift.isEmpty) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('All employees already marked')));
-      return;
+    if (records.isNotEmpty) {
+      try {
+        await ref.read(attendanceServiceProvider).bulkUpsert(records);
+        ref.invalidate(attendanceByDateProvider(_dateStr));
+      } catch (e) {
+        if (mounted) showError(context, e);
+        setState(() => _saving = false);
+        return;
+      }
     }
-    try {
-      await ref.read(attendanceServiceProvider).bulkUpsert(records);
-      ref.invalidate(attendanceByDateProvider(_dateStr));
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${records.length} marked as present')));
-    } catch (e) {
-      showError(context, e);
+    var msg = '${records.length} marked as present';
+    if (noShift.isNotEmpty) {
+      msg += '. ${noShift.length} skipped (no shift assigned)';
     }
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    setState(() => _saving = false);
   }
 
   Future<void> _updateAttendance(Attendance att, _AttStatus newStatus, double ot) async {
@@ -66,7 +74,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       });
       ref.invalidate(attendanceByDateProvider(_dateStr));
     } catch (e) {
-      showError(context, e);
+      if (mounted) showError(context, e);
     }
   }
 
@@ -86,7 +94,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       });
       ref.invalidate(attendanceByDateProvider(_dateStr));
     } catch (e) {
-      showError(context, e);
+      if (mounted) showError(context, e);
     }
   }
 
@@ -229,9 +237,11 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: FilledButton.icon(
-          onPressed: () => _markRemainingPresent(),
-          icon: const Icon(PhosphorIconsBold.checks),
-          label: const Text('Mark All Unmarked as Present', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          onPressed: _saving ? null : () => _markRemainingPresent(),
+          icon: _saving
+              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Icon(PhosphorIconsBold.checks),
+          label: Text(_saving ? 'Marking...' : 'Mark All Unmarked as Present', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
           style: FilledButton.styleFrom(
             minimumSize: const Size.fromHeight(56),
             backgroundColor: cs.primary,
@@ -333,43 +343,6 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ShiftPill extends StatelessWidget {
-  final ColorScheme cs;
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _ShiftPill({required this.cs, required this.label, required this.icon, required this.isSelected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: InkWell(
-        onTap: () { HapticFeedback.selectionClick(); onTap(); },
-        borderRadius: BorderRadius.circular(24),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? cs.primary : cs.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isSelected ? cs.primary : cs.outlineVariant.withValues(alpha: 0.5)),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, size: 16, color: isSelected ? cs.onPrimary : cs.onSurfaceVariant),
-              const SizedBox(width: 8),
-              Text(label, style: TextStyle(fontWeight: FontWeight.w700, color: isSelected ? cs.onPrimary : cs.onSurfaceVariant)),
-            ],
-          ),
-        ),
       ),
     );
   }

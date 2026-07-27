@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/vivek-app/vivek_app/repositories"
@@ -41,7 +42,7 @@ func (s *LedgerService) ListByEmployeeMonth(ctx context.Context, employeeID, ten
 	})
 }
 
-func (s *LedgerService) GetBalance(ctx context.Context, employeeID, tenantID string) (int32, error) {
+func (s *LedgerService) GetBalance(ctx context.Context, employeeID, tenantID string) (float64, error) {
 	return s.querier.GetBalanceByEmployee(ctx, repositories.GetBalanceByEmployeeParams{
 		EmployeeID: employeeID,
 		TenantID:   tenantID,
@@ -70,14 +71,17 @@ func (s *LedgerService) SettleEmployee(ctx context.Context, employeeID, tenantID
 	}
 
 	if balance == 0 {
-		return repositories.Ledger{}, nil
+		return repositories.Ledger{}, fmt.Errorf("balance is already zero")
 	}
 
-	entryType := "jama"
-	amt := float64(balance)
+	var entryType string
+	var amt float64
 	if balance > 0 {
 		entryType = "udhaar"
-		amt = float64(balance)
+		amt = balance
+	} else {
+		entryType = "jama"
+		amt = -balance
 	}
 	note := "Full & final settlement"
 	return s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{

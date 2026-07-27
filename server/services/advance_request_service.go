@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/vivek-app/vivek_app/repositories"
 )
@@ -15,6 +16,16 @@ func NewAdvanceRequestService(querier repositories.Querier) *AdvanceRequestServi
 }
 
 func (s *AdvanceRequestService) CreateRequest(ctx context.Context, tenantID, employeeID string, amount float64, note string) (repositories.AdvanceRequest, error) {
+	pending, err := s.querier.ListAdvanceRequestsByTenant(ctx, tenantID, "pending")
+	if err != nil {
+		return repositories.AdvanceRequest{}, err
+	}
+	for _, req := range pending {
+		if req.EmployeeID == employeeID {
+			return repositories.AdvanceRequest{}, fmt.Errorf("employee already has a pending advance request")
+		}
+	}
+
 	var n *string
 	if note != "" {
 		n = &note

@@ -65,7 +65,7 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 
 	employees, err := s.querier.ListEmployeesByTenant(ctx, repositories.ListEmployeesByTenantParams{
 		TenantID: tenantID,
-		Limit:    10000,
+		Limit:    listAll,
 		Offset:   0,
 	})
 	if err != nil {
@@ -167,33 +167,21 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 					}
 				}
 
+				if computedOTHours > 0 {
+					hourlyRate := dailyWageRate / 8.0
+					otPay = computedOTHours * hourlyRate * tc.OTMultiplierDefault
+				}
+
 				if tc.OTRounding > 0 && computedOTHours > 0 {
 					minutes := computedOTHours * 60.0
 					rounded := math.Round(minutes/float64(tc.OTRounding)) * float64(tc.OTRounding)
 					computedOTHours = rounded / 60.0
 				}
-
-				hourlyRate := dailyWageRate / 8.0
-				otPay = computedOTHours * hourlyRate * tc.OTMultiplierDefault
 			}
 
 			computedWage := dayWage + otPay
 			grossWages += computedWage
 			totalOT += a.OvertimeHours
-
-			s.querier.UpdateAttendance(ctx, repositories.UpdateAttendanceParams{
-				ID:                     a.ID,
-				TenantID:               a.TenantID,
-				ShiftID:                a.ShiftID,
-				Status:                 a.Status,
-				CheckInTime:            a.CheckInTime,
-				CheckOutTime:           a.CheckOutTime,
-				OvertimeHours:          a.OvertimeHours,
-				OvertimeRateMultiplier: a.OvertimeRateMultiplier,
-				UnitsProduced:          a.UnitsProduced,
-				EditedBy:               a.EditedBy,
-				ComputedWage:           &computedWage,
-			})
 		}
 
 		if tc.WeekOffPaid {

@@ -6,7 +6,11 @@ String getInitials(String name) {
 
 void showError(BuildContext context, Object? e) {
   if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    final msg = e is FlutterError ? e.message : '$e';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: Theme.of(context).colorScheme.error,
+    ));
   }
 }
 

@@ -7,6 +7,8 @@ import (
 	"github.com/vivek-app/vivek_app/repositories"
 )
 
+const listAll int32 = 100000
+
 type ReportService struct {
 	querier repositories.Querier
 }
@@ -46,7 +48,7 @@ func NewReportService(querier repositories.Querier) *ReportService {
 func (s *ReportService) DailySummary(ctx context.Context, tenantID, date string) (DailySummary, error) {
 	employees, err := s.querier.ListEmployeesByTenant(ctx, repositories.ListEmployeesByTenantParams{
 		TenantID: tenantID,
-		Limit:    10000,
+		Limit:    listAll,
 		Offset:   0,
 	})
 	if err != nil {
@@ -71,7 +73,7 @@ func (s *ReportService) DailySummary(ctx context.Context, tenantID, date string)
 			present++
 		case "absent":
 			absent++
-		case "on_leave":
+		case "paid_leave", "week_off":
 			onLeave++
 		}
 	}
@@ -129,7 +131,7 @@ func (s *ReportService) WageBillTrends(ctx context.Context, tenantID string, mon
 
 	employees, err := s.querier.ListEmployeesByTenant(ctx, repositories.ListEmployeesByTenantParams{
 		TenantID: tenantID,
-		Limit:    10000,
+		Limit:    listAll,
 		Offset:   0,
 	})
 	if err != nil {
@@ -158,25 +160,30 @@ func (s *ReportService) WageBillTrends(ctx context.Context, tenantID string, mon
 		}
 
 		totalWages := 0.0
-		presentSet := make(map[string]bool)
+		presentCount := make(map[string]int)
 		for _, a := range attendance {
 			if a.Status == "present" {
-				presentSet[a.EmployeeID] = true
+				presentCount[a.EmployeeID]++
 			}
 		}
 
-		for empID := range presentSet {
-			if wt, ok := wageTypeMap[empID]; ok && wt == "monthly" {
-				totalWages += wageMap[empID]
-			} else if wt == "daily" {
-				totalWages += wageMap[empID]
+		for empID, daysPresent := range presentCount {
+			if wt, ok := wageTypeMap[empID]; ok {
+				switch wt {
+				case "monthly":
+					totalWages += wageMap[empID]
+				case "daily":
+					totalWages += wageMap[empID] * float64(daysPresent)
+				default:
+					totalWages += wageMap[empID] * float64(daysPresent)
+				}
 			}
 		}
 
 		trends = append(trends, WageBillTrend{
 			Month:      label,
 			TotalWages: totalWages,
-			Headcount:  len(presentSet),
+			Headcount:  len(presentCount),
 		})
 	}
 
@@ -186,7 +193,7 @@ func (s *ReportService) WageBillTrends(ctx context.Context, tenantID string, mon
 func (s *ReportService) DefaultersList(ctx context.Context, tenantID string) ([]Defaulter, error) {
 	employees, err := s.querier.ListEmployeesByTenant(ctx, repositories.ListEmployeesByTenantParams{
 		TenantID: tenantID,
-		Limit:    10000,
+		Limit:    listAll,
 		Offset:   0,
 	})
 	if err != nil {
@@ -203,18 +210,17 @@ func (s *ReportService) DefaultersList(ctx context.Context, tenantID string) ([]
 			continue
 		}
 
-		bal := float64(balance)
 		monthlyWage := e.WageAmount
 		if e.WageType == "daily" {
 			monthlyWage = e.WageAmount * 26
 		}
 
-		if bal > monthlyWage {
+		if balance > monthlyWage {
 			defaulters = append(defaulters, Defaulter{
 				EmployeeID:          e.ID,
 				Name:                e.Name,
 				Phone:               e.Phone,
-				OutstandingBalance:  bal,
+				OutstandingBalance:  balance,
 				MonthlyWage:         monthlyWage,
 			})
 		}

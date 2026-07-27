@@ -43,13 +43,25 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
   }
 
   Future<void> _lockPayroll() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Lock Payroll'),
+        content: const Text('Once locked, payroll cannot be modified for this period. Proceed?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Lock')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
     HapticFeedback.heavyImpact();
     setState(() => _locking = true);
     try {
       await ref.read(payrollServiceProvider).lockMonth(startDate: _startStr, endDate: _endStr);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payroll locked successfully')));
     } catch (e) {
-      showError(context, e);
+      if (mounted) showError(context, e);
     } finally {
       if (mounted) setState(() => _locking = false);
     }

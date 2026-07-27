@@ -55,17 +55,22 @@ class _EmployeeProfileScreenState
     try {
       final list = await ref.read(attendanceServiceProvider).listByEmployee(widget.employeeId, startDate: start, endDate: end);
       attList = list.map((a) => a.toJson()).toList();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Failed to load attendance: $e');
+    }
     List<Map<String, dynamic>>? ledgerList;
     try {
       final list = await ref.read(ledgerServiceProvider).listByEmployee(widget.employeeId, startDate: start, endDate: end);
       ledgerList = list.map((l) => l.toJson()).toList();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Failed to load ledger: $e');
+    }
     double? bal;
-    try { bal = await ref.read(ledgerServiceProvider).getBalance(widget.employeeId); } catch (_) {}
+    try { bal = await ref.read(ledgerServiceProvider).getBalance(widget.employeeId); } catch (e) { debugPrint('Failed to load balance: $e'); }
     if (mounted) {
       setState(() {
-        _profile = data != null ? {...data, ...?empJson} : empJson;
+        _profile = data ?? empJson;
+        if (data != null && empJson != null) _profile = {...data, ...empJson};
         _attendance = attList;
         _ledger = ledgerList;
         _balance = bal;
@@ -193,13 +198,25 @@ class _EmployeeProfileScreenState
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Settle Account'),
+                                content: const Text('This will zero out the outstanding balance. This action cannot be undone.'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                  FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Settle')),
+                                ],
+                              ),
+                            );
+                            if (confirmed != true) return;
                             HapticFeedback.lightImpact();
                             try {
                               await ref.read(ledgerServiceProvider).settleAccount(widget.employeeId);
                               if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account settled')));
-                              _loadProfile();
+                              if (mounted) _loadProfile();
                             } catch (e) {
-                              showError(context, e);
+                              if (context.mounted) showError(context, e);
                             }
                           },
                           style: OutlinedButton.styleFrom(
@@ -228,7 +245,7 @@ class _EmployeeProfileScreenState
                               await ref.read(payrollServiceProvider).generatePayslip(employeeId: widget.employeeId, startDate: start, endDate: end);
                               if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payslip generated')));
                             } catch (e) {
-                              showError(context, e);
+                              if (context.mounted) showError(context, e);
                             }
                           },
                           style: FilledButton.styleFrom(
@@ -393,7 +410,7 @@ class _InfoTab extends StatelessWidget {
     final shiftName = profile?['shift_name'] as String? ?? 'Not assigned';
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 160),
       physics: const NeverScrollableScrollPhysics(),
       children: [
         _EditorialInfoBlock(
@@ -503,7 +520,7 @@ class _AttendanceTab extends StatelessWidget {
     final recent = list.take(5).toList();
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 160),
       physics: const NeverScrollableScrollPhysics(),
       children: [
         Row(
@@ -648,7 +665,7 @@ class _LedgerTab extends StatelessWidget {
     final recent = list.take(5).toList();
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 160),
       physics: const NeverScrollableScrollPhysics(),
       children: [
         Text('NET OUTSTANDING',

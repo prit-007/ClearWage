@@ -28,12 +28,20 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
     super.dispose();
   }
 
+  bool _creatingShifts = false;
+
   Future<void> _createDefaultShifts() async {
+    if (_creatingShifts) return;
+    setState(() => _creatingShifts = true);
     try {
       final svc = ref.read(shiftServiceProvider);
-      await svc.create({'name': 'General Shift', 'start_time': '08:00', 'end_time': '17:00', 'grace_minutes': 15, 'is_default': true});
-      await svc.create({'name': 'Night Shift', 'start_time': '22:00', 'end_time': '06:00', 'crosses_midnight': true, 'grace_minutes': 15, 'is_default': false});
-    } catch (_) {}
+      await svc.create({'name': 'General Shift', 'start_time': '08:00', 'end_time': '17:00', 'grace_period_minutes': 15, 'is_default': true});
+      await svc.create({'name': 'Night Shift', 'start_time': '22:00', 'end_time': '06:00', 'crosses_midnight': true, 'grace_period_minutes': 15, 'is_default': false});
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to create default shifts: $e')));
+    } finally {
+      if (mounted) setState(() => _creatingShifts = false);
+    }
   }
 
   void _nextStep() {

@@ -33,7 +33,7 @@ class LoadingButton extends StatelessWidget {
             icon: loading
                 ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Icon(icon, color: Colors.white),
-            label: Text(loading ? '${label}...' : label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+            label: Text(loading ? '$label...' : label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
           )
         : FilledButton(
             onPressed: effectiveOnPressed,

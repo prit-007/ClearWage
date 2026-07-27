@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"log"
+
 	"github.com/vivek-app/vivek_app/repositories"
 )
 
@@ -10,7 +12,7 @@ func logActivity(ctx context.Context, q repositories.Querier, tenantID, createdB
 	if entityType == "attendance" {
 		empID = entityID
 	}
-	q.CreateActivityLog(ctx, repositories.CreateActivityLogParams{
+	_, err := q.CreateActivityLog(ctx, repositories.CreateActivityLogParams{
 		TenantID:   tenantID,
 		EmployeeID: empID,
 		Action:     action,
@@ -19,4 +21,7 @@ func logActivity(ctx context.Context, q repositories.Querier, tenantID, createdB
 		Details:    details,
 		CreatedBy:  createdBy,
 	})
+	if err != nil {
+		log.Printf("failed to log activity: %v", err)
+	}
 }

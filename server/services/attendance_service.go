@@ -69,7 +69,10 @@ func (s *AttendanceService) ListByEmployeeMonth(ctx context.Context, employeeID,
 
 func (s *AttendanceService) UpdateAttendance(ctx context.Context, id, tenantID, shiftID, status string, checkIn, checkOut *time.Time, overtimeHours, overtimeRate string, unitsProduced *int32, editedBy string) (repositories.Attendance, error) {
 	otHours, _ := strconv.ParseFloat(overtimeHours, 64)
-	otRate, _ := strconv.ParseFloat(overtimeRate, 64)
+	var otRate float64
+	if overtimeRate != "" {
+		otRate, _ = strconv.ParseFloat(overtimeRate, 64)
+	}
 	var sID *string
 	if shiftID != "" {
 		sID = &shiftID

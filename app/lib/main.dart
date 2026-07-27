@@ -125,7 +125,7 @@ class AuthGate extends ConsumerWidget {
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, __) => const LoginScreen(),
+      error: (_, _) => const LoginScreen(),
       data: (_) {
         final token = ref.watch(tokenProvider);
         return token != null ? const MainShell() : const LoginScreen();
@@ -141,7 +141,7 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int _selectedIndex = 2;
+  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {

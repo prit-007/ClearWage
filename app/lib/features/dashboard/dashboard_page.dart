@@ -95,8 +95,8 @@ class DashboardScreen extends ConsumerWidget {
                                 tt: tt,
                                 icon: PhosphorIconsDuotone.wallet,
                                 label: 'Payroll (MTD)',
-                                value:
-                                    '\u20B9${data.totalJama.toStringAsFixed(0)}',
+                                    value:
+                                        '\u20B9${data.dailyJamaTotal.toStringAsFixed(0)}',
                                 color: cs.primary,
                               ),
                             ),
@@ -367,7 +367,7 @@ class _QuickActionTile extends StatelessWidget {
 class _ActivityTile extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  final dynamic activity;
+  final ActivityItem activity;
 
   const _ActivityTile(
       {required this.cs, required this.tt, required this.activity});

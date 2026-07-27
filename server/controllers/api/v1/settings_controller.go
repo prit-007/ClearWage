@@ -2,7 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/rs/zerolog"
@@ -44,17 +43,7 @@ func (c *SettingsController) GetPayrollSettings(w http.ResponseWriter, r *http.R
 	}
 
 	settings, err := c.settingsSvc.GetPayrollSettings(r.Context(), tenantID)
-	if err != nil && errors.Is(err, repositories.ErrNotFound) {
-		settings = repositories.TenantConfig{
-			TenantID:            tenantID,
-			OTTrigger:           "after_shift_end",
-			OTThresholdHours:    0,
-			OTMultiplierDefault: 1.5,
-			OTRounding:          30,
-			WageBasis:           "calendar",
-			WeekOffPaid:         false,
-		}
-	} else if err != nil {
+	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

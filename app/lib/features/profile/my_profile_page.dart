@@ -40,7 +40,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 4, vsync: this);
-    _tabCtrl.addListener(() => HapticFeedback.selectionClick());
+    _tabCtrl.addListener(() {
+      if (!_tabCtrl.indexIsChanging) HapticFeedback.selectionClick();
+    });
   }
 
   @override
@@ -60,9 +62,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
       final dir = await getApplicationDocumentsDirectory();
       final file = File('${dir.path}/payslip_$start.pdf');
       await file.writeAsBytes(bytes);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved: ${file.path}')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payslip downloaded successfully')));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) showError(context, e);
     }
   }
 
@@ -220,10 +222,22 @@ class _ProfileTab extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 24),
-        SizedBox(
+          SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Sign Out'),
+                  content: const Text('Are you sure you want to sign out?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Sign Out', style: TextStyle(color: cs.error))),
+                  ],
+                ),
+              );
+              if (confirmed != true) return;
               await ref.read(authServiceProvider).logout();
               ref.read(tokenProvider.notifier).state = null;
               TokenStorage.clear();

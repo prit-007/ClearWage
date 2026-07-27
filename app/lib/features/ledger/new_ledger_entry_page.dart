@@ -3,10 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
-import '../../core/widgets/validated_field.dart';
 import '../../providers/providers.dart';
-import '../../models/employee_model.dart';
-import '../../services/staff_service.dart';
 import 'ledger_list_page.dart';
 import '../../core/helpers.dart';
 
@@ -53,7 +50,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
         'employee_id': _selectedEmployeeId!,
         'date': dateStr,
         'type': _isJama ? 'jama' : 'udhaar',
-        'amount': double.tryParse(_amountController.text) ?? 0,
+        'amount': _amountController.text.trim(),
         'note': _noteController.text.trim(),
       });
       ref.invalidate(ledgerListProvider);
@@ -66,9 +63,9 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
     }
   }
 
-  void _showEmployeePicker(BuildContext context, ColorScheme cs) {
+  Future<void> _showEmployeePicker(BuildContext context, ColorScheme cs) async {
     final searchCtrl = TextEditingController();
-    showModalBottomSheet(
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -135,7 +132,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                             controller: scrollCtrl,
                             padding: const EdgeInsets.symmetric(horizontal: 24),
                             itemCount: filtered.length,
-                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            separatorBuilder: (_, _) => const Divider(height: 1),
                             itemBuilder: (_, i) {
                               final emp = filtered[i];
                               final isSelected = emp.id == _selectedEmployeeId;
@@ -177,6 +174,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
         });
       },
     );
+    searchCtrl.dispose();
   }
 
   @override

@@ -10,13 +10,9 @@ import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
 
 final leavePolicyProvider = FutureProvider.autoDispose<Map<String, dynamic>?>((ref) async {
-  try {
-    final policy = await ref.watch(leavePolicyServiceProvider).get();
-    if (policy == null) return null;
-    return {'paid': policy.paidLeaveDaysPerYear, 'unpaid': policy.unpaidLeaveDaysPerYear};
-  } catch (_) {
-    return null;
-  }
+  final policy = await ref.watch(leavePolicyServiceProvider).get();
+  if (policy == null) return null;
+  return {'paid': policy.paidLeaveDaysPerYear, 'unpaid': policy.unpaidLeaveDaysPerYear};
 });
 
 class LeavePolicyScreen extends ConsumerStatefulWidget {
@@ -55,16 +51,20 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
     }
   }
 
+  String? _paidError;
+  String? _unpaidError;
+
   bool _validate() {
-    if (int.tryParse(_paidCtrl.text) == null) return false;
-    if (int.tryParse(_unpaidCtrl.text) == null) return false;
-    return true;
+    setState(() {
+      _paidError = int.tryParse(_paidCtrl.text) == null ? 'Enter a valid number' : null;
+      _unpaidError = int.tryParse(_unpaidCtrl.text) == null ? 'Enter a valid number' : null;
+    });
+    return _paidError == null && _unpaidError == null;
   }
 
   Future<void> _save() async {
     if (!_validate()) {
       HapticFeedback.vibrate();
-      setState(() {});
       return;
     }
     HapticFeedback.mediumImpact();
@@ -80,7 +80,7 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
         Navigator.pop(context);
       }
     } catch (e) {
-      showError(context, e);
+      if (mounted) showError(context, e);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -139,12 +139,42 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
 
               FluidSlideIn(
                 delay: 100,
-                child: PremiumMacroField(cs: cs, tt: tt, label: 'Paid Leave Quota', subtitle: 'Days per year', ctrl: _paidCtrl, icon: PhosphorIconsFill.sun, activeColor: const Color(0xFF10B981)),
+                child: Column(
+                  children: [
+                    PremiumMacroField(cs: cs, tt: tt, label: 'Paid Leave Quota', subtitle: 'Days per year', ctrl: _paidCtrl, icon: PhosphorIconsFill.sun, activeColor: const Color(0xFF10B981)),
+                    if (_paidError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8, left: 4),
+                        child: Row(
+                          children: [
+                            Icon(PhosphorIconsRegular.warningCircle, size: 14, color: cs.error),
+                            const SizedBox(width: 6),
+                            Text(_paidError!, style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
               FluidSlideIn(
                 delay: 200,
-                child: PremiumMacroField(cs: cs, tt: tt, label: 'Unpaid Allowances', subtitle: 'Days per year', ctrl: _unpaidCtrl, icon: PhosphorIconsFill.moon, activeColor: cs.primary),
+                child: Column(
+                  children: [
+                    PremiumMacroField(cs: cs, tt: tt, label: 'Unpaid Allowances', subtitle: 'Days per year', ctrl: _unpaidCtrl, icon: PhosphorIconsFill.moon, activeColor: cs.primary),
+                    if (_unpaidError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8, left: 4),
+                        child: Row(
+                          children: [
+                            Icon(PhosphorIconsRegular.warningCircle, size: 14, color: cs.error),
+                            const SizedBox(width: 6),
+                            Text(_unpaidError!, style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),

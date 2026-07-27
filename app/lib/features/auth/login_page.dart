@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -166,9 +165,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
   }
 
-  void _showServerDialog() {
+  Future<void> _showServerDialog() async {
     final urlCtrl = TextEditingController(text: ref.read(serverUrlProvider));
-    showModalBottomSheet(
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -231,6 +230,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ),
       ),
     );
+    urlCtrl.dispose();
   }
 
   @override

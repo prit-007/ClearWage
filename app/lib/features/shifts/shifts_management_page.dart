@@ -113,12 +113,24 @@ Future<void> _showShiftBottomSheet(BuildContext context, WidgetRef ref, Shift? s
 }
 
 Future<void> _deleteShift(BuildContext context, WidgetRef ref, String id) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Delete Shift'),
+      content: const Text('Are you sure? This cannot be undone.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
   HapticFeedback.heavyImpact();
   try {
     await ref.read(shiftServiceProvider).delete(id);
     ref.invalidate(shiftsListProvider);
   } catch (e) {
-    showError(context, e);
+    if (context.mounted) showError(context, e);
   }
 }
 

@@ -96,15 +96,31 @@ Future<void> _showHolidaySheet(BuildContext context, WidgetRef ref) async {
       await ref.read(holidayServiceProvider).create(result);
       ref.invalidate(holidaysListProvider);
     } catch (e) {
-      showError(context, e);
+      if (context.mounted) showError(context, e);
     }
   }
 }
 
 Future<void> _deleteHoliday(BuildContext context, WidgetRef ref, String id) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Delete Holiday'),
+      content: const Text('Are you sure you want to delete this holiday?'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error))),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
   HapticFeedback.heavyImpact();
-  await ref.read(holidayServiceProvider).delete(id);
-  ref.invalidate(holidaysListProvider);
+  try {
+    await ref.read(holidayServiceProvider).delete(id);
+    ref.invalidate(holidaysListProvider);
+  } catch (e) {
+    if (context.mounted) showError(context, e);
+  }
 }
 
 class _PremiumHolidayCard extends StatelessWidget {

@@ -227,18 +227,17 @@ func (c *AttendanceController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Status != "" && !isValidAttendanceStatus(req.Status) {
+		utils.JSONError(w, http.StatusBadRequest, "invalid status: must be present, absent, half_day, paid_leave, or week_off")
+		return
+	}
 	otHours := req.OvertimeHours
 	if otHours == "" {
 		otHours = "0"
 	}
-	otRate := req.OvertimeRateMultiplier
-	if otRate == "" {
-		otRate = "1"
-	}
-
 	att, err := c.attendanceService.UpdateAttendance(
 		r.Context(), id, tenantID, req.ShiftID, req.Status,
-		req.CheckInTime, req.CheckOutTime, otHours, otRate, req.UnitsProduced, claims.EmployeeID,
+		req.CheckInTime, req.CheckOutTime, otHours, req.OvertimeRateMultiplier, req.UnitsProduced, claims.EmployeeID,
 	)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to update attendance")
@@ -282,6 +281,10 @@ func (c *AttendanceController) BulkUpsert(w http.ResponseWriter, r *http.Request
 
 	var results []interface{}
 	for _, rec := range req.Records {
+		if rec.Status != "" && !isValidAttendanceStatus(rec.Status) {
+			utils.JSONError(w, http.StatusBadRequest, "invalid status: must be present, absent, half_day, paid_leave, or week_off")
+			return
+		}
 		otHours := rec.OvertimeHours
 		if otHours == "" {
 			otHours = "0"

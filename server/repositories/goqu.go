@@ -69,15 +69,17 @@ func (q *GoquQuerier) CreateAttendance(ctx context.Context, arg CreateAttendance
 
 func (q *GoquQuerier) CreateEmployee(ctx context.Context, arg CreateEmployeeParams) (Employee, error) {
 	var e Employee
-	found, err := q.db.Insert("employees").Rows(goqu.Record{
+	rec := goqu.Record{
 		"tenant_id":          arg.TenantID,
 		"name":               arg.Name,
 		"phone":              arg.Phone,
+		"designation":        arg.Designation,
 		"wage_type":          arg.WageType,
 		"wage_amount":        arg.WageAmount,
 		"daily_target_units": arg.DailyTargetUnits,
 		"role":               arg.Role,
-	}).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &e)
+	}
+	found, err := q.db.Insert("employees").Rows(rec).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &e)
 	if err != nil {
 		return Employee{}, err
 	}
@@ -326,8 +328,8 @@ func (q *GoquQuerier) FindTenantByPhone(ctx context.Context, phone string) (Tena
 	return t, nil
 }
 
-func (q *GoquQuerier) GetBalanceByEmployee(ctx context.Context, arg GetBalanceByEmployeeParams) (int32, error) {
-	var balance int32
+func (q *GoquQuerier) GetBalanceByEmployee(ctx context.Context, arg GetBalanceByEmployeeParams) (float64, error) {
+	var balance float64
 	found, err := q.db.From("ledger").
 		Select(goqu.L("COALESCE(SUM(CASE WHEN type = 'jama' THEN amount ELSE 0 END), 0) - COALESCE(SUM(CASE WHEN type = 'udhaar' THEN amount ELSE 0 END), 0)").As("balance")).
 		Where(goqu.C("employee_id").Eq(arg.EmployeeID), goqu.C("tenant_id").Eq(arg.TenantID)).
@@ -367,7 +369,7 @@ func (q *GoquQuerier) ListAttendanceByDateRange(ctx context.Context, tenantID st
 	err := q.db.From("attendance").Where(
 		goqu.C("tenant_id").Eq(tenantID),
 		goqu.C("date").Gte(startDate),
-		goqu.C("date").Lt(endDate),
+		goqu.C("date").Lte(endDate),
 	).Order(goqu.C("date").Asc()).ScanStructsContext(ctx, &items)
 	return items, err
 }
@@ -378,7 +380,7 @@ func (q *GoquQuerier) ListAttendanceByEmployeeMonth(ctx context.Context, arg Lis
 		goqu.C("employee_id").Eq(arg.EmployeeID),
 		goqu.C("tenant_id").Eq(arg.TenantID),
 		goqu.C("date").Gte(arg.StartDate),
-		goqu.C("date").Lt(arg.EndDate),
+		goqu.C("date").Lte(arg.EndDate),
 	).Order(goqu.C("date").Asc()).ScanStructsContext(ctx, &items)
 	return items, err
 }
@@ -422,7 +424,7 @@ func (q *GoquQuerier) ListLedgerByEmployeeMonth(ctx context.Context, arg ListLed
 		goqu.C("employee_id").Eq(arg.EmployeeID),
 		goqu.C("tenant_id").Eq(arg.TenantID),
 		goqu.C("date").Gte(arg.StartDate),
-		goqu.C("date").Lt(arg.EndDate),
+		goqu.C("date").Lte(arg.EndDate),
 	).Order(goqu.C("date").Desc()).ScanStructsContext(ctx, &items)
 	return items, err
 }
@@ -540,7 +542,7 @@ func (q *GoquQuerier) ListLedgerByTenant(ctx context.Context, arg ListLedgerByTe
 	err := q.db.From("ledger").Where(
 		goqu.C("tenant_id").Eq(arg.TenantID),
 		goqu.C("date").Gte(arg.StartDate),
-		goqu.C("date").Lt(arg.EndDate),
+		goqu.C("date").Lte(arg.EndDate),
 	).Order(goqu.C("date").Desc()).ScanStructsContext(ctx, &items)
 	return items, err
 }
@@ -569,7 +571,7 @@ func (q *GoquQuerier) LockAttendanceMonth(ctx context.Context, arg LockAttendanc
 	}).Where(
 		goqu.C("tenant_id").Eq(arg.TenantID),
 		goqu.C("date").Gte(arg.StartDate),
-		goqu.C("date").Lt(arg.EndDate),
+		goqu.C("date").Lte(arg.EndDate),
 	).Executor().ExecContext(ctx)
 	return err
 }
@@ -587,12 +589,14 @@ func (q *GoquQuerier) SoftDeleteEmployee(ctx context.Context, arg SoftDeleteEmpl
 
 func (q *GoquQuerier) UpdateAttendance(ctx context.Context, arg UpdateAttendanceParams) (Attendance, error) {
 	rec := goqu.Record{
-		"status":                 arg.Status,
-		"overtime_hours":         arg.OvertimeHours,
-		"overtime_rate_multiplier": arg.OvertimeRateMultiplier,
-		"edited_by":              arg.EditedBy,
-		"edited_at":              goqu.L("now()"),
-		"updated_at":             goqu.L("now()"),
+		"status":         arg.Status,
+		"overtime_hours": arg.OvertimeHours,
+		"edited_by":      arg.EditedBy,
+		"edited_at":      goqu.L("now()"),
+		"updated_at":     goqu.L("now()"),
+	}
+	if arg.OvertimeRateMultiplier > 0 {
+		rec["overtime_rate_multiplier"] = arg.OvertimeRateMultiplier
 	}
 	if arg.ShiftID != nil {
 		rec["shift_id"] = arg.ShiftID

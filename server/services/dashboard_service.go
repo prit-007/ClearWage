@@ -31,7 +31,7 @@ func (s *DashboardService) GetDashboard(ctx context.Context, tenantID string) (D
 
 	employees, err := s.querier.ListEmployeesByTenant(ctx, repositories.ListEmployeesByTenantParams{
 		TenantID: tenantID,
-		Limit:    10000,
+		Limit:    listAll,
 		Offset:   0,
 	})
 	if err != nil {

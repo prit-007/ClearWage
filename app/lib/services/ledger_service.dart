@@ -35,7 +35,8 @@ class LedgerService {
 
   Future<double> getBalance(String employeeId) async {
     final res = await _client.get('/api/v1/ledger/$employeeId/balance');
-    return (res['data'] as num?)?.toDouble() ?? 0;
+    final data = res['data'] as Map<String, dynamic>? ?? {};
+    return (data['balance'] as num?)?.toDouble() ?? 0;
   }
 
   Future<void> settleAccount(String employeeId) async {

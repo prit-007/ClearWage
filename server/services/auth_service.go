@@ -66,6 +66,12 @@ func (s *AuthService) Register(ctx context.Context, params RegisterParams) (Veri
 		return VerifyResult{}, errors.New("phone number not found in Firebase token")
 	}
 
+	if _, err := s.queries.FindTenantByPhone(ctx, phone); err == nil {
+		return VerifyResult{}, errors.New("phone number already registered")
+	} else if !errors.Is(err, repositories.ErrNotFound) {
+		return VerifyResult{}, fmt.Errorf("database error: %w", err)
+	}
+
 	tenant, err := s.queries.CreateTenant(ctx, repositories.CreateTenantParams{
 		Name:  params.FactoryName,
 		Phone: phone,

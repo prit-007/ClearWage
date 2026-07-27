@@ -1,12 +1,14 @@
 package v1
 
 import (
+	"crypto/rand"
 	"fmt"
 	"io"
-	"math/rand"
+	"math/big"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
@@ -67,7 +69,8 @@ func (c *UploadController) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filename := fmt.Sprintf("%s-%d%s", employeeID, rand.Int63(), ext)
+	n, _ := rand.Int(rand.Reader, big.NewInt(1<<62))
+	filename := fmt.Sprintf("%s-%d%s", employeeID, n.Int64(), ext)
 	destPath := filepath.Join(c.uploadDir, filename)
 
 	dst, err := os.Create(destPath)
@@ -100,5 +103,11 @@ func (c *UploadController) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 
 func (c *UploadController) ServeFile(w http.ResponseWriter, r *http.Request) {
 	file := chi.URLParam(r, "file")
-	http.ServeFile(w, r, filepath.Join(c.uploadDir, file))
+	absPath, _ := filepath.Abs(filepath.Join(c.uploadDir, file))
+	absDir, _ := filepath.Abs(c.uploadDir)
+	if !strings.HasPrefix(absPath, absDir) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+	http.ServeFile(w, r, absPath)
 }

@@ -48,20 +48,22 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     super.dispose();
   }
 
-  bool _validateAll() {
+  String? _validateAll() {
     final name = _nameCtrl.text.trim();
     final phone = _phoneCtrl.text.trim();
     final wage = _wageCtrl.text.trim();
-    if (name.isEmpty) return false;
-    if (phone.isNotEmpty && phone.length < 10) return false;
-    if (wage.isNotEmpty && double.tryParse(wage) == null) return false;
-    return true;
+    if (name.isEmpty) return 'Employee name is required';
+    if (phone.isNotEmpty && phone.length < 10) return 'Phone number must be at least 10 digits';
+    if (wage.isNotEmpty && double.tryParse(wage) == null) return 'Wage must be a valid number';
+    return null;
   }
 
   Future<void> _save() async {
-    if (!_validateAll()) {
+    final error = _validateAll();
+    if (error != null) {
       setState(() {});
       HapticFeedback.vibrate();
+      if (mounted) showError(context, error);
       return;
     }
     HapticFeedback.heavyImpact();
@@ -83,7 +85,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       ref.invalidate(employeeListProvider);
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      showError(context, e);
+      if (mounted) showError(context, e);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

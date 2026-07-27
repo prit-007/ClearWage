@@ -6,6 +6,7 @@ import '../../models/shift_model.dart';
 import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/validated_field.dart';
+import '../../core/helpers.dart';
 
 final shiftsListProvider = FutureProvider.autoDispose<List<Shift>>((ref) {
   return ref.watch(shiftServiceProvider).list();
@@ -46,7 +47,34 @@ class ShiftsManagementScreen extends ConsumerWidget {
             async.when(
               loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
               error: (e, _) => SliverFillRemaining(child: Center(child: Text('$e', style: TextStyle(color: cs.error)))),
-              data: (shifts) => SliverPadding(
+              data: (shifts) => shifts.isEmpty
+                  ? SliverFillRemaining(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              PhosphorIconsFill.clock,
+                              size: 56,
+                              color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text('No shifts configured',
+                              style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: cs.onSurface)),
+                          const SizedBox(height: 8),
+                          Text('Tap the + button to add your first shift.',
+                              style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                              textAlign: TextAlign.center),
+                        ],
+                      ),
+                    )
+                  : SliverPadding(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
@@ -85,14 +113,24 @@ Future<void> _showShiftBottomSheet(BuildContext context, WidgetRef ref, Shift? s
 }
 
 Future<void> _deleteShift(BuildContext context, WidgetRef ref, String id) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Delete Shift'),
+      content: const Text('Are you sure? This cannot be undone.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
   HapticFeedback.heavyImpact();
   try {
     await ref.read(shiftServiceProvider).delete(id);
     ref.invalidate(shiftsListProvider);
   } catch (e) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-    }
+    if (context.mounted) showError(context, e);
   }
 }
 
@@ -228,7 +266,7 @@ class _ShiftFormModalState extends ConsumerState<_ShiftFormModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2)))),
+            Center(child: sheetHandle(cs)),
             const SizedBox(height: 24),
             Text(widget.shift != null ? 'Edit Shift' : 'Create New Shift', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
             const SizedBox(height: 24),
@@ -279,7 +317,7 @@ class _ShiftFormModalState extends ConsumerState<_ShiftFormModal> {
                   if (context.mounted) Navigator.pop(context, true);
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+                    showError(context, e);
                     setState(() => _saving = false);
                   }
                 }
@@ -309,7 +347,7 @@ class _ModalSwitch extends StatelessWidget {
     return Expanded(
       child: Row(
         children: [
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
+          Flexible(child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant))),
           const SizedBox(width: 4),
           SizedBox(
             height: 28,

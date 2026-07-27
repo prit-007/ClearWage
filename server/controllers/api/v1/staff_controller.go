@@ -74,7 +74,7 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 		employeeID = claims.EmployeeID
 	}
 
-	employee, err := ctrl.staffService.CreateEmployee(r.Context(), req.Name, req.Phone, req.WageType, req.WageAmount, tenantID, employeeID, req.DailyTargetUnits)
+	employee, err := ctrl.staffService.CreateEmployee(r.Context(), req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, tenantID, employeeID, req.DailyTargetUnits)
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("failed to create employee")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to create employee")

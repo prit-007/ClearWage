@@ -53,7 +53,7 @@ func ValidateToken(cfg config.AppConfig, tokenStr string) (*Claims, error) {
 		return nil, fmt.Errorf("invalid token claims")
 	}
 
-	if claims.TenantID == "" || claims.Role == "" {
+	if claims.TenantID == "" || claims.EmployeeID == "" || claims.Role == "" {
 		return nil, fmt.Errorf("missing required claims")
 	}
 

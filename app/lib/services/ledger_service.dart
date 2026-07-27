@@ -35,10 +35,13 @@ class LedgerService {
 
   Future<double> getBalance(String employeeId) async {
     final res = await _client.get('/api/v1/ledger/$employeeId/balance');
-    return (res['data'] as num?)?.toDouble() ?? 0;
+    final data = res['data'] as Map<String, dynamic>? ?? {};
+    return (data['balance'] as num?)?.toDouble() ?? 0;
   }
 
   Future<void> settleAccount(String employeeId) async {
-    await _client.post('/api/v1/ledger/$employeeId/settle');
+    final now = DateTime.now();
+    final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    await _client.post('/api/v1/ledger/$employeeId/settle', body: {'date': date});
   }
 }

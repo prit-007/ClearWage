@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/ledger_model.dart';
 import '../../providers/providers.dart';
+import '../../core/widgets/fluid_slide_in.dart';
 
 final ledgerListProvider = FutureProvider.autoDispose<List<LedgerEntry>>((ref) {
   final now = DateTime.now();
@@ -70,7 +71,7 @@ class LedgerListScreen extends ConsumerWidget {
                     Padding(
                       padding:
                           const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                      child: _FluidSlideIn(
+                      child: FluidSlideIn(
                         delay: 0,
                         child: _GlassSummaryCard(
                             cs: cs,
@@ -98,7 +99,7 @@ class LedgerListScreen extends ConsumerWidget {
                         return Padding(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24),
-                          child: _FluidSlideIn(
+                          child: FluidSlideIn(
                             delay: (index * 50).clamp(0, 500),
                             child: _LedgerRow(
                                 cs: cs,
@@ -128,30 +129,7 @@ class LedgerListScreen extends ConsumerWidget {
   }
 }
 
-class _FluidSlideIn extends StatelessWidget {
-  final Widget child;
-  final int delay;
-  const _FluidSlideIn({required this.child, this.delay = 0});
 
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 600 + delay),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value.clamp(0.0, 1.0),
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - value)),
-            child: child,
-          ),
-        );
-      },
-      child: child,
-    );
-  }
-}
 
 class _GlassSummaryCard extends StatelessWidget {
   final ColorScheme cs;

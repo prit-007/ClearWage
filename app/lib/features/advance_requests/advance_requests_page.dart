@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/advance_request_model.dart';
 import '../../providers/providers.dart';
+import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/helpers.dart';
 
 final advanceRequestsProvider = FutureProvider.autoDispose<List<AdvanceRequest>>((ref) {
   return ref.watch(advanceRequestServiceProvider).list();
@@ -59,7 +61,7 @@ class AdvanceRequestsScreen extends ConsumerWidget {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final req = requests[index];
-                            return _FluidSlideIn(
+                            return FluidSlideIn(
                               delay: index * 80,
                               child: _AdvanceRequestCard(cs: cs, tt: tt, request: req, onAction: () => _handleActionSheet(context, ref, req)),
                             );
@@ -79,13 +81,13 @@ class AdvanceRequestsScreen extends ConsumerWidget {
 Future<void> _handleActionSheet(BuildContext context, WidgetRef ref, AdvanceRequest req) async {
   if (!req.isPending) return;
   HapticFeedback.mediumImpact();
-  
+
   final action = await showModalBottomSheet<String>(
     context: context,
     backgroundColor: Colors.transparent,
-    builder: (context) {
-      final cs = Theme.of(context).colorScheme;
-      final tt = Theme.of(context).textTheme;
+    builder: (ctx) {
+      final cs = Theme.of(ctx).colorScheme;
+      final tt = Theme.of(ctx).textTheme;
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -93,76 +95,116 @@ Future<void> _handleActionSheet(BuildContext context, WidgetRef ref, AdvanceRequ
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 24),
-              CircleAvatar(radius: 32, backgroundColor: cs.primaryContainer, child: PhosphorIcon(PhosphorIconsDuotone.handCoins, size: 32, color: cs.primary)),
-              const SizedBox(height: 16),
-              Text(req.employeeName, style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-              Text('Requests an advance of ₹${req.amount.toStringAsFixed(0)}', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(16)),
-                child: Row(
-                  children: [
-                    Icon(PhosphorIconsRegular.quotes, color: cs.primary, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(child: Text(req.reason, style: tt.bodyMedium?.copyWith(fontStyle: FontStyle.italic))),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context, 'deny'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        side: const BorderSide(color: Color(0xFFEF4444)),
-                      ),
-                      child: const Text('Deny', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w700, fontSize: 16)),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.pop(context, 'approve'),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: const Color(0xFF10B981),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      child: const Text('Approve', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          child: _AdvanceActionSheetContent(cs: cs, tt: tt, req: req, ref: ref),
         ),
       );
     },
   );
 
-  if (action == null) return;
-  try {
-    if (action == 'approve') {
+  if (action == 'approved' || action == 'denied') {
+    ref.invalidate(advanceRequestsProvider);
+  }
+}
+
+class _AdvanceActionSheetContent extends ConsumerStatefulWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final AdvanceRequest req;
+  final WidgetRef ref;
+
+  const _AdvanceActionSheetContent({required this.cs, required this.tt, required this.req, required this.ref});
+
+  @override
+  ConsumerState<_AdvanceActionSheetContent> createState() => _AdvanceActionSheetContentState();
+}
+
+class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetContent> {
+  bool _loading = false;
+
+  Future<void> _approve() async {
+    setState(() => _loading = true);
+    try {
       HapticFeedback.heavyImpact();
       final now = DateTime.now();
       final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-      await ref.read(advanceRequestServiceProvider).approve(req.id, date: date);
-    } else {
-      HapticFeedback.selectionClick();
-      await ref.read(advanceRequestServiceProvider).deny(req.id);
+      await widget.ref.read(advanceRequestServiceProvider).approve(widget.req.id, date: date);
+      if (mounted) Navigator.pop(context, 'approved');
+    } catch (e) {
+      if (mounted) showError(context, e);
+      if (mounted) setState(() => _loading = false);
     }
-    ref.invalidate(advanceRequestsProvider);
-  } catch (e) {
-    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+  }
+
+  Future<void> _deny() async {
+    setState(() => _loading = true);
+    try {
+      HapticFeedback.selectionClick();
+      await widget.ref.read(advanceRequestServiceProvider).deny(widget.req.id);
+      if (mounted) Navigator.pop(context, 'denied');
+    } catch (e) {
+      if (mounted) showError(context, e);
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = widget.cs;
+    final tt = widget.tt;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        sheetHandle(cs),
+        const SizedBox(height: 24),
+        CircleAvatar(radius: 32, backgroundColor: cs.primaryContainer, child: PhosphorIcon(PhosphorIconsDuotone.handCoins, size: 32, color: cs.primary)),
+        const SizedBox(height: 16),
+        Text(widget.req.employeeName, style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+        Text('Requests an advance of ₹${widget.req.amount.toStringAsFixed(0)}', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(16)),
+          child: Row(
+            children: [
+              Icon(PhosphorIconsRegular.quotes, color: cs.primary, size: 20),
+              const SizedBox(width: 12),
+              Expanded(child: Text(widget.req.reason, style: tt.bodyMedium?.copyWith(fontStyle: FontStyle.italic))),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        if (_loading)
+          const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: CircularProgressIndicator())
+        else
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _deny,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    side: const BorderSide(color: Color(0xFFEF4444)),
+                  ),
+                  child: const Text('Deny', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w700, fontSize: 16)),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _approve,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: const Color(0xFF10B981),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Approve', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
   }
 }
 
@@ -221,7 +263,7 @@ class _AdvanceRequestCard extends StatelessWidget {
                     CircleAvatar(
                       radius: 20,
                       backgroundColor: cs.primaryContainer.withValues(alpha: 0.5),
-                      child: Text(request.employeeName[0], style: TextStyle(fontWeight: FontWeight.w800, color: cs.primary)),
+                      child: Text(request.employeeName.isNotEmpty ? request.employeeName[0] : '?', style: TextStyle(fontWeight: FontWeight.w800, color: cs.primary)),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -246,24 +288,4 @@ class _AdvanceRequestCard extends StatelessWidget {
   }
 }
 
-class _FluidSlideIn extends StatelessWidget {
-  final Widget child;
-  final int delay;
-  const _FluidSlideIn({required this.child, this.delay = 0});
 
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 600 + delay),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value.clamp(0.0, 1.0),
-          child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child),
-        );
-      },
-      child: child,
-    );
-  }
-}

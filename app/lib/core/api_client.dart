@@ -6,6 +6,7 @@ class ApiClient {
   final String baseUrl;
   static const _timeout = Duration(seconds: 30);
   String? _token;
+  void Function()? onUnauthorized;
 
   ApiClient({required this.baseUrl});
 
@@ -54,6 +55,15 @@ class ApiClient {
     throw ApiException(msg, statusCode: res.statusCode);
   }
 
+  Future<List<int>> postRaw(String path, {Map<String, dynamic>? body}) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final res = await http.post(uri, headers: _headers, body: jsonEncode(body)).timeout(_timeout);
+    if (res.statusCode >= 200 && res.statusCode < 300) return res.bodyBytes;
+    final json = jsonDecode(res.body) as Map<String, dynamic>;
+    final msg = json['message'] as String? ?? 'Unknown error';
+    throw ApiException(msg, statusCode: res.statusCode);
+  }
+
   Future<Map<String, dynamic>> delete(String path) async {
     final uri = Uri.parse('$baseUrl$path');
     return _handle(await http.delete(uri, headers: _headers).timeout(_timeout));
@@ -67,6 +77,7 @@ class ApiClient {
     final msg = json['message'] as String? ?? 'Unknown error';
     if (response.statusCode == 401) {
       _token = null;
+      onUnauthorized?.call();
       throw AuthException(msg);
     }
     throw ApiException(msg, statusCode: response.statusCode);

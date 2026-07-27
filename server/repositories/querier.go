@@ -48,9 +48,10 @@ type CreateAttendanceParams struct {
 }
 
 type CreateEmployeeParams struct {
-	TenantID        string  `json:"tenant_id"`
+	TenantID         string  `json:"tenant_id"`
 	Name            string  `json:"name"`
 	Phone           string  `json:"phone"`
+	Designation     *string `json:"designation"`
 	WageType        string  `json:"wage_type"`
 	WageAmount      float64 `json:"wage_amount"`
 	DailyTargetUnits *int32 `json:"daily_target_units"`
@@ -304,7 +305,7 @@ type Querier interface {
 	FindSyncEventByEventID(ctx context.Context, arg FindSyncEventByEventIDParams) (SyncQueue, error)
 	FindTenantByID(ctx context.Context, id string) (Tenant, error)
 	FindTenantByPhone(ctx context.Context, phone string) (Tenant, error)
-	GetBalanceByEmployee(ctx context.Context, arg GetBalanceByEmployeeParams) (int32, error)
+	GetBalanceByEmployee(ctx context.Context, arg GetBalanceByEmployeeParams) (float64, error)
 	GetDailyJamaTotal(ctx context.Context, tenantID string, date string) (float64, error)
 	GetLeavePolicyByTenant(ctx context.Context, tenantID string) (LeavePolicy, error)
 	GetStaffProfile(ctx context.Context, arg GetStaffProfileParams) (StaffProfile, error)

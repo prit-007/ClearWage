@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,15 +5,14 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/premium_macro_field.dart';
+import '../../core/helpers.dart';
+import '../../core/widgets/bottom_blur_bar.dart';
+import '../../core/widgets/loading_button.dart';
 
 final leavePolicyProvider = FutureProvider.autoDispose<Map<String, dynamic>?>((ref) async {
-  try {
-    final policy = await ref.watch(leavePolicyServiceProvider).get();
-    if (policy == null) return null;
-    return {'paid': policy.paidLeaveDaysPerYear, 'unpaid': policy.unpaidLeaveDaysPerYear};
-  } catch (_) {
-    return null;
-  }
+  final policy = await ref.watch(leavePolicyServiceProvider).get();
+  if (policy == null) return null;
+  return {'paid': policy.paidLeaveDaysPerYear, 'unpaid': policy.unpaidLeaveDaysPerYear};
 });
 
 class LeavePolicyScreen extends ConsumerStatefulWidget {
@@ -32,9 +30,6 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
   @override
   void initState() {
     super.initState();
-    ref.listen(leavePolicyProvider, (_, next) {
-      next.whenData(_initFromData);
-    });
   }
 
   @override
@@ -56,16 +51,20 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
     }
   }
 
+  String? _paidError;
+  String? _unpaidError;
+
   bool _validate() {
-    if (int.tryParse(_paidCtrl.text) == null) return false;
-    if (int.tryParse(_unpaidCtrl.text) == null) return false;
-    return true;
+    setState(() {
+      _paidError = int.tryParse(_paidCtrl.text) == null ? 'Enter a valid number' : null;
+      _unpaidError = int.tryParse(_unpaidCtrl.text) == null ? 'Enter a valid number' : null;
+    });
+    return _paidError == null && _unpaidError == null;
   }
 
   Future<void> _save() async {
     if (!_validate()) {
       HapticFeedback.vibrate();
-      setState(() {});
       return;
     }
     HapticFeedback.mediumImpact();
@@ -75,12 +74,13 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
         'paid_leave_days_per_year': int.tryParse(_paidCtrl.text) ?? 0,
         'unpaid_leave_days_per_year': int.tryParse(_unpaidCtrl.text) ?? 0,
       });
+      ref.invalidate(leavePolicyProvider);
       if (mounted) {
         HapticFeedback.heavyImpact();
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) showError(context, e);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -88,6 +88,7 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(leavePolicyProvider, (_, next) => next.whenData(_initFromData));
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     ref.watch(leavePolicyProvider);
@@ -138,41 +139,48 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
 
               FluidSlideIn(
                 delay: 100,
-                child: PremiumMacroField(cs: cs, tt: tt, label: 'Paid Leave Quota', subtitle: 'Days per year', ctrl: _paidCtrl, icon: PhosphorIconsFill.sun, activeColor: const Color(0xFF10B981)),
+                child: Column(
+                  children: [
+                    PremiumMacroField(cs: cs, tt: tt, label: 'Paid Leave Quota', subtitle: 'Days per year', ctrl: _paidCtrl, icon: PhosphorIconsFill.sun, activeColor: const Color(0xFF10B981)),
+                    if (_paidError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8, left: 4),
+                        child: Row(
+                          children: [
+                            Icon(PhosphorIconsRegular.warningCircle, size: 14, color: cs.error),
+                            const SizedBox(width: 6),
+                            Text(_paidError!, style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
               FluidSlideIn(
                 delay: 200,
-                child: PremiumMacroField(cs: cs, tt: tt, label: 'Unpaid Allowances', subtitle: 'Days per year', ctrl: _unpaidCtrl, icon: PhosphorIconsFill.moon, activeColor: cs.primary),
+                child: Column(
+                  children: [
+                    PremiumMacroField(cs: cs, tt: tt, label: 'Unpaid Allowances', subtitle: 'Days per year', ctrl: _unpaidCtrl, icon: PhosphorIconsFill.moon, activeColor: cs.primary),
+                    if (_unpaidError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8, left: 4),
+                        child: Row(
+                          children: [
+                            Icon(PhosphorIconsRegular.warningCircle, size: 14, color: cs.error),
+                            const SizedBox(width: 6),
+                            Text(_unpaidError!, style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),
 
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 16),
-                  decoration: BoxDecoration(
-                    color: cs.surface.withValues(alpha: 0.8),
-                    border: Border(top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3))),
-                  ),
-                  child: FilledButton(
-                    onPressed: _saving ? null : _save,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(60),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
-                    ),
-                    child: _saving
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Update Policy', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                  ),
-                ),
-              ),
-            ),
+          BottomBlurBar(
+            child: LoadingButton(loading: _saving, onPressed: _save, label: 'Update Policy'),
           ),
         ],
       ),

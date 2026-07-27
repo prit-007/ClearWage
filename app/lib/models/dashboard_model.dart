@@ -4,8 +4,8 @@ class DashboardData {
   final int absentToday;
   final int onLeave;
   final double attendancePercentage;
-  final double totalJama;
-  final double totalUdhaar;
+  final double dailyJamaTotal;
+  final double totalOutstanding;
   final List<ActivityItem> recentActivity;
 
   DashboardData({
@@ -14,8 +14,8 @@ class DashboardData {
     required this.absentToday,
     required this.onLeave,
     required this.attendancePercentage,
-    required this.totalJama,
-    required this.totalUdhaar,
+    required this.dailyJamaTotal,
+    required this.totalOutstanding,
     required this.recentActivity,
   });
 
@@ -31,8 +31,8 @@ class DashboardData {
       absentToday: absent,
       onLeave: onLeave,
       attendancePercentage: pct,
-      totalJama: (json['daily_jama_total'] as num?)?.toDouble() ?? 0,
-      totalUdhaar: (json['total_outstanding'] as num?)?.toDouble() ?? 0,
+      dailyJamaTotal: (json['daily_jama_total'] as num?)?.toDouble() ?? 0,
+      totalOutstanding: (json['total_outstanding'] as num?)?.toDouble() ?? 0,
       recentActivity: (json['recent_activity'] as List<dynamic>?)
               ?.map((e) => ActivityItem.fromJson(e as Map<String, dynamic>))
               .toList() ??

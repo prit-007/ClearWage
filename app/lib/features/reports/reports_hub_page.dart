@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../core/widgets/fluid_slide_in.dart';
 
 class ReportsHubScreen extends StatelessWidget {
   const ReportsHubScreen({super.key});
@@ -39,7 +40,7 @@ class ReportsHubScreen extends StatelessWidget {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final report = reports[index];
-                    return _FluidSlideIn(
+                    return FluidSlideIn(
                       delay: index * 100,
                       child: _PremiumReportCard(cs: cs, tt: tt, config: report),
                     );
@@ -139,24 +140,4 @@ class _PremiumReportCard extends StatelessWidget {
   }
 }
 
-class _FluidSlideIn extends StatelessWidget {
-  final Widget child;
-  final int delay;
-  const _FluidSlideIn({required this.child, this.delay = 0});
 
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 600 + delay),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value.clamp(0.0, 1.0),
-          child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child),
-        );
-      },
-      child: child,
-    );
-  }
-}

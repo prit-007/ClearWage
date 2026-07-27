@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api_client.dart';
 import '../core/app_config.dart';
+import '../core/token_storage.dart';
+import '../models/employee_model.dart';
 import '../services/auth_service.dart';
 import '../services/staff_service.dart';
 import '../services/attendance_service.dart';
@@ -13,13 +15,30 @@ import '../services/leave_policy_service.dart';
 import '../services/advance_request_service.dart';
 import '../services/payroll_service.dart';
 import '../services/settings_service.dart';
+import '../services/profile_service.dart';
+
+final sessionExpiredProvider = StateProvider<bool>((ref) => false);
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   final url = ref.watch(serverUrlProvider);
-  return ApiClient(baseUrl: url);
+  final client = ApiClient(baseUrl: url);
+  client.onUnauthorized = () {
+    ref.read(tokenProvider.notifier).state = null;
+    ref.read(sessionExpiredProvider.notifier).state = true;
+    TokenStorage.clear();
+  };
+  return client;
 });
 
 final tokenProvider = StateProvider<String?>((ref) => null);
+
+final initialTokenProvider = FutureProvider<String?>((ref) async {
+  final token = await TokenStorage.load();
+  if (token != null) {
+    ref.read(tokenProvider.notifier).state = token;
+  }
+  return token;
+});
 
 final authServiceProvider = Provider<AuthService>((ref) {
   final client = ref.watch(apiClientProvider);
@@ -30,6 +49,10 @@ final authServiceProvider = Provider<AuthService>((ref) {
 
 final staffServiceProvider = Provider<StaffService>((ref) {
   return StaffService(ref.watch(apiClientProvider));
+});
+
+final employeeListProvider = FutureProvider.autoDispose<List<Employee>>((ref) {
+  return ref.watch(staffServiceProvider).list();
 });
 
 final attendanceServiceProvider = Provider<AttendanceService>((ref) {
@@ -70,4 +93,8 @@ final payrollServiceProvider = Provider<PayrollService>((ref) {
 
 final settingsServiceProvider = Provider<SettingsService>((ref) {
   return SettingsService(ref.watch(apiClientProvider));
+});
+
+final profileServiceProvider = Provider<ProfileService>((ref) {
+  return ProfileService(ref.watch(apiClientProvider));
 });

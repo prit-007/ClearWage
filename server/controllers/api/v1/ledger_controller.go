@@ -115,7 +115,7 @@ func (c *LedgerController) GetBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.JSONSuccess(w, http.StatusOK, map[string]int32{"balance": balance})
+	utils.JSONSuccess(w, http.StatusOK, map[string]float64{"balance": balance})
 }
 
 func (c *LedgerController) ListByTenant(w http.ResponseWriter, r *http.Request) {

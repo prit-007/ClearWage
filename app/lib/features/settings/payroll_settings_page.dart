@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,13 +5,12 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/premium_macro_field.dart';
+import '../../core/helpers.dart';
+import '../../core/widgets/bottom_blur_bar.dart';
+import '../../core/widgets/loading_button.dart';
 
 final payrollSettingsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
-  try {
-    return await ref.watch(settingsServiceProvider).getPayrollSettings();
-  } catch (_) {
-    return {};
-  }
+  return await ref.watch(settingsServiceProvider).getPayrollSettings();
 });
 
 class PayrollSettingsScreen extends ConsumerStatefulWidget {
@@ -32,9 +30,6 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
   @override
   void initState() {
     super.initState();
-    ref.listen(payrollSettingsProvider, (_, next) {
-      next.whenData(_initFromData);
-    });
   }
 
   @override
@@ -54,16 +49,23 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
     _wageBasis = data['wage_basis'] as String? ?? 'daily';
   }
 
+  String? _otTriggerError;
+  String? _otMultiplierError;
+  String? _roundingError;
+
   bool _validate() {
-    if (double.tryParse(_otTriggerCtrl.text) == null) return false;
-    if (double.tryParse(_otMultiplierCtrl.text) == null) return false;
-    return true;
+    setState(() {
+      _otTriggerError = double.tryParse(_otTriggerCtrl.text) == null ? 'Enter a valid number' : null;
+      _otMultiplierError = double.tryParse(_otMultiplierCtrl.text) == null ? 'Enter a valid number' : null;
+      final r = int.tryParse(_roundingCtrl.text);
+      _roundingError = r == null || r < 0 ? 'Enter a valid number' : null;
+    });
+    return _otTriggerError == null && _otMultiplierError == null && _roundingError == null;
   }
 
   Future<void> _save() async {
     if (!_validate()) {
       HapticFeedback.vibrate();
-      setState(() {});
       return;
     }
     HapticFeedback.mediumImpact();
@@ -77,12 +79,13 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
         'wage_basis': _wageBasis,
         'week_off_paid': false,
       });
+      ref.invalidate(payrollSettingsProvider);
       if (mounted) {
         HapticFeedback.heavyImpact();
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted) showError(context, e);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -90,6 +93,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(payrollSettingsProvider, (_, next) => next.whenData(_initFromData));
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     ref.watch(payrollSettingsProvider);
@@ -140,9 +144,39 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
 
               FluidSlideIn(delay: 100, child: Text('OVERTIME SETTINGS', style: tt.labelSmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w800, letterSpacing: 1.0))),
               const SizedBox(height: 16),
-              FluidSlideIn(delay: 200, child: PremiumMacroField(cs: cs, tt: tt, label: 'OT Trigger', subtitle: 'Hours per day', ctrl: _otTriggerCtrl, icon: PhosphorIconsFill.clock, activeColor: const Color(0xFF10B981))),
+              FluidSlideIn(delay: 200, child: Column(
+                children: [
+                  PremiumMacroField(cs: cs, tt: tt, label: 'OT Trigger', subtitle: 'Hours per day', ctrl: _otTriggerCtrl, icon: PhosphorIconsFill.clock, activeColor: const Color(0xFF10B981)),
+                  if (_otTriggerError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 4),
+                      child: Row(
+                        children: [
+                          Icon(PhosphorIconsRegular.warningCircle, size: 14, color: cs.error),
+                          const SizedBox(width: 6),
+                          Text(_otTriggerError!, style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                ],
+              )),
               const SizedBox(height: 20),
-              FluidSlideIn(delay: 300, child: PremiumMacroField(cs: cs, tt: tt, label: 'OT Multiplier', subtitle: 'e.g., 1.5x Hourly Rate', ctrl: _otMultiplierCtrl, icon: PhosphorIconsFill.trendUp, activeColor: const Color(0xFFF59E0B))),
+              FluidSlideIn(delay: 300, child: Column(
+                children: [
+                  PremiumMacroField(cs: cs, tt: tt, label: 'OT Multiplier', subtitle: 'e.g., 1.5x Hourly Rate', ctrl: _otMultiplierCtrl, icon: PhosphorIconsFill.trendUp, activeColor: const Color(0xFFF59E0B)),
+                  if (_otMultiplierError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 4),
+                      child: Row(
+                        children: [
+                          Icon(PhosphorIconsRegular.warningCircle, size: 14, color: cs.error),
+                          const SizedBox(width: 6),
+                          Text(_otMultiplierError!, style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                ],
+              )),
               const SizedBox(height: 48),
 
               FluidSlideIn(delay: 400, child: Text('PAYROLL BASIS', style: tt.labelSmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w800, letterSpacing: 1.0))),
@@ -160,35 +194,27 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              FluidSlideIn(delay: 600, child: PremiumMacroField(cs: cs, tt: tt, label: 'Rounding Limit', subtitle: 'Nearest Rupee Amount', ctrl: _roundingCtrl, icon: PhosphorIconsFill.coins, activeColor: cs.primary)),
+              FluidSlideIn(delay: 600, child: Column(
+                children: [
+                  PremiumMacroField(cs: cs, tt: tt, label: 'Rounding Limit', subtitle: 'Nearest Rupee Amount', ctrl: _roundingCtrl, icon: PhosphorIconsFill.coins, activeColor: cs.primary),
+                  if (_roundingError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 4),
+                      child: Row(
+                        children: [
+                          Icon(PhosphorIconsRegular.warningCircle, size: 14, color: cs.error),
+                          const SizedBox(width: 6),
+                          Text(_roundingError!, style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                ],
+              )),
             ],
           ),
 
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 16),
-                  decoration: BoxDecoration(
-                    color: cs.surface.withValues(alpha: 0.8),
-                    border: Border(top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3))),
-                  ),
-                  child: FilledButton(
-                    onPressed: _saving ? null : _save,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(60),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
-                    ),
-                    child: _saving
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Save Configuration', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                  ),
-                ),
-              ),
-            ),
+          BottomBlurBar(
+            child: LoadingButton(loading: _saving, onPressed: _save, label: 'Save Configuration'),
           ),
         ],
       ),

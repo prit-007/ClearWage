@@ -179,4 +179,7 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writer.Flush()
+	if err := writer.Error(); err != nil {
+		c.logger.Error().Err(err).Msg("csv flush error")
+	}
 }

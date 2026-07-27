@@ -70,6 +70,10 @@ func (ctrl *MeController) Attendance(w http.ResponseWriter, r *http.Request) {
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
+	if startDate == "" || endDate == "" {
+		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date are required")
+		return
+	}
 
 	records, err := ctrl.attendanceSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate)
 	if err != nil {
@@ -91,6 +95,10 @@ func (ctrl *MeController) Ledger(w http.ResponseWriter, r *http.Request) {
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
+	if startDate == "" || endDate == "" {
+		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date are required")
+		return
+	}
 
 	entries, err := ctrl.ledgerSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate)
 	if err != nil {
@@ -121,6 +129,10 @@ func (ctrl *MeController) Payslip(w http.ResponseWriter, r *http.Request) {
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
+	if startDate == "" || endDate == "" {
+		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date are required")
+		return
+	}
 
 	pdfBytes, filename, err := ctrl.payrollSvc.GeneratePayslip(r.Context(), tenantID, claims.EmployeeID, startDate, endDate)
 	if err != nil {

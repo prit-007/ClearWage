@@ -48,7 +48,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				AllowedOrigins:   []string{"*"},
 				AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 				AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-				AllowCredentials: true,
+				AllowCredentials: false,
 				MaxAge:           300,
 			}))
 

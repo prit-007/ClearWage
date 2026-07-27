@@ -53,6 +53,6 @@ class LedgerSummary {
   factory LedgerSummary.fromJson(Map<String, dynamic> json) => LedgerSummary(
         totalJama: (json['total_jama'] as num?)?.toDouble() ?? 0,
         totalUdhaar: (json['total_udhaar'] as num?)?.toDouble() ?? 0,
-        netBalance: (json['net_balance'] as num?)?.toDouble() ?? 0,
+        netBalance: (json['total_outstanding'] as num?)?.toDouble() ?? 0,
       );
 }

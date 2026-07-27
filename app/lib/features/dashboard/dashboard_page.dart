@@ -8,6 +8,7 @@ import '../../providers/providers.dart';
 import '../staff/add_employee_page.dart';
 import '../attendance/daily_roster_page.dart' as roster;
 import '../reports/reports_hub_page.dart';
+import '../../core/widgets/fluid_slide_in.dart';
 
 final dashboardDataProvider = FutureProvider.autoDispose<DashboardData>((ref) {
   return ref.watch(dashboardServiceProvider).get();
@@ -34,7 +35,7 @@ class DashboardScreen extends ConsumerWidget {
           data: (data) => RefreshIndicator(
             onRefresh: () => ref.refresh(dashboardDataProvider.future),
             color: cs.primary,
-            child: _FluidSlideIn(
+            child: FluidSlideIn(
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
@@ -94,8 +95,8 @@ class DashboardScreen extends ConsumerWidget {
                                 tt: tt,
                                 icon: PhosphorIconsDuotone.wallet,
                                 label: 'Payroll (MTD)',
-                                value:
-                                    '\u20B9${data.totalJama.toStringAsFixed(0)}',
+                                    value:
+                                        '\u20B9${data.dailyJamaTotal.toStringAsFixed(0)}',
                                 color: cs.primary,
                               ),
                             ),
@@ -192,29 +193,7 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-class _FluidSlideIn extends StatelessWidget {
-  final Widget child;
-  const _FluidSlideIn({required this.child});
 
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 900),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value.clamp(0.0, 1.0),
-          child: Transform.translate(
-            offset: Offset(0, 30 * (1 - value)),
-            child: child,
-          ),
-        );
-      },
-      child: child,
-    );
-  }
-}
 
 class _AttendanceOverviewCard extends StatelessWidget {
   final ColorScheme cs;
@@ -388,7 +367,7 @@ class _QuickActionTile extends StatelessWidget {
 class _ActivityTile extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  final dynamic activity;
+  final ActivityItem activity;
 
   const _ActivityTile(
       {required this.cs, required this.tt, required this.activity});

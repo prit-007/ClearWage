@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
@@ -25,6 +26,7 @@ import 'providers/providers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   try {
     await Firebase.initializeApp();
   } catch (e) {
@@ -94,9 +96,41 @@ class AuthGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final token = ref.watch(tokenProvider);
-    if (token != null) return const MainShell();
-    return const LoginScreen();
+    ref.listen<bool>(sessionExpiredProvider, (prev, next) {
+      if (next && prev != true) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Session Expired'),
+              content: const Text('Your session has expired. Please sign in again to continue.'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    ref.read(sessionExpiredProvider.notifier).state = false;
+                    Navigator.of(ctx).pop();
+                  },
+                  child: const Text('Sign In'),
+                ),
+              ],
+            ),
+          );
+        });
+      }
+    });
+
+    final init = ref.watch(initialTokenProvider);
+    return init.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, _) => const LoginScreen(),
+      data: (_) {
+        final token = ref.watch(tokenProvider);
+        return token != null ? const MainShell() : const LoginScreen();
+      },
+    );
   }
 }
 
@@ -107,7 +141,7 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int _selectedIndex = 2;
+  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {

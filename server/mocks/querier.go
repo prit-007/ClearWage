@@ -325,10 +325,10 @@ func (mr *MockQuerierMockRecorder) FindTenantByPhone(ctx, phone any) *gomock.Cal
 }
 
 // GetBalanceByEmployee mocks base method.
-func (m *MockQuerier) GetBalanceByEmployee(ctx context.Context, arg repositories.GetBalanceByEmployeeParams) (int32, error) {
+func (m *MockQuerier) GetBalanceByEmployee(ctx context.Context, arg repositories.GetBalanceByEmployeeParams) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBalanceByEmployee", ctx, arg)
-	ret0, _ := ret[0].(int32)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

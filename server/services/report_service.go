@@ -58,6 +58,8 @@ func (s *ReportService) DailySummary(ctx context.Context, tenantID, date string)
 	attendance, err := s.querier.ListAttendanceByDate(ctx, repositories.ListAttendanceByDateParams{
 		TenantID: tenantID,
 		Date:     date,
+		Limit:    listAll,
+		Offset:   0,
 	})
 	if err != nil {
 		return DailySummary{}, err
@@ -154,7 +156,13 @@ func (s *ReportService) WageBillTrends(ctx context.Context, tenantID string, mon
 		end := endDate.Format("2006-01-02")
 		label := month.Format("2006-01")
 
-		attendance, err := s.querier.ListAttendanceByDateRange(ctx, tenantID, start, end)
+		attendance, err := s.querier.ListAttendanceByDateRange(ctx, repositories.ListAttendanceByDateRangeParams{
+			TenantID:  tenantID,
+			StartDate: start,
+			EndDate:   end,
+			Limit:     listAll,
+			Offset:    0,
+		})
 		if err != nil {
 			return nil, err
 		}

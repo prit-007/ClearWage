@@ -160,6 +160,10 @@ func TestRegisterWithFirebase_Success(t *testing.T) {
 	cfg := config.AppConfig{Secret: "test-secret"}
 
 	mockQuerier.EXPECT().
+		FindTenantByPhone(gomock.Any(), "+91-9876543210").
+		Return(repositories.Tenant{}, repositories.ErrNotFound)
+
+	mockQuerier.EXPECT().
 		CreateTenant(gomock.Any(), repositories.CreateTenantParams{
 			Name:  "Test Factory",
 			Phone: "+91-9876543210",
@@ -176,6 +180,10 @@ func TestRegisterWithFirebase_Success(t *testing.T) {
 			Role:       "owner",
 		}).
 		Return(repositories.Employee{ID: "emp1", TenantID: "t1", Name: "Test User", Phone: "+91-9876543210", Role: "owner"}, nil)
+
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	svc := NewAuthService(cfg, verifier, mockQuerier)
 	result, err := svc.Register(context.Background(), RegisterParams{

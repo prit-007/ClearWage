@@ -24,8 +24,12 @@ func (s *SyncQueueService) CreateEvent(ctx context.Context, tenantID, eventID, e
 	})
 }
 
-func (s *SyncQueueService) ListPending(ctx context.Context, tenantID string) ([]repositories.SyncQueue, error) {
-	return s.querier.ListPendingSyncEvents(ctx, tenantID)
+func (s *SyncQueueService) ListPending(ctx context.Context, tenantID string, limit, offset int32) ([]repositories.SyncQueue, error) {
+	return s.querier.ListPendingSyncEvents(ctx, repositories.ListPendingSyncEventsParams{
+		TenantID: tenantID,
+		Limit:    limit,
+		Offset:   offset,
+	})
 }
 
 func (s *SyncQueueService) UpdateStatus(ctx context.Context, id, tenantID, status, errorMessage string) (repositories.SyncQueue, error) {

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../providers/providers.dart';
-import 'ledger_list_page.dart';
 import '../../core/helpers.dart';
 
 class NewLedgerEntryScreen extends ConsumerStatefulWidget {
@@ -53,7 +52,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
         'amount': _amountController.text.trim(),
         'note': _noteController.text.trim(),
       });
-      ref.invalidate(ledgerListProvider);
+      ref.read(ledgerRefreshProvider.notifier).state++;
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {

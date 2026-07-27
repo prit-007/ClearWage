@@ -34,16 +34,16 @@ type shiftRequest struct {
 	StartTime       string `json:"start_time"`
 	EndTime         string `json:"end_time"`
 	CrossesMidnight bool   `json:"crosses_midnight"`
-	GraceMinutes    int    `json:"grace_minutes"`
+	GraceMinutes    int    `json:"grace_period_minutes"`
 	IsDefault       bool   `json:"is_default"`
 }
 
 // Create adds a new shift template for the current tenant.
 // Start_time and end_time must be in HH:MM 24-hour format.
 //
-// Request body: shiftRequest{name, start_time, end_time, grace_minutes?, is_default?}
+// Request body: shiftRequest{name, start_time, end_time, grace_period_minutes?, is_default?}
 // Required fields: name, start_time, end_time
-// Optional fields: grace_minutes (default 0), is_default (default false)
+// Optional fields: grace_period_minutes (default 0), is_default (default false)
 // Success (200): utils.Response with shift payload
 // Failure (400): utils.Response — missing required fields or invalid JSON
 // Failure (401): utils.Response — missing or invalid JWT / tenant context
@@ -51,22 +51,38 @@ type shiftRequest struct {
 func (c *ShiftController) Create(w http.ResponseWriter, r *http.Request) {
 	var req shiftRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	if req.Name == "" || req.StartTime == "" || req.EndTime == "" {
-		utils.JSONError(w, http.StatusBadRequest, "Name, start_time, and end_time are required")
+		utils.JSONFail(w, http.StatusBadRequest, "Name, start_time, and end_time are required")
 		return
 	}
 
-	shift, err := c.shiftService.CreateShift(r.Context(), tenantID, req.Name, req.StartTime, req.EndTime, req.CrossesMidnight, req.GraceMinutes, req.IsDefault)
+	if len(req.Name) > 50 {
+		utils.JSONFail(w, http.StatusBadRequest, "name must be at most 50 characters")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	var createdBy string
+	if claims != nil {
+		createdBy = claims.EmployeeID
+	}
+
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	shift, err := c.shiftService.CreateShift(r.Context(), tenantID, req.Name, req.StartTime, req.EndTime, req.CrossesMidnight, req.GraceMinutes, req.IsDefault, createdBy)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to create shift")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to create shift")
@@ -84,11 +100,12 @@ func (c *ShiftController) Create(w http.ResponseWriter, r *http.Request) {
 func (c *ShiftController) List(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
-	shifts, err := c.shiftService.ListShifts(r.Context(), tenantID)
+	limit, offset := parseAllLimitOffset(r)
+	shifts, err := c.shiftService.ListShifts(r.Context(), tenantID, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list shifts")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list shifts")
@@ -108,15 +125,14 @@ func (c *ShiftController) List(w http.ResponseWriter, r *http.Request) {
 func (c *ShiftController) Get(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	shiftID := chi.URLParam(r, "id")
 	shift, err := c.shiftService.GetShift(r.Context(), shiftID, tenantID)
 	if err != nil {
-		c.logger.Error().Err(err).Msg("failed to get shift")
-		utils.JSONError(w, http.StatusNotFound, "Shift not found")
+		utils.JSONFail(w, http.StatusNotFound, "Shift not found")
 		return
 	}
 
@@ -137,19 +153,30 @@ func (c *ShiftController) Get(w http.ResponseWriter, r *http.Request) {
 func (c *ShiftController) Update(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	shiftID := chi.URLParam(r, "id")
 	var req shiftRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if req.Name == "" || req.StartTime == "" || req.EndTime == "" {
-		utils.JSONError(w, http.StatusBadRequest, "Name, start_time, and end_time are required")
+		utils.JSONFail(w, http.StatusBadRequest, "Name, start_time, and end_time are required")
+		return
+	}
+
+	if len(req.Name) > 50 {
+		utils.JSONFail(w, http.StatusBadRequest, "name must be at most 50 characters")
 		return
 	}
 
@@ -174,7 +201,13 @@ func (c *ShiftController) Update(w http.ResponseWriter, r *http.Request) {
 func (c *ShiftController) Delete(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
@@ -202,7 +235,13 @@ func (c *ShiftController) Delete(w http.ResponseWriter, r *http.Request) {
 func (c *ShiftController) AssignDefaultShift(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
@@ -211,12 +250,12 @@ func (c *ShiftController) AssignDefaultShift(w http.ResponseWriter, r *http.Requ
 		ShiftID string `json:"shift_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if req.ShiftID == "" {
-		utils.JSONError(w, http.StatusBadRequest, "shift_id is required")
+		utils.JSONFail(w, http.StatusBadRequest, "shift_id is required")
 		return
 	}
 

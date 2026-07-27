@@ -116,6 +116,17 @@ func (ctrl *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 		utils.JSONFail(w, http.StatusBadRequest, "name, factory_name, and id_token are required")
 		return
 	}
+
+	if len(req.Name) > 100 {
+		utils.JSONFail(w, http.StatusBadRequest, "name must be at most 100 characters")
+		return
+	}
+
+	if len(req.FactoryName) > 100 {
+		utils.JSONFail(w, http.StatusBadRequest, "factory_name must be at most 100 characters")
+		return
+	}
+
 	token, err := ctrl.authService.Register(r.Context(), services.RegisterParams{
 		Name:        req.Name,
 		FactoryName: req.FactoryName,

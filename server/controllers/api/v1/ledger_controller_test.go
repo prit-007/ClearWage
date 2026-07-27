@@ -82,7 +82,7 @@ func TestLedgerGetBalance_Success(t *testing.T) {
 
 	mockQuerier.EXPECT().
 		GetBalanceByEmployee(gomock.Any(), gomock.Any()).
-		Return(int32(1500), nil)
+		Return(float64(1500), nil)
 
 	r := chi.NewRouter()
 	r.Get("/api/v1/ledger/{id}/balance", ctrl.GetBalance)
@@ -270,7 +270,7 @@ func TestLedgerGetBalance_DBError(t *testing.T) {
 
 	mockQuerier.EXPECT().
 		GetBalanceByEmployee(gomock.Any(), gomock.Any()).
-		Return(int32(0), errors.New("db error"))
+		Return(float64(0), errors.New("db error"))
 
 	r := chi.NewRouter()
 	r.Get("/api/v1/ledger/{id}/balance", ctrl.GetBalance)

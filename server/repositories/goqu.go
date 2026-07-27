@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
@@ -360,17 +361,17 @@ func (q *GoquQuerier) ListAttendanceByDate(ctx context.Context, arg ListAttendan
 	err := q.db.From("attendance").Where(
 		goqu.C("tenant_id").Eq(arg.TenantID),
 		goqu.C("date").Eq(arg.Date),
-	).Order(goqu.C("employee_id").Asc()).ScanStructsContext(ctx, &items)
+	).Order(goqu.C("employee_id").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
-func (q *GoquQuerier) ListAttendanceByDateRange(ctx context.Context, tenantID string, startDate string, endDate string) ([]Attendance, error) {
+func (q *GoquQuerier) ListAttendanceByDateRange(ctx context.Context, arg ListAttendanceByDateRangeParams) ([]Attendance, error) {
 	var items []Attendance
 	err := q.db.From("attendance").Where(
-		goqu.C("tenant_id").Eq(tenantID),
-		goqu.C("date").Gte(startDate),
-		goqu.C("date").Lte(endDate),
-	).Order(goqu.C("date").Asc()).ScanStructsContext(ctx, &items)
+		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("date").Gte(arg.StartDate),
+		goqu.C("date").Lte(arg.EndDate),
+	).Order(goqu.C("date").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
@@ -381,7 +382,7 @@ func (q *GoquQuerier) ListAttendanceByEmployeeMonth(ctx context.Context, arg Lis
 		goqu.C("tenant_id").Eq(arg.TenantID),
 		goqu.C("date").Gte(arg.StartDate),
 		goqu.C("date").Lte(arg.EndDate),
-	).Order(goqu.C("date").Asc()).ScanStructsContext(ctx, &items)
+	).Order(goqu.C("date").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
@@ -399,7 +400,8 @@ func (q *GoquQuerier) ListEmployeesByTenant(ctx context.Context, arg ListEmploye
 		query = query.Where(goqu.C("is_active").Eq(true))
 	}
 	if arg.Query != nil && *arg.Query != "" {
-		q := "%" + *arg.Query + "%"
+		q := "%" + strings.ReplaceAll(strings.ReplaceAll(*arg.Query, "\\", "\\\\"), "%", "\\%") + "%"
+		q = strings.ReplaceAll(q, "_", "\\_")
 		query = query.Where(
 			goqu.Or(
 				goqu.C("name").ILike(q),
@@ -412,9 +414,9 @@ func (q *GoquQuerier) ListEmployeesByTenant(ctx context.Context, arg ListEmploye
 	return items, err
 }
 
-func (q *GoquQuerier) ListHolidaysByTenant(ctx context.Context, tenantID string) ([]Holiday, error) {
+func (q *GoquQuerier) ListHolidaysByTenant(ctx context.Context, arg ListHolidaysByTenantParams) ([]Holiday, error) {
 	var items []Holiday
-	err := q.db.From("holidays").Where(goqu.C("tenant_id").Eq(tenantID)).Order(goqu.C("date").Asc()).ScanStructsContext(ctx, &items)
+	err := q.db.From("holidays").Where(goqu.C("tenant_id").Eq(arg.TenantID)).Order(goqu.C("date").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
@@ -425,7 +427,7 @@ func (q *GoquQuerier) ListLedgerByEmployeeMonth(ctx context.Context, arg ListLed
 		goqu.C("tenant_id").Eq(arg.TenantID),
 		goqu.C("date").Gte(arg.StartDate),
 		goqu.C("date").Lte(arg.EndDate),
-	).Order(goqu.C("date").Desc()).ScanStructsContext(ctx, &items)
+	).Order(goqu.C("date").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
@@ -446,11 +448,11 @@ func (q *GoquQuerier) CreateActivityLog(ctx context.Context, arg CreateActivityL
 	return a, nil
 }
 
-func (q *GoquQuerier) ListActivityLogsByTenant(ctx context.Context, tenantID string, limit int32) ([]ActivityLog, error) {
+func (q *GoquQuerier) ListActivityLogsByTenant(ctx context.Context, arg ListActivityLogsByTenantParams) ([]ActivityLog, error) {
 	var items []ActivityLog
 	err := q.db.From("activity_logs").Where(
-		goqu.C("tenant_id").Eq(tenantID),
-	).Order(goqu.C("created_at").Desc()).Limit(uint(limit)).ScanStructsContext(ctx, &items)
+		goqu.C("tenant_id").Eq(arg.TenantID),
+	).Order(goqu.C("created_at").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
@@ -487,13 +489,13 @@ func (q *GoquQuerier) CreateAdvanceRequest(ctx context.Context, arg CreateAdvanc
 	return a, nil
 }
 
-func (q *GoquQuerier) ListAdvanceRequestsByTenant(ctx context.Context, tenantID string, status string) ([]AdvanceRequest, error) {
+func (q *GoquQuerier) ListAdvanceRequestsByTenant(ctx context.Context, arg ListAdvanceRequestsByTenantParams) ([]AdvanceRequest, error) {
 	var items []AdvanceRequest
-	query := q.db.From("advance_requests").Where(goqu.C("tenant_id").Eq(tenantID))
-	if status != "" {
-		query = query.Where(goqu.C("status").Eq(status))
+	query := q.db.From("advance_requests").Where(goqu.C("tenant_id").Eq(arg.TenantID))
+	if arg.Status != "" {
+		query = query.Where(goqu.C("status").Eq(arg.Status))
 	}
-	err := query.Order(goqu.C("created_at").Desc()).ScanStructsContext(ctx, &items)
+	err := query.Order(goqu.C("created_at").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
@@ -543,24 +545,24 @@ func (q *GoquQuerier) ListLedgerByTenant(ctx context.Context, arg ListLedgerByTe
 		goqu.C("tenant_id").Eq(arg.TenantID),
 		goqu.C("date").Gte(arg.StartDate),
 		goqu.C("date").Lte(arg.EndDate),
-	).Order(goqu.C("date").Desc()).ScanStructsContext(ctx, &items)
+	).Order(goqu.C("date").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
-func (q *GoquQuerier) ListPendingSyncEvents(ctx context.Context, tenantID string) ([]SyncQueue, error) {
+func (q *GoquQuerier) ListPendingSyncEvents(ctx context.Context, arg ListPendingSyncEventsParams) ([]SyncQueue, error) {
 	var items []SyncQueue
 	err := q.db.From("sync_queue").Where(
-		goqu.C("tenant_id").Eq(tenantID),
+		goqu.C("tenant_id").Eq(arg.TenantID),
 		goqu.C("status").Eq("pending"),
-	).Order(goqu.C("created_at").Asc()).ScanStructsContext(ctx, &items)
+	).Order(goqu.C("created_at").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
-func (q *GoquQuerier) ListShiftsByTenant(ctx context.Context, tenantID string) ([]Shift, error) {
+func (q *GoquQuerier) ListShiftsByTenant(ctx context.Context, arg ListShiftsByTenantParams) ([]Shift, error) {
 	var items []Shift
 	err := q.db.From("shifts").Where(
-		goqu.C("tenant_id").Eq(tenantID),
-	).Order(goqu.C("created_at").Desc()).ScanStructsContext(ctx, &items)
+		goqu.C("tenant_id").Eq(arg.TenantID),
+	).Order(goqu.C("created_at").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 

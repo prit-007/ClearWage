@@ -38,7 +38,7 @@ type upsertPayrollSettingsRequest struct {
 func (c *SettingsController) GetPayrollSettings(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -54,30 +54,36 @@ func (c *SettingsController) GetPayrollSettings(w http.ResponseWriter, r *http.R
 func (c *SettingsController) UpsertPayrollSettings(w http.ResponseWriter, r *http.Request) {
 	var req upsertPayrollSettingsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	if req.OTTrigger != "after_shift_end" && req.OTTrigger != "after_daily_hours" {
-		utils.JSONError(w, http.StatusBadRequest, "ot_trigger must be after_shift_end or after_daily_hours")
+		utils.JSONFail(w, http.StatusBadRequest, "ot_trigger must be after_shift_end or after_daily_hours")
 		return
 	}
 	if req.OTMultiplierDefault != 1.0 && req.OTMultiplierDefault != 1.5 && req.OTMultiplierDefault != 2.0 {
-		utils.JSONError(w, http.StatusBadRequest, "ot_multiplier_default must be 1.0, 1.5, or 2.0")
+		utils.JSONFail(w, http.StatusBadRequest, "ot_multiplier_default must be 1.0, 1.5, or 2.0")
 		return
 	}
 	if req.OTRounding != 15 && req.OTRounding != 30 && req.OTRounding != 60 {
-		utils.JSONError(w, http.StatusBadRequest, "ot_rounding must be 15, 30, or 60")
+		utils.JSONFail(w, http.StatusBadRequest, "ot_rounding must be 15, 30, or 60")
 		return
 	}
 	if req.WageBasis != "calendar" && req.WageBasis != "fixed_26" && req.WageBasis != "fixed_30" {
-		utils.JSONError(w, http.StatusBadRequest, "wage_basis must be calendar, fixed_26, or fixed_30")
+		utils.JSONFail(w, http.StatusBadRequest, "wage_basis must be calendar, fixed_26, or fixed_30")
 		return
 	}
 

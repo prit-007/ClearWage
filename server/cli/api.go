@@ -42,10 +42,11 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			r := chi.NewRouter()
 
-			r.Use(mw.RequestLogger(logger))
-			r.Use(middleware.Recoverer)
-			r.Use(cors.Handler(cors.Options{
-				AllowedOrigins:   []string{"*"},
+	r.Use(mw.RequestLogger(logger))
+	r.Use(middleware.Recoverer)
+	r.Use(mw.LimitBodySize(5 << 20))
+	r.Use(cors.Handler(cors.Options{
+				AllowedOrigins:   []string{cfg.AllowedOrigin},
 				AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 				AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 				AllowCredentials: false,
@@ -68,6 +69,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 		authCtrl, err := ctrl.NewAuthController(querier, logger, cfg)
 			if err != nil {return err}
 			r.Route("/api/v1/auth", func(r chi.Router) {
+				r.Use(mw.RateLimit(10, time.Minute))
 				r.Post("/firebase-login", authCtrl.LoginWithFirebase)
 				r.Post("/register", authCtrl.Register)
 			})

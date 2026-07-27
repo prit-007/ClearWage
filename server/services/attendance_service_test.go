@@ -22,6 +22,9 @@ func TestAttendanceService_Create(t *testing.T) {
 	mockQuerier.EXPECT().
 		CreateAttendance(gomock.Any(), gomock.Any()).
 		Return(repositories.Attendance{Status: "present"}, nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	att, err := svc.CreateAttendance(
 		context.Background(),
@@ -56,7 +59,7 @@ func TestAttendanceService_ListByDate(t *testing.T) {
 		ListAttendanceByDate(gomock.Any(), gomock.Any()).
 		Return([]repositories.Attendance{{Status: "present"}}, nil)
 
-	atts, err := svc.ListByDate(context.Background(), "00000000-0000-0000-0000-000000000001", "2025-01-15")
+	atts, err := svc.ListByDate(context.Background(), "00000000-0000-0000-0000-000000000001", "2025-01-15", 100000, 0)
 	if err != nil {
 		t.Fatalf("ListByDate failed: %v", err)
 	}
@@ -123,6 +126,9 @@ func TestAttendanceService_UpdateAttendance(t *testing.T) {
 	mockQuerier.EXPECT().
 		UpdateAttendance(gomock.Any(), gomock.Any()).
 		Return(repositories.Attendance{Status: "present"}, nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	now := time.Now()
 	att, err := svc.UpdateAttendance(
@@ -160,6 +166,7 @@ func TestAttendanceService_ListByEmployeeMonth(t *testing.T) {
 		"00000000-0000-0000-0000-000000000001",
 		"2025-01-01",
 		"2025-02-01",
+		100000, 0,
 	)
 	if err != nil {
 		t.Fatalf("ListByEmployeeMonth failed: %v", err)
@@ -208,7 +215,7 @@ func TestAttendanceService_ListByDate_Empty(t *testing.T) {
 		ListAttendanceByDate(gomock.Any(), gomock.Any()).
 		Return([]repositories.Attendance{}, nil)
 
-	atts, err := svc.ListByDate(context.Background(), "00000000-0000-0000-0000-000000000001", "2025-01-15")
+	atts, err := svc.ListByDate(context.Background(), "00000000-0000-0000-0000-000000000001", "2025-01-15", 100000, 0)
 	if err != nil {
 		t.Fatalf("ListByDate failed: %v", err)
 	}

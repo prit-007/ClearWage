@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -82,29 +83,34 @@ func isValidAttendanceStatus(status string) bool {
 func (c *AttendanceController) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	claims := middlewares.GetClaims(r.Context())
 	if claims == nil {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var req createAttendanceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if req.EmployeeID == "" || req.Date == "" || req.ShiftID == "" || req.Status == "" {
-		utils.JSONError(w, http.StatusBadRequest, "employee_id, date, shift_id, and status are required")
+		utils.JSONFail(w, http.StatusBadRequest, "employee_id, date, shift_id, and status are required")
+		return
+	}
+
+	if !utils.ValidateDate(req.Date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 
 	if !isValidAttendanceStatus(req.Status) {
-		utils.JSONError(w, http.StatusBadRequest, "invalid status: must be present, absent, half_day, paid_leave, or week_off")
+		utils.JSONFail(w, http.StatusBadRequest, "invalid status: must be present, absent, half_day, paid_leave, or week_off")
 		return
 	}
 
@@ -140,17 +146,33 @@ func (c *AttendanceController) Create(w http.ResponseWriter, r *http.Request) {
 func (c *AttendanceController) ListByDate(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	date := r.URL.Query().Get("date")
 	if date == "" {
-		utils.JSONError(w, http.StatusBadRequest, "date query parameter is required")
+		utils.JSONFail(w, http.StatusBadRequest, "date query parameter is required")
 		return
 	}
 
-	attendance, err := c.attendanceService.ListByDate(r.Context(), tenantID, date)
+	if !utils.ValidateDate(date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
+	limit, _ := strconv.Atoi(limitStr)
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	offset, _ := strconv.Atoi(offsetStr)
+	if offset < 0 {
+		offset = 0
+	}
+
+	attendance, err := c.attendanceService.ListByDate(r.Context(), tenantID, date, int32(limit), int32(offset))
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list attendance")
@@ -172,7 +194,7 @@ func (c *AttendanceController) ListByDate(w http.ResponseWriter, r *http.Request
 func (c *AttendanceController) ListByEmployee(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -181,11 +203,27 @@ func (c *AttendanceController) ListByEmployee(w http.ResponseWriter, r *http.Req
 	endDate := r.URL.Query().Get("end_date")
 
 	if startDate == "" || endDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
 		return
 	}
 
-	attendance, err := c.attendanceService.ListByEmployeeMonth(r.Context(), employeeID, tenantID, startDate, endDate)
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
+	limit, _ := strconv.Atoi(limitStr)
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	offset, _ := strconv.Atoi(offsetStr)
+	if offset < 0 {
+		offset = 0
+	}
+
+	attendance, err := c.attendanceService.ListByEmployeeMonth(r.Context(), employeeID, tenantID, startDate, endDate, int32(limit), int32(offset))
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list employee attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list attendance")
@@ -210,25 +248,25 @@ func (c *AttendanceController) ListByEmployee(w http.ResponseWriter, r *http.Req
 func (c *AttendanceController) Update(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	claims := middlewares.GetClaims(r.Context())
 	if claims == nil {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	var req createAttendanceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if req.Status != "" && !isValidAttendanceStatus(req.Status) {
-		utils.JSONError(w, http.StatusBadRequest, "invalid status: must be present, absent, half_day, paid_leave, or week_off")
+		utils.JSONFail(w, http.StatusBadRequest, "invalid status: must be present, absent, half_day, paid_leave, or week_off")
 		return
 	}
 	otHours := req.OvertimeHours
@@ -262,7 +300,7 @@ func (c *AttendanceController) Update(w http.ResponseWriter, r *http.Request) {
 func (c *AttendanceController) BulkUpsert(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -270,19 +308,19 @@ func (c *AttendanceController) BulkUpsert(w http.ResponseWriter, r *http.Request
 		Records []createAttendanceRequest `json:"records"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if len(req.Records) == 0 {
-		utils.JSONError(w, http.StatusBadRequest, "records is required")
+		utils.JSONFail(w, http.StatusBadRequest, "records is required")
 		return
 	}
 
 	var results []interface{}
 	for _, rec := range req.Records {
 		if rec.Status != "" && !isValidAttendanceStatus(rec.Status) {
-			utils.JSONError(w, http.StatusBadRequest, "invalid status: must be present, absent, half_day, paid_leave, or week_off")
+			utils.JSONFail(w, http.StatusBadRequest, "invalid status: must be present, absent, half_day, paid_leave, or week_off")
 			return
 		}
 		otHours := rec.OvertimeHours
@@ -322,7 +360,13 @@ func (c *AttendanceController) BulkUpsert(w http.ResponseWriter, r *http.Request
 func (c *AttendanceController) LockMonth(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
@@ -331,12 +375,17 @@ func (c *AttendanceController) LockMonth(w http.ResponseWriter, r *http.Request)
 		EndDate   string `json:"end_date"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if req.StartDate == "" || req.EndDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date are required")
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date are required")
+		return
+	}
+
+	if !utils.ValidateDate(req.StartDate) || !utils.ValidateDate(req.EndDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 

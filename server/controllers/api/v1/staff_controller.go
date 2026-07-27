@@ -66,6 +66,21 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.WageType != "daily" && req.WageType != "monthly" && req.WageType != "hourly" {
+		utils.JSONFail(w, http.StatusBadRequest, "wage_type must be one of: daily, monthly, hourly")
+		return
+	}
+
+	if len(req.Name) > 100 {
+		utils.JSONFail(w, http.StatusBadRequest, "name must be at most 100 characters")
+		return
+	}
+
+	if len(req.Phone) < 10 || len(req.Phone) > 20 {
+		utils.JSONFail(w, http.StatusBadRequest, "phone must be between 10 and 20 characters")
+		return
+	}
+
 	tenantID := middlewares.GetTenantID(r.Context())
 	claims := middlewares.GetClaims(r.Context())
 
@@ -208,6 +223,16 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 
 	if claims != nil && claims.Role == "employee" {
 		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	if len(req.Name) > 100 {
+		utils.JSONFail(w, http.StatusBadRequest, "name must be at most 100 characters")
+		return
+	}
+
+	if len(req.Phone) < 10 || len(req.Phone) > 20 {
+		utils.JSONFail(w, http.StatusBadRequest, "phone must be between 10 and 20 characters")
 		return
 	}
 

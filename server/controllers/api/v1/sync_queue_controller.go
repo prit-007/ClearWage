@@ -34,18 +34,18 @@ type createSyncEventRequest struct {
 func (c *SyncQueueController) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var req createSyncEventRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if req.EventID == "" || req.EventType == "" || len(req.Payload) == 0 {
-		utils.JSONError(w, http.StatusBadRequest, "event_id, event_type, and payload are required")
+		utils.JSONFail(w, http.StatusBadRequest, "event_id, event_type, and payload are required")
 		return
 	}
 
@@ -62,11 +62,12 @@ func (c *SyncQueueController) CreateEvent(w http.ResponseWriter, r *http.Request
 func (c *SyncQueueController) ListPending(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
-	events, err := c.syncService.ListPending(r.Context(), tenantID)
+	limit, offset := parseAllLimitOffset(r)
+	events, err := c.syncService.ListPending(r.Context(), tenantID, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list pending sync events")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list pending sync events")
@@ -79,7 +80,7 @@ func (c *SyncQueueController) ListPending(w http.ResponseWriter, r *http.Request
 func (c *SyncQueueController) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -89,12 +90,12 @@ func (c *SyncQueueController) UpdateStatus(w http.ResponseWriter, r *http.Reques
 		ErrorMessage string `json:"error_message"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if req.ID == "" || req.Status == "" {
-		utils.JSONError(w, http.StatusBadRequest, "id and status are required")
+		utils.JSONFail(w, http.StatusBadRequest, "id and status are required")
 		return
 	}
 

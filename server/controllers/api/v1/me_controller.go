@@ -71,11 +71,16 @@ func (ctrl *MeController) Attendance(w http.ResponseWriter, r *http.Request) {
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
 	if startDate == "" || endDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date are required")
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date are required")
 		return
 	}
 
-	records, err := ctrl.attendanceSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate)
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	records, err := ctrl.attendanceSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate, 100000, 0)
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("failed to get my attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to get attendance")
@@ -96,11 +101,16 @@ func (ctrl *MeController) Ledger(w http.ResponseWriter, r *http.Request) {
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
 	if startDate == "" || endDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date are required")
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date are required")
 		return
 	}
 
-	entries, err := ctrl.ledgerSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate)
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	entries, err := ctrl.ledgerSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate, 100000, 0)
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("failed to get my ledger")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to get ledger")
@@ -130,7 +140,12 @@ func (ctrl *MeController) Payslip(w http.ResponseWriter, r *http.Request) {
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
 	if startDate == "" || endDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date are required")
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date are required")
+		return
+	}
+
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 

@@ -47,7 +47,7 @@ func TestSyncQueueService_ListPending(t *testing.T) {
 		ListPendingSyncEvents(gomock.Any(), gomock.Any()).
 		Return([]repositories.SyncQueue{{EventType: "attendance"}}, nil)
 
-	events, err := svc.ListPending(context.Background(), "00000000-0000-0000-0000-000000000001")
+	events, err := svc.ListPending(context.Background(), "00000000-0000-0000-0000-000000000001", 100000, 0)
 	if err != nil {
 		t.Fatalf("ListPending failed: %v", err)
 	}
@@ -116,7 +116,7 @@ func TestSyncQueueService_ListPending_Empty(t *testing.T) {
 		ListPendingSyncEvents(gomock.Any(), gomock.Any()).
 		Return([]repositories.SyncQueue{}, nil)
 
-	events, err := svc.ListPending(context.Background(), "00000000-0000-0000-0000-000000000001")
+	events, err := svc.ListPending(context.Background(), "00000000-0000-0000-0000-000000000001", 100000, 0)
 	if err != nil {
 		t.Fatalf("ListPending failed: %v", err)
 	}

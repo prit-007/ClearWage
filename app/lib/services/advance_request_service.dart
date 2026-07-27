@@ -5,9 +5,11 @@ class AdvanceRequestService {
   final ApiClient _client;
   AdvanceRequestService(this._client);
 
-  Future<List<AdvanceRequest>> list({String? status}) async {
+  Future<List<AdvanceRequest>> list({String? status, int? limit, int? offset}) async {
     final query = <String, String>{};
     if (status != null) query['status'] = status;
+    if (limit != null) query['limit'] = limit.toString();
+    if (offset != null) query['offset'] = offset.toString();
     final res = await _client.get('/api/v1/advance-requests', query: query.isNotEmpty ? query : null);
     final list = (res['data'] as List<dynamic>?) ?? [];
     return list.map((e) => AdvanceRequest.fromJson(e as Map<String, dynamic>)).toList();

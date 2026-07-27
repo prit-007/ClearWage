@@ -83,6 +83,8 @@ final leavePolicyServiceProvider = Provider<LeavePolicyService>((ref) {
   return LeavePolicyService(ref.watch(apiClientProvider));
 });
 
+final ledgerRefreshProvider = StateProvider<int>((ref) => 0);
+
 final advanceRequestServiceProvider = Provider<AdvanceRequestService>((ref) {
   return AdvanceRequestService(ref.watch(apiClientProvider));
 });

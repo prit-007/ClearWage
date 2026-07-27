@@ -8,129 +8,200 @@ import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../core/helpers.dart';
 
-final shiftsListProvider = FutureProvider.autoDispose<List<Shift>>((ref) {
-  return ref.watch(shiftServiceProvider).list();
-});
+const int _pageSize = 20;
 
-class ShiftsManagementScreen extends ConsumerWidget {
+class ShiftsManagementScreen extends ConsumerStatefulWidget {
   const ShiftsManagementScreen({super.key});
+  @override
+  ConsumerState<ShiftsManagementScreen> createState() => _ShiftsManagementScreenState();
+}
+
+class _ShiftsManagementScreenState extends ConsumerState<ShiftsManagementScreen> {
+  final ScrollController _scrollCtrl = ScrollController();
+  List<Shift> _items = [];
+  bool _loading = false;
+  bool _hasMore = true;
+  int _page = 0;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    _scrollCtrl.addListener(_onScroll);
+    _fetch();
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.removeListener(_onScroll);
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200 && !_loading && _hasMore) {
+      _fetch();
+    }
+  }
+
+  Future<void> _fetch() async {
+    if (_loading || !_hasMore) return;
+    setState(() => _loading = true);
+    try {
+      final items = await ref.read(shiftServiceProvider).list(limit: _pageSize, offset: _page * _pageSize);
+      if (mounted) {
+        setState(() {
+          _items.addAll(items);
+          _page++;
+          _hasMore = items.length >= _pageSize;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        showError(context, e);
+      }
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _items = [];
+      _page = 0;
+      _hasMore = true;
+    });
+    await _fetch();
+  }
+
+  Future<void> _showShiftBottomSheet({Shift? shift}) async {
+    HapticFeedback.mediumImpact();
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ShiftFormModal(shift: shift),
+    );
+    if (result == true && mounted) _onRefresh();
+  }
+
+  Future<void> _deleteShift(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Shift'),
+        content: const Text('Are you sure? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    HapticFeedback.heavyImpact();
+    try {
+      await ref.read(shiftServiceProvider).delete(id);
+      if (mounted) _onRefresh();
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final async = ref.watch(shiftsListProvider);
 
     return Scaffold(
       backgroundColor: cs.surface,
       body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverAppBar(
-              backgroundColor: cs.surface.withValues(alpha: 0.95),
-              pinned: true,
-              elevation: 0,
-              leading: IconButton(
-                icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
-                onPressed: () => Navigator.pop(context),
-              ),
-              title: Text('Shift Config', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-              centerTitle: true,
-              actions: [
-                IconButton(
-                  icon: Icon(PhosphorIconsBold.plus, color: cs.primary),
-                  onPressed: () => _showShiftBottomSheet(context, ref, null),
+        child: RefreshIndicator(
+          color: cs.primary,
+          backgroundColor: cs.surface,
+          onRefresh: _onRefresh,
+          child: CustomScrollView(
+            controller: _scrollCtrl,
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            slivers: [
+              SliverAppBar(
+                backgroundColor: cs.surface.withValues(alpha: 0.95),
+                pinned: true,
+                elevation: 0,
+                leading: IconButton(
+                  icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+                  onPressed: () => Navigator.pop(context),
                 ),
-              ],
-            ),
-            async.when(
-              loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
-              error: (e, _) => SliverFillRemaining(child: Center(child: Text('$e', style: TextStyle(color: cs.error)))),
-              data: (shifts) => shifts.isEmpty
-                  ? SliverFillRemaining(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              PhosphorIconsFill.clock,
-                              size: 56,
-                              color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text('No shifts configured',
-                              style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: cs.onSurface)),
-                          const SizedBox(height: 8),
-                          Text('Tap the + button to add your first shift.',
-                              style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-                              textAlign: TextAlign.center),
-                        ],
-                      ),
-                    )
-                  : SliverPadding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final shift = shifts[index];
-                      return FluidSlideIn(
-                        delay: index * 100,
-                        child: _PremiumShiftCard(
-                          cs: cs, tt: tt, shift: shift,
-                          onEdit: () => _showShiftBottomSheet(context, ref, shift),
-                          onDelete: () => _deleteShift(context, ref, shift.id),
+                title: Text('Shift Config', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                centerTitle: true,
+                actions: [
+                  IconButton(
+                    icon: Icon(PhosphorIconsBold.plus, color: cs.primary),
+                    onPressed: () => _showShiftBottomSheet(),
+                  ),
+                ],
+              ),
+              if (_loading && _items.isEmpty)
+                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+              else if (_items.isEmpty)
+                SliverFillRemaining(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                          shape: BoxShape.circle,
                         ),
-                      );
-                    },
-                    childCount: shifts.length,
+                        child: Icon(
+                          PhosphorIconsFill.clock,
+                          size: 56,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text('No shifts configured',
+                          style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: cs.onSurface)),
+                      const SizedBox(height: 8),
+                      Text('Tap the + button to add your first shift.',
+                          style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                          textAlign: TextAlign.center),
+                    ],
+                  ),
+                )
+              else ...[
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final shift = _items[index];
+                        return FluidSlideIn(
+                          delay: index * 100,
+                          child: _PremiumShiftCard(
+                            cs: cs, tt: tt, shift: shift,
+                            onEdit: () => _showShiftBottomSheet(shift: shift),
+                            onDelete: () => _deleteShift(shift.id),
+                          ),
+                        );
+                      },
+                      childCount: _items.length,
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ],
+                if (_loading)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary)),
+                    ),
+                  ),
+              ],
+            ],
+          ),
         ),
       ),
     );
-  }
-}
-
-Future<void> _showShiftBottomSheet(BuildContext context, WidgetRef ref, Shift? shift) async {
-  HapticFeedback.mediumImpact();
-  final result = await showModalBottomSheet<bool>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => _ShiftFormModal(shift: shift),
-  );
-  if (result == true) ref.invalidate(shiftsListProvider);
-}
-
-Future<void> _deleteShift(BuildContext context, WidgetRef ref, String id) async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Delete Shift'),
-      content: const Text('Are you sure? This cannot be undone.'),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
-      ],
-    ),
-  );
-  if (confirmed != true) return;
-  HapticFeedback.heavyImpact();
-  try {
-    await ref.read(shiftServiceProvider).delete(id);
-    ref.invalidate(shiftsListProvider);
-  } catch (e) {
-    if (context.mounted) showError(context, e);
   }
 }
 

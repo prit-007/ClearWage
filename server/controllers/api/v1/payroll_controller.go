@@ -33,17 +33,28 @@ type payrollRequest struct {
 func (c *PayrollController) Calculate(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	var req payrollRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 	if req.StartDate == "" || req.EndDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date are required")
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date are required")
+		return
+	}
+
+	if !utils.ValidateDate(req.StartDate) || !utils.ValidateDate(req.EndDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 
@@ -66,17 +77,28 @@ type payslipRequest struct {
 func (c *PayrollController) GeneratePayslip(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	var req payslipRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 	if req.EmployeeID == "" || req.StartDate == "" || req.EndDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "employee_id, start_date, and end_date are required")
+		utils.JSONFail(w, http.StatusBadRequest, "employee_id, start_date, and end_date are required")
+		return
+	}
+
+	if !utils.ValidateDate(req.StartDate) || !utils.ValidateDate(req.EndDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 
@@ -97,17 +119,28 @@ func (c *PayrollController) GeneratePayslip(w http.ResponseWriter, r *http.Reque
 func (c *PayrollController) LockMonth(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	var req payrollRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 	if req.StartDate == "" || req.EndDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date are required")
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date are required")
+		return
+	}
+
+	if !utils.ValidateDate(req.StartDate) || !utils.ValidateDate(req.EndDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 

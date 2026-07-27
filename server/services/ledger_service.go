@@ -17,7 +17,10 @@ func NewLedgerService(querier repositories.Querier) *LedgerService {
 }
 
 func (s *LedgerService) CreateEntry(ctx context.Context, tenantID, employeeID, date, entryType, amount, note, createdBy string) (repositories.Ledger, error) {
-	amt, _ := strconv.ParseFloat(amount, 64)
+	amt, err := strconv.ParseFloat(amount, 64)
+	if err != nil {
+		return repositories.Ledger{}, fmt.Errorf("invalid amount: %w", err)
+	}
 	var n *string
 	if note != "" {
 		n = &note
@@ -33,12 +36,14 @@ func (s *LedgerService) CreateEntry(ctx context.Context, tenantID, employeeID, d
 	})
 }
 
-func (s *LedgerService) ListByEmployeeMonth(ctx context.Context, employeeID, tenantID, startDate, endDate string) ([]repositories.Ledger, error) {
+func (s *LedgerService) ListByEmployeeMonth(ctx context.Context, employeeID, tenantID, startDate, endDate string, limit, offset int32) ([]repositories.Ledger, error) {
 	return s.querier.ListLedgerByEmployeeMonth(ctx, repositories.ListLedgerByEmployeeMonthParams{
 		EmployeeID: employeeID,
 		TenantID:   tenantID,
 		StartDate:  startDate,
 		EndDate:    endDate,
+		Limit:      limit,
+		Offset:     offset,
 	})
 }
 
@@ -49,11 +54,13 @@ func (s *LedgerService) GetBalance(ctx context.Context, employeeID, tenantID str
 	})
 }
 
-func (s *LedgerService) ListByTenant(ctx context.Context, tenantID, startDate, endDate string) ([]repositories.Ledger, error) {
+func (s *LedgerService) ListByTenant(ctx context.Context, tenantID, startDate, endDate string, limit, offset int32) ([]repositories.Ledger, error) {
 	return s.querier.ListLedgerByTenant(ctx, repositories.ListLedgerByTenantParams{
 		TenantID:  tenantID,
 		StartDate: startDate,
 		EndDate:   endDate,
+		Limit:     limit,
+		Offset:    offset,
 	})
 }
 

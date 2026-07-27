@@ -16,7 +16,12 @@ func NewAdvanceRequestService(querier repositories.Querier) *AdvanceRequestServi
 }
 
 func (s *AdvanceRequestService) CreateRequest(ctx context.Context, tenantID, employeeID string, amount float64, note string) (repositories.AdvanceRequest, error) {
-	pending, err := s.querier.ListAdvanceRequestsByTenant(ctx, tenantID, "pending")
+	pending, err := s.querier.ListAdvanceRequestsByTenant(ctx, repositories.ListAdvanceRequestsByTenantParams{
+		TenantID: tenantID,
+		Status:   "pending",
+		Limit:    10000,
+		Offset:   0,
+	})
 	if err != nil {
 		return repositories.AdvanceRequest{}, err
 	}
@@ -39,8 +44,13 @@ func (s *AdvanceRequestService) CreateRequest(ctx context.Context, tenantID, emp
 	})
 }
 
-func (s *AdvanceRequestService) ListRequests(ctx context.Context, tenantID, status string) ([]repositories.AdvanceRequest, error) {
-	return s.querier.ListAdvanceRequestsByTenant(ctx, tenantID, status)
+func (s *AdvanceRequestService) ListRequests(ctx context.Context, tenantID, status string, limit, offset int32) ([]repositories.AdvanceRequest, error) {
+	return s.querier.ListAdvanceRequestsByTenant(ctx, repositories.ListAdvanceRequestsByTenantParams{
+		TenantID: tenantID,
+		Status:   status,
+		Limit:    limit,
+		Offset:   offset,
+	})
 }
 
 func (s *AdvanceRequestService) ApproveRequest(ctx context.Context, id, tenantID, approvedBy string) (repositories.AdvanceRequest, error) {

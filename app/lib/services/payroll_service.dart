@@ -20,10 +20,11 @@ class PayrollService {
     });
   }
 
-  Future<void> lockMonth({required String startDate, required String endDate}) async {
+  Future<void> lockMonth({required String startDate, required String endDate, List<Map<String, dynamic>>? adjustments}) async {
     await _client.post('/api/v1/payroll/lock', body: {
       'start_date': startDate,
       'end_date': endDate,
+      'adjustments': ?adjustments,
     });
   }
 }

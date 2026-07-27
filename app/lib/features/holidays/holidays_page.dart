@@ -23,6 +23,7 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
   bool _loading = false;
   bool _hasMore = true;
   int _page = 0;
+  String? _error;
 
   @override
   void initState() {
@@ -57,11 +58,8 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
           _loading = false;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _loading = false);
-        showError(context, e);
-      }
+    } catch (err) {
+      if (mounted) setState(() { _loading = false; _error = err.toString(); });
     }
   }
 
@@ -71,6 +69,7 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
       _items = [];
       _page = 0;
       _hasMore = true;
+      _error = null;
     });
     await _fetch();
   }
@@ -149,7 +148,28 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
                   const SizedBox(width: 8),
                 ],
               ),
-              if (_loading && _items.isEmpty)
+              if (_error != null)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(PhosphorIconsFill.warningCircle, size: 48, color: Theme.of(context).colorScheme.error),
+                        const SizedBox(height: 16),
+                        Text('Failed to load holidays', style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 8),
+                        Text(_error!, style: Theme.of(context).textTheme.bodySmall),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          icon: const Icon(PhosphorIconsFill.arrowClockwise),
+                          label: const Text('Retry'),
+                          onPressed: _onRefresh,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else if (_loading && _items.isEmpty)
                 const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
               else if (_items.isEmpty)
                 SliverFillRemaining(

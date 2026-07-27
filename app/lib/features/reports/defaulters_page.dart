@@ -37,7 +37,29 @@ class DefaultersScreen extends ConsumerWidget {
             ),
             async.when(
               loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
-              error: (e, _) => SliverFillRemaining(child: Center(child: Text('$e', style: TextStyle(color: cs.error)))),
+              error: (e, _) => SliverFillRemaining(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(PhosphorIconsFill.warningCircle, size: 48, color: cs.error),
+                        const SizedBox(height: 16),
+                        Text('Failed to load defaulters', style: tt.titleMedium),
+                        const SizedBox(height: 8),
+                        Text('$e', style: tt.bodySmall, textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          icon: const Icon(PhosphorIconsFill.arrowClockwise),
+                          label: const Text('Retry'),
+                          onPressed: () => ref.invalidate(defaultersProvider),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               data: (defaulters) => defaulters.isEmpty
                   ? SliverFillRemaining(
                       child: Column(

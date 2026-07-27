@@ -110,7 +110,8 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
         title: Text('Payroll Rules', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
         centerTitle: true,
       ),
-      body: Stack(
+      body: _loaded
+          ? Stack(
         children: [
           ListView(
             physics: const BouncingScrollPhysics(),
@@ -217,7 +218,8 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
             child: LoadingButton(loading: _saving, onPressed: _save, label: 'Save Configuration'),
           ),
         ],
-      ),
+      )
+          : const Center(child: CircularProgressIndicator()),
     );
   }
 }

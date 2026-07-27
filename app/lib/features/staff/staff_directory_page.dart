@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -29,6 +30,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
   bool _hasMore = true;
   int _offset = 0;
   String? _error;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -39,6 +41,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();
     _searchFocus.dispose();
@@ -95,9 +98,12 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
 
   void _onSearchChanged(String v) {
     setState(() => _searchQuery = v.toLowerCase());
-    if (v.isNotEmpty && _allEmployees.length < 100) {
-      _fetchAllForSearch();
-    }
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (v.isNotEmpty && _allEmployees.length < 100) {
+        _fetchAllForSearch();
+      }
+    });
   }
 
   Future<void> _fetchAllForSearch() async {

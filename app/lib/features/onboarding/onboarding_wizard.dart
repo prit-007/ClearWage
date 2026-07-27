@@ -176,18 +176,21 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
                   const SizedBox(width: 16),
                 ],
                 Expanded(
-                  child: FilledButton(
-                    onPressed: _nextStep,
+                  child: FilledButton.icon(
+                    icon: _creatingShifts
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(PhosphorIconsFill.checkCircle),
+                    onPressed: _creatingShifts ? null : _nextStep,
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(56),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16)),
                       elevation: 0,
                     ),
-                    child: Text(
+                    label: Text(
                       _currentStep < _totalSteps - 1
                           ? 'Continue'
-                          : 'Complete Setup',
+                          : _creatingShifts ? 'Setting up...' : 'Complete Setup',
                       style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

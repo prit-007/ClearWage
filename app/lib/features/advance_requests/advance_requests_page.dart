@@ -134,7 +134,26 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
               if (_loading)
                 const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
               else if (_error != null)
-                SliverFillRemaining(child: Center(child: Text('$_error', style: TextStyle(color: cs.error))))
+                SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(PhosphorIconsFill.warningCircle, size: 48, color: Theme.of(context).colorScheme.error),
+                        const SizedBox(height: 16),
+                        Text('Failed to load requests', style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 8),
+                        Text(_error!, style: Theme.of(context).textTheme.bodySmall),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          icon: const Icon(PhosphorIconsFill.arrowClockwise),
+                          label: const Text('Retry'),
+                          onPressed: _fetch,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               else if (_requests.isEmpty)
                 SliverFillRemaining(
                   child: Column(
@@ -197,6 +216,18 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
   bool _loading = false;
 
   Future<void> _approve() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirm'),
+        content: const Text('Approve this advance request?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Approve')),
+        ],
+      ),
+    );
+    if (confirm != true) return;
     setState(() => _loading = true);
     try {
       HapticFeedback.heavyImpact();
@@ -211,6 +242,18 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
   }
 
   Future<void> _deny() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirm'),
+        content: const Text('Deny this advance request?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Deny')),
+        ],
+      ),
+    );
+    if (confirm != true) return;
     setState(() => _loading = true);
     try {
       HapticFeedback.selectionClick();

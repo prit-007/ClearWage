@@ -30,8 +30,27 @@ class DashboardScreen extends ConsumerWidget {
           loading: () => Center(
               child: CircularProgressIndicator(
                   color: cs.primary, strokeWidth: 2)),
-          error: (e, _) =>
-              Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
+          error: (e, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(PhosphorIconsFill.warningCircle, size: 48, color: cs.error),
+                  const SizedBox(height: 16),
+                  Text('Something went wrong', style: tt.titleMedium),
+                  const SizedBox(height: 8),
+                  Text('$e', style: tt.bodySmall, textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    icon: const Icon(PhosphorIconsFill.arrowClockwise),
+                    label: const Text('Retry'),
+                    onPressed: () => ref.invalidate(dashboardDataProvider),
+                  ),
+                ],
+              ),
+            ),
+          ),
           data: (data) => RefreshIndicator(
             onRefresh: () => ref.refresh(dashboardDataProvider.future),
             color: cs.primary,
@@ -395,8 +414,6 @@ class _ActivityTile extends StatelessWidget {
                   tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
           subtitle: Text(activity.createdAt,
               style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
-          trailing: Icon(PhosphorIconsRegular.caretRight,
-              color: cs.onSurfaceVariant, size: 16),
         ),
       ),
     );

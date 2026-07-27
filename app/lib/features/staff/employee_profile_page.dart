@@ -311,66 +311,7 @@ class _EditorialProfileHeader extends StatelessWidget {
                 color: cs.onSurfaceVariant,
                 fontWeight: FontWeight.w500)),
         const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _PremiumActionButton(
-                cs: cs,
-                icon: PhosphorIconsFill.phone,
-                label: 'Call',
-                color: const Color(0xFF10B981)),
-            const SizedBox(width: 16),
-            _PremiumActionButton(
-                cs: cs,
-                icon: PhosphorIconsFill.whatsappLogo,
-                label: 'WhatsApp',
-                color: const Color(0xFF128C7E)),
-          ],
-        ),
-        const SizedBox(height: 24),
       ],
-    );
-  }
-}
-
-class _PremiumActionButton extends StatelessWidget {
-  final ColorScheme cs;
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _PremiumActionButton(
-      {required this.cs,
-      required this.icon,
-      required this.label,
-      required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => HapticFeedback.selectionClick(),
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-            horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(24),
-          border:
-              Border.all(color: color.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(width: 8),
-            Text(label,
-                style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14)),
-          ],
-        ),
-      ),
     );
   }
 }

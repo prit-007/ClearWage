@@ -112,17 +112,31 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                 ),
                 title: Text('Ledger Hub', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
                 centerTitle: true,
-                actions: [
-                  IconButton(
-                    icon: Icon(PhosphorIconsRegular.funnel, color: cs.onSurfaceVariant),
-                    onPressed: () {},
-                  ),
-                ],
+                actions: const [],
               ),
               if (_loading)
                 const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
               else if (_error != null)
-                SliverFillRemaining(child: Center(child: Text('Error: $_error', style: TextStyle(color: cs.error))))
+                SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(PhosphorIconsFill.warningCircle, size: 48, color: Theme.of(context).colorScheme.error),
+                        const SizedBox(height: 16),
+                        Text('Failed to load entries', style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 8),
+                        Text(_error!, style: Theme.of(context).textTheme.bodySmall),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          icon: const Icon(PhosphorIconsFill.arrowClockwise),
+                          label: const Text('Retry'),
+                          onPressed: _fetch,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               else ...[
                 SliverToBoxAdapter(
                   child: _buildSummary(cs, tt),
@@ -134,10 +148,27 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                   ),
                 ),
                 if (_entries.isEmpty)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(48),
-                      child: Center(child: Text('No ledger entries yet.')),
+                  SliverToBoxAdapter(
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: 48),
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(PhosphorIconsFill.notebook, size: 48, color: Theme.of(context).colorScheme.primary),
+                          ),
+                          const SizedBox(height: 24),
+                          Text('No ledger entries yet', style: Theme.of(context).textTheme.titleLarge),
+                          const SizedBox(height: 8),
+                          Text('Entries will appear here once transactions are recorded.',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                        ],
+                      ),
                     ),
                   )
                 else

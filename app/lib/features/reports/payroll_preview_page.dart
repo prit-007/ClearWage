@@ -19,6 +19,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
   bool _loading = true;
   Map<String, dynamic>? _data;
   String? _error;
+  List<TextEditingController> _rowControllers = [];
 
   @override
   void initState() {
@@ -36,7 +37,10 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final data = await ref.read(payrollServiceProvider).calculate(startDate: _startStr, endDate: _endStr);
-      if (mounted) setState(() { _data = data; _loading = false; });
+      if (mounted) {
+        setState(() { _data = data; _loading = false; });
+        _initializeControllers(data);
+      }
     } catch (e) {
       if (mounted) setState(() { _error = '$e'; _loading = false; });
     }
@@ -58,13 +62,37 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
     HapticFeedback.heavyImpact();
     setState(() => _locking = true);
     try {
-      await ref.read(payrollServiceProvider).lockMonth(startDate: _startStr, endDate: _endStr);
+      final employees = (_data?['employees'] as List<dynamic>?) ?? [];
+      final adjustments = _rowControllers.asMap().entries.map((e) => {
+        'employee_id': employees[e.key]['employee_id'],
+        'net_pay': double.tryParse(e.value.text.trim()) ?? (employees[e.key]['net'] as num?)?.toDouble() ?? 0,
+      }).toList();
+      await ref.read(payrollServiceProvider).lockMonth(startDate: _startStr, endDate: _endStr, adjustments: adjustments);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payroll locked successfully')));
     } catch (e) {
       if (mounted) showError(context, e);
     } finally {
       if (mounted) setState(() => _locking = false);
     }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _rowControllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  void _initializeControllers(Map<String, dynamic> data) {
+    for (final c in _rowControllers) {
+      c.dispose();
+    }
+    final emps = (data['employees'] as List<dynamic>?) ?? [];
+    _rowControllers = List.generate(emps.length, (i) {
+      final emp = emps[i] as Map<String, dynamic>;
+      return TextEditingController(text: (emp['net'] as num?)?.toStringAsFixed(0) ?? '0');
+    });
   }
 
   Future<void> _pickDates() async {
@@ -129,7 +157,29 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
               if (_loading)
                 const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
               else if (_error != null)
-                SliverFillRemaining(child: Center(child: Text(_error!, style: TextStyle(color: cs.error))))
+                SliverFillRemaining(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(PhosphorIconsFill.warningCircle, size: 48, color: cs.error),
+                          const SizedBox(height: 16),
+                          Text('Failed to load payroll', style: tt.titleMedium),
+                          const SizedBox(height: 8),
+                          Text(_error!, style: tt.bodySmall, textAlign: TextAlign.center),
+                          const SizedBox(height: 16),
+                          FilledButton.icon(
+                            icon: const Icon(PhosphorIconsFill.arrowClockwise),
+                            label: const Text('Retry'),
+                            onPressed: _loadData,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
               else ...[
                 SliverToBoxAdapter(
                   child: Padding(
@@ -168,7 +218,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                           cs: cs, tt: tt,
                           name: emp['name'] as String? ?? '',
                           gross: '₹${(emp['gross'] as num?)?.toStringAsFixed(0) ?? '0'}',
-                          initialNet: (emp['net'] as num?)?.toStringAsFixed(0) ?? '0',
+                          controller: _rowControllers[index],
                         );
                       },
                       childCount: ((_data?['employees'] as List<dynamic>?) ?? []).length,
@@ -263,23 +313,22 @@ class _PayStat extends StatelessWidget {
 class _EditablePayrollRow extends StatefulWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  final String name, gross, initialNet;
+  final String name, gross;
+  final TextEditingController controller;
 
-  const _EditablePayrollRow({required this.cs, required this.tt, required this.name, required this.gross, required this.initialNet});
+  const _EditablePayrollRow({required this.cs, required this.tt, required this.name, required this.gross, required this.controller});
 
   @override
   State<_EditablePayrollRow> createState() => _EditablePayrollRowState();
 }
 
 class _EditablePayrollRowState extends State<_EditablePayrollRow> {
-  late final TextEditingController _ctrl;
   final FocusNode _focus = FocusNode();
   bool _isFocused = false;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = TextEditingController(text: widget.initialNet);
     _focus.addListener(() {
       setState(() => _isFocused = _focus.hasFocus);
       if (_isFocused) HapticFeedback.selectionClick();
@@ -288,7 +337,6 @@ class _EditablePayrollRowState extends State<_EditablePayrollRow> {
 
   @override
   void dispose() {
-    _ctrl.dispose();
     _focus.dispose();
     super.dispose();
   }
@@ -338,7 +386,7 @@ class _EditablePayrollRowState extends State<_EditablePayrollRow> {
                   Text('₹', style: TextStyle(color: _isFocused ? widget.cs.primary : widget.cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
                   Expanded(
                     child: TextField(
-                      controller: _ctrl,
+                      controller: widget.controller,
                       focusNode: _focus,
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.right,

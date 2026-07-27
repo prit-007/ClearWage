@@ -35,6 +35,7 @@ class MyProfileScreen extends ConsumerStatefulWidget {
 
 class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
+  bool _downloading = false;
 
   @override
   void initState() {
@@ -53,6 +54,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
 
   Future<void> _downloadPayslip() async {
     HapticFeedback.heavyImpact();
+    setState(() => _downloading = true);
     try {
       final now = DateTime.now();
       final start = '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
@@ -65,6 +67,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payslip downloaded successfully')));
     } catch (e) {
       if (mounted) showError(context, e);
+    } finally {
+      if (mounted) setState(() => _downloading = false);
     }
   }
 
@@ -87,7 +91,27 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
       ),
       body: ref.watch(myProfileProvider).when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e', style: TextStyle(color: cs.error))),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(PhosphorIconsFill.warningCircle, size: 48, color: cs.error),
+                const SizedBox(height: 16),
+                Text('Something went wrong', style: tt.titleMedium),
+                const SizedBox(height: 8),
+                Text('$e', style: tt.bodySmall, textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  icon: const Icon(PhosphorIconsFill.arrowClockwise),
+                  label: const Text('Retry'),
+                  onPressed: () => ref.invalidate(myProfileProvider),
+                ),
+              ],
+            ),
+          ),
+        ),
         data: (data) {
           final name = data['name'] as String? ?? 'User';
           final role = data['role'] as String? ?? '';
@@ -165,7 +189,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
                 _ProfileTab(cs: cs, tt: tt, data: data),
                 _MyAttendanceTab(cs: cs, tt: tt),
                 _MyLedgerTab(cs: cs, tt: tt),
-                _PayslipTab(cs: cs, tt: tt, onDownload: _downloadPayslip),
+                _PayslipTab(cs: cs, tt: tt, onDownload: _downloadPayslip, isDownloading: _downloading),
               ],
             ),
           );
@@ -284,7 +308,27 @@ class _MyAttendanceTab extends ConsumerWidget {
     final async = ref.watch(myAttendanceProvider);
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('$e', style: TextStyle(color: cs.error))),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(PhosphorIconsFill.warningCircle, size: 48, color: cs.error),
+              const SizedBox(height: 16),
+              Text('Something went wrong', style: tt.titleMedium),
+              const SizedBox(height: 8),
+              Text('$e', style: tt.bodySmall, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                icon: const Icon(PhosphorIconsFill.arrowClockwise),
+                label: const Text('Retry'),
+                onPressed: () => ref.invalidate(myAttendanceProvider),
+              ),
+            ],
+          ),
+        ),
+      ),
       data: (list) {
         final present = list.where((a) => a.status == 'present').length;
         final absent = list.where((a) => a.status == 'absent').length;
@@ -387,7 +431,27 @@ class _MyLedgerTab extends ConsumerWidget {
     final async = ref.watch(myLedgerProvider);
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('$e', style: TextStyle(color: cs.error))),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(PhosphorIconsFill.warningCircle, size: 48, color: cs.error),
+              const SizedBox(height: 16),
+              Text('Something went wrong', style: tt.titleMedium),
+              const SizedBox(height: 8),
+              Text('$e', style: tt.bodySmall, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                icon: const Icon(PhosphorIconsFill.arrowClockwise),
+                label: const Text('Retry'),
+                onPressed: () => ref.invalidate(myLedgerProvider),
+              ),
+            ],
+          ),
+        ),
+      ),
       data: (data) {
         final balance = (data['balance'] as num?)?.toDouble() ?? 0;
         final entries = (data['entries'] as List<dynamic>?) ?? [];
@@ -463,7 +527,8 @@ class _PayslipTab extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final VoidCallback onDownload;
-  const _PayslipTab({required this.cs, required this.tt, required this.onDownload});
+  final bool isDownloading;
+  const _PayslipTab({required this.cs, required this.tt, required this.onDownload, this.isDownloading = false});
 
   @override
   Widget build(BuildContext context) {
@@ -486,9 +551,11 @@ class _PayslipTab extends StatelessWidget {
               Text('Download your payslip for the current month', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
               const SizedBox(height: 32),
               FilledButton.icon(
-                onPressed: onDownload,
-                icon: const Icon(PhosphorIconsBold.download),
-                label: const Text('Download Payslip', style: TextStyle(fontWeight: FontWeight.w700)),
+                onPressed: isDownloading ? null : onDownload,
+                icon: isDownloading
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(PhosphorIconsBold.download),
+                label: Text(isDownloading ? 'Downloading...' : 'Download Payslip', style: const TextStyle(fontWeight: FontWeight.w700)),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(56),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

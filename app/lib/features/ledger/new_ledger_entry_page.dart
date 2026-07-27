@@ -35,9 +35,19 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
   }
 
   Future<void> _save() async {
+    if (_selectedEmployeeId == null) {
+      showError(context, 'Please select an employee');
+      HapticFeedback.vibrate();
+      return;
+    }
+    if (_amountController.text.trim().isEmpty) {
+      showError(context, 'Please enter an amount');
+      HapticFeedback.vibrate();
+      return;
+    }
     final amount = double.tryParse(_amountController.text.trim());
-    if (_selectedEmployeeId == null || amount == null || amount <= 0) {
-      setState(() {});
+    if (amount == null || amount <= 0) {
+      showError(context, 'Please enter a valid amount');
       HapticFeedback.vibrate();
       return;
     }

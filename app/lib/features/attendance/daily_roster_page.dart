@@ -104,6 +104,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     final tt = Theme.of(context).textTheme;
     final employeesAsync = ref.watch(employeeListProvider);
     final attendanceAsync = ref.watch(attendanceByDateProvider(_dateStr));
+    final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
@@ -219,7 +220,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                         return FluidSlideIn(
                           delay: (index * 50).clamp(0, 400),
                           child: row.attendance != null
-                              ? _PremiumAttendanceCard(cs: cs, tt: tt, attendance: row.attendance!, onUpdate: _updateAttendance)
+                              ? _PremiumAttendanceCard(cs: cs, tt: tt, employee: row.employee, attendance: row.attendance!, onUpdate: _updateAttendance)
                               : _UnmarkedEmployeeCard(cs: cs, tt: tt, employee: row.employee, onMark: (status, ot) => _createAttendance(row.employee, status, ot)),
                         );
                       },
@@ -234,7 +235,8 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Padding(
+      floatingActionButton: isAdmin
+          ? Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: FilledButton.icon(
           onPressed: _saving ? null : () => _markRemainingPresent(),
@@ -249,7 +251,8 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
             elevation: 4,
           ),
         ),
-      ),
+      )
+          : null,
     );
   }
 }
@@ -275,6 +278,7 @@ class _UnmarkedEmployeeCard extends StatefulWidget {
 class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
   final _otCtrl = TextEditingController();
   bool _saving = false;
+  _AttStatus? _optimisticStatus;
 
   @override
   void dispose() {
@@ -285,9 +289,17 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
   void _mark(_AttStatus status) {
     if (_saving) return;
     HapticFeedback.lightImpact();
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _optimisticStatus = status;
+    });
     widget.onMark(status, double.tryParse(_otCtrl.text) ?? 0).then((_) {
       if (mounted) setState(() => _saving = false);
+    }).catchError((_) {
+      if (mounted) setState(() {
+        _saving = false;
+        _optimisticStatus = null;
+      });
     });
   }
 
@@ -335,11 +347,11 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: TactileToggle(label: 'P', color: const Color(0xFF10B981), isSelected: false, onTap: () => _mark(_AttStatus.present))),
+              Expanded(child: TactileToggle(label: 'P', color: const Color(0xFF10B981), isSelected: _optimisticStatus == _AttStatus.present, onTap: () => _mark(_AttStatus.present))),
               const SizedBox(width: 8),
-              Expanded(child: TactileToggle(label: 'A', color: const Color(0xFFEF4444), isSelected: false, onTap: () => _mark(_AttStatus.absent))),
+              Expanded(child: TactileToggle(label: 'A', color: const Color(0xFFEF4444), isSelected: _optimisticStatus == _AttStatus.absent, onTap: () => _mark(_AttStatus.absent))),
               const SizedBox(width: 8),
-              Expanded(child: TactileToggle(label: 'HD', color: const Color(0xFFF59E0B), isSelected: false, onTap: () => _mark(_AttStatus.halfDay))),
+              Expanded(child: TactileToggle(label: 'HD', color: const Color(0xFFF59E0B), isSelected: _optimisticStatus == _AttStatus.halfDay, onTap: () => _mark(_AttStatus.halfDay))),
             ],
           ),
         ],
@@ -355,10 +367,11 @@ final attendanceByDateProvider = FutureProvider.autoDispose.family<List<Attendan
 class _PremiumAttendanceCard extends StatefulWidget {
   final ColorScheme cs;
   final TextTheme tt;
+  final Employee employee;
   final Attendance attendance;
   final Future<void> Function(Attendance att, _AttStatus newStatus, double ot)? onUpdate;
 
-  const _PremiumAttendanceCard({required this.cs, required this.tt, required this.attendance, this.onUpdate});
+  const _PremiumAttendanceCard({required this.cs, required this.tt, required this.employee, required this.attendance, this.onUpdate});
 
   @override
   State<_PremiumAttendanceCard> createState() => _PremiumAttendanceCardState();
@@ -393,20 +406,24 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
   void _updateStatus(_AttStatus s) {
     if (_status == s || _saving) return;
     HapticFeedback.lightImpact();
-    setState(() => _saving = true);
+    final previous = _status;
+    setState(() {
+      _status = s;
+      _saving = true;
+    });
     widget.onUpdate?.call(widget.attendance, s, double.tryParse(_otCtrl.text) ?? 0).then((_) {
-      if (mounted) {
-        setState(() {
-          _status = s;
-          _saving = false;
-        });
-      }
+      if (mounted) setState(() => _saving = false);
+    }).catchError((_) {
+      if (mounted) setState(() {
+        _status = previous;
+        _saving = false;
+      });
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final initials = getInitials(widget.attendance.employeeName);
+    final initials = getInitials(widget.employee.name);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -430,8 +447,8 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.attendance.employeeName, style: widget.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                    Text(widget.attendance.shiftId, style: widget.tt.labelSmall?.copyWith(color: widget.cs.onSurfaceVariant)),
+                    Text(widget.employee.name, style: widget.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    Text(widget.employee.shiftName ?? 'No shift', style: widget.tt.labelSmall?.copyWith(color: widget.cs.onSurfaceVariant)),
                   ],
                 ),
               ),

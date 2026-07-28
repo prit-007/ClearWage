@@ -56,4 +56,12 @@ class AuthService {
     } catch (_) {}
     _client.setToken(null);
   }
+
+  Future<void> deleteAccount() async {
+    final res = await _client.delete('/api/v1/auth/account');
+    if (res['status'] != 'success') {
+      throw ApiException(res['message'] as String? ?? 'Delete failed');
+    }
+    await logout();
+  }
 }

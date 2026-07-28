@@ -14,11 +14,12 @@ type ReportService struct {
 }
 
 type DailySummary struct {
-	Date       string `json:"date"`
-	TotalStaff int    `json:"total_staff"`
-	Present    int    `json:"present"`
-	Absent     int    `json:"absent"`
-	OnLeave    int    `json:"on_leave"`
+	Date          string  `json:"date"`
+	TotalWorkers  int     `json:"total_workers"`
+	Present       int     `json:"present"`
+	Absent        int     `json:"absent"`
+	OnLeave       int     `json:"on_leave"`
+	TotalWageBill float64 `json:"total_wage_bill"`
 }
 
 type EmployeeMonthlyReport struct {
@@ -31,6 +32,14 @@ type WageBillTrend struct {
 	Month      string  `json:"month"`
 	TotalWages float64 `json:"total_wages"`
 	Headcount  int     `json:"headcount"`
+}
+
+type AttendanceTrend struct {
+	Date    string `json:"date"`
+	Present int    `json:"present"`
+	Absent  int    `json:"absent"`
+	HalfDay int    `json:"half_day"`
+	OnLeave int    `json:"on_leave"`
 }
 
 type Defaulter struct {
@@ -65,14 +74,30 @@ func (s *ReportService) DailySummary(ctx context.Context, tenantID, date string)
 		return DailySummary{}, err
 	}
 
+	empMap := make(map[string]repositories.Employee, len(employees))
+	for _, e := range employees {
+		empMap[e.ID] = e
+	}
+
 	present := 0
 	absent := 0
 	onLeave := 0
+	wageBill := 0.0
 
 	for _, a := range attendance {
+		emp, ok := empMap[a.EmployeeID]
+		if !ok {
+			continue
+		}
 		switch a.Status {
 		case "present":
 			present++
+			switch emp.WageType {
+			case "monthly":
+				wageBill += emp.WageAmount / 30
+			default:
+				wageBill += emp.WageAmount
+			}
 		case "absent":
 			absent++
 		case "paid_leave", "week_off":
@@ -80,14 +105,13 @@ func (s *ReportService) DailySummary(ctx context.Context, tenantID, date string)
 		}
 	}
 
-	idleStaff := len(employees) - len(attendance)
-
 	return DailySummary{
-		Date:       date,
-		TotalStaff: len(employees),
-		Present:    present,
-		Absent:     absent + idleStaff,
-		OnLeave:    onLeave,
+		Date:          date,
+		TotalWorkers:  len(employees),
+		Present:       present,
+		Absent:        absent,
+		OnLeave:       onLeave,
+		TotalWageBill: wageBill,
 	}, nil
 }
 
@@ -235,4 +259,51 @@ func (s *ReportService) DefaultersList(ctx context.Context, tenantID string) ([]
 	}
 
 	return defaulters, nil
+}
+
+func (s *ReportService) GetAttendanceTrends(ctx context.Context, tenantID string, days int) ([]AttendanceTrend, error) {
+	endDate := time.Now().Format("2006-01-02")
+	startDate := time.Now().AddDate(0, 0, -days).Format("2006-01-02")
+
+	records, err := s.querier.ListAttendanceByDateRange(ctx, repositories.ListAttendanceByDateRangeParams{
+		TenantID:  tenantID,
+		StartDate: startDate,
+		EndDate:   endDate,
+		Limit:     listAll,
+		Offset:    0,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	dailyMap := make(map[string]*AttendanceTrend)
+	for _, r := range records {
+		if _, ok := dailyMap[r.Date]; !ok {
+			dailyMap[r.Date] = &AttendanceTrend{Date: r.Date}
+		}
+		switch r.Status {
+		case "present":
+			dailyMap[r.Date].Present++
+		case "absent":
+			dailyMap[r.Date].Absent++
+		case "half_day":
+			dailyMap[r.Date].HalfDay++
+		case "paid_leave", "week_off":
+			dailyMap[r.Date].OnLeave++
+		}
+	}
+
+	start, _ := time.Parse("2006-01-02", startDate)
+	end, _ := time.Parse("2006-01-02", endDate)
+	result := make([]AttendanceTrend, 0, days+1)
+	for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
+		dateStr := d.Format("2006-01-02")
+		if trend, ok := dailyMap[dateStr]; ok {
+			result = append(result, *trend)
+		} else {
+			result = append(result, AttendanceTrend{Date: dateStr})
+		}
+	}
+
+	return result, nil
 }

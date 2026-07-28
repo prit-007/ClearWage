@@ -126,6 +126,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
@@ -234,17 +235,19 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          HapticFeedback.heavyImpact();
-          final result = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AddEmployeeScreen()));
-          if (result == true && mounted) _fetch();
-        },
-        backgroundColor: cs.primary,
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Icon(PhosphorIconsBold.userPlus, color: cs.onPrimary),
-      ),
+      floatingActionButton: isAdmin
+          ? FloatingActionButton(
+              onPressed: () async {
+                HapticFeedback.heavyImpact();
+                final result = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AddEmployeeScreen()));
+                if (result == true && mounted) _fetch();
+              },
+              backgroundColor: cs.primary,
+              elevation: 4,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              child: Icon(PhosphorIconsBold.userPlus, color: cs.onPrimary),
+            )
+          : null,
     );
   }
 

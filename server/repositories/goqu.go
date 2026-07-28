@@ -191,6 +191,13 @@ func (q *GoquQuerier) DeleteHoliday(ctx context.Context, arg DeleteHolidayParams
 	return err
 }
 
+func (q *GoquQuerier) DeleteTenant(ctx context.Context, tenantID string) error {
+	_, err := q.db.Delete("tenants").Where(
+		goqu.C("id").Eq(tenantID),
+	).Executor().ExecContext(ctx)
+	return err
+}
+
 func (q *GoquQuerier) DeleteShift(ctx context.Context, arg DeleteShiftParams) error {
 	_, err := q.db.Delete("shifts").Where(
 		goqu.C("id").Eq(arg.ID),
@@ -814,6 +821,7 @@ func (q *GoquQuerier) UpsertTenantConfig(ctx context.Context, arg UpsertTenantCo
 		"ot_rounding":            arg.OTRounding,
 		"wage_basis":             arg.WageBasis,
 		"week_off_paid":          arg.WeekOffPaid,
+		"weekly_offs":            arg.WeeklyOffs,
 	}
 	var tc TenantConfig
 	found, err := q.db.Insert("tenant_config").Rows(row).
@@ -824,6 +832,7 @@ func (q *GoquQuerier) UpsertTenantConfig(ctx context.Context, arg UpsertTenantCo
 			"ot_rounding":            arg.OTRounding,
 			"wage_basis":             arg.WageBasis,
 			"week_off_paid":          arg.WeekOffPaid,
+			"weekly_offs":            arg.WeeklyOffs,
 			"updated_at":             goqu.L("now()"),
 		})).
 		Returning(goqu.Star()).Executor().ScanStructContext(ctx, &tc)

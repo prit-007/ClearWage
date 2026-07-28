@@ -136,3 +136,52 @@ CREATE TABLE IF NOT EXISTS sync_queue (
 
 CREATE INDEX IF NOT EXISTS idx_sync_queue_tenant_created ON sync_queue (tenant_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue (tenant_id, status);
+
+CREATE TABLE IF NOT EXISTS activity_logs (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    employee_id TEXT REFERENCES employees(id) ON DELETE SET NULL,
+    action TEXT NOT NULL,
+    entity_type TEXT,
+    entity_id TEXT,
+    description TEXT,
+    metadata TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_logs_tenant_created ON activity_logs (tenant_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_employee ON activity_logs (employee_id);
+
+CREATE TABLE IF NOT EXISTS advance_requests (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    employee_id TEXT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    amount REAL NOT NULL,
+    reason TEXT,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'denied', 'settled')),
+    reviewed_by TEXT REFERENCES employees(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_advance_requests_tenant ON advance_requests (tenant_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_advance_requests_employee ON advance_requests (employee_id);
+
+CREATE TABLE IF NOT EXISTS tenant_config (
+    tenant_id TEXT PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
+    ot_trigger TEXT NOT NULL DEFAULT 'after_shift_end' CHECK (ot_trigger IN ('after_shift_end', 'after_daily_hours')),
+    ot_threshold_hours REAL NOT NULL DEFAULT 0,
+    ot_multiplier_default REAL NOT NULL DEFAULT 1.5 CHECK (ot_multiplier_default IN (1.0, 1.5, 2.0)),
+    ot_rounding INTEGER NOT NULL DEFAULT 30 CHECK (ot_rounding IN (15, 30, 60)),
+    wage_basis TEXT NOT NULL DEFAULT 'calendar' CHECK (wage_basis IN ('calendar', 'fixed_26', 'fixed_30')),
+    week_off_paid INTEGER NOT NULL DEFAULT 0,
+    weekly_offs TEXT NOT NULL DEFAULT '0',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+ALTER TABLE employees ADD COLUMN manager_id TEXT REFERENCES employees(id) ON DELETE SET NULL;
+ALTER TABLE shifts ADD COLUMN crosses_midnight INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE attendance ADD COLUMN daily_target_units INTEGER;
+ALTER TABLE ledger ADD COLUMN computed_wage REAL;
+ALTER TABLE ledger ADD COLUMN linked_payroll_month TEXT;

@@ -31,7 +31,7 @@ func TestStaffService_CreateEmployee(t *testing.T) {
 		CreateActivityLog(gomock.Any(), gomock.Any()).
 		Return(repositories.ActivityLog{}, nil)
 
-	created, err := svc.CreateEmployee(context.Background(), "John Doe", "+91-9876543210", "", "daily", "500", "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002", nil)
+	created, err := svc.CreateEmployee(context.Background(), "John Doe", "+91-9876543210", "", "daily", "500", "employee", "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002", nil)
 	if err != nil {
 		t.Fatalf("CreateEmployee failed: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestStaffService_CreateEmployee_DBError(t *testing.T) {
 		CreateEmployee(gomock.Any(), gomock.Any()).
 		Return(repositories.Employee{}, errors.New("db error"))
 
-	_, err := svc.CreateEmployee(context.Background(), "John", "+91-9876543210", "", "daily", "500", "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002", nil)
+	_, err := svc.CreateEmployee(context.Background(), "John", "+91-9876543210", "", "daily", "500", "employee", "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002", nil)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -112,7 +112,7 @@ func TestStaffService_UpdateEmployee(t *testing.T) {
 		CreateActivityLog(gomock.Any(), gomock.Any()).
 		Return(repositories.ActivityLog{}, nil)
 
-	emp, err := svc.UpdateEmployee(context.Background(), "00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000001", "Updated", "+91-9876543210", "Manager", "monthly", "1000", nil)
+	emp, err := svc.UpdateEmployee(context.Background(), "00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000001", "Updated", "+91-9876543210", "Manager", "monthly", "1000", "manager", nil)
 	if err != nil {
 		t.Fatalf("UpdateEmployee failed: %v", err)
 	}
@@ -135,7 +135,7 @@ func TestStaffService_UpdateEmployee_DBError(t *testing.T) {
 		UpdateEmployee(gomock.Any(), gomock.Any()).
 		Return(repositories.Employee{}, errors.New("db error"))
 
-	_, err := svc.UpdateEmployee(context.Background(), "00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000001", "Updated", "+91-9876543210", "Manager", "monthly", "1000", nil)
+	_, err := svc.UpdateEmployee(context.Background(), "00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000001", "Updated", "+91-9876543210", "Manager", "monthly", "1000", "manager", nil)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

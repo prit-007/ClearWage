@@ -16,7 +16,7 @@ func NewStaffService(querier repositories.Querier) *StaffService {
 	return &StaffService{querier: querier}
 }
 
-func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designation, wageType, wageAmount, tenantID, employeeID string, dailyTargetUnits *int32) (repositories.Employee, error) {
+func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designation, wageType, wageAmount, role, tenantID, employeeID string, dailyTargetUnits *int32) (repositories.Employee, error) {
 	wageAmt, err := strconv.ParseFloat(wageAmount, 64)
 	if err != nil {
 		return repositories.Employee{}, fmt.Errorf("invalid wage_amount: %w", err)
@@ -24,6 +24,9 @@ func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designat
 	var desig *string
 	if designation != "" {
 		desig = &designation
+	}
+	if role == "" {
+		role = "employee"
 	}
 	emp, err := s.querier.CreateEmployee(ctx, repositories.CreateEmployeeParams{
 		TenantID:         tenantID,
@@ -33,7 +36,7 @@ func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designat
 		WageType:         wageType,
 		WageAmount:       wageAmt,
 		DailyTargetUnits: dailyTargetUnits,
-		Role:             "employee",
+		Role:             role,
 	})
 	if err == nil {
 		logActivity(ctx, s.querier, tenantID, employeeID, "created_employee", "employee", &emp.ID, nil)
@@ -48,7 +51,7 @@ func (s *StaffService) GetEmployee(ctx context.Context, employeeID, tenantID str
 	})
 }
 
-func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID, name, phone, designation, wageType, wageAmount string, dailyTargetUnits *int32) (repositories.Employee, error) {
+func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID, name, phone, designation, wageType, wageAmount, role string, dailyTargetUnits *int32) (repositories.Employee, error) {
 	existing, err := s.querier.FindEmployeeByID(ctx, repositories.FindEmployeeByIDParams{
 		ID:       employeeID,
 		TenantID: tenantID,
@@ -82,6 +85,10 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 		dailyTargetUnits = existing.DailyTargetUnits
 	}
 
+	if role == "" {
+		role = existing.Role
+	}
+
 	emp, err := s.querier.UpdateEmployee(ctx, repositories.UpdateEmployeeParams{
 		ID:                    employeeID,
 		TenantID:              tenantID,
@@ -107,7 +114,7 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 		HealthNotes:           existing.HealthNotes,
 		CurrentAddress:        existing.CurrentAddress,
 		PermanentAddress:      existing.PermanentAddress,
-		Role:                  existing.Role,
+		Role:                  role,
 		IsActive:              existing.IsActive,
 	})
 	if err == nil {

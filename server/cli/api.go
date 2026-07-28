@@ -74,9 +74,8 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Post("/register", authCtrl.Register)
 			})
 
-		uploadCtrl := ctrl.NewUploadController(services.NewStaffService(querier), logger, cfg)
-
 		shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
+		uploadCtrl := ctrl.NewUploadController(services.NewStaffService(querier), logger, cfg)
 		staffCtrl := ctrl.NewStaffController(services.NewStaffService(querier), logger, cfg)
 		r.Route("/api/v1/staff", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
@@ -178,8 +177,11 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Get("/employee-monthly", reportCtrl.EmployeeMonthly)
 				r.Get("/wage-bill-trends", reportCtrl.WageBillTrends)
 				r.Get("/defaulters", reportCtrl.DefaultersList)
+				r.Get("/attendance-trends", reportCtrl.AttendanceTrends)
 				r.Get("/export", reportCtrl.ExportCSV)
 			})
+
+			r.With(mw.AuthMiddleware(cfg), mw.TenantMiddleware()).Delete("/api/v1/auth/account", authCtrl.DeleteAccount)
 
 			dashCtrl := ctrl.NewDashboardController(services.NewDashboardService(querier), logger, cfg)
 			r.Route("/api/v1/dashboard", func(r chi.Router) {

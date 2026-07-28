@@ -16,7 +16,7 @@
                                                 │
                                         ┌───────▼──────┐
                                         │  PostgreSQL   │
-                                        │  (16 migrations)│
+                                         │  (17 migrations)│
                                         └──────────────┘
 ```
 
@@ -185,6 +185,26 @@ Uses Firebase ID token for phone verification.
 
 **Frontend**: `AuthService.register()` → used in `RegisterScreen`. Calls `ApiClient.setToken()` with
 the app JWT on success. Navigates to `/onboarding`.
+
+---
+
+#### `DELETE /api/v1/auth/account`
+
+Deletes the entire tenant account and all associated data (employees, attendance, ledger, shifts, etc.).
+**Requires "owner" role** (403 otherwise). Irreversible — no undo.
+
+**Success (200):**
+```json
+{
+  "status": "success",
+  "data": {
+    "message": "Account deleted"
+  }
+}
+```
+**Failure (403):** caller is not the account owner
+
+**Frontend**: `AuthService.deleteAccount()` → confirmation dialog in `MyProfileScreen` with permanent-deletion warning. On success, navigates back to login.
 
 ---
 
@@ -904,7 +924,8 @@ Auto-creates a ledger entry of type `udhaar` for the approved amount.
   "data": {
     "ot_trigger": "after_shift_end", "ot_threshold_hours": 0,
     "ot_multiplier_default": 1.5, "ot_rounding": 30,
-    "wage_basis": "calendar", "week_off_paid": false
+    "wage_basis": "calendar", "week_off_paid": false,
+    "weekly_offs": "0,6"
   }
 }
 ```
@@ -915,13 +936,14 @@ Auto-creates a ledger entry of type `udhaar` for the approved amount.
 
 #### `PUT /api/v1/settings/payroll`
 
-**Request:** `{ "ot_trigger": "after_shift_end", "ot_threshold_hours": 0, "ot_multiplier_default": 1.5, "ot_rounding": 30, "wage_basis": "calendar", "week_off_paid": false }`
+**Request:** `{ "ot_trigger": "after_shift_end", "ot_threshold_hours": 0, "ot_multiplier_default": 1.5, "ot_rounding": 30, "wage_basis": "calendar", "week_off_paid": false, "weekly_offs": "0,6" }`
 
 **Validation:**
 - `ot_trigger`: must be `"after_shift_end"` or `"after_daily_hours"`
 - `ot_multiplier_default`: must be `1.0`, `1.5`, or `2.0`
 - `ot_rounding`: must be `15`, `30`, or `60`
 - `wage_basis`: must be `"calendar"`, `"fixed_26"`, or `"fixed_30"`
+- `weekly_offs`: comma-separated weekday numbers (0=Sunday, 6=Saturday), e.g. `"0,6"`
 
 **Frontend**: `SettingsService.upsertPayrollSettings()` → save button → refetch.
 
@@ -941,7 +963,7 @@ Serves static files from `./uploads/` directory. The `{file}` param is the filen
 
 | Service File | Backend Group | Methods |
 |-------------|---------------|---------|
-| `auth_service.dart` | Auth | `signInWithFirebase()`, `register()`, `logout()` |
+| `auth_service.dart` | Auth | `signInWithFirebase()`, `register()`, `logout()`, `deleteAccount()` |
 | `staff_service.dart` | Staff | `list()`, `get()`, `create()`, `update()`, `delete()`, `getProfile()`, `assignManager()` |
 | `attendance_service.dart` | Attendance | `listByDate()`, `listByEmployee()`, `create()`, `update()`, `bulkUpsert()`, `lockMonth()` |
 | `shift_service.dart` | Shifts | `list()`, `get()`, `create()`, `update()`, `delete()` |
@@ -988,9 +1010,9 @@ Serves static files from `./uploads/` directory. The `{file}` param is the filen
 
 ---
 
-## Database Schema (16 Migrations)
+## Database Schema (17 Migrations)
 
-The database has 16 goose migrations creating:
+The database has 17 goose migrations creating:
 - `tenants` — factory accounts
 - `employees` — worker profiles with wage config
 - `shifts` — shift templates (start/end time, grace period, cross-midnight)
@@ -1000,6 +1022,6 @@ The database has 16 goose migrations creating:
 - `holidays` — tenant-specific holidays
 - `leave_policies` — paid/unpaid leave configuration
 - `sync_queue` — offline-sync event buffer
-- `tenant_config` — payroll settings (OT rules, wage basis, rounding)
+- `tenant_config` — payroll settings (OT rules, wage basis, rounding, weekly offs)
 
 ---

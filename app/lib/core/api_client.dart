@@ -6,7 +6,7 @@ class ApiClient {
   final String baseUrl;
   static const _timeout = Duration(seconds: 30);
   String? _token;
-  void Function()? onUnauthorized;
+  Future<void> Function()? onUnauthorized;
 
   ApiClient({required this.baseUrl});
 

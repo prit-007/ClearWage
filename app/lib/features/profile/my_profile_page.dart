@@ -277,6 +277,44 @@ class _ProfileTab extends ConsumerWidget {
             ),
           ),
         ),
+        if (role != 'employee') ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Delete Account'),
+                    content: const Text('This will permanently delete your account and all associated data. This action cannot be undone.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                      FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Delete', style: TextStyle(color: cs.onError))),
+                    ],
+                  ),
+                );
+                if (confirmed != true) return;
+                try {
+                  await ref.read(authServiceProvider).deleteAccount();
+                  ref.read(tokenProvider.notifier).state = null;
+                  TokenStorage.clear();
+                  if (context.mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+                } catch (e) {
+                  if (context.mounted) showError(context, e);
+                }
+              },
+              icon: const Icon(PhosphorIconsRegular.trash),
+              label: const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.w700)),
+              style: FilledButton.styleFrom(
+                backgroundColor: cs.error,
+                foregroundColor: cs.onError,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

@@ -23,6 +23,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   final _desigCtrl = TextEditingController();
   final _wageCtrl = TextEditingController();
   late String _wageType;
+  late String _role;
   bool _saving = false;
   List<Shift> _shifts = [];
   String? _selectedShiftId;
@@ -38,9 +39,11 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       _desigCtrl.text = e.designation ?? '';
       _wageCtrl.text = e.wageAmount == 0 ? '' : e.wageAmount.toStringAsFixed(0);
       _wageType = e.wageType;
+      _role = e.role;
       _selectedShiftId = e.defaultShiftId;
     } else {
       _wageType = 'daily';
+      _role = 'employee';
     }
   }
 
@@ -87,6 +90,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
         'designation': _desigCtrl.text.trim(),
         'wage_type': _wageType,
         'wage_amount': _wageCtrl.text.trim().isEmpty ? '0' : _wageCtrl.text.trim(),
+        'role': _role,
       };
       final e = widget.employee;
       if (e != null) {
@@ -197,6 +201,18 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                   onChanged: (id) => setState(() => _selectedShiftId = id),
                 ),
               ),
+              if (ref.watch(userInfoProvider)?.isAdmin ?? false) ...[
+                const SizedBox(height: 24),
+                FluidSlideIn(
+                  delay: 900,
+                  child: Text('ROLE', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w800, color: cs.primary, letterSpacing: 1.0)),
+                ),
+                const SizedBox(height: 12),
+                FluidSlideIn(
+                  delay: 1000,
+                  child: _RoleSelector(role: _role, onChanged: (r) => setState(() => _role = r)),
+                ),
+              ],
             ],
           ),
           Positioned(
@@ -327,6 +343,38 @@ class _ShiftSelector extends StatelessWidget {
             )),
           ],
           onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+}
+
+class _RoleSelector extends StatelessWidget {
+  final String role;
+  final ValueChanged<String> onChanged;
+
+  const _RoleSelector({required this.role, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: role,
+          isExpanded: true,
+          icon: Icon(PhosphorIconsRegular.caretDown, color: cs.onSurfaceVariant),
+          items: const [
+            DropdownMenuItem(value: 'employee', child: Text('Employee', style: TextStyle(fontWeight: FontWeight.w600))),
+            DropdownMenuItem(value: 'manager', child: Text('Manager', style: TextStyle(fontWeight: FontWeight.w600))),
+          ],
+          onChanged: (v) { if (v != null) onChanged(v); },
         ),
       ),
     );

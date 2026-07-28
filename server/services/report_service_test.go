@@ -29,8 +29,8 @@ func TestReportService_DailySummary(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DailySummary failed: %v", err)
 	}
-	if summary.TotalStaff != 2 {
-		t.Errorf("expected 2 staff, got %d", summary.TotalStaff)
+	if summary.TotalWorkers != 2 {
+		t.Errorf("expected 2 workers, got %d", summary.TotalWorkers)
 	}
 	if summary.Present != 1 {
 		t.Errorf("expected 1 present, got %d", summary.Present)
@@ -113,8 +113,8 @@ func TestReportService_DailySummary_Empty(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DailySummary failed: %v", err)
 	}
-	if summary.TotalStaff != 0 {
-		t.Errorf("expected 0 staff, got %d", summary.TotalStaff)
+	if summary.TotalWorkers != 0 {
+		t.Errorf("expected 0 workers, got %d", summary.TotalWorkers)
 	}
 }
 

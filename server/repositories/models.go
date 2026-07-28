@@ -146,13 +146,14 @@ type Tenant struct {
 }
 
 type TenantConfig struct {
-	TenantID            string  `json:"tenant_id" db:"tenant_id"`
-	OTTrigger           string  `json:"ot_trigger" db:"ot_trigger"`
-	OTThresholdHours    float64 `json:"ot_threshold_hours" db:"ot_threshold_hours"`
-	OTMultiplierDefault float64 `json:"ot_multiplier_default" db:"ot_multiplier_default"`
-	OTRounding          int32   `json:"ot_rounding" db:"ot_rounding"`
-	WageBasis           string  `json:"wage_basis" db:"wage_basis"`
-	WeekOffPaid         bool    `json:"week_off_paid" db:"week_off_paid"`
+	TenantID            string    `json:"tenant_id" db:"tenant_id"`
+	OTTrigger           string    `json:"ot_trigger" db:"ot_trigger"`
+	OTThresholdHours    float64   `json:"ot_threshold_hours" db:"ot_threshold_hours"`
+	OTMultiplierDefault float64   `json:"ot_multiplier_default" db:"ot_multiplier_default"`
+	OTRounding          int32     `json:"ot_rounding" db:"ot_rounding"`
+	WageBasis           string    `json:"wage_basis" db:"wage_basis"`
+	WeekOffPaid         bool      `json:"week_off_paid" db:"week_off_paid"`
+	WeeklyOffs          string    `json:"weekly_offs" db:"weekly_offs"`
 	CreatedAt           time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt           time.Time `json:"updated_at" db:"updated_at"`
 }

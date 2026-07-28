@@ -9,117 +9,208 @@ import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/helpers.dart';
 
-final holidaysListProvider = FutureProvider.autoDispose<List<Holiday>>((ref) {
-  return ref.watch(holidayServiceProvider).list();
-});
+const int _pageSize = 20;
 
-class HolidaysScreen extends ConsumerWidget {
+class HolidaysScreen extends ConsumerStatefulWidget {
   const HolidaysScreen({super.key});
+  @override
+  ConsumerState<HolidaysScreen> createState() => _HolidaysScreenState();
+}
+
+class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
+  final ScrollController _scrollCtrl = ScrollController();
+  List<Holiday> _items = [];
+  bool _loading = false;
+  bool _hasMore = true;
+  int _page = 0;
+  String? _error;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    _scrollCtrl.addListener(_onScroll);
+    _fetch();
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.removeListener(_onScroll);
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200 && !_loading && _hasMore) {
+      _fetch();
+    }
+  }
+
+  Future<void> _fetch() async {
+    if (_loading || !_hasMore) return;
+    setState(() => _loading = true);
+    try {
+      final items = await ref.read(holidayServiceProvider).list(limit: _pageSize, offset: _page * _pageSize);
+      if (mounted) {
+        setState(() {
+          _items.addAll(items);
+          _page++;
+          _hasMore = items.length >= _pageSize;
+          _loading = false;
+        });
+      }
+    } catch (err) {
+      if (mounted) setState(() { _loading = false; _error = err.toString(); });
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _items = [];
+      _page = 0;
+      _hasMore = true;
+      _error = null;
+    });
+    await _fetch();
+  }
+
+  Future<void> _showHolidaySheet() async {
+    HapticFeedback.mediumImpact();
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _HolidayFormSheet(),
+    );
+    if (result != null) {
+      try {
+        await ref.read(holidayServiceProvider).create(result);
+        if (mounted) _onRefresh();
+      } catch (e) {
+        if (mounted) showError(context, e);
+      }
+    }
+  }
+
+  Future<void> _deleteHoliday(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Holiday'),
+        content: const Text('Are you sure you want to delete this holiday?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error))),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    HapticFeedback.heavyImpact();
+    try {
+      await ref.read(holidayServiceProvider).delete(id);
+      if (mounted) _onRefresh();
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final async = ref.watch(holidaysListProvider);
 
     return Scaffold(
       backgroundColor: cs.surface,
       body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverAppBar(
-              backgroundColor: cs.surface.withValues(alpha: 0.95),
-              pinned: true,
-              elevation: 0,
-              leading: IconButton(
-                icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
-                onPressed: () => Navigator.pop(context),
-              ),
-              title: Text('Holidays', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-              centerTitle: true,
-              actions: [
-                IconButton(
-                  icon: Icon(PhosphorIconsBold.plus, color: cs.primary),
-                  onPressed: () => _showHolidaySheet(context, ref),
+        child: RefreshIndicator(
+          color: cs.primary,
+          backgroundColor: cs.surface,
+          onRefresh: _onRefresh,
+          child: CustomScrollView(
+            controller: _scrollCtrl,
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            slivers: [
+              SliverAppBar(
+                backgroundColor: cs.surface.withValues(alpha: 0.95),
+                pinned: true,
+                elevation: 0,
+                leading: IconButton(
+                  icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+                  onPressed: () => Navigator.pop(context),
                 ),
-                const SizedBox(width: 8),
-              ],
-            ),
-            async.when(
-              loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
-              error: (e, _) => SliverFillRemaining(child: Center(child: Text('$e', style: TextStyle(color: cs.error)))),
-              data: (holidays) => holidays.isEmpty
-                  ? SliverFillRemaining(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          PhosphorIcon(PhosphorIconsDuotone.calendarStar, size: 72, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
-                          const SizedBox(height: 24),
-                          Text('No holidays configured', style: tt.titleMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
-                        ],
-                      ),
-                    )
-                  : SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final h = holidays[index];
-                            return FluidSlideIn(
-                              delay: index * 80,
-                              child: _PremiumHolidayCard(cs: cs, tt: tt, holiday: h, onDelete: () => _deleteHoliday(context, ref, h.id)),
-                            );
-                          },
-                          childCount: holidays.length,
+                title: Text('Holidays', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                centerTitle: true,
+                actions: [
+                  IconButton(
+                    icon: Icon(PhosphorIconsBold.plus, color: cs.primary),
+                    onPressed: _showHolidaySheet,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+              if (_error != null)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(PhosphorIconsFill.warningCircle, size: 48, color: Theme.of(context).colorScheme.error),
+                        const SizedBox(height: 16),
+                        Text('Failed to load holidays', style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 8),
+                        Text(_error!, style: Theme.of(context).textTheme.bodySmall),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          icon: const Icon(PhosphorIconsFill.arrowClockwise),
+                          label: const Text('Retry'),
+                          onPressed: _onRefresh,
                         ),
-                      ),
+                      ],
                     ),
-            ),
-          ],
+                  ),
+                )
+              else if (_loading && _items.isEmpty)
+                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+              else if (_items.isEmpty)
+                SliverFillRemaining(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      PhosphorIcon(PhosphorIconsDuotone.calendarStar, size: 72, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                      const SizedBox(height: 24),
+                      Text('No holidays configured', style: tt.titleMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                )
+              else ...[
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final h = _items[index];
+                        return FluidSlideIn(
+                          delay: index * 80,
+                          child: _PremiumHolidayCard(cs: cs, tt: tt, holiday: h, onDelete: () => _deleteHoliday(h.id)),
+                        );
+                      },
+                      childCount: _items.length,
+                    ),
+                  ),
+                ),
+                if (_loading)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary)),
+                    ),
+                  ),
+              ],
+            ],
+          ),
         ),
       ),
     );
-  }
-}
-
-Future<void> _showHolidaySheet(BuildContext context, WidgetRef ref) async {
-  HapticFeedback.mediumImpact();
-  final result = await showModalBottomSheet<Map<String, dynamic>>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => const _HolidayFormSheet(),
-  );
-  if (result != null) {
-    try {
-      await ref.read(holidayServiceProvider).create(result);
-      ref.invalidate(holidaysListProvider);
-    } catch (e) {
-      if (context.mounted) showError(context, e);
-    }
-  }
-}
-
-Future<void> _deleteHoliday(BuildContext context, WidgetRef ref, String id) async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Delete Holiday'),
-      content: const Text('Are you sure you want to delete this holiday?'),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-        TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error))),
-      ],
-    ),
-  );
-  if (confirmed != true) return;
-  HapticFeedback.heavyImpact();
-  try {
-    await ref.read(holidayServiceProvider).delete(id);
-    ref.invalidate(holidaysListProvider);
-  } catch (e) {
-    if (context.mounted) showError(context, e);
   }
 }
 
@@ -345,5 +436,3 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
     );
   }
 }
-
-

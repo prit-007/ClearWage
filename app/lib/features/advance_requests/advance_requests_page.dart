@@ -7,102 +7,196 @@ import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/helpers.dart';
 
-final advanceRequestsProvider = FutureProvider.autoDispose<List<AdvanceRequest>>((ref) {
-  return ref.watch(advanceRequestServiceProvider).list();
-});
+const int _pageSize = 20;
 
-class AdvanceRequestsScreen extends ConsumerWidget {
+class AdvanceRequestsScreen extends ConsumerStatefulWidget {
   const AdvanceRequestsScreen({super.key});
+  @override
+  ConsumerState<AdvanceRequestsScreen> createState() => _AdvanceRequestsScreenState();
+}
+
+class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
+  final ScrollController _scrollCtrl = ScrollController();
+  List<AdvanceRequest> _requests = [];
+  bool _loading = true;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  String? _error;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    _scrollCtrl.addListener(_onScroll);
+    _fetch();
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.removeListener(_onScroll);
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200 && !_loadingMore && _hasMore) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _fetch() async {
+    setState(() { _loading = true; _error = null; _requests = []; _hasMore = true; });
+    try {
+      final svc = ref.read(advanceRequestServiceProvider);
+      final requests = await svc.list(limit: _pageSize, offset: 0);
+      if (mounted) {
+        setState(() {
+          _requests = requests;
+          _hasMore = requests.length >= _pageSize;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final svc = ref.read(advanceRequestServiceProvider);
+      final requests = await svc.list(limit: _pageSize, offset: _requests.length);
+      if (mounted) {
+        setState(() {
+          _requests.addAll(requests);
+          _hasMore = requests.length >= _pageSize;
+          _loadingMore = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
+  Future<void> _handleActionSheet(AdvanceRequest req) async {
+    if (!req.isPending) return;
+    HapticFeedback.mediumImpact();
+
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final cs = Theme.of(ctx).colorScheme;
+        final tt = Theme.of(ctx).textTheme;
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: SafeArea(
+            child: _AdvanceActionSheetContent(cs: cs, tt: tt, req: req, ref: ref),
+          ),
+        );
+      },
+    );
+
+    if (action == 'approved' || action == 'denied') {
+      await _fetch();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final async = ref.watch(advanceRequestsProvider);
 
     return Scaffold(
       backgroundColor: cs.surface,
       body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverAppBar(
-              backgroundColor: cs.surface.withValues(alpha: 0.95),
-              pinned: true,
-              elevation: 0,
-              leading: IconButton(
-                icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
-                onPressed: () => Navigator.pop(context),
+        child: RefreshIndicator(
+          onRefresh: _fetch,
+          child: CustomScrollView(
+            controller: _scrollCtrl,
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                backgroundColor: cs.surface.withValues(alpha: 0.95),
+                pinned: true,
+                elevation: 0,
+                leading: IconButton(
+                  icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                title: Text('Jama Requests', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                centerTitle: true,
               ),
-              title: Text('Jama Requests', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-              centerTitle: true,
-            ),
-            async.when(
-              loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
-              error: (e, _) => SliverFillRemaining(child: Center(child: Text('$e', style: TextStyle(color: cs.error)))),
-              data: (requests) => requests.isEmpty
-                  ? SliverFillRemaining(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.3), shape: BoxShape.circle),
-                            child: PhosphorIcon(PhosphorIconsDuotone.wallet, size: 64, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
-                          ),
-                          const SizedBox(height: 24),
-                          Text('No pending requests', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
-                        ],
-                      ),
-                    )
-                  : SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final req = requests[index];
-                            return FluidSlideIn(
-                              delay: index * 80,
-                              child: _AdvanceRequestCard(cs: cs, tt: tt, request: req, onAction: () => _handleActionSheet(context, ref, req)),
-                            );
-                          },
-                          childCount: requests.length,
+              if (_loading)
+                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+              else if (_error != null)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(PhosphorIconsFill.warningCircle, size: 48, color: Theme.of(context).colorScheme.error),
+                        const SizedBox(height: 16),
+                        Text('Failed to load requests', style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 8),
+                        Text(_error!, style: Theme.of(context).textTheme.bodySmall),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          icon: const Icon(PhosphorIconsFill.arrowClockwise),
+                          label: const Text('Retry'),
+                          onPressed: _fetch,
                         ),
-                      ),
+                      ],
                     ),
-            ),
-          ],
+                  ),
+                )
+              else if (_requests.isEmpty)
+                SliverFillRemaining(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.3), shape: BoxShape.circle),
+                        child: PhosphorIcon(PhosphorIconsDuotone.wallet, size: 64, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                      ),
+                      const SizedBox(height: 24),
+                      Text('No pending requests', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
+                    ],
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final req = _requests[index];
+                        return FluidSlideIn(
+                          delay: index * 80,
+                          child: _AdvanceRequestCard(cs: cs, tt: tt, request: req, onAction: () => _handleActionSheet(req)),
+                        );
+                      },
+                      childCount: _requests.length,
+                    ),
+                  ),
+                ),
+              if (_loadingMore)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 24),
+                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
-  }
-}
-
-Future<void> _handleActionSheet(BuildContext context, WidgetRef ref, AdvanceRequest req) async {
-  if (!req.isPending) return;
-  HapticFeedback.mediumImpact();
-
-  final action = await showModalBottomSheet<String>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    builder: (ctx) {
-      final cs = Theme.of(ctx).colorScheme;
-      final tt = Theme.of(ctx).textTheme;
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: SafeArea(
-          child: _AdvanceActionSheetContent(cs: cs, tt: tt, req: req, ref: ref),
-        ),
-      );
-    },
-  );
-
-  if (action == 'approved' || action == 'denied') {
-    ref.invalidate(advanceRequestsProvider);
   }
 }
 
@@ -122,6 +216,18 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
   bool _loading = false;
 
   Future<void> _approve() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirm'),
+        content: const Text('Approve this advance request?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Approve')),
+        ],
+      ),
+    );
+    if (confirm != true) return;
     setState(() => _loading = true);
     try {
       HapticFeedback.heavyImpact();
@@ -136,6 +242,18 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
   }
 
   Future<void> _deny() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirm'),
+        content: const Text('Deny this advance request?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Deny')),
+        ],
+      ),
+    );
+    if (confirm != true) return;
     setState(() => _loading = true);
     try {
       HapticFeedback.selectionClick();
@@ -159,7 +277,7 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
         CircleAvatar(radius: 32, backgroundColor: cs.primaryContainer, child: PhosphorIcon(PhosphorIconsDuotone.handCoins, size: 32, color: cs.primary)),
         const SizedBox(height: 16),
         Text(widget.req.employeeName, style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-        Text('Requests an advance of ₹${widget.req.amount.toStringAsFixed(0)}', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+        Text('Requests an advance of \u20B9${widget.req.amount.toStringAsFixed(0)}', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
         const SizedBox(height: 24),
         Container(
           padding: const EdgeInsets.all(16),
@@ -254,7 +372,7 @@ class _AdvanceRequestCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Text('₹${request.amount.toStringAsFixed(0)}', style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w900, color: cs.primary, letterSpacing: -1.0)),
+                    Text('\u20B9${request.amount.toStringAsFixed(0)}', style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w900, color: cs.primary, letterSpacing: -1.0)),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -287,5 +405,3 @@ class _AdvanceRequestCard extends StatelessWidget {
     );
   }
 }
-
-

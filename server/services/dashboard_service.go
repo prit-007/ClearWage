@@ -41,6 +41,8 @@ func (s *DashboardService) GetDashboard(ctx context.Context, tenantID string) (D
 	attendance, err := s.querier.ListAttendanceByDate(ctx, repositories.ListAttendanceByDateParams{
 		TenantID: tenantID,
 		Date:     today,
+		Limit:    listAll,
+		Offset:   0,
 	})
 	if err != nil {
 		return DashboardData{}, err
@@ -56,7 +58,11 @@ func (s *DashboardService) GetDashboard(ctx context.Context, tenantID string) (D
 		return DashboardData{}, err
 	}
 
-	activity, err := s.querier.ListActivityLogsByTenant(ctx, tenantID, 5)
+	activity, err := s.querier.ListActivityLogsByTenant(ctx, repositories.ListActivityLogsByTenantParams{
+		TenantID: tenantID,
+		Limit:    5,
+		Offset:   0,
+	})
 	if err != nil {
 		return DashboardData{}, err
 	}

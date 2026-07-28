@@ -14,7 +14,7 @@ func NewShiftService(querier repositories.Querier) *ShiftService {
 	return &ShiftService{querier: querier}
 }
 
-func (s *ShiftService) CreateShift(ctx context.Context, tenantID, name, startTime, endTime string, crossesMidnight bool, graceMinutes int, isDefault bool) (repositories.Shift, error) {
+func (s *ShiftService) CreateShift(ctx context.Context, tenantID, name, startTime, endTime string, crossesMidnight bool, graceMinutes int, isDefault bool, createdBy string) (repositories.Shift, error) {
 	shift, err := s.querier.CreateShift(ctx, repositories.CreateShiftParams{
 		TenantID:           tenantID,
 		Name:               name,
@@ -25,7 +25,7 @@ func (s *ShiftService) CreateShift(ctx context.Context, tenantID, name, startTim
 		IsDefault:          isDefault,
 	})
 	if err == nil {
-		logActivity(ctx, s.querier, tenantID, "", "created_shift", "shift", &shift.ID, nil)
+		logActivity(ctx, s.querier, tenantID, createdBy, "created_shift", "shift", &shift.ID, nil)
 	}
 	return shift, err
 }
@@ -34,8 +34,12 @@ func (s *ShiftService) GetShift(ctx context.Context, shiftID, tenantID string) (
 	return s.querier.FindShiftByID(ctx, repositories.FindShiftByIDParams{ID: shiftID, TenantID: tenantID})
 }
 
-func (s *ShiftService) ListShifts(ctx context.Context, tenantID string) ([]repositories.Shift, error) {
-	return s.querier.ListShiftsByTenant(ctx, tenantID)
+func (s *ShiftService) ListShifts(ctx context.Context, tenantID string, limit, offset int32) ([]repositories.Shift, error) {
+	return s.querier.ListShiftsByTenant(ctx, repositories.ListShiftsByTenantParams{
+		TenantID: tenantID,
+		Limit:    limit,
+		Offset:   offset,
+	})
 }
 
 func (s *ShiftService) UpdateShift(ctx context.Context, shiftID, tenantID, name, startTime, endTime string, crossesMidnight bool, graceMinutes int, isDefault bool) (repositories.Shift, error) {

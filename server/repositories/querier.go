@@ -136,6 +136,16 @@ type GetBalanceByEmployeeParams struct {
 type ListAttendanceByDateParams struct {
 	TenantID string `json:"tenant_id"`
 	Date     string `json:"date"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+type ListAttendanceByDateRangeParams struct {
+	TenantID  string `json:"tenant_id"`
+	StartDate string `json:"start_date"`
+	EndDate   string `json:"end_date"`
+	Limit     int32  `json:"limit"`
+	Offset    int32  `json:"offset"`
 }
 
 type ListAttendanceByEmployeeMonthParams struct {
@@ -143,6 +153,8 @@ type ListAttendanceByEmployeeMonthParams struct {
 	TenantID   string `json:"tenant_id"`
 	StartDate  string `json:"start_date"`
 	EndDate    string `json:"end_date"`
+	Limit      int32  `json:"limit"`
+	Offset     int32  `json:"offset"`
 }
 
 type ListEmployeesByTenantParams struct {
@@ -158,12 +170,47 @@ type ListLedgerByEmployeeMonthParams struct {
 	TenantID   string `json:"tenant_id"`
 	StartDate  string `json:"start_date"`
 	EndDate    string `json:"end_date"`
+	Limit      int32  `json:"limit"`
+	Offset     int32  `json:"offset"`
 }
 
 type ListLedgerByTenantParams struct {
 	TenantID  string `json:"tenant_id"`
 	StartDate string `json:"start_date"`
 	EndDate   string `json:"end_date"`
+	Limit     int32  `json:"limit"`
+	Offset    int32  `json:"offset"`
+}
+
+type ListActivityLogsByTenantParams struct {
+	TenantID string `json:"tenant_id"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+type ListAdvanceRequestsByTenantParams struct {
+	TenantID string `json:"tenant_id"`
+	Status   string `json:"status"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+type ListShiftsByTenantParams struct {
+	TenantID string `json:"tenant_id"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+type ListHolidaysByTenantParams struct {
+	TenantID string `json:"tenant_id"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+type ListPendingSyncEventsParams struct {
+	TenantID string `json:"tenant_id"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
 }
 
 type GetStaffProfileParams struct {
@@ -311,17 +358,17 @@ type Querier interface {
 	GetStaffProfile(ctx context.Context, arg GetStaffProfileParams) (StaffProfile, error)
 	GetTenantConfig(ctx context.Context, tenantID string) (TenantConfig, error)
 	GetTotalOutstanding(ctx context.Context, tenantID string) (float64, error)
-	ListActivityLogsByTenant(ctx context.Context, tenantID string, limit int32) ([]ActivityLog, error)
+	ListActivityLogsByTenant(ctx context.Context, arg ListActivityLogsByTenantParams) ([]ActivityLog, error)
+	ListAdvanceRequestsByTenant(ctx context.Context, arg ListAdvanceRequestsByTenantParams) ([]AdvanceRequest, error)
 	ListAttendanceByDate(ctx context.Context, arg ListAttendanceByDateParams) ([]Attendance, error)
-	ListAttendanceByDateRange(ctx context.Context, tenantID string, startDate string, endDate string) ([]Attendance, error)
+	ListAttendanceByDateRange(ctx context.Context, arg ListAttendanceByDateRangeParams) ([]Attendance, error)
 	ListAttendanceByEmployeeMonth(ctx context.Context, arg ListAttendanceByEmployeeMonthParams) ([]Attendance, error)
-	ListAdvanceRequestsByTenant(ctx context.Context, tenantID string, status string) ([]AdvanceRequest, error)
 	ListEmployeesByTenant(ctx context.Context, arg ListEmployeesByTenantParams) ([]Employee, error)
-	ListHolidaysByTenant(ctx context.Context, tenantID string) ([]Holiday, error)
+	ListHolidaysByTenant(ctx context.Context, arg ListHolidaysByTenantParams) ([]Holiday, error)
 	ListLedgerByEmployeeMonth(ctx context.Context, arg ListLedgerByEmployeeMonthParams) ([]Ledger, error)
 	ListLedgerByTenant(ctx context.Context, arg ListLedgerByTenantParams) ([]Ledger, error)
-	ListPendingSyncEvents(ctx context.Context, tenantID string) ([]SyncQueue, error)
-	ListShiftsByTenant(ctx context.Context, tenantID string) ([]Shift, error)
+	ListPendingSyncEvents(ctx context.Context, arg ListPendingSyncEventsParams) ([]SyncQueue, error)
+	ListShiftsByTenant(ctx context.Context, arg ListShiftsByTenantParams) ([]Shift, error)
 	LockAttendanceMonth(ctx context.Context, arg LockAttendanceMonthParams) error
 	SoftDeleteEmployee(ctx context.Context, arg SoftDeleteEmployeeParams) error
 	UpdateAdvanceRequestStatus(ctx context.Context, arg UpdateAdvanceRequestStatusParams) (AdvanceRequest, error)

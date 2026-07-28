@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
 import '../../models/employee_model.dart';
+import '../../models/shift_model.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../core/helpers.dart';
@@ -23,10 +24,13 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   final _wageCtrl = TextEditingController();
   late String _wageType;
   bool _saving = false;
+  List<Shift> _shifts = [];
+  String? _selectedShiftId;
 
   @override
   void initState() {
     super.initState();
+    _loadShifts();
     final e = widget.employee;
     if (e != null) {
       _nameCtrl.text = e.name;
@@ -34,9 +38,17 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       _desigCtrl.text = e.designation ?? '';
       _wageCtrl.text = e.wageAmount == 0 ? '' : e.wageAmount.toStringAsFixed(0);
       _wageType = e.wageType;
+      _selectedShiftId = e.defaultShiftId;
     } else {
       _wageType = 'daily';
     }
+  }
+
+  Future<void> _loadShifts() async {
+    try {
+      final shifts = await ref.read(shiftServiceProvider).list();
+      if (mounted) setState(() => _shifts = shifts);
+    } catch (_) {}
   }
 
   @override
@@ -79,8 +91,14 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       final e = widget.employee;
       if (e != null) {
         await ref.read(staffServiceProvider).update(e.id, body);
+        if (_selectedShiftId != null && _selectedShiftId != e.defaultShiftId) {
+          await ref.read(shiftServiceProvider).assignDefaultShift(e.id, _selectedShiftId!);
+        }
       } else {
-        await ref.read(staffServiceProvider).create(body);
+        final created = await ref.read(staffServiceProvider).create(body);
+        if (_selectedShiftId != null) {
+          await ref.read(shiftServiceProvider).assignDefaultShift(created.id, _selectedShiftId!);
+        }
       }
       ref.invalidate(employeeListProvider);
       if (mounted) Navigator.pop(context, true);
@@ -165,6 +183,20 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                 if (amt == null || amt <= 0) return 'Enter a valid amount';
                 return null;
               })),
+              const SizedBox(height: 24),
+              FluidSlideIn(
+                delay: 700,
+                child: Text('SHIFT ASSIGNMENT', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w800, color: cs.primary, letterSpacing: 1.0)),
+              ),
+              const SizedBox(height: 12),
+              FluidSlideIn(
+                delay: 800,
+                child: _ShiftSelector(
+                  shifts: _shifts,
+                  selectedId: _selectedShiftId,
+                  onChanged: (id) => setState(() => _selectedShiftId = id),
+                ),
+              ),
             ],
           ),
           Positioned(
@@ -229,6 +261,72 @@ class _TactileWageCard extends StatelessWidget {
               Text(label, style: TextStyle(fontWeight: FontWeight.w700, color: isSelected ? cs.primary : cs.onSurfaceVariant, fontSize: 13)),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShiftSelector extends StatelessWidget {
+  final List<Shift> shifts;
+  final String? selectedId;
+  final ValueChanged<String?> onChanged;
+
+  const _ShiftSelector({
+    required this.shifts,
+    required this.selectedId,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String?>(
+          value: selectedId,
+          isExpanded: true,
+          icon: Icon(PhosphorIconsRegular.caretDown, color: cs.onSurfaceVariant),
+          hint: Row(
+            children: [
+              Icon(PhosphorIconsRegular.clock, size: 20, color: cs.onSurfaceVariant),
+              const SizedBox(width: 12),
+              Text('Select shift', style: TextStyle(color: cs.onSurfaceVariant)),
+            ],
+          ),
+          items: [
+            DropdownMenuItem<String?>(
+              value: null,
+              child: Row(
+                children: [
+                  Icon(PhosphorIconsRegular.xCircle, size: 20, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 12),
+                  Text('No shift', style: TextStyle(color: cs.onSurfaceVariant)),
+                ],
+              ),
+            ),
+            ...shifts.map((s) => DropdownMenuItem<String?>(
+              value: s.id,
+              child: Row(
+                children: [
+                  Icon(PhosphorIconsRegular.clock, size: 20, color: cs.primary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('${s.startTime}-${s.endTime}', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                ],
+              ),
+            )),
+          ],
+          onChanged: onChanged,
         ),
       ),
     );

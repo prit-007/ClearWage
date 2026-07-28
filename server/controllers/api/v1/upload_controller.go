@@ -44,7 +44,7 @@ const maxUploadSize = 5 << 20
 func (c *UploadController) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 

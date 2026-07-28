@@ -22,8 +22,12 @@ func (s *HolidayService) CreateHoliday(ctx context.Context, tenantID, name, date
 	})
 }
 
-func (s *HolidayService) ListHolidays(ctx context.Context, tenantID string) ([]repositories.Holiday, error) {
-	return s.querier.ListHolidaysByTenant(ctx, tenantID)
+func (s *HolidayService) ListHolidays(ctx context.Context, tenantID string, limit, offset int32) ([]repositories.Holiday, error) {
+	return s.querier.ListHolidaysByTenant(ctx, repositories.ListHolidaysByTenantParams{
+		TenantID: tenantID,
+		Limit:    limit,
+		Offset:   offset,
+	})
 }
 
 func (s *HolidayService) DeleteHoliday(ctx context.Context, id, tenantID string) error {

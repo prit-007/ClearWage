@@ -35,7 +35,9 @@ class Employee {
         phone: json['phone'] as String? ?? '',
         designation: json['designation'] as String?,
         wageType: json['wage_type'] as String? ?? '',
-        wageAmount: (json['wage_amount'] as num?)?.toDouble() ?? 0,
+        wageAmount: json['wage_amount'] is String
+            ? double.tryParse(json['wage_amount'] as String) ?? 0
+            : (json['wage_amount'] as num?)?.toDouble() ?? 0,
         defaultShiftId: json['default_shift_id'] as String?,
         managerId: json['manager_id'] as String?,
         photoUrl: json['photo_url'] as String?,

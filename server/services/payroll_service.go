@@ -72,7 +72,13 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 		return PayrollResult{}, err
 	}
 
-	attendance, err := s.querier.ListAttendanceByDateRange(ctx, tenantID, startDate, endDate)
+	attendance, err := s.querier.ListAttendanceByDateRange(ctx, repositories.ListAttendanceByDateRangeParams{
+		TenantID:  tenantID,
+		StartDate: startDate,
+		EndDate:   endDate,
+		Limit:     listAll,
+		Offset:    0,
+	})
 	if err != nil {
 		return PayrollResult{}, err
 	}
@@ -81,12 +87,18 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 		TenantID:  tenantID,
 		StartDate: startDate,
 		EndDate:   endDate,
+		Limit:     listAll,
+		Offset:    0,
 	})
 	if err != nil {
 		return PayrollResult{}, err
 	}
 
-	holidays, err := s.querier.ListHolidaysByTenant(ctx, tenantID)
+	holidays, err := s.querier.ListHolidaysByTenant(ctx, repositories.ListHolidaysByTenantParams{
+		TenantID: tenantID,
+		Limit:    listAll,
+		Offset:   0,
+	})
 	if err != nil {
 		return PayrollResult{}, err
 	}

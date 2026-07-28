@@ -34,6 +34,9 @@ func TestShiftCreate_Success(t *testing.T) {
 	mockQuerier.EXPECT().
 		CreateShift(gomock.Any(), gomock.Any()).
 		Return(repositories.Shift{Name: "Morning"}, nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	body, _ := json.Marshal(map[string]interface{}{
 		"name":       "Morning",

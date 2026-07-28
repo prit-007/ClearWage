@@ -14,6 +14,10 @@ func NewActivityService(querier repositories.Querier) *ActivityService {
 	return &ActivityService{querier: querier}
 }
 
-func (s *ActivityService) ListRecent(ctx context.Context, tenantID string, limit int32) ([]repositories.ActivityLog, error) {
-	return s.querier.ListActivityLogsByTenant(ctx, tenantID, limit)
+func (s *ActivityService) ListRecent(ctx context.Context, tenantID string, limit, offset int32) ([]repositories.ActivityLog, error) {
+	return s.querier.ListActivityLogsByTenant(ctx, repositories.ListActivityLogsByTenantParams{
+		TenantID: tenantID,
+		Limit:    limit,
+		Offset:   offset,
+	})
 }

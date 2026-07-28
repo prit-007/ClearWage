@@ -42,10 +42,11 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			r := chi.NewRouter()
 
-			r.Use(mw.RequestLogger(logger))
-			r.Use(middleware.Recoverer)
-			r.Use(cors.Handler(cors.Options{
-				AllowedOrigins:   []string{"*"},
+	r.Use(mw.RequestLogger(logger))
+	r.Use(middleware.Recoverer)
+	r.Use(mw.LimitBodySize(5 << 20))
+	r.Use(cors.Handler(cors.Options{
+				AllowedOrigins:   []string{cfg.AllowedOrigin},
 				AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 				AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 				AllowCredentials: false,
@@ -68,12 +69,14 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 		authCtrl, err := ctrl.NewAuthController(querier, logger, cfg)
 			if err != nil {return err}
 			r.Route("/api/v1/auth", func(r chi.Router) {
+				r.Use(mw.RateLimit(10, time.Minute))
 				r.Post("/firebase-login", authCtrl.LoginWithFirebase)
 				r.Post("/register", authCtrl.Register)
 			})
 
 		uploadCtrl := ctrl.NewUploadController(services.NewStaffService(querier), logger, cfg)
 
+		shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
 		staffCtrl := ctrl.NewStaffController(services.NewStaffService(querier), logger, cfg)
 		r.Route("/api/v1/staff", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
@@ -86,6 +89,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			r.Post("/{id}/upload-photo", uploadCtrl.UploadPhoto)
 			r.Get("/{id}/profile", staffCtrl.Profile)
 			r.Put("/{id}/manager", staffCtrl.AssignManager)
+			r.Put("/{id}/default-shift", shiftCtrl.AssignDefaultShift)
 		})
 
 		meCtrl := ctrl.NewMeController(
@@ -106,7 +110,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			r.Post("/advance-request", meCtrl.RequestAdvance)
 		})
 
-			shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
 			r.Route("/api/v1/shifts", func(r chi.Router) {
 				r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())

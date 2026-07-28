@@ -5,8 +5,11 @@ class ShiftService {
   final ApiClient _client;
   ShiftService(this._client);
 
-  Future<List<Shift>> list() async {
-    final res = await _client.get('/api/v1/shifts');
+  Future<List<Shift>> list({int? limit, int? offset}) async {
+    final query = <String, String>{};
+    if (limit != null) query['limit'] = limit.toString();
+    if (offset != null) query['offset'] = offset.toString();
+    final res = await _client.get('/api/v1/shifts', query: query.isNotEmpty ? query : null);
     final list = (res['data'] as List<dynamic>?) ?? [];
     return list.map((e) => Shift.fromJson(e as Map<String, dynamic>)).toList();
   }
@@ -28,5 +31,11 @@ class ShiftService {
 
   Future<void> delete(String id) async {
     await _client.delete('/api/v1/shifts/$id');
+  }
+
+  Future<void> assignDefaultShift(String employeeId, String shiftId) async {
+    await _client.put('/api/v1/staff/$employeeId/default-shift', body: {
+      'shift_id': shiftId,
+    });
   }
 }

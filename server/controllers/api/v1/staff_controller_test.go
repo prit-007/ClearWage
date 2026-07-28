@@ -68,6 +68,9 @@ func TestStaffCreate_Success(t *testing.T) {
 	mockQuerier.EXPECT().
 		CreateEmployee(gomock.Any(), gomock.Any()).
 		Return(reposEmployee(t, "John Doe", "daily", "500"), nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	body, _ := json.Marshal(map[string]interface{}{
 		"name":        "John Doe",
@@ -157,6 +160,9 @@ func TestStaffDelete_Success(t *testing.T) {
 	mockQuerier.EXPECT().
 		SoftDeleteEmployee(gomock.Any(), gomock.Any()).
 		Return(nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	r := chi.NewRouter()
 	r.Delete("/api/v1/staff/{id}", staffCtrl.Delete)
@@ -193,8 +199,14 @@ func TestStaffUpdate_Success(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
+		FindEmployeeByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Employee{WageType: "daily", WageAmount: 500}, nil)
+	mockQuerier.EXPECT().
 		UpdateEmployee(gomock.Any(), gomock.Any()).
 		Return(reposEmployee(t, "John Updated", "monthly", "600"), nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	r := chi.NewRouter()
 	r.Put("/api/v1/staff/{id}", staffCtrl.Update)
@@ -376,6 +388,9 @@ func TestStaffUpdate_DBError(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
+		FindEmployeeByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Employee{WageType: "daily", WageAmount: 500}, nil)
+	mockQuerier.EXPECT().
 		UpdateEmployee(gomock.Any(), gomock.Any()).
 		Return(repositories.Employee{}, errors.New("db connection error"))
 
@@ -515,6 +530,9 @@ func TestStaffUpdate_Unauthorized(t *testing.T) {
 	staffCtrl, mockQuerier, cleanup := setupStaffTest(t)
 	defer cleanup()
 
+	mockQuerier.EXPECT().
+		FindEmployeeByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Employee{WageType: "daily", WageAmount: 500}, nil)
 	mockQuerier.EXPECT().
 		UpdateEmployee(gomock.Any(), gomock.Any()).
 		Return(repositories.Employee{}, errors.New("db error"))

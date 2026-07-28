@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +12,8 @@ import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/helpers.dart';
 
+const int _pageSize = 20;
+
 class StaffDirectoryScreen extends ConsumerStatefulWidget {
   const StaffDirectoryScreen({super.key});
   @override
@@ -20,30 +23,118 @@ class StaffDirectoryScreen extends ConsumerStatefulWidget {
 class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
   String _searchQuery = '';
   final FocusNode _searchFocus = FocusNode();
+  final ScrollController _scrollCtrl = ScrollController();
+  List<Employee> _allEmployees = [];
+  bool _loading = true;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  int _offset = 0;
+  String? _error;
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollCtrl.addListener(_onScroll);
+    _fetch();
+  }
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _scrollCtrl.removeListener(_onScroll);
+    _scrollCtrl.dispose();
     _searchFocus.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200 && !_loadingMore && _hasMore && _searchQuery.isEmpty) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _fetch() async {
+    setState(() { _loading = true; _error = null; _offset = 0; _hasMore = true; _allEmployees = []; });
+    try {
+      final staffService = ref.read(staffServiceProvider);
+      final employees = await staffService.list(limit: _pageSize, offset: 0);
+      if (mounted) {
+        setState(() {
+          _allEmployees = employees;
+          _offset = employees.length;
+          _hasMore = employees.length >= _pageSize;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final staffService = ref.read(staffServiceProvider);
+      final employees = await staffService.list(limit: _pageSize, offset: _offset);
+      if (mounted) {
+        setState(() {
+          _allEmployees.addAll(employees);
+          _offset = _allEmployees.length;
+          _hasMore = employees.length >= _pageSize;
+          _loadingMore = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    HapticFeedback.mediumImpact();
+    await _fetch();
+  }
+
+  void _onSearchChanged(String v) {
+    setState(() => _searchQuery = v.toLowerCase());
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (v.isNotEmpty && _allEmployees.length < 100) {
+        _fetchAllForSearch();
+      }
+    });
+  }
+
+  Future<void> _fetchAllForSearch() async {
+    try {
+      final staffService = ref.read(staffServiceProvider);
+      final employees = await staffService.list(limit: 100000, offset: 0);
+      if (mounted) setState(() { _allEmployees = employees; _hasMore = false; });
+    } catch (_) {}
+  }
+
+  List<Employee> get _filtered {
+    if (_searchQuery.isEmpty) return _allEmployees;
+    return _allEmployees.where((e) =>
+      e.name.toLowerCase().contains(_searchQuery) ||
+      (e.designation?.toLowerCase().contains(_searchQuery) ?? false) ||
+      e.role.toLowerCase().contains(_searchQuery)).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final asyncData = ref.watch(employeeListProvider);
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
       body: RefreshIndicator(
         color: cs.primary,
         backgroundColor: cs.surface,
-        onRefresh: () async {
-          HapticFeedback.mediumImpact();
-          ref.invalidate(employeeListProvider);
-          await ref.read(employeeListProvider.future);
-        },
+        onRefresh: _onRefresh,
         child: CustomScrollView(
+          controller: _scrollCtrl,
           physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           slivers: [
             SliverAppBar(
@@ -65,7 +156,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
                         child: _PremiumSearchBar(
                           cs: cs,
                           focusNode: _searchFocus,
-                          onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                          onChanged: _onSearchChanged,
                         ),
                       ),
                     ),
@@ -81,9 +172,10 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
               ],
             ),
 
-            asyncData.when(
-              loading: () => const ShimmerLoading(itemCount: 8, height: 82),
-              error: (e, _) => SliverFillRemaining(
+            if (_loading)
+              const ShimmerLoading(itemCount: 8, height: 82)
+            else if (_error != null)
+              SliverFillRemaining(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -91,33 +183,23 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
                       Icon(PhosphorIconsFill.warningCircle, size: 48, color: cs.error),
                       const SizedBox(height: 16),
                       Text('Failed to load staff', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                      Text('$e', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                      Text('$_error', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
                     ],
                   ),
                 ),
-              ),
-              data: (employees) {
-                final filtered = _searchQuery.isEmpty
-                    ? employees
-                    : employees.where((e) =>
-                        e.name.toLowerCase().contains(_searchQuery) ||
-                        (e.designation?.toLowerCase().contains(_searchQuery) ?? false) ||
-                        e.role.toLowerCase().contains(_searchQuery)).toList();
-
-                if (filtered.isEmpty) {
-                  return SliverFillRemaining(child: _EmptySearchState(cs: cs, tt: tt, isSearching: _searchQuery.isNotEmpty));
-                }
-
-                final grouped = _groupByLetter(filtered);
-
-                return SliverPadding(
+              )
+            else ...[
+              if (_filtered.isEmpty)
+                SliverFillRemaining(child: _EmptySearchState(cs: cs, tt: tt, isSearching: _searchQuery.isNotEmpty))
+              else
+                SliverPadding(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
+                        final grouped = _groupByLetter(_filtered);
                         final letter = grouped.keys.elementAt(index);
                         final staffList = grouped[letter]!;
-
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -137,12 +219,18 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
                           ],
                         );
                       },
-                      childCount: grouped.keys.length,
+                      childCount: _groupByLetter(_filtered).keys.length,
                     ),
                   ),
-                );
-              },
-            ),
+                ),
+              if (_loadingMore)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary)),
+                  ),
+                ),
+            ],
           ],
         ),
       ),
@@ -150,7 +238,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
         onPressed: () async {
           HapticFeedback.heavyImpact();
           final result = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AddEmployeeScreen()));
-          if (result == true && mounted) ref.invalidate(employeeListProvider);
+          if (result == true && mounted) _fetch();
         },
         backgroundColor: cs.primary,
         elevation: 4,
@@ -382,4 +470,3 @@ class _EmptySearchState extends StatelessWidget {
     );
   }
 }
-

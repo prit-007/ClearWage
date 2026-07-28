@@ -37,29 +37,39 @@ type createLedgerRequest struct {
 func (c *LedgerController) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	claims := middlewares.GetClaims(r.Context())
 	if claims == nil {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	var req createLedgerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if req.EmployeeID == "" || req.Date == "" || req.Type == "" || req.Amount == "" {
-		utils.JSONError(w, http.StatusBadRequest, "employee_id, date, type, and amount are required")
+		utils.JSONFail(w, http.StatusBadRequest, "employee_id, date, type, and amount are required")
+		return
+	}
+
+	if !utils.ValidateDate(req.Date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 
 	if req.Type != "jama" && req.Type != "udhaar" {
-		utils.JSONError(w, http.StatusBadRequest, "type must be 'jama' or 'udhaar'")
+		utils.JSONFail(w, http.StatusBadRequest, "type must be 'jama' or 'udhaar'")
 		return
 	}
 
@@ -76,7 +86,7 @@ func (c *LedgerController) CreateEntry(w http.ResponseWriter, r *http.Request) {
 func (c *LedgerController) ListByEmployee(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -85,11 +95,17 @@ func (c *LedgerController) ListByEmployee(w http.ResponseWriter, r *http.Request
 	endDate := r.URL.Query().Get("end_date")
 
 	if startDate == "" || endDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
 		return
 	}
 
-	entries, err := c.ledgerService.ListByEmployeeMonth(r.Context(), employeeID, tenantID, startDate, endDate)
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	limit, offset := parseAllLimitOffset(r)
+	entries, err := c.ledgerService.ListByEmployeeMonth(r.Context(), employeeID, tenantID, startDate, endDate, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list ledger entries")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list entries")
@@ -102,7 +118,7 @@ func (c *LedgerController) ListByEmployee(w http.ResponseWriter, r *http.Request
 func (c *LedgerController) GetBalance(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -121,18 +137,24 @@ func (c *LedgerController) GetBalance(w http.ResponseWriter, r *http.Request) {
 func (c *LedgerController) ListByTenant(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
 	if startDate == "" || endDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
 		return
 	}
 
-	entries, err := c.ledgerService.ListByTenant(r.Context(), tenantID, startDate, endDate)
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	limit, offset := parseLimitOffset(r)
+	entries, err := c.ledgerService.ListByTenant(r.Context(), tenantID, startDate, endDate, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list global ledger feed")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list entries")
@@ -145,7 +167,7 @@ func (c *LedgerController) ListByTenant(w http.ResponseWriter, r *http.Request) 
 func (c *LedgerController) GetTotalOutstanding(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -166,24 +188,34 @@ type settleRequest struct {
 func (c *LedgerController) SettleAccount(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	claims := middlewares.GetClaims(r.Context())
 	if claims == nil {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	employeeID := chi.URLParam(r, "id")
 	var req settleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 	if req.Date == "" {
-		utils.JSONError(w, http.StatusBadRequest, "date is required")
+		utils.JSONFail(w, http.StatusBadRequest, "date is required")
+		return
+	}
+
+	if !utils.ValidateDate(req.Date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 

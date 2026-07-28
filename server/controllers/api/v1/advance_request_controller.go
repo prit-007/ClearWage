@@ -13,6 +13,37 @@ import (
 	"github.com/vivek-app/vivek_app/utils"
 )
 
+func parseLimitOffset(r *http.Request) (int32, int32) {
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
+	limit, _ := strconv.Atoi(limitStr)
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	offset, _ := strconv.Atoi(offsetStr)
+	if offset < 0 {
+		offset = 0
+	}
+	return int32(limit), int32(offset)
+}
+
+func parseAllLimitOffset(r *http.Request) (int32, int32) {
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
+	if limitStr == "" {
+		return 100000, 0
+	}
+	limit, _ := strconv.Atoi(limitStr)
+	if limit <= 0 || limit > 100000 {
+		limit = 100000
+	}
+	offset, _ := strconv.Atoi(offsetStr)
+	if offset < 0 {
+		offset = 0
+	}
+	return int32(limit), int32(offset)
+}
+
 type AdvanceRequestController struct {
 	advanceRequestService *services.AdvanceRequestService
 	logger                *zerolog.Logger
@@ -36,24 +67,30 @@ type createAdvanceRequest struct {
 func (c *AdvanceRequestController) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	var req createAdvanceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if req.EmployeeID == "" || req.Amount == "" {
-		utils.JSONError(w, http.StatusBadRequest, "employee_id and amount are required")
+		utils.JSONFail(w, http.StatusBadRequest, "employee_id and amount are required")
 		return
 	}
 
 	amt, err := strconv.ParseFloat(req.Amount, 64)
 	if err != nil || amt <= 0 {
-		utils.JSONError(w, http.StatusBadRequest, "amount must be a positive number")
+		utils.JSONFail(w, http.StatusBadRequest, "amount must be a positive number")
 		return
 	}
 
@@ -70,12 +107,13 @@ func (c *AdvanceRequestController) Create(w http.ResponseWriter, r *http.Request
 func (c *AdvanceRequestController) List(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	status := r.URL.Query().Get("status")
-	requests, err := c.advanceRequestService.ListRequests(r.Context(), tenantID, status)
+	limit, offset := parseLimitOffset(r)
+	requests, err := c.advanceRequestService.ListRequests(r.Context(), tenantID, status, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list advance requests")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list advance requests")
@@ -92,24 +130,34 @@ type approveAdvanceRequest struct {
 func (c *AdvanceRequestController) Approve(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	claims := middlewares.GetClaims(r.Context())
 	if claims == nil {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	var req approveAdvanceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 	if req.Date == "" {
-		utils.JSONError(w, http.StatusBadRequest, "date is required")
+		utils.JSONFail(w, http.StatusBadRequest, "date is required")
+		return
+	}
+
+	if !utils.ValidateDate(req.Date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 
@@ -126,13 +174,18 @@ func (c *AdvanceRequestController) Approve(w http.ResponseWriter, r *http.Reques
 func (c *AdvanceRequestController) Deny(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	claims := middlewares.GetClaims(r.Context())
 	if claims == nil {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 

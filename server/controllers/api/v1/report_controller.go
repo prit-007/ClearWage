@@ -30,13 +30,18 @@ func NewReportController(reportService *services.ReportService, logger *zerolog.
 func (c *ReportController) DailySummary(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	date := r.URL.Query().Get("date")
 	if date == "" {
-		utils.JSONError(w, http.StatusBadRequest, "date query parameter is required")
+		utils.JSONFail(w, http.StatusBadRequest, "date query parameter is required")
+		return
+	}
+
+	if !utils.ValidateDate(date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 
@@ -53,7 +58,7 @@ func (c *ReportController) DailySummary(w http.ResponseWriter, r *http.Request) 
 func (c *ReportController) EmployeeMonthly(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -62,7 +67,12 @@ func (c *ReportController) EmployeeMonthly(w http.ResponseWriter, r *http.Reques
 	employeeID := r.URL.Query().Get("employee_id")
 
 	if startDate == "" || endDate == "" || employeeID == "" {
-		utils.JSONError(w, http.StatusBadRequest, "employee_id, start_date, and end_date query parameters are required")
+		utils.JSONFail(w, http.StatusBadRequest, "employee_id, start_date, and end_date query parameters are required")
+		return
+	}
+
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 
@@ -79,7 +89,7 @@ func (c *ReportController) EmployeeMonthly(w http.ResponseWriter, r *http.Reques
 func (c *ReportController) WageBillTrends(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -104,7 +114,7 @@ func (c *ReportController) WageBillTrends(w http.ResponseWriter, r *http.Request
 func (c *ReportController) DefaultersList(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -121,13 +131,13 @@ func (c *ReportController) DefaultersList(w http.ResponseWriter, r *http.Request
 func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	reportType := r.URL.Query().Get("type")
 	if reportType == "" {
-		utils.JSONError(w, http.StatusBadRequest, "type query parameter is required (defaulters, trends)")
+		utils.JSONFail(w, http.StatusBadRequest, "type query parameter is required (defaulters, trends)")
 		return
 	}
 
@@ -174,7 +184,7 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 	default:
-		utils.JSONError(w, http.StatusBadRequest, "invalid type: must be 'defaulters' or 'trends'")
+		utils.JSONFail(w, http.StatusBadRequest, "invalid type: must be 'defaulters' or 'trends'")
 		return
 	}
 

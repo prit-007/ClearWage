@@ -349,7 +349,7 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
 }
 
 final attendanceByDateProvider = FutureProvider.autoDispose.family<List<Attendance>, String>((ref, date) {
-  return ref.watch(attendanceServiceProvider).listByDate(date);
+  return ref.watch(attendanceServiceProvider).listByDate(date, limit: 100000);
 });
 
 class _PremiumAttendanceCard extends StatefulWidget {

@@ -37,6 +37,9 @@ func TestAttendanceCreate_Success(t *testing.T) {
 	mockQuerier.EXPECT().
 		CreateAttendance(gomock.Any(), gomock.Any()).
 		Return(repositories.Attendance{Status: "present"}, nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	body, _ := json.Marshal(map[string]interface{}{
 		"employee_id":    "00000000-0000-0000-0000-000000000002",
@@ -469,6 +472,9 @@ func TestAttendanceUpdate_Success(t *testing.T) {
 	mockQuerier.EXPECT().
 		UpdateAttendance(gomock.Any(), gomock.Any()).
 		Return(repositories.Attendance{Status: "present"}, nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	r := chi.NewRouter()
 	r.Put("/api/v1/attendance/{id}", ctrl.Update)

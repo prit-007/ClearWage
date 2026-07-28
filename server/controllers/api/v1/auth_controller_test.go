@@ -168,6 +168,10 @@ func TestRegister_Success(t *testing.T) {
 	defer finish()
 
 	mockQ.EXPECT().
+		FindTenantByPhone(gomock.Any(), "+91-9876543210").
+		Return(repositories.Tenant{}, repositories.ErrNotFound)
+
+	mockQ.EXPECT().
 		CreateTenant(gomock.Any(), repositories.CreateTenantParams{
 			Name:  "Test Factory",
 			Phone: "+91-9876543210",
@@ -184,6 +188,10 @@ func TestRegister_Success(t *testing.T) {
 			Role:       "owner",
 		}).
 		Return(repositories.Employee{ID: "emp1", TenantID: "t1", Name: "Test User", Phone: "+91-9876543210", Role: "owner"}, nil)
+
+	mockQ.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	body, _ := json.Marshal(map[string]string{
 		"name":         "Test User",

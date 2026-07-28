@@ -34,18 +34,29 @@ type createHolidayRequest struct {
 func (c *HolidayController) Create(w http.ResponseWriter, r *http.Request) {
 	var req createHolidayRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	if req.Name == "" || req.Date == "" {
-		utils.JSONError(w, http.StatusBadRequest, "Name and date are required")
+		utils.JSONFail(w, http.StatusBadRequest, "Name and date are required")
+		return
+	}
+
+	if len(req.Name) > 50 {
+		utils.JSONFail(w, http.StatusBadRequest, "name must be at most 50 characters")
 		return
 	}
 
@@ -62,11 +73,12 @@ func (c *HolidayController) Create(w http.ResponseWriter, r *http.Request) {
 func (c *HolidayController) List(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
-	holidays, err := c.holidayService.ListHolidays(r.Context(), tenantID)
+	limit, offset := parseAllLimitOffset(r)
+	holidays, err := c.holidayService.ListHolidays(r.Context(), tenantID, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list holidays")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list holidays")
@@ -79,7 +91,13 @@ func (c *HolidayController) List(w http.ResponseWriter, r *http.Request) {
 func (c *HolidayController) Delete(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 

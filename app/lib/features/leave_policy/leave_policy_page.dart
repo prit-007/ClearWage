@@ -105,7 +105,8 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
         title: Text('Leave Policy', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
         centerTitle: true,
       ),
-      body: Stack(
+      body: _loaded
+          ? Stack(
         children: [
           ListView(
             physics: const BouncingScrollPhysics(),
@@ -183,7 +184,8 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
             child: LoadingButton(loading: _saving, onPressed: _save, label: 'Update Policy'),
           ),
         ],
-      ),
+      )
+          : const Center(child: CircularProgressIndicator()),
     );
   }
 }

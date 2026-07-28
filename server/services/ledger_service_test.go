@@ -48,14 +48,14 @@ func TestLedgerService_GetBalance(t *testing.T) {
 
 	mockQuerier.EXPECT().
 		GetBalanceByEmployee(gomock.Any(), gomock.Any()).
-		Return(int32(1500), nil)
+		Return(float64(1500), nil)
 
 	balance, err := svc.GetBalance(context.Background(), "00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000001")
 	if err != nil {
 		t.Fatalf("GetBalance failed: %v", err)
 	}
 	if balance != 1500 {
-		t.Errorf("expected 1500, got %d", balance)
+		t.Errorf("expected 1500, got %v", balance)
 	}
 }
 
@@ -76,6 +76,7 @@ func TestLedgerService_ListByEmployeeMonth(t *testing.T) {
 		"00000000-0000-0000-0000-000000000001",
 		"2025-01-01",
 		"2025-02-01",
+		100000, 0,
 	)
 	if err != nil {
 		t.Fatalf("ListByEmployeeMonth failed: %v", err)
@@ -120,14 +121,14 @@ func TestLedgerService_GetBalance_Empty(t *testing.T) {
 
 	mockQuerier.EXPECT().
 		GetBalanceByEmployee(gomock.Any(), gomock.Any()).
-		Return(int32(0), nil)
+		Return(float64(0), nil)
 
 	balance, err := svc.GetBalance(context.Background(), "00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000001")
 	if err != nil {
 		t.Fatalf("GetBalance failed: %v", err)
 	}
 	if balance != 0 {
-		t.Errorf("expected 0, got %d", balance)
+		t.Errorf("expected 0, got %v", balance)
 	}
 }
 
@@ -148,6 +149,7 @@ func TestLedgerService_ListByEmployeeMonth_DBError(t *testing.T) {
 		"00000000-0000-0000-0000-000000000001",
 		"2025-01-01",
 		"2025-02-01",
+		100000, 0,
 	)
 	if err == nil {
 		t.Fatal("expected error, got nil")

@@ -15,8 +15,9 @@ type AppConfig struct {
 	Env                     string   `envconfig:"APP_ENV"`
 	Port                    string   `envconfig:"APP_PORT"`
 	Secret                  string   `envconfig:"JWT_SECRET"`
-	TokenTTL                int      `envconfig:"TOKEN_TTL" default:"720"`
+	TokenTTL                int      `envconfig:"TOKEN_TTL" default:"72"`
 	DB                      DBConfig
+	AllowedOrigin           string `envconfig:"ALLOWED_ORIGIN" default:"*"`
 	FirebaseCredentialsPath string `envconfig:"FIREBASE_CREDENTIALS_PATH"`
 	FirebaseCredBase64      string `envconfig:"FIREBASE_CRED_BASE64"`
 	FirebaseProjectID       string `envconfig:"FIREBASE_PROJECT_ID"`
@@ -34,8 +35,8 @@ func GetConfig() AppConfig {
 		log.Fatal(err)
 	}
 
-	if AllConfig.Secret == "" {
-		log.Fatal("JWT_SECRET must be set")
+	if len(AllConfig.Secret) < 16 {
+		log.Fatal("JWT_SECRET must be at least 16 characters")
 	}
 	if AllConfig.FirebaseCredentialsPath == "" && AllConfig.FirebaseCredBase64 == "" {
 		log.Fatal("either FIREBASE_CREDENTIALS_PATH or FIREBASE_CRED_BASE64 must be set")

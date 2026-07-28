@@ -5,8 +5,11 @@ class StaffService {
   final ApiClient _client;
   StaffService(this._client);
 
-  Future<List<Employee>> list() async {
-    final res = await _client.get('/api/v1/staff');
+  Future<List<Employee>> list({int? limit, int? offset}) async {
+    final query = <String, String>{};
+    if (limit != null) query['limit'] = limit.toString();
+    if (offset != null) query['offset'] = offset.toString();
+    final res = await _client.get('/api/v1/staff', query: query.isNotEmpty ? query : null);
     final list = (res['data'] as List<dynamic>?) ?? [];
     return list.map((e) => Employee.fromJson(e as Map<String, dynamic>)).toList();
   }

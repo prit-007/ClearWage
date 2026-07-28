@@ -39,44 +39,47 @@ class _EmployeeProfileScreenState
     final now = DateTime.now();
     final start = '${now.year}-01-01';
     final end = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    Map<String, dynamic>? data;
-    Map<String, dynamic>? empJson;
-    try {
-      data = await ref.read(staffServiceProvider).getProfile(widget.employeeId);
-    } catch (_) {
-      // getProfile is optional; fall back to get() data
+
+    final svc = ref.read(staffServiceProvider);
+    final attSvc = ref.read(attendanceServiceProvider);
+    final ledgerSvc = ref.read(ledgerServiceProvider);
+
+    final dataF = _fetch(() => svc.getProfile(widget.employeeId));
+    final empF = _fetch(() => svc.get(widget.employeeId).then((e) => e.toJson()));
+    final attF = _fetch(() => attSvc.listByEmployee(widget.employeeId, startDate: start, endDate: end).then((l) => l.map((a) => a.toJson()).toList()));
+    final ledF = _fetch(() => ledgerSvc.listByEmployee(widget.employeeId, startDate: start, endDate: end).then((l) => l.map((e) => e.toJson()).toList()));
+    final balF = _fetch(() => ledgerSvc.getBalance(widget.employeeId));
+
+    final data = await dataF;
+    final empJson = await empF;
+    if (empJson == null && data == null) { if (mounted) setState(() => _loading = false); return; }
+    final attList = await attF ?? [];
+    final ledgerList = await ledF ?? [];
+    final bal = await balF ?? 0.0;
+
+    var profile = data ?? empJson;
+    if (data != null && empJson != null) profile = {...data, ...empJson};
+
+    if (profile?['shift_name'] == null && profile?['default_shift_id'] != null) {
+      try {
+        final shift = await ref.read(shiftServiceProvider).get(profile!['default_shift_id'] as String);
+        profile['shift_name'] = shift.name;
+      } catch (_) {}
     }
-    try {
-      empJson = (await ref.read(staffServiceProvider).get(widget.employeeId)).toJson();
-    } catch (e) {
-      if (mounted) showError(context, e);
-    }
-    List<Map<String, dynamic>>? attList;
-    try {
-      final list = await ref.read(attendanceServiceProvider).listByEmployee(widget.employeeId, startDate: start, endDate: end);
-      attList = list.map((a) => a.toJson()).toList();
-    } catch (e) {
-      debugPrint('Failed to load attendance: $e');
-    }
-    List<Map<String, dynamic>>? ledgerList;
-    try {
-      final list = await ref.read(ledgerServiceProvider).listByEmployee(widget.employeeId, startDate: start, endDate: end);
-      ledgerList = list.map((l) => l.toJson()).toList();
-    } catch (e) {
-      debugPrint('Failed to load ledger: $e');
-    }
-    double? bal;
-    try { bal = await ref.read(ledgerServiceProvider).getBalance(widget.employeeId); } catch (e) { debugPrint('Failed to load balance: $e'); }
+
     if (mounted) {
       setState(() {
-        _profile = data ?? empJson;
-        if (data != null && empJson != null) _profile = {...data, ...empJson};
+        _profile = profile;
         _attendance = attList;
         _ledger = ledgerList;
         _balance = bal;
         _loading = false;
       });
     }
+  }
+
+  Future<T?> _fetch<T>(Future<T> Function() fn) async {
+    try { return await fn(); } catch (_) { return null; }
   }
 
   @override

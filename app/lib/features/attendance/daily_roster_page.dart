@@ -219,7 +219,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                         return FluidSlideIn(
                           delay: (index * 50).clamp(0, 400),
                           child: row.attendance != null
-                              ? _PremiumAttendanceCard(cs: cs, tt: tt, attendance: row.attendance!, onUpdate: _updateAttendance)
+                              ? _PremiumAttendanceCard(cs: cs, tt: tt, employee: row.employee, attendance: row.attendance!, onUpdate: _updateAttendance)
                               : _UnmarkedEmployeeCard(cs: cs, tt: tt, employee: row.employee, onMark: (status, ot) => _createAttendance(row.employee, status, ot)),
                         );
                       },
@@ -355,10 +355,11 @@ final attendanceByDateProvider = FutureProvider.autoDispose.family<List<Attendan
 class _PremiumAttendanceCard extends StatefulWidget {
   final ColorScheme cs;
   final TextTheme tt;
+  final Employee employee;
   final Attendance attendance;
   final Future<void> Function(Attendance att, _AttStatus newStatus, double ot)? onUpdate;
 
-  const _PremiumAttendanceCard({required this.cs, required this.tt, required this.attendance, this.onUpdate});
+  const _PremiumAttendanceCard({required this.cs, required this.tt, required this.employee, required this.attendance, this.onUpdate});
 
   @override
   State<_PremiumAttendanceCard> createState() => _PremiumAttendanceCardState();
@@ -406,7 +407,7 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
 
   @override
   Widget build(BuildContext context) {
-    final initials = getInitials(widget.attendance.employeeName);
+    final initials = getInitials(widget.employee.name);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -430,8 +431,8 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.attendance.employeeName, style: widget.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                    Text(widget.attendance.shiftId, style: widget.tt.labelSmall?.copyWith(color: widget.cs.onSurfaceVariant)),
+                    Text(widget.employee.name, style: widget.tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    Text(widget.employee.shiftName ?? 'No shift', style: widget.tt.labelSmall?.copyWith(color: widget.cs.onSurfaceVariant)),
                   ],
                 ),
               ),

@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jung-kurt/gofpdf"
@@ -202,7 +204,7 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 			if parseErr == nil {
 				for d := start; d.Before(end); d = d.AddDate(0, 0, 1) {
 					dateStr := d.Format("2006-01-02")
-					if !employeeDates[dateStr] && (d.Weekday() == time.Sunday || holidayMap[dateStr]) {
+					if !employeeDates[dateStr] && (isWeeklyOffDay(tc.WeeklyOffs, d.Weekday()) || holidayMap[dateStr]) {
 						dayWage := dailyWageRate
 						grossWages += dayWage
 						present++
@@ -338,4 +340,17 @@ func (s *PayrollService) LockMonth(ctx context.Context, tenantID, startDate, end
 		StartDate: startDate,
 		EndDate:   endDate,
 	})
+}
+
+func isWeeklyOffDay(weeklyOffs string, day time.Weekday) bool {
+	if weeklyOffs == "" {
+		return false
+	}
+	target := strconv.Itoa(int(day))
+	for _, s := range strings.Split(weeklyOffs, ",") {
+		if strings.TrimSpace(s) == target {
+			return true
+		}
+	}
+	return false
 }

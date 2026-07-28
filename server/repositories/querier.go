@@ -309,6 +309,7 @@ type UpsertTenantConfigParams struct {
 	OTRounding          int32   `json:"ot_rounding"`
 	WageBasis           string  `json:"wage_basis"`
 	WeekOffPaid         bool    `json:"week_off_paid"`
+	WeeklyOffs          string  `json:"weekly_offs"`
 }
 
 type UpdateSyncEventStatusParams struct {
@@ -344,6 +345,7 @@ type Querier interface {
 	CreateSyncEvent(ctx context.Context, arg CreateSyncEventParams) (SyncQueue, error)
 	CreateTenant(ctx context.Context, arg CreateTenantParams) (Tenant, error)
 	DeleteHoliday(ctx context.Context, arg DeleteHolidayParams) error
+	DeleteTenant(ctx context.Context, tenantID string) error
 	DeleteShift(ctx context.Context, arg DeleteShiftParams) error
 	FindEmployeeByID(ctx context.Context, arg FindEmployeeByIDParams) (Employee, error)
 	FindEmployeeByPhone(ctx context.Context, arg FindEmployeeByPhoneParams) (Employee, error)

@@ -114,6 +114,17 @@ func (c *AttendanceController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isHoliday, err := c.attendanceService.IsHoliday(r.Context(), tenantID, req.Date)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to check holiday")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to check holiday")
+		return
+	}
+	if isHoliday {
+		utils.JSONFail(w, http.StatusBadRequest, "Cannot mark attendance on a declared holiday")
+		return
+	}
+
 	otHours := req.OvertimeHours
 	if otHours == "" {
 		otHours = "0"
@@ -322,6 +333,18 @@ func (c *AttendanceController) BulkUpsert(w http.ResponseWriter, r *http.Request
 		if rec.Status != "" && !isValidAttendanceStatus(rec.Status) {
 			utils.JSONFail(w, http.StatusBadRequest, "invalid status: must be present, absent, half_day, paid_leave, or week_off")
 			return
+		}
+		if rec.Date != "" {
+			isHoliday, err := c.attendanceService.IsHoliday(r.Context(), tenantID, rec.Date)
+			if err != nil {
+				c.logger.Error().Err(err).Msg("failed to check holiday")
+				utils.JSONError(w, http.StatusInternalServerError, "Failed to check holiday")
+				return
+			}
+			if isHoliday {
+				utils.JSONFail(w, http.StatusBadRequest, "Cannot mark attendance on a declared holiday")
+				return
+			}
 		}
 		otHours := rec.OvertimeHours
 		if otHours == "" {

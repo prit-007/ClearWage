@@ -103,7 +103,7 @@ final staffServiceProvider = Provider<StaffService>((ref) {
 });
 
 final employeeListProvider = FutureProvider.autoDispose<List<Employee>>((ref) {
-  return ref.watch(staffServiceProvider).list();
+  return ref.watch(staffServiceProvider).list(limit: 10000);
 });
 
 final attendanceServiceProvider = Provider<AttendanceService>((ref) {

@@ -14,6 +14,7 @@ import (
 	"google.golang.org/api/option"
 
 	"github.com/vivek-app/vivek_app/config"
+	"github.com/vivek-app/vivek_app/middlewares"
 	"github.com/vivek-app/vivek_app/repositories"
 	"github.com/vivek-app/vivek_app/services"
 	"github.com/vivek-app/vivek_app/utils"
@@ -157,3 +158,25 @@ func (ctrl *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 
 // compile-time assertion ensures *auth.Client satisfies TokenVerifier
 var _ services.TokenVerifier = (*auth.Client)(nil)
+
+func (ctrl *AuthController) DeleteAccount(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || claims.Role != "owner" {
+		utils.JSONFail(w, http.StatusForbidden, "Only the account owner can delete the account")
+		return
+	}
+
+	if err := ctrl.authService.DeleteAccount(r.Context(), tenantID); err != nil {
+		ctrl.logger.Error().Err(err).Msg("failed to delete account")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to delete account")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, map[string]string{"message": "Account deleted"})
+}

@@ -33,6 +33,7 @@ type upsertPayrollSettingsRequest struct {
 	OTRounding          int32   `json:"ot_rounding"`
 	WageBasis           string  `json:"wage_basis"`
 	WeekOffPaid         bool    `json:"week_off_paid"`
+	WeeklyOffs          string  `json:"weekly_offs"`
 }
 
 func (c *SettingsController) GetPayrollSettings(w http.ResponseWriter, r *http.Request) {
@@ -95,6 +96,7 @@ func (c *SettingsController) UpsertPayrollSettings(w http.ResponseWriter, r *htt
 		OTRounding:          req.OTRounding,
 		WageBasis:           req.WageBasis,
 		WeekOffPaid:         req.WeekOffPaid,
+		WeeklyOffs:          req.WeeklyOffs,
 	})
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to upsert payroll settings")

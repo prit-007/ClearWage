@@ -6,8 +6,6 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/dashboard_model.dart';
 import '../../providers/providers.dart';
 import '../staff/add_employee_page.dart';
-import '../attendance/daily_roster_page.dart' as roster;
-import '../reports/reports_hub_page.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
 final dashboardDataProvider = FutureProvider.autoDispose<DashboardData>((ref) {
@@ -97,85 +95,89 @@ class DashboardScreen extends ConsumerWidget {
                       delegate: SliverChildListDelegate([
                         _AttendanceOverviewCard(cs: cs, tt: tt, data: data),
                         const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _GlassStatCard(
-                                cs: cs,
-                                tt: tt,
-                                icon: PhosphorIconsDuotone.users,
-                                label: 'Total Staff',
-                                value: '${data.totalWorkforce}',
-                                color: cs.secondary,
+                        if (isAdmin)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _GlassStatCard(
+                                  cs: cs,
+                                  tt: tt,
+                                  icon: PhosphorIconsDuotone.users,
+                                  label: 'Total Staff',
+                                  value: '${data.totalWorkforce}',
+                                  color: cs.secondary,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _GlassStatCard(
-                                cs: cs,
-                                tt: tt,
-                                icon: PhosphorIconsDuotone.wallet,
-                                label: 'Payroll (MTD)',
-                                    value:
-                                        '\u20B9${data.dailyJamaTotal.toStringAsFixed(0)}',
-                                color: cs.primary,
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _GlassStatCard(
+                                  cs: cs,
+                                  tt: tt,
+                                  icon: PhosphorIconsDuotone.wallet,
+                                  label: 'Payroll (MTD)',
+                                      value:
+                                          '\u20B9${data.dailyJamaTotal.toStringAsFixed(0)}',
+                                  color: cs.primary,
+                                ),
                               ),
+                            ],
+                          ),
+                        if (!isAdmin)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _GlassStatCard(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsDuotone.checkCircle,
+                                    label: 'Present Today',
+                                    value: '${data.presentToday}',
+                                    color: const Color(0xFF10B981),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _GlassStatCard(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsDuotone.wallet,
+                                    label: 'Outstanding',
+                                        value:
+                                            '\u20B9${data.totalOutstanding.toStringAsFixed(0)}',
+                                    color: cs.primary,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
                         const SizedBox(height: 40),
                         Text('Quick Actions',
                             style: tt.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.5)),
                         const SizedBox(height: 16),
-                        GridView.count(
-                          crossAxisCount: 4,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 0.75,
-                          children: [
-                            if (isAdmin)
-                              _QuickActionTile(
-                                  cs: cs,
-                                  tt: tt,
-                                  icon: PhosphorIconsRegular.userPlus,
-                                  label: 'Add\nStaff',
-                                  onTap: () {
-                                    HapticFeedback.lightImpact();
-                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEmployeeScreen()));
-                                  }),
-                            _QuickActionTile(
-                                cs: cs,
-                                tt: tt,
-                                icon: PhosphorIconsRegular.clipboardText,
-                                label: 'Mark\nRoster',
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const roster.AttendanceRosterPage()));
-                                }),
-                            if (isAdmin)
-                              _QuickActionTile(
-                                  cs: cs,
-                                  tt: tt,
-                                  icon: PhosphorIconsRegular.bookOpenText,
-                                  label: 'Ledger\nEntry',
-                                  onTap: () {
-                                    HapticFeedback.lightImpact();
-                                    Navigator.pushNamed(context, '/new_ledger');
-                                  }),
-                            _QuickActionTile(
-                                cs: cs,
-                                tt: tt,
-                                icon: PhosphorIconsRegular.chartLineUp,
-                                label: 'Reports',
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsHubScreen()));
-                                }),
-                          ],
-                        ),
+                        if (isAdmin)
+                          _QuickActionTile(
+                              cs: cs,
+                              tt: tt,
+                              icon: PhosphorIconsRegular.userPlus,
+                              label: 'Add\nStaff',
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEmployeeScreen()));
+                              }),
+                        if (!isAdmin)
+                          _QuickActionTile(
+                              cs: cs,
+                              tt: tt,
+                              icon: PhosphorIconsRegular.userCircle,
+                              label: 'My\nProfile',
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                Navigator.pushNamed(context, '/my-profile');
+                              }),
                         const SizedBox(height: 40),
                         Text('Recent Activity',
                             style: tt.titleLarge?.copyWith(
@@ -192,7 +194,7 @@ class DashboardScreen extends ConsumerWidget {
                           )
                         else
                           ...data.recentActivity.map((a) => _ActivityTile(
-                              cs: cs, tt: tt, activity: a)),
+                                cs: cs, tt: tt, activity: a)),
                         const SizedBox(height: 40),
                       ]),
                     ),

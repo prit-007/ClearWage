@@ -35,6 +35,12 @@ func TestAttendanceCreate_Success(t *testing.T) {
 
 	now := time.Now()
 	mockQuerier.EXPECT().
+		ListHolidaysByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Holiday{}, nil)
+	mockQuerier.EXPECT().
+		GetTenantConfig(gomock.Any(), gomock.Any()).
+		Return(repositories.TenantConfig{WeeklyOffs: "0"}, nil)
+	mockQuerier.EXPECT().
 		CreateAttendance(gomock.Any(), gomock.Any()).
 		Return(repositories.Attendance{Status: "present"}, nil)
 	mockQuerier.EXPECT().
@@ -263,6 +269,12 @@ func TestAttendanceBulkUpsert_Success(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
+		ListHolidaysByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Holiday{}, nil)
+	mockQuerier.EXPECT().
+		GetTenantConfig(gomock.Any(), gomock.Any()).
+		Return(repositories.TenantConfig{WeeklyOffs: "0"}, nil)
+	mockQuerier.EXPECT().
 		BulkUpsertAttendance(gomock.Any(), gomock.Any()).
 		Return([]repositories.Attendance{{Status: "present"}}, nil)
 
@@ -320,6 +332,12 @@ func TestAttendanceBulkUpsert_DBError(t *testing.T) {
 	ctrl, mockQuerier, cleanup := setupAttendanceTest(t)
 	defer cleanup()
 
+	mockQuerier.EXPECT().
+		ListHolidaysByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Holiday{}, nil)
+	mockQuerier.EXPECT().
+		GetTenantConfig(gomock.Any(), gomock.Any()).
+		Return(repositories.TenantConfig{WeeklyOffs: "0"}, nil)
 	mockQuerier.EXPECT().
 		BulkUpsertAttendance(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("db connection error"))
@@ -426,6 +444,12 @@ func TestAttendanceCreate_DBError(t *testing.T) {
 	ctrl, mockQuerier, cleanup := setupAttendanceTest(t)
 	defer cleanup()
 
+	mockQuerier.EXPECT().
+		ListHolidaysByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Holiday{}, nil)
+	mockQuerier.EXPECT().
+		GetTenantConfig(gomock.Any(), gomock.Any()).
+		Return(repositories.TenantConfig{WeeklyOffs: "0"}, nil)
 	mockQuerier.EXPECT().
 		CreateAttendance(gomock.Any(), gomock.Any()).
 		Return(repositories.Attendance{}, errors.New("db error"))

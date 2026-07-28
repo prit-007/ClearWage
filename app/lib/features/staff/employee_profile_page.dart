@@ -131,23 +131,57 @@ class _EmployeeProfileScreenState
                   onPressed: () => Navigator.pop(context),
                 ),
                 actions: [
-                  IconButton(
-                    icon: Icon(PhosphorIconsRegular.pencilSimple,
-                        color: cs.onSurfaceVariant),
-                    onPressed: () async {
-                      final emp = _profile;
-                      if (emp == null || emp['id'] == null) return;
-                      final result = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AddEmployeeScreen(
-                            employee: Employee.fromJson(emp),
+                  if (ref.watch(userInfoProvider)?.isAdmin ?? false) ...[
+                    IconButton(
+                      icon: Icon(PhosphorIconsRegular.pencilSimple,
+                          color: cs.onSurfaceVariant),
+                      onPressed: () async {
+                        final emp = _profile;
+                        if (emp == null || emp['id'] == null) return;
+                        final result = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddEmployeeScreen(
+                              employee: Employee.fromJson(emp),
+                            ),
                           ),
-                        ),
-                      );
-                      if (result == true && mounted) _loadProfile();
-                    },
-                  ),
+                        );
+                        if (result == true && mounted) _loadProfile();
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(PhosphorIconsRegular.trash,
+                          color: cs.error),
+                      onPressed: () async {
+                        final emp = _profile;
+                        if (emp == null || emp['id'] == null) return;
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Delete Employee'),
+                            content: Text('Permanently deactivate ${emp['name'] ?? 'this employee'}? They will no longer be able to log in.'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                style: TextButton.styleFrom(foregroundColor: cs.error),
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed == true && mounted) {
+                          try {
+                            await ref.read(staffServiceProvider).delete(widget.employeeId);
+                            ref.invalidate(employeeListProvider);
+                            if (mounted) Navigator.pop(context);
+                          } catch (e) {
+                            if (mounted) showError(context, e);
+                          }
+                        }
+                      },
+                    ),
+                  ],
                 ],
               ),
               SliverToBoxAdapter(

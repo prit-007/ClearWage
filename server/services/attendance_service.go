@@ -152,3 +152,31 @@ func (s *AttendanceService) LockMonth(ctx context.Context, tenantID, startDate, 
 		EndDate:   endDate,
 	})
 }
+
+func (s *AttendanceService) IsHoliday(ctx context.Context, tenantID, date string) (bool, error) {
+	holidays, err := s.querier.ListHolidaysByTenant(ctx, repositories.ListHolidaysByTenantParams{
+		TenantID: tenantID,
+		Limit:    1000,
+		Offset:   0,
+	})
+	if err != nil {
+		return false, err
+	}
+	for _, h := range holidays {
+		if h.Date == date {
+			return true, nil
+		}
+	}
+	tc, err := s.querier.GetTenantConfig(ctx, tenantID)
+	if err != nil {
+		return false, nil
+	}
+	d, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return false, nil
+	}
+	if isWeeklyOffDay(tc.WeeklyOffs, d.Weekday()) {
+		return true, nil
+	}
+	return false, nil
+}

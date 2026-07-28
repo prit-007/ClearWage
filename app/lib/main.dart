@@ -147,6 +147,45 @@ class _MainShellState extends ConsumerState<MainShell> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
+
+    final pages = <Widget>[
+      const DashboardScreen(),
+      if (isAdmin) const StaffDirectoryScreen(),
+      const roster.AttendanceRosterPage(),
+      if (isAdmin) const LedgerListScreen(),
+      const ReportsHubScreen(),
+    ];
+
+    final navItems = <NavigationDestination>[
+      const NavigationDestination(
+        icon: Icon(Icons.home_outlined),
+        selectedIcon: Icon(Icons.home),
+        label: 'Home',
+      ),
+      if (isAdmin)
+        const NavigationDestination(
+          icon: Icon(Icons.groups_outlined),
+          selectedIcon: Icon(Icons.groups),
+          label: 'Staff',
+        ),
+      const NavigationDestination(
+        icon: Icon(Icons.event_available_outlined),
+        selectedIcon: Icon(Icons.event_available),
+        label: 'Attendance',
+      ),
+      if (isAdmin)
+        const NavigationDestination(
+          icon: Icon(Icons.account_balance_wallet_outlined),
+          selectedIcon: Icon(Icons.account_balance_wallet),
+          label: 'Ledger',
+        ),
+      const NavigationDestination(
+        icon: Icon(Icons.analytics_outlined),
+        selectedIcon: Icon(Icons.analytics),
+        label: 'Reports',
+      ),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: cs.surface,
@@ -171,54 +210,15 @@ class _MainShellState extends ConsumerState<MainShell> {
           ),
         ],
       ),
-      body: _buildPage(isAdmin),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: pages,
+      ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (i) {
-          if (!isAdmin && i == 3) return;
-          setState(() => _selectedIndex = i);
-        },
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.groups_outlined),
-            selectedIcon: Icon(Icons.groups),
-            label: 'Staff',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.event_available_outlined),
-            selectedIcon: Icon(Icons.event_available),
-            label: 'Attendance',
-          ),
-          if (isAdmin)
-            const NavigationDestination(
-              icon: Icon(Icons.account_balance_wallet_outlined),
-              selectedIcon: Icon(Icons.account_balance_wallet),
-              label: 'Ledger',
-            ),
-          const NavigationDestination(
-            icon: Icon(Icons.analytics_outlined),
-            selectedIcon: Icon(Icons.analytics),
-            label: 'Reports',
-          ),
-        ],
+        selectedIndex: _selectedIndex.clamp(0, navItems.length - 1),
+        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+        destinations: navItems,
       ),
     );
-  }
-
-  Widget _buildPage(bool isAdmin) {
-    final pages = <Widget>[
-      const DashboardScreen(),
-      const StaffDirectoryScreen(),
-      const roster.AttendanceRosterPage(),
-      if (isAdmin) const LedgerListScreen(),
-      const ReportsHubScreen(),
-    ];
-    if (_selectedIndex < pages.length) return pages[_selectedIndex];
-    return const DashboardScreen();
   }
 }

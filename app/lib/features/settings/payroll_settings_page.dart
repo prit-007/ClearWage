@@ -26,6 +26,10 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
   String _wageBasis = 'daily';
   bool _loaded = false;
   bool _saving = false;
+  List<int> _weeklyOffs = [0];
+  bool _weekOffPaid = false;
+
+  static const _dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   @override
   void initState() {
@@ -47,6 +51,9 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
     _otMultiplierCtrl.text = (data['ot_multiplier_default'] as num? ?? 1.5).toString();
     _roundingCtrl.text = (data['ot_rounding'] as num? ?? 0).toString();
     _wageBasis = data['wage_basis'] as String? ?? 'daily';
+    _weekOffPaid = data['week_off_paid'] as bool? ?? false;
+    final wo = data['weekly_offs'] as String? ?? '0';
+    _weeklyOffs = wo.split(',').map((s) => int.tryParse(s.trim()) ?? 0).toList();
   }
 
   String? _otTriggerError;
@@ -77,7 +84,8 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
         'ot_multiplier_default': double.tryParse(_otMultiplierCtrl.text) ?? 1.5,
         'ot_rounding': int.tryParse(_roundingCtrl.text) ?? 0,
         'wage_basis': _wageBasis,
-        'week_off_paid': false,
+        'week_off_paid': _weekOffPaid,
+        'weekly_offs': _weeklyOffs.join(','),
       });
       ref.invalidate(payrollSettingsProvider);
       if (mounted) {
@@ -115,7 +123,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
         children: [
           ListView(
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 240),
             children: [
               FluidSlideIn(
                 delay: 0,
@@ -211,6 +219,76 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
                     ),
                 ],
               )),
+              const SizedBox(height: 48),
+
+              FluidSlideIn(delay: 700, child: Text('WEEKLY OFFS', style: tt.labelSmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w800, letterSpacing: 1.0))),
+              const SizedBox(height: 16),
+              FluidSlideIn(
+                delay: 800,
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Paid Week Offs', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                          Switch(
+                            value: _weekOffPaid,
+                            onChanged: (v) => setState(() => _weekOffPaid = v),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text('Employees get paid for weekly off days', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                      const SizedBox(height: 20),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: List.generate(7, (i) {
+                          final selected = _weeklyOffs.contains(i);
+                          return InkWell(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                if (selected) {
+                                  _weeklyOffs.remove(i);
+                                } else {
+                                  _weeklyOffs.add(i);
+                                }
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: selected ? cs.primaryContainer.withValues(alpha: 0.4) : cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: selected ? cs.primary : cs.outlineVariant.withValues(alpha: 0.3)),
+                              ),
+                              child: Text(
+                                _dayNames[i],
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: selected ? cs.primary : cs.onSurfaceVariant,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
 

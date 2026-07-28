@@ -134,3 +134,7 @@ func (s *AuthService) LoginWithFirebase(ctx context.Context, idToken string) (Ve
 
 	return VerifyResult{}, errors.New("phone number not registered")
 }
+
+func (s *AuthService) DeleteAccount(ctx context.Context, tenantID string) error {
+	return s.queries.DeleteTenant(ctx, tenantID)
+}

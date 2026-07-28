@@ -219,6 +219,20 @@ func (mr *MockQuerierMockRecorder) DeleteShift(ctx, arg any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteShift", reflect.TypeOf((*MockQuerier)(nil).DeleteShift), ctx, arg)
 }
 
+// DeleteTenant mocks base method.
+func (m *MockQuerier) DeleteTenant(ctx context.Context, tenantID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteTenant", ctx, tenantID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteTenant indicates an expected call of DeleteTenant.
+func (mr *MockQuerierMockRecorder) DeleteTenant(ctx, tenantID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTenant", reflect.TypeOf((*MockQuerier)(nil).DeleteTenant), ctx, tenantID)
+}
+
 // FindEmployeeByID mocks base method.
 func (m *MockQuerier) FindEmployeeByID(ctx context.Context, arg repositories.FindEmployeeByIDParams) (repositories.Employee, error) {
 	m.ctrl.T.Helper()

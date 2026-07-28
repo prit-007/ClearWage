@@ -31,7 +31,9 @@ class _EmployeeProfileScreenState
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 3, vsync: this);
-    _tabCtrl.addListener(() => HapticFeedback.selectionClick());
+    _tabCtrl.addListener(() {
+      if (!_tabCtrl.indexIsChanging) HapticFeedback.selectionClick();
+    });
     _loadProfile();
   }
 
@@ -62,7 +64,7 @@ class _EmployeeProfileScreenState
 
     if (profile?['shift_name'] == null && profile?['default_shift_id'] != null) {
       try {
-        final shift = await ref.read(shiftServiceProvider).get(profile!['default_shift_id'] as String);
+        final shift = await ref.read(shiftServiceProvider).get(profile!['default_shift_id'].toString());
         profile['shift_name'] = shift.name;
       } catch (_) {}
     }
@@ -389,7 +391,7 @@ class _InfoTab extends StatelessWidget {
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 160),
-      physics: const NeverScrollableScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(),
       children: [
         _EditorialInfoBlock(
             cs: cs,
@@ -499,7 +501,7 @@ class _AttendanceTab extends StatelessWidget {
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 160),
-      physics: const NeverScrollableScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(),
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -644,7 +646,7 @@ class _LedgerTab extends StatelessWidget {
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 160),
-      physics: const NeverScrollableScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(),
       children: [
         Text('NET OUTSTANDING',
             style: tt.labelSmall?.copyWith(

@@ -171,9 +171,9 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 
 				var computedOTHours float64
 				switch tc.OTTrigger {
-				case "all_working":
+				case "after_daily_hours":
 					computedOTHours = otHours
-				case "after_threshold":
+				case "after_shift_end":
 					fallthrough
 				default:
 					if otHours > tc.OTThresholdHours {

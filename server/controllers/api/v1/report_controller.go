@@ -128,6 +128,31 @@ func (c *ReportController) DefaultersList(w http.ResponseWriter, r *http.Request
 	utils.JSONSuccess(w, http.StatusOK, defaulters)
 }
 
+func (c *ReportController) AttendanceTrends(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	daysStr := r.URL.Query().Get("days")
+	days := 30
+	if daysStr != "" {
+		if d, err := strconv.Atoi(daysStr); err == nil && d > 0 && d <= 90 {
+			days = d
+		}
+	}
+
+	trends, err := c.reportService.GetAttendanceTrends(r.Context(), tenantID, days)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to get attendance trends")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to get attendance trends")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, trends)
+}
+
 func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {

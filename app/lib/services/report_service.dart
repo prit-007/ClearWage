@@ -30,4 +30,11 @@ class ReportService {
         .map((e) => e as Map<String, dynamic>)
         .toList();
   }
+
+  Future<List<Map<String, dynamic>>> attendanceTrends({int days = 30}) async {
+    final res = await _client.get('/api/v1/reports/attendance-trends', query: {'days': '$days'});
+    return ((res['data'] as List<dynamic>?) ?? [])
+        .map((e) => e as Map<String, dynamic>)
+        .toList();
+  }
 }

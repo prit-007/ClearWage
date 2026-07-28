@@ -177,6 +177,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Get("/employee-monthly", reportCtrl.EmployeeMonthly)
 				r.Get("/wage-bill-trends", reportCtrl.WageBillTrends)
 				r.Get("/defaulters", reportCtrl.DefaultersList)
+				r.Get("/attendance-trends", reportCtrl.AttendanceTrends)
 				r.Get("/export", reportCtrl.ExportCSV)
 			})
 

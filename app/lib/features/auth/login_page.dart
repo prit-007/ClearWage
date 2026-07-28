@@ -8,6 +8,7 @@ import 'package:pinput/pinput.dart';
 import '../../core/app_config.dart';
 import '../../core/token_storage.dart';
 import '../../core/widgets/firebase_phone_field.dart';
+import '../../models/auth_model.dart';
 import '../../providers/providers.dart';
 import 'register_page.dart';
 
@@ -97,6 +98,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       final token = await ref.read(authServiceProvider).signInWithFirebase(idToken);
       ref.read(tokenProvider.notifier).state = token.token;
       TokenStorage.save(token.token);
+      final userInfo = AppUser.fromAuthToken(token);
+      TokenStorage.saveUserInfo(userInfo);
+      ref.read(userInfoProvider.notifier).state = userInfo;
       HapticFeedback.heavyImpact();
       if (mounted) Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {

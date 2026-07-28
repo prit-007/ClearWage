@@ -14,11 +14,12 @@ type ReportService struct {
 }
 
 type DailySummary struct {
-	Date       string `json:"date"`
-	TotalStaff int    `json:"total_staff"`
-	Present    int    `json:"present"`
-	Absent     int    `json:"absent"`
-	OnLeave    int    `json:"on_leave"`
+	Date          string  `json:"date"`
+	TotalWorkers  int     `json:"total_workers"`
+	Present       int     `json:"present"`
+	Absent        int     `json:"absent"`
+	OnLeave       int     `json:"on_leave"`
+	TotalWageBill float64 `json:"total_wage_bill"`
 }
 
 type EmployeeMonthlyReport struct {
@@ -65,14 +66,30 @@ func (s *ReportService) DailySummary(ctx context.Context, tenantID, date string)
 		return DailySummary{}, err
 	}
 
+	empMap := make(map[string]repositories.Employee, len(employees))
+	for _, e := range employees {
+		empMap[e.ID] = e
+	}
+
 	present := 0
 	absent := 0
 	onLeave := 0
+	wageBill := 0.0
 
 	for _, a := range attendance {
+		emp, ok := empMap[a.EmployeeID]
+		if !ok {
+			continue
+		}
 		switch a.Status {
 		case "present":
 			present++
+			switch emp.WageType {
+			case "monthly":
+				wageBill += emp.WageAmount / 30
+			default:
+				wageBill += emp.WageAmount
+			}
 		case "absent":
 			absent++
 		case "paid_leave", "week_off":
@@ -80,14 +97,13 @@ func (s *ReportService) DailySummary(ctx context.Context, tenantID, date string)
 		}
 	}
 
-	idleStaff := len(employees) - len(attendance)
-
 	return DailySummary{
-		Date:       date,
-		TotalStaff: len(employees),
-		Present:    present,
-		Absent:     absent + idleStaff,
-		OnLeave:    onLeave,
+		Date:          date,
+		TotalWorkers:  len(employees),
+		Present:       present,
+		Absent:        absent,
+		OnLeave:       onLeave,
+		TotalWageBill: wageBill,
 	}, nil
 }
 

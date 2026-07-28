@@ -22,6 +22,8 @@ class DashboardScreen extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final asyncData = ref.watch(dashboardDataProvider);
+    final user = ref.watch(userInfoProvider);
+    final isAdmin = user?.isAdmin ?? false;
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -134,15 +136,16 @@ class DashboardScreen extends ConsumerWidget {
                           crossAxisSpacing: 12,
                           childAspectRatio: 0.75,
                           children: [
-                            _QuickActionTile(
-                                cs: cs,
-                                tt: tt,
-                                icon: PhosphorIconsRegular.userPlus,
-                                label: 'Add\nStaff',
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEmployeeScreen()));
-                                }),
+                            if (isAdmin)
+                              _QuickActionTile(
+                                  cs: cs,
+                                  tt: tt,
+                                  icon: PhosphorIconsRegular.userPlus,
+                                  label: 'Add\nStaff',
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEmployeeScreen()));
+                                  }),
                             _QuickActionTile(
                                 cs: cs,
                                 tt: tt,
@@ -152,15 +155,16 @@ class DashboardScreen extends ConsumerWidget {
                                   HapticFeedback.lightImpact();
                                   Navigator.push(context, MaterialPageRoute(builder: (_) => const roster.AttendanceRosterPage()));
                                 }),
-                            _QuickActionTile(
-                                cs: cs,
-                                tt: tt,
-                                icon: PhosphorIconsRegular.bookOpenText,
-                                label: 'Ledger\nEntry',
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  Navigator.pushNamed(context, '/new_ledger');
-                                }),
+                            if (isAdmin)
+                              _QuickActionTile(
+                                  cs: cs,
+                                  tt: tt,
+                                  icon: PhosphorIconsRegular.bookOpenText,
+                                  label: 'Ledger\nEntry',
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    Navigator.pushNamed(context, '/new_ledger');
+                                  }),
                             _QuickActionTile(
                                 cs: cs,
                                 tt: tt,

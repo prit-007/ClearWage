@@ -8,6 +8,7 @@ import 'package:pinput/pinput.dart';
 import '../../core/token_storage.dart';
 import '../../core/widgets/firebase_phone_field.dart';
 import '../../core/widgets/validated_field.dart';
+import '../../models/auth_model.dart';
 import '../../providers/providers.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -97,6 +98,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       );
       ref.read(tokenProvider.notifier).state = token.token;
       TokenStorage.save(token.token);
+      final userInfo = AppUser.fromAuthToken(token);
+      TokenStorage.saveUserInfo(userInfo);
+      ref.read(userInfoProvider.notifier).state = userInfo;
       HapticFeedback.heavyImpact();
       if (mounted) Navigator.of(context).pushNamedAndRemoveUntil('/onboarding', (_) => false);
     } catch (e) {

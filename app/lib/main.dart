@@ -134,18 +134,19 @@ class AuthGate extends ConsumerWidget {
   }
 }
 
-class MainShell extends StatefulWidget {
+class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
   @override
-  State<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends ConsumerState<MainShell> {
   int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: cs.surface,
@@ -163,39 +164,43 @@ class _MainShellState extends State<MainShell> {
             itemBuilder: (_) => [
               const PopupMenuItem(value: '/shifts', child: Text('Shift Timings')),
               const PopupMenuItem(value: '/holidays', child: Text('Holidays')),
-              const PopupMenuItem(value: '/advance-requests', child: Text('Advance Requests')),
-              const PopupMenuItem(value: '/leave-policy', child: Text('Leave Policy')),
-              const PopupMenuItem(value: '/payroll-settings', child: Text('Payroll Settings')),
+              if (isAdmin) const PopupMenuItem(value: '/advance-requests', child: Text('Advance Requests')),
+              if (isAdmin) const PopupMenuItem(value: '/leave-policy', child: Text('Leave Policy')),
+              if (isAdmin) const PopupMenuItem(value: '/payroll-settings', child: Text('Payroll Settings')),
             ],
           ),
         ],
       ),
-      body: _buildPage(),
+      body: _buildPage(isAdmin),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
-        destinations: const [
-          NavigationDestination(
+        onDestinationSelected: (i) {
+          if (!isAdmin && i == 3) return;
+          setState(() => _selectedIndex = i);
+        },
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.groups_outlined),
             selectedIcon: Icon(Icons.groups),
             label: 'Staff',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.event_available_outlined),
             selectedIcon: Icon(Icons.event_available),
             label: 'Attendance',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Ledger',
-          ),
-          NavigationDestination(
+          if (isAdmin)
+            const NavigationDestination(
+              icon: Icon(Icons.account_balance_wallet_outlined),
+              selectedIcon: Icon(Icons.account_balance_wallet),
+              label: 'Ledger',
+            ),
+          const NavigationDestination(
             icon: Icon(Icons.analytics_outlined),
             selectedIcon: Icon(Icons.analytics),
             label: 'Reports',
@@ -205,14 +210,15 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  Widget _buildPage() {
-    switch (_selectedIndex) {
-      case 0: return const DashboardScreen();
-      case 1: return const StaffDirectoryScreen();
-      case 2: return const roster.AttendanceRosterPage();
-      case 3: return const LedgerListScreen();
-      case 4: return const ReportsHubScreen();
-      default: return const roster.AttendanceRosterPage();
-    }
+  Widget _buildPage(bool isAdmin) {
+    final pages = <Widget>[
+      const DashboardScreen(),
+      const StaffDirectoryScreen(),
+      const roster.AttendanceRosterPage(),
+      if (isAdmin) const LedgerListScreen(),
+      const ReportsHubScreen(),
+    ];
+    if (_selectedIndex < pages.length) return pages[_selectedIndex];
+    return const DashboardScreen();
   }
 }

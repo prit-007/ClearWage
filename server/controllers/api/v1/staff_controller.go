@@ -37,6 +37,7 @@ type createStaffRequest struct {
 	Designation      string `json:"designation,omitempty"`
 	WageType         string `json:"wage_type"`
 	WageAmount       string `json:"wage_amount"`
+	Role             string `json:"role,omitempty"`
 	DailyTargetUnits *int32 `json:"daily_target_units,omitempty"`
 }
 
@@ -89,7 +90,7 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 		employeeID = claims.EmployeeID
 	}
 
-	employee, err := ctrl.staffService.CreateEmployee(r.Context(), req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, tenantID, employeeID, req.DailyTargetUnits)
+	employee, err := ctrl.staffService.CreateEmployee(r.Context(), req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, req.Role, tenantID, employeeID, req.DailyTargetUnits)
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("failed to create employee")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to create employee")
@@ -236,7 +237,7 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	employee, err := ctrl.staffService.UpdateEmployee(r.Context(), employeeID, tenantID, req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, req.DailyTargetUnits)
+	employee, err := ctrl.staffService.UpdateEmployee(r.Context(), employeeID, tenantID, req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, req.Role, req.DailyTargetUnits)
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("failed to update employee")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to update employee")

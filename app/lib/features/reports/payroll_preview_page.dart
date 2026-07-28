@@ -145,8 +145,10 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                         children: [
                           Icon(PhosphorIconsFill.calendarBlank, color: cs.primary),
                           const SizedBox(width: 12),
-                          Text('$_start to $_end', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                          const Spacer(),
+                          Flexible(
+                            child: Text('$_start to $_end', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
+                          ),
+                          const SizedBox(width: 8),
                           Icon(PhosphorIconsRegular.caretDown, color: cs.onSurfaceVariant, size: 18),
                         ],
                       ),

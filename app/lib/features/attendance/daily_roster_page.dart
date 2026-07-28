@@ -288,6 +288,8 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
     setState(() => _saving = true);
     widget.onMark(status, double.tryParse(_otCtrl.text) ?? 0).then((_) {
       if (mounted) setState(() => _saving = false);
+    }).catchError((_) {
+      if (mounted) setState(() => _saving = false);
     });
   }
 
@@ -402,6 +404,8 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
           _saving = false;
         });
       }
+    }).catchError((_) {
+      if (mounted) setState(() => _saving = false);
     });
   }
 

@@ -55,7 +55,7 @@ class ActivityItem {
   factory ActivityItem.fromJson(Map<String, dynamic> json) => ActivityItem(
         action: json['action'] as String? ?? '',
         description: json['description'] as String? ??
-            (json['entity_type'] as String? ?? ''),
+            '${json['action'] ?? ''} ${json['entity_type'] ?? ''}',
         createdAt: json['created_at'] as String? ?? '',
       );
 }

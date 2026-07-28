@@ -211,7 +211,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         ],
       ),
       body: IndexedStack(
-        index: _selectedIndex,
+        index: _selectedIndex < pages.length ? _selectedIndex : 0,
         children: pages,
       ),
       bottomNavigationBar: NavigationBar(

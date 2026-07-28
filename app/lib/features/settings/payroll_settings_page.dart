@@ -20,10 +20,11 @@ class PayrollSettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
-  final _otTriggerCtrl = TextEditingController();
+  final _thresholdCtrl = TextEditingController();
   final _otMultiplierCtrl = TextEditingController();
   final _roundingCtrl = TextEditingController();
-  String _wageBasis = 'daily';
+  String _wageBasis = 'calendar';
+  String _otTrigger = 'after_shift_end';
   bool _loaded = false;
   bool _saving = false;
   List<int> _weeklyOffs = [0];
@@ -38,7 +39,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
 
   @override
   void dispose() {
-    _otTriggerCtrl.dispose();
+    _thresholdCtrl.dispose();
     _otMultiplierCtrl.dispose();
     _roundingCtrl.dispose();
     super.dispose();
@@ -47,27 +48,28 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
   void _initFromData(Map<String, dynamic> data) {
     if (_loaded || data.isEmpty) return;
     _loaded = true;
-    _otTriggerCtrl.text = (data['ot_threshold_hours'] as num? ?? 8).toString();
+    _thresholdCtrl.text = (data['ot_threshold_hours'] as num? ?? 8).toString();
     _otMultiplierCtrl.text = (data['ot_multiplier_default'] as num? ?? 1.5).toString();
     _roundingCtrl.text = (data['ot_rounding'] as num? ?? 0).toString();
-    _wageBasis = data['wage_basis'] as String? ?? 'daily';
+    _otTrigger = data['ot_trigger'] as String? ?? 'after_shift_end';
+    _wageBasis = data['wage_basis'] as String? ?? 'calendar';
     _weekOffPaid = data['week_off_paid'] as bool? ?? false;
     final wo = data['weekly_offs'] as String? ?? '0';
     _weeklyOffs = wo.split(',').map((s) => int.tryParse(s.trim()) ?? 0).toList();
   }
 
-  String? _otTriggerError;
+  String? _thresholdError;
   String? _otMultiplierError;
   String? _roundingError;
 
   bool _validate() {
     setState(() {
-      _otTriggerError = double.tryParse(_otTriggerCtrl.text) == null ? 'Enter a valid number' : null;
+      _thresholdError = double.tryParse(_thresholdCtrl.text) == null ? 'Enter a valid number' : null;
       _otMultiplierError = double.tryParse(_otMultiplierCtrl.text) == null ? 'Enter a valid number' : null;
       final r = int.tryParse(_roundingCtrl.text);
       _roundingError = r == null || r < 0 ? 'Enter a valid number' : null;
     });
-    return _otTriggerError == null && _otMultiplierError == null && _roundingError == null;
+    return _thresholdError == null && _otMultiplierError == null && _roundingError == null;
   }
 
   Future<void> _save() async {
@@ -79,8 +81,8 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
     setState(() => _saving = true);
     try {
       await ref.read(settingsServiceProvider).upsertPayrollSettings({
-        'ot_trigger': 'after_shift_end',
-        'ot_threshold_hours': double.tryParse(_otTriggerCtrl.text) ?? 8,
+        'ot_trigger': _otTrigger,
+        'ot_threshold_hours': double.tryParse(_thresholdCtrl.text) ?? 8,
         'ot_multiplier_default': double.tryParse(_otMultiplierCtrl.text) ?? 1.5,
         'ot_rounding': int.tryParse(_roundingCtrl.text) ?? 0,
         'wage_basis': _wageBasis,
@@ -154,16 +156,29 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
               FluidSlideIn(delay: 100, child: Text('OVERTIME SETTINGS', style: tt.labelSmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w800, letterSpacing: 1.0))),
               const SizedBox(height: 16),
               FluidSlideIn(delay: 200, child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  PremiumMacroField(cs: cs, tt: tt, label: 'OT Trigger', subtitle: 'Hours per day', ctrl: _otTriggerCtrl, icon: PhosphorIconsFill.clock, activeColor: const Color(0xFF10B981)),
-                  if (_otTriggerError != null)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _TriggerOption(label: 'After Shift End', icon: PhosphorIconsFill.clock, isSelected: _otTrigger == 'after_shift_end', onTap: () { HapticFeedback.selectionClick(); setState(() => _otTrigger = 'after_shift_end'); }),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _TriggerOption(label: 'After Daily Hours', icon: PhosphorIconsFill.hourglass, isSelected: _otTrigger == 'after_daily_hours', onTap: () { HapticFeedback.selectionClick(); setState(() => _otTrigger = 'after_daily_hours'); }),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  PremiumMacroField(cs: cs, tt: tt, label: 'Threshold Hours', subtitle: 'Hours per day', ctrl: _thresholdCtrl, icon: PhosphorIconsFill.clock, activeColor: const Color(0xFF10B981)),
+                  if (_thresholdError != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 8, left: 4),
                       child: Row(
                         children: [
                           Icon(PhosphorIconsRegular.warningCircle, size: 14, color: cs.error),
                           const SizedBox(width: 6),
-                          Text(_otTriggerError!, style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
+                          Text(_thresholdError!, style: TextStyle(fontSize: 12, color: cs.error, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -194,11 +209,11 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
                 delay: 500,
                 child: Row(
                   children: [
-                    _BasisOptionCard(cs: cs, label: 'Daily', icon: PhosphorIconsFill.sun, isSelected: _wageBasis == 'daily', onTap: () { HapticFeedback.selectionClick(); setState(() => _wageBasis = 'daily'); }),
+                    _BasisOptionCard(cs: cs, label: 'Calendar Days', icon: PhosphorIconsFill.sun, isSelected: _wageBasis == 'calendar', onTap: () { HapticFeedback.selectionClick(); setState(() => _wageBasis = 'calendar'); }),
                     const SizedBox(width: 12),
-                    _BasisOptionCard(cs: cs, label: 'Monthly', icon: PhosphorIconsFill.calendarBlank, isSelected: _wageBasis == 'monthly', onTap: () { HapticFeedback.selectionClick(); setState(() => _wageBasis = 'monthly'); }),
+                    _BasisOptionCard(cs: cs, label: 'Fixed 26 Days', icon: PhosphorIconsFill.calendarBlank, isSelected: _wageBasis == 'fixed_26', onTap: () { HapticFeedback.selectionClick(); setState(() => _wageBasis = 'fixed_26'); }),
                     const SizedBox(width: 12),
-                    _BasisOptionCard(cs: cs, label: 'Hourly', icon: PhosphorIconsFill.hourglass, isSelected: _wageBasis == 'hourly', onTap: () { HapticFeedback.selectionClick(); setState(() => _wageBasis = 'hourly'); }),
+                    _BasisOptionCard(cs: cs, label: 'Fixed 30 Days', icon: PhosphorIconsFill.hourglass, isSelected: _wageBasis == 'fixed_30', onTap: () { HapticFeedback.selectionClick(); setState(() => _wageBasis = 'fixed_30'); }),
                   ],
                 ),
               ),
@@ -298,6 +313,40 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
         ],
       )
           : const Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+class _TriggerOption extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _TriggerOption({required this.label, required this.icon, required this.isSelected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? cs.primaryContainer.withValues(alpha: 0.4) : cs.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isSelected ? cs.primary : cs.outlineVariant.withValues(alpha: 0.5), width: isSelected ? 2 : 1),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: isSelected ? cs.primary : cs.onSurfaceVariant, size: 24),
+            const SizedBox(height: 8),
+            Text(label, style: TextStyle(fontWeight: FontWeight.w700, color: isSelected ? cs.primary : cs.onSurfaceVariant, fontSize: 11), textAlign: TextAlign.center),
+          ],
+        ),
+      ),
     );
   }
 }

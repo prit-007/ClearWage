@@ -75,12 +75,12 @@ func (c *SettingsController) UpsertPayrollSettings(w http.ResponseWriter, r *htt
 		utils.JSONFail(w, http.StatusBadRequest, "ot_trigger must be after_shift_end or after_daily_hours")
 		return
 	}
-	if req.OTMultiplierDefault != 1.0 && req.OTMultiplierDefault != 1.5 && req.OTMultiplierDefault != 2.0 {
-		utils.JSONFail(w, http.StatusBadRequest, "ot_multiplier_default must be 1.0, 1.5, or 2.0")
+	if req.OTMultiplierDefault < 1.0 {
+		utils.JSONFail(w, http.StatusBadRequest, "ot_multiplier_default must be at least 1.0")
 		return
 	}
-	if req.OTRounding != 15 && req.OTRounding != 30 && req.OTRounding != 60 {
-		utils.JSONFail(w, http.StatusBadRequest, "ot_rounding must be 15, 30, or 60")
+	if req.OTRounding < 0 {
+		utils.JSONFail(w, http.StatusBadRequest, "ot_rounding must be a non-negative integer")
 		return
 	}
 	if req.WageBasis != "calendar" && req.WageBasis != "fixed_26" && req.WageBasis != "fixed_30" {

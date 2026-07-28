@@ -27,8 +27,9 @@ func NewHolidayController(holidayService *services.HolidayService, logger *zerol
 }
 
 type createHolidayRequest struct {
-	Name string `json:"name"`
-	Date string `json:"date"`
+	Name        string `json:"name"`
+	Date        string `json:"date"`
+	IsRecurring bool   `json:"is_recurring"`
 }
 
 func (c *HolidayController) Create(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +61,7 @@ func (c *HolidayController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	holiday, err := c.holidayService.CreateHoliday(r.Context(), tenantID, req.Name, req.Date)
+	holiday, err := c.holidayService.CreateHoliday(r.Context(), tenantID, req.Name, req.Date, req.IsRecurring)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to create holiday")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to create holiday")

@@ -225,7 +225,9 @@ class _ProfileTab extends ConsumerWidget {
     final phone = data['phone'] as String? ?? '';
     final email = data['email'] as String? ?? '';
     final role = data['role'] as String? ?? '';
-    final factoryName = data['factory_name'] as String? ?? data['tenant_name'] as String? ?? '';
+    final factoryName = ((data['factory_name'] as String?)?.isNotEmpty == true
+        ? data['factory_name'] as String
+        : data['tenant_name'] as String?) ?? '';
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
@@ -264,7 +266,7 @@ class _ProfileTab extends ConsumerWidget {
               if (confirmed != true) return;
               await ref.read(authServiceProvider).logout();
               ref.read(tokenProvider.notifier).state = null;
-              TokenStorage.clear();
+              await TokenStorage.clear();
               if (context.mounted) Navigator.of(context).popUntil((route) => route.isFirst);
             },
             icon: const Icon(PhosphorIconsRegular.signOut),

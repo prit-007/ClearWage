@@ -59,9 +59,10 @@ type CreateEmployeeParams struct {
 }
 
 type CreateHolidayParams struct {
-	TenantID string `json:"tenant_id"`
-	Name     string `json:"name"`
-	Date     string `json:"date"`
+	TenantID    string `json:"tenant_id"`
+	Name        string `json:"name"`
+	Date        string `json:"date"`
+	IsRecurring bool   `json:"is_recurring"`
 }
 
 type CreateLedgerEntryParams struct {

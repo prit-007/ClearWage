@@ -69,17 +69,19 @@ class DashboardScreen extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(_getGreeting(),
-                                  style: tt.titleMedium
-                                      ?.copyWith(color: cs.onSurfaceVariant)),
-                              Text('Workspace',
-                                  style: tt.headlineLarge?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -1.0)),
-                            ],
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(_getGreeting(),
+                                    style: tt.titleMedium
+                                        ?.copyWith(color: cs.onSurfaceVariant)),
+                                Text('Workspace',
+                                    style: tt.headlineLarge?.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: -1.0)),
+                              ],
+                            ),
                           ),
                           CircleAvatar(
                             radius: 24,

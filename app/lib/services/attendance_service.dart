@@ -14,13 +14,14 @@ class AttendanceService {
     return list.map((e) => Attendance.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  Future<List<Attendance>> listByEmployee(String employeeId, {String? startDate, String? endDate, int? limit, int? offset}) async {
-    final query = <String, String>{};
-    if (startDate != null) query['start_date'] = startDate;
-    if (endDate != null) query['end_date'] = endDate;
+  Future<List<Attendance>> listByEmployee(String employeeId, {required String startDate, required String endDate, int? limit, int? offset}) async {
+    final query = <String, String>{
+      'start_date': startDate,
+      'end_date': endDate,
+    };
     if (limit != null) query['limit'] = limit.toString();
     if (offset != null) query['offset'] = offset.toString();
-    final res = await _client.get('/api/v1/attendance/$employeeId', query: query.isNotEmpty ? query : null);
+    final res = await _client.get('/api/v1/attendance/$employeeId', query: query);
     final list = (res['data'] as List<dynamic>?) ?? [];
     return list.map((e) => Attendance.fromJson(e as Map<String, dynamic>)).toList();
   }

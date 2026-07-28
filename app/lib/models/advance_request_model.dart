@@ -3,7 +3,7 @@ class AdvanceRequest {
   final String employeeId;
   final String employeeName;
   final double amount;
-  final String reason;
+  final String note;
   final String status;
   final String createdAt;
 
@@ -12,7 +12,7 @@ class AdvanceRequest {
     required this.employeeId,
     required this.employeeName,
     required this.amount,
-    required this.reason,
+    required this.note,
     required this.status,
     required this.createdAt,
   });
@@ -26,7 +26,7 @@ class AdvanceRequest {
         employeeId: json['employee_id'] as String? ?? '',
         employeeName: json['employee_name'] as String? ?? '',
         amount: (json['amount'] as num?)?.toDouble() ?? 0,
-        reason: json['reason'] as String? ?? '',
+        note: json['note'] as String? ?? '',
         status: json['status'] as String? ?? 'pending',
         createdAt: json['created_at'] as String? ?? '',
       );
@@ -34,6 +34,6 @@ class AdvanceRequest {
   Map<String, dynamic> toJson() => {
         'employee_id': employeeId,
         'amount': amount,
-        'reason': reason,
+        'note': note,
       };
 }

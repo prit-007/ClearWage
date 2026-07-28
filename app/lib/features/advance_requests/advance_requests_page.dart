@@ -286,7 +286,7 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
             children: [
               Icon(PhosphorIconsRegular.quotes, color: cs.primary, size: 20),
               const SizedBox(width: 12),
-              Expanded(child: Text(widget.req.reason, style: tt.bodyMedium?.copyWith(fontStyle: FontStyle.italic))),
+              Expanded(child: Text(widget.req.note, style: tt.bodyMedium?.copyWith(fontStyle: FontStyle.italic))),
             ],
           ),
         ),
@@ -390,7 +390,7 @@ class _AdvanceRequestCard extends StatelessWidget {
                         children: [
                           Text(request.employeeName, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
                           const SizedBox(height: 2),
-                          Text(request.reason, style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text(request.note, style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
                         ],
                       ),
                     ),

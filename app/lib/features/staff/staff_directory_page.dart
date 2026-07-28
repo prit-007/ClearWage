@@ -173,7 +173,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
             ),
 
             if (_loading)
-              const SliverToBoxAdapter(child: ShimmerLoading(itemCount: 8, height: 82))
+              const ShimmerLoading(itemCount: 8, height: 82)
             else if (_error != null)
               SliverFillRemaining(
                 child: Center(

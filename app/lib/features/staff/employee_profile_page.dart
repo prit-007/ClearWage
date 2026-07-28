@@ -43,8 +43,8 @@ class _EmployeeProfileScreenState
     Map<String, dynamic>? empJson;
     try {
       data = await ref.read(staffServiceProvider).getProfile(widget.employeeId);
-    } catch (e) {
-      if (mounted) showError(context, e);
+    } catch (_) {
+      // getProfile is optional; fall back to get() data
     }
     try {
       empJson = (await ref.read(staffServiceProvider).get(widget.employeeId)).toJson();

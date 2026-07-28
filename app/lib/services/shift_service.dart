@@ -32,4 +32,10 @@ class ShiftService {
   Future<void> delete(String id) async {
     await _client.delete('/api/v1/shifts/$id');
   }
+
+  Future<void> assignDefaultShift(String employeeId, String shiftId) async {
+    await _client.put('/api/v1/staff/$employeeId/default-shift', body: {
+      'shift_id': shiftId,
+    });
+  }
 }

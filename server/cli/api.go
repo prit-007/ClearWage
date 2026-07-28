@@ -76,6 +76,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 		uploadCtrl := ctrl.NewUploadController(services.NewStaffService(querier), logger, cfg)
 
+		shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
 		staffCtrl := ctrl.NewStaffController(services.NewStaffService(querier), logger, cfg)
 		r.Route("/api/v1/staff", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
@@ -88,6 +89,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			r.Post("/{id}/upload-photo", uploadCtrl.UploadPhoto)
 			r.Get("/{id}/profile", staffCtrl.Profile)
 			r.Put("/{id}/manager", staffCtrl.AssignManager)
+			r.Put("/{id}/default-shift", shiftCtrl.AssignDefaultShift)
 		})
 
 		meCtrl := ctrl.NewMeController(
@@ -108,7 +110,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			r.Post("/advance-request", meCtrl.RequestAdvance)
 		})
 
-			shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
 			r.Route("/api/v1/shifts", func(r chi.Router) {
 				r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())

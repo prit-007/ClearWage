@@ -14,11 +14,12 @@ func NewHolidayService(querier repositories.Querier) *HolidayService {
 	return &HolidayService{querier: querier}
 }
 
-func (s *HolidayService) CreateHoliday(ctx context.Context, tenantID, name, date string) (repositories.Holiday, error) {
+func (s *HolidayService) CreateHoliday(ctx context.Context, tenantID, name, date string, isRecurring bool) (repositories.Holiday, error) {
 	return s.querier.CreateHoliday(ctx, repositories.CreateHolidayParams{
-		TenantID: tenantID,
-		Name:     name,
-		Date:     date,
+		TenantID:    tenantID,
+		Name:        name,
+		Date:        date,
+		IsRecurring: isRecurring,
 	})
 }
 

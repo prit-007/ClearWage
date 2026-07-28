@@ -12,8 +12,8 @@ class PayrollService {
     return res['data'] as Map<String, dynamic>? ?? {};
   }
 
-  Future<void> generatePayslip({required String employeeId, required String startDate, required String endDate}) async {
-    await _client.postRaw('/api/v1/payroll/payslip', body: {
+  Future<List<int>> generatePayslip({required String employeeId, required String startDate, required String endDate}) async {
+    return await _client.postRaw('/api/v1/payroll/payslip', body: {
       'employee_id': employeeId,
       'start_date': startDate,
       'end_date': endDate,

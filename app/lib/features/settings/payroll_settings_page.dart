@@ -23,7 +23,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
   final _thresholdCtrl = TextEditingController();
   final _otMultiplierCtrl = TextEditingController();
   final _roundingCtrl = TextEditingController();
-  String _wageBasis = 'daily';
+  String _wageBasis = 'calendar';
   String _otTrigger = 'after_shift_end';
   bool _loaded = false;
   bool _saving = false;
@@ -52,7 +52,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
     _otMultiplierCtrl.text = (data['ot_multiplier_default'] as num? ?? 1.5).toString();
     _roundingCtrl.text = (data['ot_rounding'] as num? ?? 0).toString();
     _otTrigger = data['ot_trigger'] as String? ?? 'after_shift_end';
-    _wageBasis = data['wage_basis'] as String? ?? 'daily';
+    _wageBasis = data['wage_basis'] as String? ?? 'calendar';
     _weekOffPaid = data['week_off_paid'] as bool? ?? false;
     final wo = data['weekly_offs'] as String? ?? '0';
     _weeklyOffs = wo.split(',').map((s) => int.tryParse(s.trim()) ?? 0).toList();
@@ -209,11 +209,11 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
                 delay: 500,
                 child: Row(
                   children: [
-                    _BasisOptionCard(cs: cs, label: 'Daily', icon: PhosphorIconsFill.sun, isSelected: _wageBasis == 'daily', onTap: () { HapticFeedback.selectionClick(); setState(() => _wageBasis = 'daily'); }),
+                    _BasisOptionCard(cs: cs, label: 'Calendar Days', icon: PhosphorIconsFill.sun, isSelected: _wageBasis == 'calendar', onTap: () { HapticFeedback.selectionClick(); setState(() => _wageBasis = 'calendar'); }),
                     const SizedBox(width: 12),
-                    _BasisOptionCard(cs: cs, label: 'Monthly', icon: PhosphorIconsFill.calendarBlank, isSelected: _wageBasis == 'monthly', onTap: () { HapticFeedback.selectionClick(); setState(() => _wageBasis = 'monthly'); }),
+                    _BasisOptionCard(cs: cs, label: 'Fixed 26 Days', icon: PhosphorIconsFill.calendarBlank, isSelected: _wageBasis == 'fixed_26', onTap: () { HapticFeedback.selectionClick(); setState(() => _wageBasis = 'fixed_26'); }),
                     const SizedBox(width: 12),
-                    _BasisOptionCard(cs: cs, label: 'Hourly', icon: PhosphorIconsFill.hourglass, isSelected: _wageBasis == 'hourly', onTap: () { HapticFeedback.selectionClick(); setState(() => _wageBasis = 'hourly'); }),
+                    _BasisOptionCard(cs: cs, label: 'Fixed 30 Days', icon: PhosphorIconsFill.hourglass, isSelected: _wageBasis == 'fixed_30', onTap: () { HapticFeedback.selectionClick(); setState(() => _wageBasis = 'fixed_30'); }),
                   ],
                 ),
               ),

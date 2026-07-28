@@ -93,9 +93,10 @@ func (q *GoquQuerier) CreateEmployee(ctx context.Context, arg CreateEmployeePara
 func (q *GoquQuerier) CreateHoliday(ctx context.Context, arg CreateHolidayParams) (Holiday, error) {
 	var h Holiday
 	found, err := q.db.Insert("holidays").Rows(goqu.Record{
-		"tenant_id": arg.TenantID,
-		"name":      arg.Name,
-		"date":      arg.Date,
+		"tenant_id":    arg.TenantID,
+		"name":         arg.Name,
+		"date":         arg.Date,
+		"is_recurring": arg.IsRecurring,
 	}).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &h)
 	if err != nil {
 		return Holiday{}, err
@@ -365,31 +366,58 @@ func (q *GoquQuerier) GetLeavePolicyByTenant(ctx context.Context, tenantID strin
 
 func (q *GoquQuerier) ListAttendanceByDate(ctx context.Context, arg ListAttendanceByDateParams) ([]Attendance, error) {
 	var items []Attendance
-	err := q.db.From("attendance").Where(
-		goqu.C("tenant_id").Eq(arg.TenantID),
-		goqu.C("date").Eq(arg.Date),
-	).Order(goqu.C("employee_id").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
+	att := goqu.T("attendance")
+	emp := goqu.T("employees")
+	err := q.db.From(att).
+		LeftJoin(emp, goqu.On(att.Col("employee_id").Eq(emp.Col("id")), emp.Col("tenant_id").Eq(att.Col("tenant_id")))).
+		Where(
+			att.Col("tenant_id").Eq(arg.TenantID),
+			att.Col("date").Eq(arg.Date),
+		).
+		Select(
+			att.Col("*"),
+			emp.Col("name").As("employee_name"),
+		).
+		Order(att.Col("employee_id").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
 func (q *GoquQuerier) ListAttendanceByDateRange(ctx context.Context, arg ListAttendanceByDateRangeParams) ([]Attendance, error) {
 	var items []Attendance
-	err := q.db.From("attendance").Where(
-		goqu.C("tenant_id").Eq(arg.TenantID),
-		goqu.C("date").Gte(arg.StartDate),
-		goqu.C("date").Lte(arg.EndDate),
-	).Order(goqu.C("date").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
+	att := goqu.T("attendance")
+	emp := goqu.T("employees")
+	err := q.db.From(att).
+		LeftJoin(emp, goqu.On(att.Col("employee_id").Eq(emp.Col("id")), emp.Col("tenant_id").Eq(att.Col("tenant_id")))).
+		Where(
+			att.Col("tenant_id").Eq(arg.TenantID),
+			att.Col("date").Gte(arg.StartDate),
+			att.Col("date").Lte(arg.EndDate),
+		).
+		Select(
+			att.Col("*"),
+			emp.Col("name").As("employee_name"),
+		).
+		Order(att.Col("date").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
 func (q *GoquQuerier) ListAttendanceByEmployeeMonth(ctx context.Context, arg ListAttendanceByEmployeeMonthParams) ([]Attendance, error) {
 	var items []Attendance
-	err := q.db.From("attendance").Where(
-		goqu.C("employee_id").Eq(arg.EmployeeID),
-		goqu.C("tenant_id").Eq(arg.TenantID),
-		goqu.C("date").Gte(arg.StartDate),
-		goqu.C("date").Lte(arg.EndDate),
-	).Order(goqu.C("date").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
+	att := goqu.T("attendance")
+	emp := goqu.T("employees")
+	err := q.db.From(att).
+		LeftJoin(emp, goqu.On(att.Col("employee_id").Eq(emp.Col("id")), emp.Col("tenant_id").Eq(att.Col("tenant_id")))).
+		Where(
+			att.Col("employee_id").Eq(arg.EmployeeID),
+			att.Col("tenant_id").Eq(arg.TenantID),
+			att.Col("date").Gte(arg.StartDate),
+			att.Col("date").Lte(arg.EndDate),
+		).
+		Select(
+			att.Col("*"),
+			emp.Col("name").As("employee_name"),
+		).
+		Order(att.Col("date").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
@@ -429,12 +457,21 @@ func (q *GoquQuerier) ListHolidaysByTenant(ctx context.Context, arg ListHolidays
 
 func (q *GoquQuerier) ListLedgerByEmployeeMonth(ctx context.Context, arg ListLedgerByEmployeeMonthParams) ([]Ledger, error) {
 	var items []Ledger
-	err := q.db.From("ledger").Where(
-		goqu.C("employee_id").Eq(arg.EmployeeID),
-		goqu.C("tenant_id").Eq(arg.TenantID),
-		goqu.C("date").Gte(arg.StartDate),
-		goqu.C("date").Lte(arg.EndDate),
-	).Order(goqu.C("date").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
+	l := goqu.T("ledger")
+	emp := goqu.T("employees")
+	err := q.db.From(l).
+		LeftJoin(emp, goqu.On(l.Col("employee_id").Eq(emp.Col("id")), emp.Col("tenant_id").Eq(l.Col("tenant_id")))).
+		Where(
+			l.Col("employee_id").Eq(arg.EmployeeID),
+			l.Col("tenant_id").Eq(arg.TenantID),
+			l.Col("date").Gte(arg.StartDate),
+			l.Col("date").Lte(arg.EndDate),
+		).
+		Select(
+			l.Col("*"),
+			emp.Col("name").As("employee_name"),
+		).
+		Order(l.Col("date").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
@@ -498,11 +535,19 @@ func (q *GoquQuerier) CreateAdvanceRequest(ctx context.Context, arg CreateAdvanc
 
 func (q *GoquQuerier) ListAdvanceRequestsByTenant(ctx context.Context, arg ListAdvanceRequestsByTenantParams) ([]AdvanceRequest, error) {
 	var items []AdvanceRequest
-	query := q.db.From("advance_requests").Where(goqu.C("tenant_id").Eq(arg.TenantID))
+	ar := goqu.T("advance_requests")
+	emp := goqu.T("employees")
+	query := q.db.From(ar).
+		LeftJoin(emp, goqu.On(ar.Col("employee_id").Eq(emp.Col("id")), emp.Col("tenant_id").Eq(ar.Col("tenant_id")))).
+		Where(ar.Col("tenant_id").Eq(arg.TenantID)).
+		Select(
+			ar.Col("*"),
+			emp.Col("name").As("employee_name"),
+		)
 	if arg.Status != "" {
-		query = query.Where(goqu.C("status").Eq(arg.Status))
+		query = query.Where(ar.Col("status").Eq(arg.Status))
 	}
-	err := query.Order(goqu.C("created_at").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
+	err := query.Order(ar.Col("created_at").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
@@ -548,11 +593,20 @@ func (q *GoquQuerier) GetTotalOutstanding(ctx context.Context, tenantID string) 
 
 func (q *GoquQuerier) ListLedgerByTenant(ctx context.Context, arg ListLedgerByTenantParams) ([]Ledger, error) {
 	var items []Ledger
-	err := q.db.From("ledger").Where(
-		goqu.C("tenant_id").Eq(arg.TenantID),
-		goqu.C("date").Gte(arg.StartDate),
-		goqu.C("date").Lte(arg.EndDate),
-	).Order(goqu.C("date").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
+	l := goqu.T("ledger")
+	emp := goqu.T("employees")
+	err := q.db.From(l).
+		LeftJoin(emp, goqu.On(l.Col("employee_id").Eq(emp.Col("id")), emp.Col("tenant_id").Eq(l.Col("tenant_id")))).
+		Where(
+			l.Col("tenant_id").Eq(arg.TenantID),
+			l.Col("date").Gte(arg.StartDate),
+			l.Col("date").Lte(arg.EndDate),
+		).
+		Select(
+			l.Col("*"),
+			emp.Col("name").As("employee_name"),
+		).
+		Order(l.Col("date").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
 }
 

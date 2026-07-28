@@ -15,16 +15,17 @@ type ActivityLog struct {
 }
 
 type AdvanceRequest struct {
-	ID         string     `json:"id" db:"id"`
-	TenantID   string     `json:"tenant_id" db:"tenant_id"`
-	EmployeeID string     `json:"employee_id" db:"employee_id"`
-	Amount     float64    `json:"amount" db:"amount"`
-	Status     string     `json:"status" db:"status"`
-	Note       *string    `json:"note" db:"note"`
-	ApprovedBy *string    `json:"approved_by" db:"approved_by"`
-	DeniedBy   *string    `json:"denied_by" db:"denied_by"`
-	CreatedAt  time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt  time.Time  `json:"updated_at" db:"updated_at"`
+	ID           string     `json:"id" db:"id"`
+	TenantID     string     `json:"tenant_id" db:"tenant_id"`
+	EmployeeID   string     `json:"employee_id" db:"employee_id"`
+	Amount       float64    `json:"amount" db:"amount"`
+	Status       string     `json:"status" db:"status"`
+	Note         *string    `json:"note" db:"note"`
+	ApprovedBy   *string    `json:"approved_by" db:"approved_by"`
+	DeniedBy     *string    `json:"denied_by" db:"denied_by"`
+	EmployeeName *string    `json:"employee_name"`
+	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at" db:"updated_at"`
 }
 
 type Attendance struct {
@@ -43,6 +44,7 @@ type Attendance struct {
 	IsLocked               bool        `json:"is_locked" db:"is_locked"`
 	EditedBy               *string    `json:"edited_by" db:"edited_by"`
 	EditedAt               *time.Time `json:"edited_at" db:"edited_at"`
+	EmployeeName           *string    `json:"employee_name"`
 	CreatedAt              time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt              time.Time  `json:"updated_at" db:"updated_at"`
 }
@@ -80,12 +82,13 @@ type Employee struct {
 }
 
 type Holiday struct {
-	ID        string    `json:"id" db:"id"`
-	TenantID  string    `json:"tenant_id" db:"tenant_id"`
-	Name      string    `json:"name" db:"name"`
-	Date      string    `json:"date" db:"date"`
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+	ID          string    `json:"id" db:"id"`
+	TenantID    string    `json:"tenant_id" db:"tenant_id"`
+	Name        string    `json:"name" db:"name"`
+	Date        string    `json:"date" db:"date"`
+	IsRecurring bool      `json:"is_recurring" db:"is_recurring"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type LeavePolicy struct {
@@ -107,6 +110,7 @@ type Ledger struct {
 	Note               *string   `json:"note" db:"note"`
 	LinkedPayrollMonth *string   `json:"linked_payroll_month" db:"linked_payroll_month"`
 	CreatedBy          string    `json:"created_by" db:"created_by"`
+	EmployeeName       *string   `json:"employee_name"`
 	CreatedAt          time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt          time.Time `json:"updated_at" db:"updated_at"`
 }

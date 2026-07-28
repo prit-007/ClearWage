@@ -40,19 +40,13 @@ class LedgerEntry {
 }
 
 class LedgerSummary {
-  final double totalJama;
-  final double totalUdhaar;
-  final double netBalance;
+  final double totalOutstanding;
 
   LedgerSummary({
-    required this.totalJama,
-    required this.totalUdhaar,
-    required this.netBalance,
+    required this.totalOutstanding,
   });
 
   factory LedgerSummary.fromJson(Map<String, dynamic> json) => LedgerSummary(
-        totalJama: (json['total_jama'] as num?)?.toDouble() ?? 0,
-        totalUdhaar: (json['total_udhaar'] as num?)?.toDouble() ?? 0,
-        netBalance: (json['total_outstanding'] as num?)?.toDouble() ?? 0,
+        totalOutstanding: (json['total_outstanding'] as num?)?.toDouble() ?? 0,
       );
 }

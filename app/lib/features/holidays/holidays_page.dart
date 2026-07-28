@@ -263,9 +263,9 @@ class _PremiumHolidayCard extends StatelessWidget {
                   if (holiday.isRecurring)
                     Row(
                       children: [
-                        Icon(PhosphorIconsRegular.arrowsClockwise, size: 14, color: cs.onSurfaceVariant),
-                        const SizedBox(width: 6),
-                        Text('Repeats Annually', style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                        Icon(PhosphorIconsRegular.arrowClockwise, size: 14, color: cs.onSurfaceVariant),
+                        const SizedBox(width: 4),
+                        Text('Recurring', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
                       ],
                     ),
                 ],

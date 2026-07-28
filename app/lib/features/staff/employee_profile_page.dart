@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
 import '../../models/employee_model.dart';
@@ -281,8 +283,11 @@ class _EmployeeProfileScreenState
                               final now = DateTime.now();
                               final start = '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
                               final end = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-                              await ref.read(payrollServiceProvider).generatePayslip(employeeId: widget.employeeId, startDate: start, endDate: end);
-                              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payslip generated')));
+                              final pdf = await ref.read(payrollServiceProvider).generatePayslip(employeeId: widget.employeeId, startDate: start, endDate: end);
+                              final dir = await getTemporaryDirectory();
+                              final file = File('${dir.path}/payslip_${widget.employeeId}_${start}_$end.pdf');
+                              await file.writeAsBytes(pdf);
+                              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Payslip saved to ${file.path}')));
                             } catch (e) {
                               if (context.mounted) showError(context, e);
                             }

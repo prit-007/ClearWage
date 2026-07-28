@@ -23,6 +23,8 @@ final sessionExpiredProvider = StateProvider<bool>((ref) => false);
 final apiClientProvider = Provider<ApiClient>((ref) {
   final url = ref.watch(serverUrlProvider);
   final client = ApiClient(baseUrl: url);
+  final initialToken = ref.read(tokenProvider);
+  if (initialToken != null) client.setToken(initialToken);
   ref.listen(tokenProvider, (_, token) => client.setToken(token));
   client.onUnauthorized = () async {
     final user = FirebaseAuth.instance.currentUser;

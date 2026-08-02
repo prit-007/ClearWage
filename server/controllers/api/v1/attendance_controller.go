@@ -3,7 +3,6 @@ package v1
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -182,18 +181,9 @@ func (c *AttendanceController) ListByDate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	limitStr := r.URL.Query().Get("limit")
-	offsetStr := r.URL.Query().Get("offset")
-	limit, _ := strconv.Atoi(limitStr)
-	if limit <= 0 || limit > 100 {
-		limit = 20
-	}
-	offset, _ := strconv.Atoi(offsetStr)
-	if offset < 0 {
-		offset = 0
-	}
+	limit, offset := parseAllLimitOffset(r)
 
-	attendance, err := c.attendanceService.ListByDate(r.Context(), tenantID, date, int32(limit), int32(offset))
+	attendance, err := c.attendanceService.ListByDate(r.Context(), tenantID, date, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list attendance")
@@ -239,18 +229,9 @@ func (c *AttendanceController) ListByEmployee(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	limitStr := r.URL.Query().Get("limit")
-	offsetStr := r.URL.Query().Get("offset")
-	limit, _ := strconv.Atoi(limitStr)
-	if limit <= 0 || limit > 100 {
-		limit = 20
-	}
-	offset, _ := strconv.Atoi(offsetStr)
-	if offset < 0 {
-		offset = 0
-	}
+	limit, offset := parseAllLimitOffset(r)
 
-	attendance, err := c.attendanceService.ListByEmployeeMonth(r.Context(), employeeID, tenantID, startDate, endDate, int32(limit), int32(offset))
+	attendance, err := c.attendanceService.ListByEmployeeMonth(r.Context(), employeeID, tenantID, startDate, endDate, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list employee attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list attendance")

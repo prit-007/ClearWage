@@ -111,6 +111,11 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Role != "" && req.Role != "employee" && req.Role != "manager" {
+		utils.JSONFail(w, http.StatusBadRequest, "role must be one of: employee, manager")
+		return
+	}
+
 	tenantID := middlewares.GetTenantID(r.Context())
 	claims := middlewares.GetClaims(r.Context())
 
@@ -289,6 +294,15 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 
 	if len(req.Phone) < 10 || len(req.Phone) > 20 {
 		utils.JSONFail(w, http.StatusBadRequest, "phone must be between 10 and 20 characters")
+		return
+	}
+
+	if req.Role != "" && req.Role != "employee" && req.Role != "manager" && req.Role != "owner" {
+		utils.JSONFail(w, http.StatusBadRequest, "role must be one of: employee, manager, owner")
+		return
+	}
+	if req.Role == "owner" && claims != nil && claims.Role != "owner" {
+		utils.JSONFail(w, http.StatusForbidden, "only the owner can assign the owner role")
 		return
 	}
 

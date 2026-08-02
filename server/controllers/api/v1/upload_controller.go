@@ -76,6 +76,11 @@ func (c *UploadController) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 	}
 
 	employeeID := chi.URLParam(r, "id")
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" && claims.EmployeeID != employeeID {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 	data, filename, err := uploadBytes(r)

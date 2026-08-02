@@ -189,9 +189,9 @@ class _EmployeeProfileScreenState
                           try {
                             await ref.read(staffServiceProvider).delete(widget.employeeId);
                             ref.invalidate(employeeListProvider);
-                            if (mounted) Navigator.pop(context);
+                            if (context.mounted) Navigator.pop(context);
                           } catch (e) {
-                            if (mounted) showError(context, e);
+                            if (context.mounted) showError(context, e);
                           }
                         }
                       },

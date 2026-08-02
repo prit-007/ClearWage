@@ -262,7 +262,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                   onChanged: (id) => setState(() => _selectedShiftId = id),
                 ),
               ),
-              if (ref.watch(userInfoProvider)?.isAdmin ?? false) ...[
+              if ((ref.watch(userInfoProvider)?.isAdmin ?? false) && _role != 'owner') ...[
                 const SizedBox(height: 24),
                 FluidSlideIn(
                   delay: 900,

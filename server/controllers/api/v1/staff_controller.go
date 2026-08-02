@@ -32,13 +32,42 @@ func NewStaffController(staffService *services.StaffService, logger *zerolog.Log
 }
 
 type createStaffRequest struct {
-	Name             string `json:"name"`
-	Phone            string `json:"phone"`
-	Designation      string `json:"designation,omitempty"`
-	WageType         string `json:"wage_type"`
-	WageAmount       string `json:"wage_amount"`
-	Role             string `json:"role,omitempty"`
-	DailyTargetUnits *int32 `json:"daily_target_units,omitempty"`
+	Name                  string  `json:"name"`
+	Phone                 string  `json:"phone"`
+	Designation           string  `json:"designation,omitempty"`
+	WageType              string  `json:"wage_type"`
+	WageAmount            string  `json:"wage_amount"`
+	Role                  string  `json:"role,omitempty"`
+	DailyTargetUnits      *int32  `json:"daily_target_units,omitempty"`
+	DateOfJoining         *string `json:"date_of_joining,omitempty"`
+	PanNumber             *string `json:"pan_number,omitempty"`
+	AadhaarNumber         *string `json:"aadhaar_number,omitempty"`
+	PfNumber              *string `json:"pf_number,omitempty"`
+	BankAccountNumber     *string `json:"bank_account_number,omitempty"`
+	BankIfsc              *string `json:"bank_ifsc,omitempty"`
+	UpiID                 *string `json:"upi_id,omitempty"`
+	EmergencyContactName  *string `json:"emergency_contact_name,omitempty"`
+	EmergencyContactPhone *string `json:"emergency_contact_phone,omitempty"`
+	HealthNotes           *string `json:"health_notes,omitempty"`
+	CurrentAddress        *string `json:"current_address,omitempty"`
+	PermanentAddress      *string `json:"permanent_address,omitempty"`
+}
+
+func (r createStaffRequest) kyc() services.EmployeeProfileDetails {
+	return services.EmployeeProfileDetails{
+		DateOfJoining:         r.DateOfJoining,
+		PanNumber:             r.PanNumber,
+		AadhaarNumber:         r.AadhaarNumber,
+		PfNumber:              r.PfNumber,
+		BankAccountNumber:     r.BankAccountNumber,
+		BankIfsc:              r.BankIfsc,
+		UpiID:                 r.UpiID,
+		EmergencyContactName:  r.EmergencyContactName,
+		EmergencyContactPhone: r.EmergencyContactPhone,
+		HealthNotes:           r.HealthNotes,
+		CurrentAddress:        r.CurrentAddress,
+		PermanentAddress:      r.PermanentAddress,
+	}
 }
 
 type assignManagerRequest struct {
@@ -99,7 +128,7 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 		employeeID = claims.EmployeeID
 	}
 
-	employee, err := ctrl.staffService.CreateEmployee(r.Context(), req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, req.Role, tenantID, employeeID, req.DailyTargetUnits)
+	employee, err := ctrl.staffService.CreateEmployee(r.Context(), req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, req.Role, tenantID, employeeID, req.DailyTargetUnits, req.kyc())
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("failed to create employee")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to create employee")
@@ -263,7 +292,7 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	employee, err := ctrl.staffService.UpdateEmployee(r.Context(), employeeID, tenantID, req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, req.Role, req.DailyTargetUnits)
+	employee, err := ctrl.staffService.UpdateEmployee(r.Context(), employeeID, tenantID, req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, req.Role, req.DailyTargetUnits, req.kyc())
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("failed to update employee")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to update employee")

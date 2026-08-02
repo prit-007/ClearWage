@@ -15,17 +15,17 @@ type ActivityLog struct {
 }
 
 type AdvanceRequest struct {
-	ID           string     `json:"id" db:"id"`
-	TenantID     string     `json:"tenant_id" db:"tenant_id"`
-	EmployeeID   string     `json:"employee_id" db:"employee_id"`
-	Amount       float64    `json:"amount" db:"amount"`
-	Status       string     `json:"status" db:"status"`
-	Note         *string    `json:"note" db:"note"`
-	ApprovedBy   *string    `json:"approved_by" db:"approved_by"`
-	DeniedBy     *string    `json:"denied_by" db:"denied_by"`
-	EmployeeName *string    `json:"employee_name"`
-	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time  `json:"updated_at" db:"updated_at"`
+	ID           string    `json:"id" db:"id"`
+	TenantID     string    `json:"tenant_id" db:"tenant_id"`
+	EmployeeID   string    `json:"employee_id" db:"employee_id"`
+	Amount       float64   `json:"amount" db:"amount"`
+	Status       string    `json:"status" db:"status"`
+	Note         *string   `json:"note" db:"note"`
+	ApprovedBy   *string   `json:"approved_by" db:"approved_by"`
+	DeniedBy     *string   `json:"denied_by" db:"denied_by"`
+	EmployeeName *string   `json:"employee_name"`
+	CreatedAt    time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type Attendance struct {
@@ -37,11 +37,11 @@ type Attendance struct {
 	Status                 string     `json:"status" db:"status"`
 	CheckInTime            *time.Time `json:"check_in_time" db:"check_in_time"`
 	CheckOutTime           *time.Time `json:"check_out_time" db:"check_out_time"`
-	OvertimeHours          float64     `json:"overtime_hours" db:"overtime_hours"`
-	OvertimeRateMultiplier float64     `json:"overtime_rate_multiplier" db:"overtime_rate_multiplier"`
-	UnitsProduced          *int32      `json:"units_produced" db:"units_produced"`
-	ComputedWage           *float64    `json:"computed_wage" db:"computed_wage"`
-	IsLocked               bool        `json:"is_locked" db:"is_locked"`
+	OvertimeHours          float64    `json:"overtime_hours" db:"overtime_hours"`
+	OvertimeRateMultiplier float64    `json:"overtime_rate_multiplier" db:"overtime_rate_multiplier"`
+	UnitsProduced          *int32     `json:"units_produced" db:"units_produced"`
+	ComputedWage           *float64   `json:"computed_wage" db:"computed_wage"`
+	IsLocked               bool       `json:"is_locked" db:"is_locked"`
 	EditedBy               *string    `json:"edited_by" db:"edited_by"`
 	EditedAt               *time.Time `json:"edited_at" db:"edited_at"`
 	EmployeeName           *string    `json:"employee_name"`
@@ -50,35 +50,46 @@ type Attendance struct {
 }
 
 type Employee struct {
-	ID                    string     `json:"id" db:"id"`
-	TenantID              string     `json:"tenant_id" db:"tenant_id"`
-	Name                  string     `json:"name" db:"name"`
-	Phone                 string     `json:"phone" db:"phone"`
-	Designation           *string    `json:"designation" db:"designation"`
-	WageType              string     `json:"wage_type" db:"wage_type"`
-	WageAmount            float64    `json:"wage_amount" db:"wage_amount"`
-	DefaultShiftID        *string    `json:"default_shift_id" db:"default_shift_id"`
-	ManagerID             *string    `json:"manager_id" db:"manager_id"`
-	PieceRateItemName     *string    `json:"piece_rate_item_name" db:"piece_rate_item_name"`
-	PieceRatePerUnit      *float64   `json:"piece_rate_per_unit" db:"piece_rate_per_unit"`
-	DailyTargetUnits      *int32     `json:"daily_target_units" db:"daily_target_units"`
-	DateOfJoining         *string    `json:"date_of_joining" db:"date_of_joining"`
-	PanNumber             *string    `json:"pan_number" db:"pan_number"`
-	AadhaarNumber         *string    `json:"aadhaar_number" db:"aadhaar_number"`
-	PfNumber              *string    `json:"pf_number" db:"pf_number"`
-	PhotoUrl              *string    `json:"photo_url" db:"photo_url"`
-	BankAccountNumber     *string    `json:"bank_account_number" db:"bank_account_number"`
-	BankIfsc              *string    `json:"bank_ifsc" db:"bank_ifsc"`
-	UpiID                 *string    `json:"upi_id" db:"upi_id"`
-	EmergencyContactName  *string    `json:"emergency_contact_name" db:"emergency_contact_name"`
-	EmergencyContactPhone *string    `json:"emergency_contact_phone" db:"emergency_contact_phone"`
-	HealthNotes           *string    `json:"health_notes" db:"health_notes"`
-	CurrentAddress        *string    `json:"current_address" db:"current_address"`
-	PermanentAddress      *string    `json:"permanent_address" db:"permanent_address"`
-	Role                  string     `json:"role" db:"role"`
-	IsActive              bool       `json:"is_active" db:"is_active"`
-	CreatedAt             time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt             time.Time  `json:"updated_at" db:"updated_at"`
+	ID                    string    `json:"id" db:"id"`
+	TenantID              string    `json:"tenant_id" db:"tenant_id"`
+	Name                  string    `json:"name" db:"name"`
+	Phone                 string    `json:"phone" db:"phone"`
+	Designation           *string   `json:"designation" db:"designation"`
+	WageType              string    `json:"wage_type" db:"wage_type"`
+	WageAmount            float64   `json:"wage_amount" db:"wage_amount"`
+	DefaultShiftID        *string   `json:"default_shift_id" db:"default_shift_id"`
+	ManagerID             *string   `json:"manager_id" db:"manager_id"`
+	PieceRateItemName     *string   `json:"piece_rate_item_name" db:"piece_rate_item_name"`
+	PieceRatePerUnit      *float64  `json:"piece_rate_per_unit" db:"piece_rate_per_unit"`
+	DailyTargetUnits      *int32    `json:"daily_target_units" db:"daily_target_units"`
+	DateOfJoining         *string   `json:"date_of_joining" db:"date_of_joining"`
+	PanNumber             *string   `json:"pan_number" db:"pan_number"`
+	AadhaarNumber         *string   `json:"aadhaar_number" db:"aadhaar_number"`
+	PfNumber              *string   `json:"pf_number" db:"pf_number"`
+	PhotoUrl              *string   `json:"photo_url" db:"photo_url"`
+	BankAccountNumber     *string   `json:"bank_account_number" db:"bank_account_number"`
+	BankIfsc              *string   `json:"bank_ifsc" db:"bank_ifsc"`
+	UpiID                 *string   `json:"upi_id" db:"upi_id"`
+	EmergencyContactName  *string   `json:"emergency_contact_name" db:"emergency_contact_name"`
+	EmergencyContactPhone *string   `json:"emergency_contact_phone" db:"emergency_contact_phone"`
+	HealthNotes           *string   `json:"health_notes" db:"health_notes"`
+	CurrentAddress        *string   `json:"current_address" db:"current_address"`
+	PermanentAddress      *string   `json:"permanent_address" db:"permanent_address"`
+	Role                  string    `json:"role" db:"role"`
+	IsActive              bool      `json:"is_active" db:"is_active"`
+	CreatedAt             time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt             time.Time `json:"updated_at" db:"updated_at"`
+}
+
+type EmployeeDocument struct {
+	ID           string    `json:"id" db:"id"`
+	TenantID     string    `json:"tenant_id" db:"tenant_id"`
+	EmployeeID   string    `json:"employee_id" db:"employee_id"`
+	DocType      string    `json:"doc_type" db:"doc_type"`
+	FilePath     string    `json:"file_path" db:"file_path"`
+	PublicID     *string   `json:"public_id" db:"public_id"`
+	OriginalName *string   `json:"original_name" db:"original_name"`
+	UploadedAt   time.Time `json:"uploaded_at" db:"uploaded_at"`
 }
 
 type Holiday struct {

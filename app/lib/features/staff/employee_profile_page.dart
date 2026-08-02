@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
@@ -227,7 +229,7 @@ class _EmployeeProfileScreenState
               controller: _tabCtrl,
               physics: const BouncingScrollPhysics(),
               children: [
-                _InfoTab(cs: cs, tt: tt, profile: _profile),
+                _InfoTab(cs: cs, tt: tt, profile: _profile, employeeId: widget.employeeId),
                 _AttendanceTab(cs: cs, tt: tt, attendanceList: _attendance),
                 _LedgerTab(cs: cs, tt: tt, ledgerList: _ledger, balance: _balance),
               ],
@@ -384,7 +386,8 @@ class _InfoTab extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final Map<String, dynamic>? profile;
-  const _InfoTab({required this.cs, required this.tt, this.profile});
+  final String employeeId;
+  const _InfoTab({required this.cs, required this.tt, this.profile, required this.employeeId});
 
   @override
   Widget build(BuildContext context) {
@@ -393,6 +396,20 @@ class _InfoTab extends StatelessWidget {
     final designation = profile?['designation'] as String? ?? profile?['role'] as String? ?? '';
     final manager = profile?['manager_name'] as String? ?? 'Not assigned';
     final shiftName = profile?['shift_name'] as String? ?? 'Not assigned';
+
+    final kyc = <String, String>{
+      'PAN Number': profile?['pan_number'] as String? ?? '—',
+      'Aadhaar Number': profile?['aadhaar_number'] as String? ?? '—',
+      'PF / UAN': profile?['pf_number'] as String? ?? '—',
+      'Bank Account': profile?['bank_account_number'] as String? ?? '—',
+      'IFSC': profile?['bank_ifsc'] as String? ?? '—',
+      'UPI ID': profile?['upi_id'] as String? ?? '—',
+      'Emergency Contact': profile?['emergency_contact_name'] as String? ?? '—',
+      'Emergency Phone': profile?['emergency_contact_phone'] as String? ?? '—',
+      'Current Address': profile?['current_address'] as String? ?? '—',
+      'Permanent Address': profile?['permanent_address'] as String? ?? '—',
+      'Health Notes': profile?['health_notes'] as String? ?? '—',
+    };
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 160),
@@ -415,7 +432,342 @@ class _InfoTab extends StatelessWidget {
               'Wage Type': wageType == 'daily' ? 'Daily Wage' : wageType == 'monthly' ? 'Monthly' : wageType,
               'Base Rate': '₹$wageAmount${wageType == 'daily' ? ' / day' : ''}',
             }),
+        _EditorialInfoBlock(
+            cs: cs,
+            tt: tt,
+            title: 'KYC & Identity',
+            data: kyc),
+        const Padding(
+          padding: EdgeInsets.only(top: 8),
+          child: Text('KYC DOCUMENTS',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+        ),
+        const SizedBox(height: 16),
+        _DocumentVault(employeeId: employeeId),
+        const SizedBox(height: 8),
       ],
+    );
+  }
+}
+
+class _DocumentVault extends ConsumerStatefulWidget {
+  final String employeeId;
+  const _DocumentVault({required this.employeeId});
+
+  @override
+  ConsumerState<_DocumentVault> createState() => _DocumentVaultState();
+}
+
+class _DocumentVaultState extends ConsumerState<_DocumentVault> {
+  List<Map<String, dynamic>> _docs = [];
+  bool _loading = true;
+  String? _uploadingType;
+
+  static const _types = [
+    ('aadhaar', 'Aadhaar Card', 'fingerprint'),
+    ('pan', 'PAN Card', 'identificationCard'),
+    ('bank', 'Bank Passbook', 'bank'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final docs = await ref.read(documentServiceProvider).listDocuments(widget.employeeId);
+      if (mounted) {
+        setState(() {
+          _docs = docs.map((d) => d.toJson()).toList();
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Map<String, dynamic>? _docFor(String type) {
+    for (final d in _docs) {
+      if (d['doc_type'] == type) return d;
+    }
+    return null;
+  }
+
+  Future<void> _upload(String type) async {
+    HapticFeedback.selectionClick();
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_rounded),
+              title: const Text('Capture with Camera'),
+              onTap: () => Navigator.pop(ctx, 'camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.pop(ctx, 'gallery'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.description_rounded),
+              title: const Text('Upload PDF / File'),
+              onTap: () => Navigator.pop(ctx, 'file'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    String? path;
+    try {
+      if (source == 'camera' || source == 'gallery') {
+        final picker = ImagePicker();
+        final picked = await picker.pickImage(
+          source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
+          imageQuality: 70,
+          maxWidth: 1600,
+        );
+        path = picked?.path;
+      } else {
+        final result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+        path = result?.files.single.path;
+      }
+    } catch (_) {
+      if (mounted) showError(context, 'Could not pick file');
+      return;
+    }
+    if (path == null || !mounted) return;
+
+    setState(() => _uploadingType = type);
+    try {
+      await ref.read(documentServiceProvider).uploadDocument(
+            employeeId: widget.employeeId,
+            docType: type,
+            filePath: path,
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Document uploaded')));
+        _load();
+      }
+    } catch (e) {
+      if (mounted) showError(context, e);
+    } finally {
+      if (mounted) setState(() => _uploadingType = null);
+    }
+  }
+
+  Future<void> _view(Map<String, dynamic> doc) async {
+    final url = doc['file_path'] as String? ?? '';
+    if (url.isEmpty) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _DocumentViewerPage(url: url, isPdf: (doc['original_name'] as String? ?? '').toLowerCase().endsWith('.pdf')),
+      ),
+    );
+  }
+
+  Future<void> _delete(String type) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete document'),
+        content: const Text('Remove this document? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await ref.read(documentServiceProvider).deleteDocument(employeeId: widget.employeeId, docType: type);
+      if (mounted) _load();
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    if (_loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Column(
+      children: [
+        for (final (type, label, icon) in _types)
+          _DocumentCard(
+            cs: cs,
+            tt: tt,
+            type: type,
+            label: label,
+            icon: icon,
+            doc: _docFor(type),
+            uploading: _uploadingType == type,
+            onUpload: () => _upload(type),
+            onView: _docFor(type) == null ? null : () => _view(_docFor(type)!),
+            onDelete: _docFor(type) == null ? null : () => _delete(type),
+          ),
+      ],
+    );
+  }
+}
+
+class _DocumentCard extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final String type;
+  final String label;
+  final String icon;
+  final Map<String, dynamic>? doc;
+  final bool uploading;
+  final VoidCallback onUpload;
+  final VoidCallback? onView;
+  final VoidCallback? onDelete;
+
+  const _DocumentCard({
+    required this.cs,
+    required this.tt,
+    required this.type,
+    required this.label,
+    required this.icon,
+    required this.doc,
+    required this.uploading,
+    required this.onUpload,
+    this.onView,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isPdf = (doc?['original_name'] as String? ?? '').toLowerCase().endsWith('.pdf');
+    final filePath = doc?['file_path'] as String? ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          if (doc != null && !isPdf)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                filePath,
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Icon(_iconFor(icon), size: 28, color: cs.onSurfaceVariant),
+              ),
+            )
+          else
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: cs.primaryContainer.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                isPdf ? Icons.picture_as_pdf_rounded : _iconFor(icon),
+                size: 28,
+                color: isPdf ? cs.error : cs.primary,
+              ),
+            ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(
+                  doc != null ? 'Uploaded' : 'Not uploaded yet',
+                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          if (uploading)
+            const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+          else if (doc != null) ...[
+            IconButton(onPressed: onView, icon: Icon(Icons.visibility_outlined, color: cs.onSurfaceVariant)),
+            IconButton(onPressed: onDelete, icon: Icon(Icons.delete_outline_rounded, color: cs.error)),
+          ] else
+            FilledButton.tonal(onPressed: onUpload, child: const Text('Upload')),
+        ],
+      ),
+    );
+  }
+
+  IconData _iconFor(String name) {
+    switch (name) {
+      case 'fingerprint':
+        return Icons.fingerprint_rounded;
+      case 'identificationCard':
+        return Icons.badge_rounded;
+      default:
+        return Icons.account_balance_rounded;
+    }
+  }
+}
+
+class _DocumentViewerPage extends StatelessWidget {
+  final String url;
+  final bool isPdf;
+  const _DocumentViewerPage({required this.url, required this.isPdf});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text(isPdf ? 'Document' : 'Document Preview'),
+      ),
+      body: Center(
+        child: isPdf
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.picture_as_pdf_rounded, size: 96, color: Colors.white70),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(url,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6), fontSize: 12)),
+                  ),
+                ],
+              )
+            : InteractiveViewer(
+                child: Image.network(url, fit: BoxFit.contain),
+              ),
+      ),
     );
   }
 }

@@ -16,7 +16,24 @@ func NewStaffService(querier repositories.Querier) *StaffService {
 	return &StaffService{querier: querier}
 }
 
-func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designation, wageType, wageAmount, role, tenantID, employeeID string, dailyTargetUnits *int32) (repositories.Employee, error) {
+// EmployeeProfileDetails carries optional KYC/personal fields for an employee.
+// On update, nil fields leave the existing value untouched.
+type EmployeeProfileDetails struct {
+	DateOfJoining         *string
+	PanNumber             *string
+	AadhaarNumber         *string
+	PfNumber              *string
+	BankAccountNumber     *string
+	BankIfsc              *string
+	UpiID                 *string
+	EmergencyContactName  *string
+	EmergencyContactPhone *string
+	HealthNotes           *string
+	CurrentAddress        *string
+	PermanentAddress      *string
+}
+
+func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designation, wageType, wageAmount, role, tenantID, employeeID string, dailyTargetUnits *int32, kyc EmployeeProfileDetails) (repositories.Employee, error) {
 	wageAmt, err := strconv.ParseFloat(wageAmount, 64)
 	if err != nil {
 		return repositories.Employee{}, fmt.Errorf("invalid wage_amount: %w", err)
@@ -29,14 +46,26 @@ func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designat
 		role = "employee"
 	}
 	emp, err := s.querier.CreateEmployee(ctx, repositories.CreateEmployeeParams{
-		TenantID:         tenantID,
-		Name:             name,
-		Phone:            phone,
-		Designation:      desig,
-		WageType:         wageType,
-		WageAmount:       wageAmt,
-		DailyTargetUnits: dailyTargetUnits,
-		Role:             role,
+		TenantID:              tenantID,
+		Name:                  name,
+		Phone:                 phone,
+		Designation:           desig,
+		WageType:              wageType,
+		WageAmount:            wageAmt,
+		DailyTargetUnits:      dailyTargetUnits,
+		DateOfJoining:         kyc.DateOfJoining,
+		PanNumber:             kyc.PanNumber,
+		AadhaarNumber:         kyc.AadhaarNumber,
+		PfNumber:              kyc.PfNumber,
+		BankAccountNumber:     kyc.BankAccountNumber,
+		BankIfsc:              kyc.BankIfsc,
+		UpiID:                 kyc.UpiID,
+		EmergencyContactName:  kyc.EmergencyContactName,
+		EmergencyContactPhone: kyc.EmergencyContactPhone,
+		HealthNotes:           kyc.HealthNotes,
+		CurrentAddress:        kyc.CurrentAddress,
+		PermanentAddress:      kyc.PermanentAddress,
+		Role:                  role,
 	})
 	if err == nil {
 		logActivity(ctx, s.querier, tenantID, employeeID, "created_employee", "employee", &emp.ID, nil)
@@ -51,7 +80,7 @@ func (s *StaffService) GetEmployee(ctx context.Context, employeeID, tenantID str
 	})
 }
 
-func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID, name, phone, designation, wageType, wageAmount, role string, dailyTargetUnits *int32) (repositories.Employee, error) {
+func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID, name, phone, designation, wageType, wageAmount, role string, dailyTargetUnits *int32, kyc EmployeeProfileDetails) (repositories.Employee, error) {
 	existing, err := s.querier.FindEmployeeByID(ctx, repositories.FindEmployeeByIDParams{
 		ID:       employeeID,
 		TenantID: tenantID,
@@ -89,6 +118,55 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 		role = existing.Role
 	}
 
+	dateOfJoining := existing.DateOfJoining
+	if kyc.DateOfJoining != nil {
+		dateOfJoining = kyc.DateOfJoining
+	}
+	panNumber := existing.PanNumber
+	if kyc.PanNumber != nil {
+		panNumber = kyc.PanNumber
+	}
+	aadhaarNumber := existing.AadhaarNumber
+	if kyc.AadhaarNumber != nil {
+		aadhaarNumber = kyc.AadhaarNumber
+	}
+	pfNumber := existing.PfNumber
+	if kyc.PfNumber != nil {
+		pfNumber = kyc.PfNumber
+	}
+	bankAccountNumber := existing.BankAccountNumber
+	if kyc.BankAccountNumber != nil {
+		bankAccountNumber = kyc.BankAccountNumber
+	}
+	bankIfsc := existing.BankIfsc
+	if kyc.BankIfsc != nil {
+		bankIfsc = kyc.BankIfsc
+	}
+	upiID := existing.UpiID
+	if kyc.UpiID != nil {
+		upiID = kyc.UpiID
+	}
+	emergencyContactName := existing.EmergencyContactName
+	if kyc.EmergencyContactName != nil {
+		emergencyContactName = kyc.EmergencyContactName
+	}
+	emergencyContactPhone := existing.EmergencyContactPhone
+	if kyc.EmergencyContactPhone != nil {
+		emergencyContactPhone = kyc.EmergencyContactPhone
+	}
+	healthNotes := existing.HealthNotes
+	if kyc.HealthNotes != nil {
+		healthNotes = kyc.HealthNotes
+	}
+	currentAddress := existing.CurrentAddress
+	if kyc.CurrentAddress != nil {
+		currentAddress = kyc.CurrentAddress
+	}
+	permanentAddress := existing.PermanentAddress
+	if kyc.PermanentAddress != nil {
+		permanentAddress = kyc.PermanentAddress
+	}
+
 	emp, err := s.querier.UpdateEmployee(ctx, repositories.UpdateEmployeeParams{
 		ID:                    employeeID,
 		TenantID:              tenantID,
@@ -101,19 +179,19 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 		PieceRateItemName:     existing.PieceRateItemName,
 		PieceRatePerUnit:      existing.PieceRatePerUnit,
 		DailyTargetUnits:      dailyTargetUnits,
-		DateOfJoining:         existing.DateOfJoining,
-		PanNumber:             existing.PanNumber,
-		AadhaarNumber:         existing.AadhaarNumber,
-		PfNumber:              existing.PfNumber,
+		DateOfJoining:         dateOfJoining,
+		PanNumber:             panNumber,
+		AadhaarNumber:         aadhaarNumber,
+		PfNumber:              pfNumber,
 		PhotoUrl:              existing.PhotoUrl,
-		BankAccountNumber:     existing.BankAccountNumber,
-		BankIfsc:              existing.BankIfsc,
-		UpiID:                 existing.UpiID,
-		EmergencyContactName:  existing.EmergencyContactName,
-		EmergencyContactPhone: existing.EmergencyContactPhone,
-		HealthNotes:           existing.HealthNotes,
-		CurrentAddress:        existing.CurrentAddress,
-		PermanentAddress:      existing.PermanentAddress,
+		BankAccountNumber:     bankAccountNumber,
+		BankIfsc:              bankIfsc,
+		UpiID:                 upiID,
+		EmergencyContactName:  emergencyContactName,
+		EmergencyContactPhone: emergencyContactPhone,
+		HealthNotes:           healthNotes,
+		CurrentAddress:        currentAddress,
+		PermanentAddress:      permanentAddress,
 		Role:                  role,
 		IsActive:              existing.IsActive,
 	})
@@ -146,6 +224,40 @@ func (s *StaffService) UpdatePhotoURL(ctx context.Context, employeeID, tenantID,
 		ID:       employeeID,
 		TenantID: tenantID,
 		PhotoURL: photoURL,
+	})
+}
+
+func (s *StaffService) SaveDocument(ctx context.Context, tenantID, employeeID, docType, filePath string, publicID *string, originalName *string) (repositories.EmployeeDocument, error) {
+	return s.querier.CreateEmployeeDocument(ctx, repositories.CreateEmployeeDocumentParams{
+		TenantID:     tenantID,
+		EmployeeID:   employeeID,
+		DocType:      docType,
+		FilePath:     filePath,
+		PublicID:     publicID,
+		OriginalName: originalName,
+	})
+}
+
+func (s *StaffService) GetDocumentByType(ctx context.Context, tenantID, employeeID, docType string) (repositories.EmployeeDocument, error) {
+	return s.querier.GetEmployeeDocumentByType(ctx, repositories.GetEmployeeDocumentByTypeParams{
+		TenantID:   tenantID,
+		EmployeeID: employeeID,
+		DocType:    docType,
+	})
+}
+
+func (s *StaffService) ListDocuments(ctx context.Context, tenantID, employeeID string) ([]repositories.EmployeeDocument, error) {
+	return s.querier.ListEmployeeDocumentsByEmployee(ctx, repositories.ListEmployeeDocumentsByEmployeeParams{
+		TenantID:   tenantID,
+		EmployeeID: employeeID,
+	})
+}
+
+func (s *StaffService) DeleteDocument(ctx context.Context, tenantID, employeeID, docType string) error {
+	return s.querier.DeleteEmployeeDocument(ctx, repositories.DeleteEmployeeDocumentParams{
+		TenantID:   tenantID,
+		EmployeeID: employeeID,
+		DocType:    docType,
 	})
 }
 

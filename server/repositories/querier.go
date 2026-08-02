@@ -48,14 +48,41 @@ type CreateAttendanceParams struct {
 }
 
 type CreateEmployeeParams struct {
-	TenantID         string  `json:"tenant_id"`
-	Name            string  `json:"name"`
-	Phone           string  `json:"phone"`
-	Designation     *string `json:"designation"`
-	WageType        string  `json:"wage_type"`
-	WageAmount      float64 `json:"wage_amount"`
-	DailyTargetUnits *int32 `json:"daily_target_units"`
-	Role            string  `json:"role"`
+	TenantID              string  `json:"tenant_id"`
+	Name                  string  `json:"name"`
+	Phone                 string  `json:"phone"`
+	Designation           *string `json:"designation"`
+	WageType              string  `json:"wage_type"`
+	WageAmount            float64 `json:"wage_amount"`
+	DailyTargetUnits      *int32  `json:"daily_target_units"`
+	DateOfJoining         *string `json:"date_of_joining"`
+	PanNumber             *string `json:"pan_number"`
+	AadhaarNumber         *string `json:"aadhaar_number"`
+	PfNumber              *string `json:"pf_number"`
+	BankAccountNumber     *string `json:"bank_account_number"`
+	BankIfsc              *string `json:"bank_ifsc"`
+	UpiID                 *string `json:"upi_id"`
+	EmergencyContactName  *string `json:"emergency_contact_name"`
+	EmergencyContactPhone *string `json:"emergency_contact_phone"`
+	HealthNotes           *string `json:"health_notes"`
+	CurrentAddress        *string `json:"current_address"`
+	PermanentAddress      *string `json:"permanent_address"`
+	Role                  string  `json:"role"`
+}
+
+type CreateEmployeeDocumentParams struct {
+	TenantID     string  `json:"tenant_id"`
+	EmployeeID   string  `json:"employee_id"`
+	DocType      string  `json:"doc_type"`
+	FilePath     string  `json:"file_path"`
+	PublicID     *string `json:"public_id"`
+	OriginalName *string `json:"original_name"`
+}
+
+type DeleteEmployeeDocumentParams struct {
+	TenantID   string `json:"tenant_id"`
+	EmployeeID string `json:"employee_id"`
+	DocType    string `json:"doc_type"`
 }
 
 type CreateHolidayParams struct {
@@ -244,6 +271,21 @@ type UpdateAttendanceParams struct {
 	ComputedWage           *float64   `json:"computed_wage"`
 }
 
+type FindEmployeeByPhoneOnlyParams struct {
+	Phone string `json:"phone"`
+}
+
+type GetEmployeeDocumentByTypeParams struct {
+	TenantID   string `json:"tenant_id"`
+	EmployeeID string `json:"employee_id"`
+	DocType    string `json:"doc_type"`
+}
+
+type ListEmployeeDocumentsByEmployeeParams struct {
+	TenantID   string `json:"tenant_id"`
+	EmployeeID string `json:"employee_id"`
+}
+
 type UpdateEmployeeParams struct {
 	ID                    string   `json:"id"`
 	Name                  string   `json:"name"`
@@ -340,12 +382,14 @@ type Querier interface {
 	CreateAdvanceRequest(ctx context.Context, arg CreateAdvanceRequestParams) (AdvanceRequest, error)
 	CreateAttendance(ctx context.Context, arg CreateAttendanceParams) (Attendance, error)
 	CreateEmployee(ctx context.Context, arg CreateEmployeeParams) (Employee, error)
+	CreateEmployeeDocument(ctx context.Context, arg CreateEmployeeDocumentParams) (EmployeeDocument, error)
 	CreateHoliday(ctx context.Context, arg CreateHolidayParams) (Holiday, error)
 	CreateLedgerEntry(ctx context.Context, arg CreateLedgerEntryParams) (Ledger, error)
 	CreateShift(ctx context.Context, arg CreateShiftParams) (Shift, error)
 	CreateSyncEvent(ctx context.Context, arg CreateSyncEventParams) (SyncQueue, error)
 	CreateTenant(ctx context.Context, arg CreateTenantParams) (Tenant, error)
 	DeleteHoliday(ctx context.Context, arg DeleteHolidayParams) error
+	DeleteEmployeeDocument(ctx context.Context, arg DeleteEmployeeDocumentParams) error
 	DeleteTenant(ctx context.Context, tenantID string) error
 	DeleteShift(ctx context.Context, arg DeleteShiftParams) error
 	FindEmployeeByID(ctx context.Context, arg FindEmployeeByIDParams) (Employee, error)
@@ -357,6 +401,7 @@ type Querier interface {
 	FindTenantByPhone(ctx context.Context, phone string) (Tenant, error)
 	GetBalanceByEmployee(ctx context.Context, arg GetBalanceByEmployeeParams) (float64, error)
 	GetDailyJamaTotal(ctx context.Context, tenantID string, date string) (float64, error)
+	GetEmployeeDocumentByType(ctx context.Context, arg GetEmployeeDocumentByTypeParams) (EmployeeDocument, error)
 	GetLeavePolicyByTenant(ctx context.Context, tenantID string) (LeavePolicy, error)
 	GetStaffProfile(ctx context.Context, arg GetStaffProfileParams) (StaffProfile, error)
 	GetTenantConfig(ctx context.Context, tenantID string) (TenantConfig, error)
@@ -367,6 +412,7 @@ type Querier interface {
 	ListAttendanceByDateRange(ctx context.Context, arg ListAttendanceByDateRangeParams) ([]Attendance, error)
 	ListAttendanceByEmployeeMonth(ctx context.Context, arg ListAttendanceByEmployeeMonthParams) ([]Attendance, error)
 	ListEmployeesByTenant(ctx context.Context, arg ListEmployeesByTenantParams) ([]Employee, error)
+	ListEmployeeDocumentsByEmployee(ctx context.Context, arg ListEmployeeDocumentsByEmployeeParams) ([]EmployeeDocument, error)
 	ListHolidaysByTenant(ctx context.Context, arg ListHolidaysByTenantParams) ([]Holiday, error)
 	ListLedgerByEmployeeMonth(ctx context.Context, arg ListLedgerByEmployeeMonthParams) ([]Ledger, error)
 	ListLedgerByTenant(ctx context.Context, arg ListLedgerByTenantParams) ([]Ledger, error)

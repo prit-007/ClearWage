@@ -20,9 +20,9 @@ import (
 
 	"github.com/vivek-app/vivek_app/config"
 	ctrl "github.com/vivek-app/vivek_app/controllers/api/v1"
+	mw "github.com/vivek-app/vivek_app/middlewares"
 	"github.com/vivek-app/vivek_app/repositories"
 	"github.com/vivek-app/vivek_app/services"
-	mw "github.com/vivek-app/vivek_app/middlewares"
 )
 
 func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Command {
@@ -42,10 +42,10 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			r := chi.NewRouter()
 
-	r.Use(mw.RequestLogger(logger))
-	r.Use(middleware.Recoverer)
-	r.Use(mw.LimitBodySize(5 << 20))
-	r.Use(cors.Handler(cors.Options{
+			r.Use(mw.RequestLogger(logger))
+			r.Use(middleware.Recoverer)
+			r.Use(mw.LimitBodySize(5 << 20))
+			r.Use(cors.Handler(cors.Options{
 				AllowedOrigins:   []string{cfg.AllowedOrigin},
 				AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 				AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
@@ -53,61 +53,66 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				MaxAge:           300,
 			}))
 
-		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("ok"))
-		})
+			r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("ok"))
+			})
 
-		r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, "./docs/index.html")
-		})
+			r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
+				http.ServeFile(w, r, "./docs/index.html")
+			})
 
-		r.Get("/swagger.json", func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, "./docs/swagger.json")
-		})
+			r.Get("/swagger.json", func(w http.ResponseWriter, r *http.Request) {
+				http.ServeFile(w, r, "./docs/swagger.json")
+			})
 
-		authCtrl, err := ctrl.NewAuthController(querier, logger, cfg)
-			if err != nil {return err}
+			authCtrl, err := ctrl.NewAuthController(querier, logger, cfg)
+			if err != nil {
+				return err
+			}
 			r.Route("/api/v1/auth", func(r chi.Router) {
 				r.Use(mw.RateLimit(10, time.Minute))
 				r.Post("/firebase-login", authCtrl.LoginWithFirebase)
 				r.Post("/register", authCtrl.Register)
 			})
 
-		shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
-		uploadCtrl := ctrl.NewUploadController(services.NewStaffService(querier), logger, cfg)
-		staffCtrl := ctrl.NewStaffController(services.NewStaffService(querier), logger, cfg)
-		r.Route("/api/v1/staff", func(r chi.Router) {
-			r.Use(mw.AuthMiddleware(cfg))
-			r.Use(mw.TenantMiddleware())
-			r.Get("/", staffCtrl.List)
-			r.Post("/", staffCtrl.Create)
-			r.Get("/{id}", staffCtrl.Get)
-			r.Put("/{id}", staffCtrl.Update)
-			r.Delete("/{id}", staffCtrl.Delete)
-			r.Post("/{id}/upload-photo", uploadCtrl.UploadPhoto)
-			r.Get("/{id}/profile", staffCtrl.Profile)
-			r.Put("/{id}/manager", staffCtrl.AssignManager)
-			r.Put("/{id}/default-shift", shiftCtrl.AssignDefaultShift)
-		})
+			shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
+			uploadCtrl := ctrl.NewUploadController(services.NewStaffService(querier), logger, cfg)
+			staffCtrl := ctrl.NewStaffController(services.NewStaffService(querier), logger, cfg)
+			r.Route("/api/v1/staff", func(r chi.Router) {
+				r.Use(mw.AuthMiddleware(cfg))
+				r.Use(mw.TenantMiddleware())
+				r.Get("/", staffCtrl.List)
+				r.Post("/", staffCtrl.Create)
+				r.Get("/{id}", staffCtrl.Get)
+				r.Put("/{id}", staffCtrl.Update)
+				r.Delete("/{id}", staffCtrl.Delete)
+				r.Post("/{id}/upload-photo", uploadCtrl.UploadPhoto)
+				r.Get("/{id}/documents", uploadCtrl.ListDocuments)
+				r.Post("/{id}/documents/{type}", uploadCtrl.UploadDocument)
+				r.Delete("/{id}/documents/{type}", uploadCtrl.DeleteDocument)
+				r.Get("/{id}/profile", staffCtrl.Profile)
+				r.Put("/{id}/manager", staffCtrl.AssignManager)
+				r.Put("/{id}/default-shift", shiftCtrl.AssignDefaultShift)
+			})
 
-		meCtrl := ctrl.NewMeController(
-			services.NewStaffService(querier),
-			services.NewAttendanceService(querier),
-			services.NewLedgerService(querier),
-			services.NewPayrollService(querier),
-			services.NewAdvanceRequestService(querier),
-			logger, cfg,
-		)
-		r.Route("/api/v1/me", func(r chi.Router) {
-			r.Use(mw.AuthMiddleware(cfg))
-			r.Use(mw.TenantMiddleware())
-			r.Get("/", meCtrl.Profile)
-			r.Get("/attendance", meCtrl.Attendance)
-			r.Get("/ledger", meCtrl.Ledger)
-			r.Get("/payslip", meCtrl.Payslip)
-			r.Post("/advance-request", meCtrl.RequestAdvance)
-		})
+			meCtrl := ctrl.NewMeController(
+				services.NewStaffService(querier),
+				services.NewAttendanceService(querier),
+				services.NewLedgerService(querier),
+				services.NewPayrollService(querier),
+				services.NewAdvanceRequestService(querier),
+				logger, cfg,
+			)
+			r.Route("/api/v1/me", func(r chi.Router) {
+				r.Use(mw.AuthMiddleware(cfg))
+				r.Use(mw.TenantMiddleware())
+				r.Get("/", meCtrl.Profile)
+				r.Get("/attendance", meCtrl.Attendance)
+				r.Get("/ledger", meCtrl.Ledger)
+				r.Get("/payslip", meCtrl.Payslip)
+				r.Post("/advance-request", meCtrl.RequestAdvance)
+			})
 
 			r.Route("/api/v1/shifts", func(r chi.Router) {
 				r.Use(mw.AuthMiddleware(cfg))

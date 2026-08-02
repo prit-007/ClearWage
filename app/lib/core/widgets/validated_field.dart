@@ -8,6 +8,7 @@ class ValidatedField extends StatefulWidget {
   final IconData? prefixIcon;
   final TextInputType? keyboardType;
   final bool enabled;
+  final bool readOnly;
   final bool obscureText;
   final int? maxLines;
   final String? Function(String?)? validator;
@@ -21,6 +22,7 @@ class ValidatedField extends StatefulWidget {
     this.prefixIcon,
     this.keyboardType,
     this.enabled = true,
+    this.readOnly = false,
     this.obscureText = false,
     this.maxLines,
     this.validator,
@@ -111,6 +113,7 @@ class _ValidatedFieldState extends State<ValidatedField> {
                   focusNode: _focusNode,
                   keyboardType: widget.keyboardType,
                   enabled: widget.enabled,
+                  readOnly: widget.readOnly,
                   obscureText: widget.obscureText,
                   maxLines: widget.maxLines,
                   style: tt.bodyLarge?.copyWith(

@@ -220,6 +220,9 @@ All staff endpoints require `AuthMiddleware` + `TenantMiddleware`. Every employe
 | `PUT` | `/api/v1/staff/{id}` | `staffCtrl.Update` | Update employee (blocks "employee" role) |
 | `DELETE` | `/api/v1/staff/{id}` | `staffCtrl.Delete` | Soft-delete (requires "owner" role) |
 | `POST` | `/api/v1/staff/{id}/upload-photo` | `uploadCtrl.UploadPhoto` | Upload photo (jpg/png, max 5MB) |
+| `GET` | `/api/v1/staff/{id}/documents` | `uploadCtrl.ListDocuments` | List KYC documents for employee |
+| `POST` | `/api/v1/staff/{id}/documents/{type}` | `uploadCtrl.UploadDocument` | Upload/replace KYC doc (aadhaar\|pan\|bank, jpg/png/pdf) |
+| `DELETE` | `/api/v1/staff/{id}/documents/{type}` | `uploadCtrl.DeleteDocument` | Delete KYC doc + stored asset |
 | `GET` | `/api/v1/staff/{id}/profile` | `staffCtrl.Profile` | Full profile with manager + shift info |
 | `PUT` | `/api/v1/staff/{id}/manager` | `staffCtrl.AssignManager` | Set/remove reporting manager |
 
@@ -255,19 +258,26 @@ All staff endpoints require `AuthMiddleware` + `TenantMiddleware`. Every employe
 {
   "name": "Rahul Sharma", "phone": "+919876543210",
   "designation": "Operator", "wage_type": "daily", "wage_amount": "450",
-  "daily_target_units": 100
+  "daily_target_units": 100,
+  "date_of_joining": "2024-01-15", "pan_number": "ABCDE1234F",
+  "aadhaar_number": "123412341234", "pf_number": "MH/123/4567",
+  "bank_account_number": "00012345678901", "bank_ifsc": "SBIN0001234",
+  "upi_id": "rahul@upi", "emergency_contact_name": "Sunita",
+  "emergency_contact_phone": "+919000000000", "health_notes": "None",
+  "current_address": "Line 1, City", "permanent_address": "Village, Dist"
 }
 ```
 **Required:** `name`, `phone`, `wage_type`, `wage_amount`
+**Optional KYC:** `date_of_joining`, `pan_number`, `aadhaar_number`, `pf_number`, `bank_account_number`, `bank_ifsc`, `upi_id`, `emergency_contact_name`, `emergency_contact_phone`, `health_notes`, `current_address`, `permanent_address`
 
-**Frontend**: `StaffService.create()` → `AddEmployeeScreen` (premium form with wage type toggle, haptic feedback, glassmorphism fields).
+**Frontend**: `StaffService.create()` → `AddEmployeeScreen` (premium form with wage type toggle, KYC & Financial section, Emergency & Address section, haptic feedback, glassmorphism fields).
 
 ---
 
 #### `GET /api/v1/staff/{id}`
 
 **Path Param:** `id` — Employee UUID
-**Success:** Single employee object (same shape as list items).
+**Success:** Single employee object (same shape as list items, including all KYC fields).
 
 **Frontend**: `StaffService.get()` → `EmployeeProfileScreen` (fetched in `initState`).
 
@@ -275,8 +285,8 @@ All staff endpoints require `AuthMiddleware` + `TenantMiddleware`. Every employe
 
 #### `PUT /api/v1/staff/{id}`
 
-**Request:** Same shape as create. **Blocks "employee" role** (403).
-**Frontend**: Not yet wired (future: edit employee from profile screen).
+**Request:** Same shape as create. KYC fields are only updated when provided; `null`/omitted values keep the existing value. **Blocks "employee" role** (403).
+**Frontend**: `StaffService.update()` → `AddEmployeeScreen` opened in edit mode from profile screen.
 
 ---
 
@@ -290,7 +300,7 @@ Soft-deletes (`is_active = false`). **Requires "owner" role** (403 otherwise).
 #### `POST /api/v1/staff/{id}/upload-photo`
 
 **Multipart:** `file` field, max 5MB, `.jpg`/`.jpeg`/`.png` only.
-Saves to `./uploads/{employeeID}-{random}{ext}`. Updates `photo_url` on employee record.
+When Cloudinary is configured (`CLOUDINARY_CLOUD_NAME` + `CLOUDINARY_API_KEY` + `CLOUDINARY_API_SECRET`), the photo is uploaded to the `profiles` folder and `photo_url` is the Cloudinary `secure_url`. Otherwise it is saved to `./uploads/{employeeID}-{random}{ext}` and `photo_url` is `/uploads/{filename}`.
 
 **Success:**
 ```json
@@ -298,6 +308,34 @@ Saves to `./uploads/{employeeID}-{random}{ext}`. Updates `photo_url` on employee
 ```
 
 **Frontend**: Not yet wired.
+
+---
+
+#### `POST /api/v1/staff/{id}/documents/{type}`
+
+**Path:** `type` must be `aadhaar`, `pan`, or `bank` (one slot per type — uploading replaces).
+**Multipart:** `file` field, max 5MB, `.jpg`/`.jpeg`/`.png`/`.pdf` only.
+**Blocks "employee" role** (403). Stored in Cloudinary (`kyc/{employeeID}` folder, deterministic public id) when configured; otherwise `./uploads/`.
+Deletes the previous asset when replacing.
+
+**Success:**
+```json
+{ "status": "success", "data": { "id": "uuid", "doc_type": "aadhaar", "file_path": "https://res.cloudinary.com/.../kyc/abc/aadhaar.jpg", "public_id": "kyc/abc/aadhaar", "original_name": "aadhaar.jpg" } }
+```
+
+---
+
+#### `GET /api/v1/staff/{id}/documents`
+
+Returns array of `{ id, doc_type, file_path, public_id, original_name, uploaded_at }` for the employee.
+
+---
+
+#### `DELETE /api/v1/staff/{id}/documents/{type}`
+
+Deletes the document record and removes the stored asset (Cloudinary destroy or local file). **Blocks "employee" role** (403). Returns 404 if no document exists.
+
+**Frontend**: `DocumentService` → `_DocumentVault` in `EmployeeProfileScreen` Info & KYC tab (3 cards: Aadhaar / PAN / Bank Passbook, camera/gallery/PDF picker, thumbnail, view, delete).
 
 ---
 

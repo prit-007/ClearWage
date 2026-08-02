@@ -22,6 +22,18 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   final _phoneCtrl = TextEditingController();
   final _desigCtrl = TextEditingController();
   final _wageCtrl = TextEditingController();
+  final _dojCtrl = TextEditingController();
+  final _panCtrl = TextEditingController();
+  final _aadhaarCtrl = TextEditingController();
+  final _pfCtrl = TextEditingController();
+  final _bankCtrl = TextEditingController();
+  final _ifscCtrl = TextEditingController();
+  final _upiCtrl = TextEditingController();
+  final _emergencyNameCtrl = TextEditingController();
+  final _emergencyPhoneCtrl = TextEditingController();
+  final _healthCtrl = TextEditingController();
+  final _currentAddrCtrl = TextEditingController();
+  final _permAddrCtrl = TextEditingController();
   late String _wageType;
   late String _role;
   bool _saving = false;
@@ -38,6 +50,18 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       _phoneCtrl.text = e.phone;
       _desigCtrl.text = e.designation ?? '';
       _wageCtrl.text = e.wageAmount == 0 ? '' : e.wageAmount.toStringAsFixed(0);
+      _dojCtrl.text = e.dateOfJoining ?? '';
+      _panCtrl.text = e.panNumber ?? '';
+      _aadhaarCtrl.text = e.aadhaarNumber ?? '';
+      _pfCtrl.text = e.pfNumber ?? '';
+      _bankCtrl.text = e.bankAccountNumber ?? '';
+      _ifscCtrl.text = e.bankIfsc ?? '';
+      _upiCtrl.text = e.upiId ?? '';
+      _emergencyNameCtrl.text = e.emergencyContactName ?? '';
+      _emergencyPhoneCtrl.text = e.emergencyContactPhone ?? '';
+      _healthCtrl.text = e.healthNotes ?? '';
+      _currentAddrCtrl.text = e.currentAddress ?? '';
+      _permAddrCtrl.text = e.permanentAddress ?? '';
       _wageType = e.wageType;
       _role = e.role;
       _selectedShiftId = e.defaultShiftId;
@@ -60,6 +84,18 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     _phoneCtrl.dispose();
     _desigCtrl.dispose();
     _wageCtrl.dispose();
+    _dojCtrl.dispose();
+    _panCtrl.dispose();
+    _aadhaarCtrl.dispose();
+    _pfCtrl.dispose();
+    _bankCtrl.dispose();
+    _ifscCtrl.dispose();
+    _upiCtrl.dispose();
+    _emergencyNameCtrl.dispose();
+    _emergencyPhoneCtrl.dispose();
+    _healthCtrl.dispose();
+    _currentAddrCtrl.dispose();
+    _permAddrCtrl.dispose();
     super.dispose();
   }
 
@@ -91,6 +127,18 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
         'wage_type': _wageType,
         'wage_amount': _wageCtrl.text.trim().isEmpty ? '0' : _wageCtrl.text.trim(),
         'role': _role,
+        'date_of_joining': _dojCtrl.text.trim().isEmpty ? null : _dojCtrl.text.trim(),
+        'pan_number': _panCtrl.text.trim().isEmpty ? null : _panCtrl.text.trim(),
+        'aadhaar_number': _aadhaarCtrl.text.trim().isEmpty ? null : _aadhaarCtrl.text.trim(),
+        'pf_number': _pfCtrl.text.trim().isEmpty ? null : _pfCtrl.text.trim(),
+        'bank_account_number': _bankCtrl.text.trim().isEmpty ? null : _bankCtrl.text.trim(),
+        'bank_ifsc': _ifscCtrl.text.trim().isEmpty ? null : _ifscCtrl.text.trim(),
+        'upi_id': _upiCtrl.text.trim().isEmpty ? null : _upiCtrl.text.trim(),
+        'emergency_contact_name': _emergencyNameCtrl.text.trim().isEmpty ? null : _emergencyNameCtrl.text.trim(),
+        'emergency_contact_phone': _emergencyPhoneCtrl.text.trim().isEmpty ? null : _emergencyPhoneCtrl.text.trim(),
+        'health_notes': _healthCtrl.text.trim().isEmpty ? null : _healthCtrl.text.trim(),
+        'current_address': _currentAddrCtrl.text.trim().isEmpty ? null : _currentAddrCtrl.text.trim(),
+        'permanent_address': _permAddrCtrl.text.trim().isEmpty ? null : _permAddrCtrl.text.trim(),
       };
       final e = widget.employee;
       if (e != null) {
@@ -116,6 +164,19 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   void _updateWage(String type) {
     HapticFeedback.selectionClick();
     setState(() => _wageType = type);
+  }
+
+  Future<void> _pickDoj() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dojCtrl.text.isNotEmpty ? (DateTime.tryParse(_dojCtrl.text) ?? now) : now,
+      firstDate: DateTime(1990),
+      lastDate: now,
+    );
+    if (picked != null) {
+      setState(() => _dojCtrl.text = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}');
+    }
   }
 
   @override
@@ -213,6 +274,43 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                   child: _RoleSelector(role: _role, onChanged: (r) => setState(() => _role = r)),
                 ),
               ],
+              const SizedBox(height: 24),
+              FluidSlideIn(
+                delay: 1100,
+                child: Text('KYC & FINANCIAL', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w800, color: cs.primary, letterSpacing: 1.0)),
+              ),
+              const SizedBox(height: 16),
+              FluidSlideIn(
+                delay: 1200,
+                child: InkWell(
+                  onTap: _pickDoj,
+                  borderRadius: BorderRadius.circular(16),
+                  child: ValidatedField(
+                    controller: _dojCtrl,
+                    label: 'Date of Joining',
+                    prefixIcon: PhosphorIconsRegular.calendarBlank,
+                    readOnly: true,
+                    hint: 'Tap to select date',
+                  ),
+                ),
+              ),
+              FluidSlideIn(delay: 1300, child: ValidatedField(controller: _panCtrl, label: 'PAN Number', prefixIcon: PhosphorIconsRegular.identificationCard)),
+              FluidSlideIn(delay: 1400, child: ValidatedField(controller: _aadhaarCtrl, label: 'Aadhaar Number', prefixIcon: PhosphorIconsRegular.fingerprint, keyboardType: TextInputType.number)),
+              FluidSlideIn(delay: 1500, child: ValidatedField(controller: _pfCtrl, label: 'PF / UAN Number', prefixIcon: PhosphorIconsRegular.shieldStar)),
+              FluidSlideIn(delay: 1600, child: ValidatedField(controller: _bankCtrl, label: 'Bank Account Number', prefixIcon: PhosphorIconsRegular.bank, keyboardType: TextInputType.number)),
+              FluidSlideIn(delay: 1700, child: ValidatedField(controller: _ifscCtrl, label: 'Bank IFSC', prefixIcon: PhosphorIconsRegular.bank)),
+              FluidSlideIn(delay: 1800, child: ValidatedField(controller: _upiCtrl, label: 'UPI ID', prefixIcon: PhosphorIconsRegular.qrCode)),
+              const SizedBox(height: 24),
+              FluidSlideIn(
+                delay: 1900,
+                child: Text('EMERGENCY & ADDRESS', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w800, color: cs.primary, letterSpacing: 1.0)),
+              ),
+              const SizedBox(height: 16),
+              FluidSlideIn(delay: 2000, child: ValidatedField(controller: _emergencyNameCtrl, label: 'Emergency Contact Name', prefixIcon: PhosphorIconsRegular.userCircle)),
+              FluidSlideIn(delay: 2100, child: ValidatedField(controller: _emergencyPhoneCtrl, label: 'Emergency Contact Phone', prefixIcon: PhosphorIconsRegular.phone, keyboardType: TextInputType.phone)),
+              FluidSlideIn(delay: 2200, child: ValidatedField(controller: _currentAddrCtrl, label: 'Current Address', prefixIcon: PhosphorIconsRegular.house, maxLines: 2)),
+              FluidSlideIn(delay: 2300, child: ValidatedField(controller: _permAddrCtrl, label: 'Permanent Address', prefixIcon: PhosphorIconsRegular.mapPin, maxLines: 2)),
+              FluidSlideIn(delay: 2400, child: ValidatedField(controller: _healthCtrl, label: 'Health Notes', prefixIcon: PhosphorIconsRegular.firstAid, maxLines: 2)),
             ],
           ),
           Positioned(

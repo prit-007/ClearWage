@@ -23,7 +23,7 @@ type AdvanceRequest struct {
 	Note         *string   `json:"note" db:"note"`
 	ApprovedBy   *string   `json:"approved_by" db:"approved_by"`
 	DeniedBy     *string   `json:"denied_by" db:"denied_by"`
-	EmployeeName *string   `json:"employee_name"`
+	EmployeeName *string   `json:"employee_name" db:"employee_name"`
 	CreatedAt    time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
 }
@@ -44,7 +44,7 @@ type Attendance struct {
 	IsLocked               bool       `json:"is_locked" db:"is_locked"`
 	EditedBy               *string    `json:"edited_by" db:"edited_by"`
 	EditedAt               *time.Time `json:"edited_at" db:"edited_at"`
-	EmployeeName           *string    `json:"employee_name"`
+	EmployeeName           *string    `json:"employee_name" db:"employee_name"`
 	CreatedAt              time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt              time.Time  `json:"updated_at" db:"updated_at"`
 }
@@ -121,7 +121,7 @@ type Ledger struct {
 	Note               *string   `json:"note" db:"note"`
 	LinkedPayrollMonth *string   `json:"linked_payroll_month" db:"linked_payroll_month"`
 	CreatedBy          string    `json:"created_by" db:"created_by"`
-	EmployeeName       *string   `json:"employee_name"`
+	EmployeeName       *string   `json:"employee_name" db:"employee_name"`
 	CreatedAt          time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt          time.Time `json:"updated_at" db:"updated_at"`
 }
@@ -175,9 +175,9 @@ type TenantConfig struct {
 
 type StaffProfile struct {
 	Employee
-	ManagerName  *string `json:"manager_name"`
-	ManagerPhone *string `json:"manager_phone"`
-	ShiftName    *string `json:"shift_name"`
-	ShiftStart   *string `json:"shift_start_time"`
-	ShiftEnd     *string `json:"shift_end_time"`
+	ManagerName  *string `json:"manager_name" db:"manager_name"`
+	ManagerPhone *string `json:"manager_phone" db:"manager_phone"`
+	ShiftName    *string `json:"shift_name" db:"shift_name"`
+	ShiftStart   *string `json:"shift_start_time" db:"shift_start_time"`
+	ShiftEnd     *string `json:"shift_end_time" db:"shift_end_time"`
 }

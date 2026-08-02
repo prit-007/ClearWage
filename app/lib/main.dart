@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'features/attendance/daily_roster_page.dart' as roster;
+import 'features/attendance/attendance_roster_page.dart' as roster;
 import 'features/dashboard/dashboard_page.dart';
 import 'features/staff/staff_directory_page.dart';
 import 'features/staff/add_employee_page.dart';

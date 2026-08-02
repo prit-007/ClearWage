@@ -1,0 +1,554 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:intl/intl.dart';
+import '../../core/widgets/shimmer_loading.dart';
+import '../../models/attendance_model.dart';
+import '../../models/employee_model.dart';
+import '../../providers/providers.dart';
+import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/widgets/tactile_toggle.dart';
+import '../../core/helpers.dart';
+
+enum _AttStatus { present, absent, halfDay }
+
+class AttendanceRosterPage extends ConsumerStatefulWidget {
+  const AttendanceRosterPage({super.key});
+  @override
+  ConsumerState<AttendanceRosterPage> createState() => _AttendanceRosterPageState();
+}
+
+class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
+  DateTime _selectedDate = DateTime.now();
+  bool _saving = false;
+
+  String get _dateStr => DateFormat('yyyy-MM-dd').format(_selectedDate);
+
+  Future<void> _markRemainingPresent() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    HapticFeedback.heavyImpact();
+    final employees = ref.read(employeeListProvider).valueOrNull ?? [];
+    final attendanceList = ref.read(attendanceByDateProvider(_dateStr)).valueOrNull ?? [];
+    final date = _dateStr;
+    final unmarked = employees.where((emp) => !attendanceList.any((a) => a.employeeId == emp.id)).toList();
+    final noShift = unmarked.where((e) => e.defaultShiftId == null || e.defaultShiftId!.isEmpty).toList();
+    final withShift = unmarked.where((e) => e.defaultShiftId != null && e.defaultShiftId!.isNotEmpty).toList();
+
+    if (unmarked.isEmpty) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('All employees already marked')));
+      setState(() => _saving = false);
+      return;
+    }
+
+    final records = withShift.map((emp) => ({
+      'employee_id': emp.id,
+      'date': date,
+      'shift_id': emp.defaultShiftId!,
+      'status': 'present',
+      'overtime_hours': '0',
+    })).toList();
+
+    if (records.isNotEmpty) {
+      try {
+        await ref.read(attendanceServiceProvider).bulkUpsert(records);
+        ref.invalidate(attendanceByDateProvider(_dateStr));
+      } catch (e) {
+        if (mounted) showError(context, e);
+        setState(() => _saving = false);
+        return;
+      }
+    }
+    var msg = '${records.length} marked as present';
+    if (noShift.isNotEmpty) {
+      msg += '. ${noShift.length} skipped (no shift assigned)';
+    }
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    setState(() => _saving = false);
+  }
+
+  Future<void> _updateAttendance(Attendance att, _AttStatus newStatus, double ot) async {
+    try {
+      final statusMap = {_AttStatus.present: 'present', _AttStatus.absent: 'absent', _AttStatus.halfDay: 'half_day'};
+      await ref.read(attendanceServiceProvider).update(att.id, {
+        'status': statusMap[newStatus],
+        'overtime_hours': ot.toStringAsFixed(1),
+      });
+      ref.invalidate(attendanceByDateProvider(_dateStr));
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
+  }
+
+  Future<void> _createAttendance(Employee emp, _AttStatus status, double ot) async {
+    if (emp.defaultShiftId == null || emp.defaultShiftId!.isEmpty) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No shift assigned. Edit staff profile to assign one.')));
+      return;
+    }
+    try {
+      final statusMap = {_AttStatus.present: 'present', _AttStatus.absent: 'absent', _AttStatus.halfDay: 'half_day'};
+      await ref.read(attendanceServiceProvider).create({
+        'employee_id': emp.id,
+        'date': _dateStr,
+        'shift_id': emp.defaultShiftId!,
+        'status': statusMap[status],
+        'overtime_hours': ot.toStringAsFixed(1),
+      });
+      ref.invalidate(attendanceByDateProvider(_dateStr));
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final employeesAsync = ref.watch(employeeListProvider);
+    final attendanceAsync = ref.watch(attendanceByDateProvider(_dateStr));
+    final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
+
+    return Scaffold(
+      backgroundColor: cs.surfaceContainerLowest,
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: cs.primary,
+          backgroundColor: cs.surface,
+          onRefresh: () async {
+            HapticFeedback.mediumImpact();
+            ref.invalidate(employeeListProvider);
+            ref.invalidate(attendanceByDateProvider(_dateStr));
+            await Future.wait([
+              ref.read(employeeListProvider.future),
+              ref.read(attendanceByDateProvider(_dateStr).future),
+            ]);
+          },
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            slivers: [
+              SliverAppBar(
+                backgroundColor: cs.surfaceContainerLowest.withValues(alpha: 0.85),
+                pinned: true,
+                elevation: 0,
+                expandedHeight: 80,
+                collapsedHeight: 70,
+                flexibleSpace: ClipRRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                    child: FlexibleSpaceBar(
+                      titlePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      centerTitle: true,
+                      title: Text('Daily Roster', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                    ),
+                  ),
+                ),
+                actions: [
+                  IconButton(
+                    icon: Icon(PhosphorIconsBold.arrowsClockwise, color: cs.primary),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      ref.invalidate(attendanceByDateProvider(_dateStr));
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                  child: InkWell(
+                    onTap: () async {
+                      HapticFeedback.selectionClick();
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedDate,
+                        firstDate: DateTime(2024),
+                        lastDate: DateTime.now().add(const Duration(days: 1)),
+                        builder: (context, child) => Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: cs.copyWith(primary: cs.primary, onPrimary: cs.onPrimary),
+                          ),
+                          child: child!,
+                        ),
+                      );
+                      if (picked != null) setState(() => _selectedDate = picked);
+                    },
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: cs.primary.withValues(alpha: 0.2), width: 2),
+                        boxShadow: [BoxShadow(color: cs.primary.withValues(alpha: 0.05), blurRadius: 16, offset: const Offset(0, 8))],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              PhosphorIcon(PhosphorIconsDuotone.calendarBlank, color: cs.primary, size: 28),
+                              const SizedBox(width: 16),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(DateFormat('EEEE').format(_selectedDate).toUpperCase(), style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+                                  Text(DateFormat('MMM d, yyyy').format(_selectedDate), style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Icon(PhosphorIconsRegular.caretDown, size: 20, color: cs.primary),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              employeesAsync.when(
+                loading: () => const SliverPadding(
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  sliver: ShimmerLoading(itemCount: 6, height: 160),
+                ),
+                error: (e, _) => SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        PhosphorIcon(PhosphorIconsDuotone.warningCircle, size: 48, color: cs.error),
+                        const SizedBox(height: 16),
+                        Text('Failed to load roster', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                      ],
+                    ),
+                  ),
+                ),
+                data: (employees) {
+                  final attendance = attendanceAsync.valueOrNull ?? [];
+                  final merged = employees.map((emp) {
+                    final att = attendance.where((a) => a.employeeId == emp.id).firstOrNull;
+                    return _MergedRow(employee: emp, attendance: att);
+                  }).toList();
+
+                  if (merged.isEmpty) {
+                    return SliverFillRemaining(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.3), shape: BoxShape.circle),
+                              child: PhosphorIcon(PhosphorIconsDuotone.usersThree, size: 56, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                            ),
+                            const SizedBox(height: 24),
+                            Text('No Active Staff', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                            const SizedBox(height: 8),
+                            Text('Add employees from the directory to start tracking.', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  return SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 140),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final row = merged[index];
+                          return FluidSlideIn(
+                            delay: (index * 50).clamp(0, 400).toInt(),
+                            child: row.attendance != null
+                                ? _PremiumAttendanceCard(cs: cs, tt: tt, employee: row.employee, attendance: row.attendance!, onUpdate: _updateAttendance)
+                                : _UnmarkedEmployeeCard(cs: cs, tt: tt, employee: row.employee, onMark: (status, ot) => _createAttendance(row.employee, status, ot)),
+                          );
+                        },
+                        childCount: merged.length,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: isAdmin
+          ? Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: FilledButton.icon(
+                onPressed: _saving ? null : () => _markRemainingPresent(),
+                icon: _saving
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(PhosphorIconsBold.checks),
+                label: Text(_saving ? 'Processing...' : 'Mark All Present', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(64),
+                  backgroundColor: cs.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  elevation: 8,
+                  shadowColor: cs.primary.withValues(alpha: 0.4),
+                ),
+              ),
+            )
+          : null,
+    );
+  }
+}
+
+class _MergedRow {
+  final Employee employee;
+  final Attendance? attendance;
+  const _MergedRow({required this.employee, this.attendance});
+}
+
+class _UnmarkedEmployeeCard extends StatefulWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final Employee employee;
+  final Future<void> Function(_AttStatus status, double ot) onMark;
+
+  const _UnmarkedEmployeeCard({required this.cs, required this.tt, required this.employee, required this.onMark});
+
+  @override
+  State<_UnmarkedEmployeeCard> createState() => _UnmarkedEmployeeCardState();
+}
+
+class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
+  final _otCtrl = TextEditingController();
+  bool _saving = false;
+  _AttStatus? _optimisticStatus;
+
+  @override
+  void dispose() {
+    _otCtrl.dispose();
+    super.dispose();
+  }
+
+  void _mark(_AttStatus status) {
+    if (_saving) return;
+    HapticFeedback.lightImpact();
+    setState(() {
+      _saving = true;
+      _optimisticStatus = status;
+    });
+    widget.onMark(status, double.tryParse(_otCtrl.text) ?? 0).then((_) {
+      if (mounted) setState(() => _saving = false);
+    }).catchError((_) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _optimisticStatus = null;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final initials = getInitials(widget.employee.name);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: widget.cs.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: widget.cs.outlineVariant.withValues(alpha: 0.3)),
+        boxShadow: [BoxShadow(color: widget.cs.shadow.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: widget.cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                child: Text(initials, style: TextStyle(fontWeight: FontWeight.w900, color: widget.cs.onSurface, fontSize: 14)),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.employee.name, style: widget.tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                    const SizedBox(height: 2),
+                    Text(widget.employee.designation ?? widget.employee.role, style: widget.tt.labelSmall?.copyWith(color: widget.cs.onSurfaceVariant)),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: widget.cs.primaryContainer.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text('PENDING', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: widget.cs.primary, letterSpacing: 0.5)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(child: TactileToggle(label: 'P', color: const Color(0xFF10B981), isSelected: _optimisticStatus == _AttStatus.present, onTap: () => _mark(_AttStatus.present))),
+              const SizedBox(width: 12),
+              Expanded(child: TactileToggle(label: 'A', color: const Color(0xFFEF4444), isSelected: _optimisticStatus == _AttStatus.absent, onTap: () => _mark(_AttStatus.absent))),
+              const SizedBox(width: 12),
+              Expanded(child: TactileToggle(label: 'HD', color: const Color(0xFFF59E0B), isSelected: _optimisticStatus == _AttStatus.halfDay, onTap: () => _mark(_AttStatus.halfDay))),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+final attendanceByDateProvider = FutureProvider.autoDispose.family<List<Attendance>, String>((ref, date) {
+  return ref.watch(attendanceServiceProvider).listByDate(date, limit: 100000);
+});
+
+class _PremiumAttendanceCard extends StatefulWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final Employee employee;
+  final Attendance attendance;
+  final Future<void> Function(Attendance att, _AttStatus newStatus, double ot)? onUpdate;
+
+  const _PremiumAttendanceCard({required this.cs, required this.tt, required this.employee, required this.attendance, this.onUpdate});
+
+  @override
+  State<_PremiumAttendanceCard> createState() => _PremiumAttendanceCardState();
+}
+
+class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
+  late _AttStatus _status;
+  final _otCtrl = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _status = _mapStatus(widget.attendance.status);
+    _otCtrl.text = widget.attendance.overtimeHours > 0 ? widget.attendance.overtimeHours.toStringAsFixed(1).replaceAll('.0', '') : '';
+  }
+
+  @override
+  void dispose() {
+    _otCtrl.dispose();
+    super.dispose();
+  }
+
+  _AttStatus _mapStatus(String s) {
+    switch (s) {
+      case 'present': return _AttStatus.present;
+      case 'absent': return _AttStatus.absent;
+      case 'half_day': return _AttStatus.halfDay;
+      default: return _AttStatus.present;
+    }
+  }
+
+  void _updateStatus(_AttStatus s) {
+    if (_status == s || _saving) return;
+    HapticFeedback.lightImpact();
+    final previous = _status;
+    setState(() {
+      _status = s;
+      _saving = true;
+    });
+    widget.onUpdate?.call(widget.attendance, s, double.tryParse(_otCtrl.text) ?? 0).then((_) {
+      if (mounted) setState(() => _saving = false);
+    }).catchError((_) {
+      if (mounted) {
+        setState(() {
+          _status = previous;
+          _saving = false;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final initials = getInitials(widget.employee.name);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: widget.cs.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: widget.cs.outlineVariant.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: widget.cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                child: Text(initials, style: TextStyle(fontWeight: FontWeight.w900, color: widget.cs.onSurface, fontSize: 14)),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.employee.name, style: widget.tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                    const SizedBox(height: 2),
+                    Text(widget.employee.shiftName ?? 'No shift assigned', style: widget.tt.labelSmall?.copyWith(color: widget.cs.onSurfaceVariant)),
+                  ],
+                ),
+              ),
+              Container(
+                width: 76, height: 42,
+                decoration: BoxDecoration(
+                  color: widget.cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _otCtrl.text.isNotEmpty && double.tryParse(_otCtrl.text) == null
+                        ? widget.cs.error.withValues(alpha: 0.5)
+                        : widget.cs.outlineVariant.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: TextField(
+                  controller: _otCtrl,
+                  textAlign: TextAlign.center,
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: _otCtrl.text.isNotEmpty && double.tryParse(_otCtrl.text) == null ? widget.cs.error : widget.cs.onSurface),
+                  decoration: InputDecoration(
+                    hintText: 'OT (hrs)',
+                    hintStyle: TextStyle(fontSize: 12, color: widget.cs.onSurfaceVariant, fontWeight: FontWeight.w600),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 11),
+                  ),
+                  onChanged: (_) {
+                    if (mounted) setState(() {});
+                    HapticFeedback.selectionClick();
+                  },
+                  onSubmitted: (_) => widget.onUpdate?.call(widget.attendance, _status, double.tryParse(_otCtrl.text) ?? 0),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(child: TactileToggle(label: 'P', color: const Color(0xFF10B981), isSelected: _status == _AttStatus.present, onTap: () => _updateStatus(_AttStatus.present))),
+              const SizedBox(width: 12),
+              Expanded(child: TactileToggle(label: 'A', color: const Color(0xFFEF4444), isSelected: _status == _AttStatus.absent, onTap: () => _updateStatus(_AttStatus.absent))),
+              const SizedBox(width: 12),
+              Expanded(child: TactileToggle(label: 'HD', color: const Color(0xFFF59E0B), isSelected: _status == _AttStatus.halfDay, onTap: () => _updateStatus(_AttStatus.halfDay))),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}

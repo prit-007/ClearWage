@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,7 @@ import '../../core/app_config.dart';
 import '../../models/attendance_model.dart';
 import '../../providers/providers.dart';
 import '../../core/helpers.dart';
+import '../../core/widgets/fluid_slide_in.dart';
 
 final myProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) {
   return ref.watch(profileServiceProvider).getProfile();
@@ -40,26 +42,53 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
   bool _downloading = false;
   bool _uploadingPhoto = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 4, vsync: this);
+    _tabCtrl.addListener(() {
+      if (!_tabCtrl.indexIsChanging) HapticFeedback.selectionClick();
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _pickAndUploadPhoto(String employeeId) async {
     HapticFeedback.selectionClick();
     final source = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera_rounded),
-              title: const Text('Capture with Camera'),
-              onTap: () => Navigator.pop(ctx, 'camera'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_rounded),
-              title: const Text('Choose from Gallery'),
-              onTap: () => Navigator.pop(ctx, 'gallery'),
-            ),
-          ],
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Theme.of(context).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: PhosphorIcon(PhosphorIconsDuotone.camera, color: Theme.of(context).colorScheme.primary),
+                title: const Text('Capture with Camera', style: TextStyle(fontWeight: FontWeight.w700)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                onTap: () => Navigator.pop(ctx, 'camera'),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: PhosphorIcon(PhosphorIconsDuotone.image, color: Theme.of(context).colorScheme.primary),
+                title: const Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.w700)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                onTap: () => Navigator.pop(ctx, 'gallery'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -95,21 +124,6 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _tabCtrl = TabController(length: 4, vsync: this);
-    _tabCtrl.addListener(() {
-      if (!_tabCtrl.indexIsChanging) HapticFeedback.selectionClick();
-    });
-  }
-
-  @override
-  void dispose() {
-    _tabCtrl.dispose();
-    super.dispose();
-  }
-
   Future<void> _downloadPayslip() async {
     HapticFeedback.heavyImpact();
     setState(() => _downloading = true);
@@ -137,16 +151,6 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
-      appBar: AppBar(
-        backgroundColor: cs.surfaceContainerLowest,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text('My Profile', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-        centerTitle: true,
-      ),
       body: ref.watch(myProfileProvider).when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -155,15 +159,15 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(PhosphorIconsFill.warningCircle, size: 48, color: cs.error),
+                PhosphorIcon(PhosphorIconsDuotone.warningCircle, size: 56, color: cs.error),
                 const SizedBox(height: 16),
-                Text('Something went wrong', style: tt.titleMedium),
+                Text('Something went wrong', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
-                Text('$e', style: tt.bodySmall, textAlign: TextAlign.center),
-                const SizedBox(height: 16),
+                Text('$e', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
+                const SizedBox(height: 24),
                 FilledButton.icon(
-                  icon: const Icon(PhosphorIconsFill.arrowClockwise),
-                  label: const Text('Retry'),
+                  icon: const Icon(PhosphorIconsBold.arrowClockwise, size: 18),
+                  label: const Text('Retry', style: TextStyle(fontWeight: FontWeight.w700)),
                   onPressed: () => ref.invalidate(myProfileProvider),
                 ),
               ],
@@ -180,90 +184,113 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
           return NestedScrollView(
             physics: const BouncingScrollPhysics(),
             headerSliverBuilder: (_, _) => [
+              SliverAppBar(
+                backgroundColor: cs.surfaceContainerLowest.withValues(alpha: 0.85),
+                elevation: 0,
+                pinned: true,
+                expandedHeight: 100,
+                flexibleSpace: ClipRRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                    child: FlexibleSpaceBar(
+                      titlePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      centerTitle: true,
+                      title: Text('Account', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                    ),
+                  ),
+                ),
+                leading: IconButton(
+                  icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: cs.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: cs.primary.withValues(alpha: 0.2), width: 2),
-                          ),
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              CircleAvatar(
-                                radius: 40,
-                                backgroundColor: cs.primaryContainer,
-                                backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-                                child: photoUrl.isNotEmpty
-                                    ? null
-                                    : Text(initials, style: tt.headlineMedium?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w800)),
-                              ),
-                              if (employeeId.isNotEmpty)
-                                Positioned(
-                                  right: -6,
-                                  bottom: -6,
-                                  child: GestureDetector(
-                                    onTap: _uploadingPhoto ? null : () => _pickAndUploadPhoto(employeeId),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: cs.primary,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: cs.surface, width: 2),
-                                      ),
-                                      child: _uploadingPhoto
-                                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                          : Icon(PhosphorIconsFill.camera, size: 16, color: cs.onPrimary),
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: cs.primary.withValues(alpha: 0.2), width: 3),
+                        ),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            CircleAvatar(
+                              radius: 56,
+                              backgroundColor: cs.primaryContainer.withValues(alpha: 0.5),
+                              backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                              child: photoUrl.isNotEmpty
+                                  ? null
+                                  : Text(initials, style: tt.headlineMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.w900, letterSpacing: -1.0)),
+                            ),
+                            if (employeeId.isNotEmpty)
+                              Positioned(
+                                right: -4,
+                                bottom: -4,
+                                child: GestureDetector(
+                                  onTap: _uploadingPhoto ? null : () => _pickAndUploadPhoto(employeeId),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: cs.primary,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: cs.surfaceContainerLowest, width: 3),
                                     ),
+                                    child: _uploadingPhoto
+                                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                        : Icon(PhosphorIconsFill.camera, size: 16, color: cs.onPrimary),
                                   ),
                                 ),
-                            ],
-                          ),
+                              ),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-                        Text(name, style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(8)),
-                          child: Text(role.toUpperCase(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: cs.onPrimaryContainer)),
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(name, style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -1.0)),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(color: cs.primaryContainer.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(12)),
+                        child: Text(role.toUpperCase(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.0, color: cs.primary)),
+                      ),
+                    ],
                   ),
                 ),
               ),
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _TabBarDelegate(
-                  TabBar(
-                    controller: _tabCtrl,
-                    indicatorSize: TabBarIndicatorSize.label,
-                    indicator: BoxDecoration(borderRadius: BorderRadius.circular(24), color: cs.primaryContainer),
-                    labelColor: cs.onPrimaryContainer,
-                    unselectedLabelColor: cs.onSurfaceVariant,
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
-                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-                    dividerColor: Colors.transparent,
-                    splashBorderRadius: BorderRadius.circular(24),
-                    isScrollable: true,
-                    tabs: const [
-                      Tab(text: 'Profile'),
-                      Tab(text: 'Attendance'),
-                      Tab(text: 'Ledger'),
-                      Tab(text: 'Payslip'),
-                    ],
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: TabBar(
+                      controller: _tabCtrl,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      indicator: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: cs.surface,
+                        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                      ),
+                      labelColor: cs.primary,
+                      unselectedLabelColor: cs.onSurfaceVariant,
+                      labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      dividerColor: Colors.transparent,
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.center,
+                      tabs: const [
+                        Tab(text: 'Details'),
+                        Tab(text: 'Attendance'),
+                        Tab(text: 'Ledger'),
+                        Tab(text: 'Payslips'),
+                      ],
+                    ),
                   ),
                   cs.surfaceContainerLowest,
                 ),
@@ -287,16 +314,16 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
 }
 
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar tabBar;
+  final Widget tabBar;
   final Color bgColor;
   _TabBarDelegate(this.tabBar, this.bgColor);
 
   @override
-  Widget build(BuildContext context, _, _) => Container(color: bgColor, padding: const EdgeInsets.only(bottom: 8), child: tabBar);
+  Widget build(BuildContext context, _, _) => Container(color: bgColor, child: tabBar);
   @override
-  double get maxExtent => 56;
+  double get maxExtent => 64;
   @override
-  double get minExtent => 56;
+  double get minExtent => 64;
   @override
   bool shouldRebuild(_) => false;
 }
@@ -319,34 +346,38 @@ class _ProfileTab extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
       children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3))),
-          child: Column(
-            children: [
-              _InfoRow(cs: cs, label: 'Phone', value: phone),
-              const Divider(height: 24),
-              _InfoRow(cs: cs, label: 'Email', value: email.isNotEmpty ? email : 'Not set'),
-              const Divider(height: 24),
-              _InfoRow(cs: cs, label: 'Role', value: role),
-              const Divider(height: 24),
-              _InfoRow(cs: cs, label: 'Factory', value: factoryName.isNotEmpty ? factoryName : 'Not set'),
-            ],
+        FluidSlideIn(
+          delay: 0,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3))),
+            child: Column(
+              children: [
+                _InfoRow(cs: cs, label: 'Phone', value: phone),
+                Divider(height: 32, color: cs.outlineVariant.withValues(alpha: 0.3)),
+                _InfoRow(cs: cs, label: 'Email', value: email.isNotEmpty ? email : 'Not assigned'),
+                Divider(height: 32, color: cs.outlineVariant.withValues(alpha: 0.3)),
+                _InfoRow(cs: cs, label: 'System Role', value: role),
+                Divider(height: 32, color: cs.outlineVariant.withValues(alpha: 0.3)),
+                _InfoRow(cs: cs, label: 'Workspace', value: factoryName.isNotEmpty ? factoryName : 'Unknown'),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 24),
-          SizedBox(
-          width: double.infinity,
+        const SizedBox(height: 32),
+        FluidSlideIn(
+          delay: 100,
           child: OutlinedButton.icon(
             onPressed: () async {
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text('Sign Out'),
-                  content: const Text('Are you sure you want to sign out?'),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w800)),
+                  content: const Text('Are you sure you want to end your current session?'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Sign Out', style: TextStyle(color: cs.error))),
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700))),
+                    FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: cs.error), child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w700))),
                   ],
                 ),
               );
@@ -357,29 +388,30 @@ class _ProfileTab extends ConsumerWidget {
               if (context.mounted) Navigator.of(context).popUntil((route) => route.isFirst);
             },
             icon: const Icon(PhosphorIconsRegular.signOut),
-            label: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w700)),
+            label: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w800)),
             style: OutlinedButton.styleFrom(
               foregroundColor: cs.error,
               side: BorderSide(color: cs.error.withValues(alpha: 0.3)),
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: 18),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
           ),
         ),
         if (role != 'employee') ...[
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
+          const SizedBox(height: 16),
+          FluidSlideIn(
+            delay: 150,
             child: FilledButton.icon(
               onPressed: () async {
                 final confirmed = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text('Delete Account'),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    title: const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.w800)),
                     content: const Text('This will permanently delete your account and all associated data. This action cannot be undone.'),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                      FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Delete', style: TextStyle(color: cs.onError))),
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700))),
+                      FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: cs.error), child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w700))),
                     ],
                   ),
                 );
@@ -394,11 +426,12 @@ class _ProfileTab extends ConsumerWidget {
                 }
               },
               icon: const Icon(PhosphorIconsRegular.trash),
-              label: const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.w700)),
+              label: const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.w800)),
               style: FilledButton.styleFrom(
-                backgroundColor: cs.error,
-                foregroundColor: cs.onError,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: cs.error.withValues(alpha: 0.1),
+                foregroundColor: cs.error,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 18),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
             ),
@@ -418,8 +451,8 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(flex: 2, child: Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w500, fontSize: 13))),
-        Expanded(flex: 3, child: Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14))),
+        Expanded(flex: 2, child: Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13))),
+        Expanded(flex: 3, child: Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14))),
       ],
     );
   }
@@ -441,15 +474,15 @@ class _MyAttendanceTab extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(PhosphorIconsFill.warningCircle, size: 48, color: cs.error),
+              PhosphorIcon(PhosphorIconsDuotone.warningCircle, size: 48, color: cs.error),
               const SizedBox(height: 16),
-              Text('Something went wrong', style: tt.titleMedium),
+              Text('Something went wrong', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
-              Text('$e', style: tt.bodySmall, textAlign: TextAlign.center),
+              Text('$e', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
               const SizedBox(height: 16),
               FilledButton.icon(
-                icon: const Icon(PhosphorIconsFill.arrowClockwise),
-                label: const Text('Retry'),
+                icon: const Icon(PhosphorIconsBold.arrowClockwise),
+                label: const Text('Retry', style: TextStyle(fontWeight: FontWeight.w700)),
                 onPressed: () => ref.invalidate(myAttendanceProvider),
               ),
             ],
@@ -466,56 +499,65 @@ class _MyAttendanceTab extends ConsumerWidget {
         return ListView(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
           children: [
-            Row(
-              children: [
-                _StatBadge(label: 'Present', value: '$present', color: const Color(0xFF10B981)),
-                const SizedBox(width: 12),
-                _StatBadge(label: 'Absent', value: '$absent', color: const Color(0xFFEF4444)),
-                const SizedBox(width: 12),
-                _StatBadge(label: 'Half Day', value: '$halfDay', color: const Color(0xFFF59E0B)),
-              ],
-            ),
-            const SizedBox(height: 24),
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: pct),
-              duration: const Duration(milliseconds: 1000),
-              curve: Curves.easeOutExpo,
-              builder: (ctx, val, _) => LinearProgressIndicator(
-                value: val.clamp(0.0, 1.0),
-                backgroundColor: cs.surfaceContainerHighest,
-                color: cs.primary,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
+            FluidSlideIn(
+              delay: 0,
+              child: Row(
+                children: [
+                  _StatBadge(label: 'Present', value: '$present', color: const Color(0xFF10B981)),
+                  const SizedBox(width: 12),
+                  _StatBadge(label: 'Absent', value: '$absent', color: const Color(0xFFEF4444)),
+                  const SizedBox(width: 12),
+                  _StatBadge(label: 'Half Day', value: '$halfDay', color: const Color(0xFFF59E0B)),
+                ],
               ),
             ),
             const SizedBox(height: 24),
-            Text('RECORDS (${list.length})', style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+            FluidSlideIn(
+              delay: 100,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: pct),
+                duration: const Duration(milliseconds: 1000),
+                curve: Curves.easeOutExpo,
+                builder: (ctx, val, _) => LinearProgressIndicator(
+                  value: val.clamp(0.0, 1.0),
+                  backgroundColor: cs.surfaceContainerHighest,
+                  color: cs.primary,
+                  minHeight: 12,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            FluidSlideIn(delay: 200, child: Text('RECORDS (${list.length})', style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w900, letterSpacing: 1.0))),
             const SizedBox(height: 16),
             if (list.isEmpty)
-              Text('No attendance records this month', style: TextStyle(color: cs.onSurfaceVariant))
+              FluidSlideIn(delay: 250, child: Text('No attendance records this month', style: TextStyle(color: cs.onSurfaceVariant)))
             else
-              for (final att in list.take(20))
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: (att.status == 'present' ? const Color(0xFF10B981) : att.status == 'absent' ? const Color(0xFFEF4444) : const Color(0xFFF59E0B)).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
+              for (int i = 0; i < list.take(20).length; i++)
+                FluidSlideIn(
+                  delay: 250 + (i * 50).clamp(0, 400).toInt(),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: (list[i].status == 'present' ? const Color(0xFF10B981) : list[i].status == 'absent' ? const Color(0xFFEF4444) : const Color(0xFFF59E0B)).withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            list[i].status == 'present' ? PhosphorIconsBold.check : list[i].status == 'absent' ? PhosphorIconsBold.x : PhosphorIconsBold.minus,
+                            size: 16,
+                            color: list[i].status == 'present' ? const Color(0xFF10B981) : list[i].status == 'absent' ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
+                          ),
                         ),
-                        child: Icon(
-                          att.status == 'present' ? PhosphorIconsBold.check : att.status == 'absent' ? PhosphorIconsBold.x : PhosphorIconsBold.minus,
-                          size: 14,
-                          color: att.status == 'present' ? const Color(0xFF10B981) : att.status == 'absent' ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(att.date, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                      const Spacer(),
-                      Text(att.status.toUpperCase(), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: cs.onSurfaceVariant)),
-                    ],
+                        const SizedBox(width: 16),
+                        Text(list[i].date, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                        const Spacer(),
+                        Text(list[i].status.toUpperCase(), style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5, color: cs.onSurfaceVariant)),
+                      ],
+                    ),
                   ),
                 ),
           ],
@@ -534,13 +576,13 @@ class _StatBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
         child: Column(
           children: [
-            Text(value, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: color)),
+            Text(value, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 28, color: color, letterSpacing: -1.0)),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: color)),
+            Text(label, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: color, letterSpacing: 0.5)),
           ],
         ),
       ),
@@ -564,15 +606,15 @@ class _MyLedgerTab extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(PhosphorIconsFill.warningCircle, size: 48, color: cs.error),
+              PhosphorIcon(PhosphorIconsDuotone.warningCircle, size: 48, color: cs.error),
               const SizedBox(height: 16),
-              Text('Something went wrong', style: tt.titleMedium),
+              Text('Something went wrong', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
-              Text('$e', style: tt.bodySmall, textAlign: TextAlign.center),
+              Text('$e', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
               const SizedBox(height: 16),
               FilledButton.icon(
-                icon: const Icon(PhosphorIconsFill.arrowClockwise),
-                label: const Text('Retry'),
+                icon: const Icon(PhosphorIconsBold.arrowClockwise),
+                label: const Text('Retry', style: TextStyle(fontWeight: FontWeight.w700)),
                 onPressed: () => ref.invalidate(myLedgerProvider),
               ),
             ],
@@ -586,25 +628,32 @@ class _MyLedgerTab extends ConsumerWidget {
         return ListView(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
           children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3))),
-              child: Column(
-                children: [
-                  Text('OUTSTANDING BALANCE', style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-                  const SizedBox(height: 8),
-                  Text('₹${balance.toStringAsFixed(0)}', style: tt.displaySmall?.copyWith(fontWeight: FontWeight.w900, color: cs.primary, letterSpacing: -1.5)),
-                ],
+            FluidSlideIn(
+              delay: 0,
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)), boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))]),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('OUTSTANDING BALANCE', style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                    const SizedBox(height: 8),
+                    Text('₹${balance.abs().toStringAsFixed(0)}', style: tt.displayLarge?.copyWith(fontWeight: FontWeight.w900, color: cs.primary, letterSpacing: -2.0)),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 24),
-            Text('ENTRIES (${entries.length})', style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+            const SizedBox(height: 32),
+            FluidSlideIn(delay: 100, child: Text('ENTRIES (${entries.length})', style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w900, letterSpacing: 1.0))),
             const SizedBox(height: 16),
             if (entries.isEmpty)
-              Text('No ledger entries', style: TextStyle(color: cs.onSurfaceVariant))
+              FluidSlideIn(delay: 150, child: Text('No ledger entries', style: TextStyle(color: cs.onSurfaceVariant)))
             else
-              for (final e in entries.take(20))
-                _LedgerEntryRow(cs: cs, entry: e as Map<String, dynamic>),
+              for (int i = 0; i < entries.take(20).length; i++)
+                FluidSlideIn(
+                  delay: 150 + (i * 50).clamp(0, 400).toInt(),
+                  child: _LedgerEntryRow(cs: cs, entry: entries[i] as Map<String, dynamic>),
+                ),
           ],
         );
       },
@@ -625,25 +674,25 @@ class _LedgerEntryRow extends StatelessWidget {
     final color = isJama ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 24),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(12)),
-            child: Icon(isJama ? PhosphorIconsFill.arrowUpRight : PhosphorIconsFill.arrowDownLeft, size: 16, color: color),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(16)),
+            child: Icon(isJama ? PhosphorIconsBold.arrowUpRight : PhosphorIconsBold.arrowDownLeft, size: 18, color: color),
           ),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(isJama ? 'Wage Added' : 'Advance Taken', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-              const SizedBox(height: 2),
-              Text(date, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+              Text(isJama ? 'Wage Added' : 'Advance Taken', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+              const SizedBox(height: 4),
+              Text(date, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
             ],
           ),
           const Spacer(),
-          Text('${isJama ? '+' : '-'}₹$amount', style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 16)),
+          Text('${isJama ? '+' : '-'}₹$amount', style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: -0.5)),
         ],
       ),
     );
@@ -662,33 +711,41 @@ class _PayslipTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
       children: [
-        Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
-          ),
-          child: Column(
-            children: [
-              Icon(PhosphorIconsFill.fileText, size: 64, color: cs.primary.withValues(alpha: 0.5)),
-              const SizedBox(height: 20),
-              Text('Monthly Payslip', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 8),
-              Text('Download your payslip for the current month', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
-              const SizedBox(height: 32),
-              FilledButton.icon(
-                onPressed: isDownloading ? null : onDownload,
-                icon: isDownloading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(PhosphorIconsBold.download),
-                label: Text(isDownloading ? 'Downloading...' : 'Download Payslip', style: const TextStyle(fontWeight: FontWeight.w700)),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        FluidSlideIn(
+          delay: 0,
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(color: cs.primaryContainer.withValues(alpha: 0.5), shape: BoxShape.circle),
+                  child: PhosphorIcon(PhosphorIconsDuotone.fileText, size: 48, color: cs.primary),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                Text('Monthly Payslip', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                const SizedBox(height: 8),
+                Text('Download a detailed breakdown of your attendance, wages, and advances for the current month.', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
+                const SizedBox(height: 32),
+                FilledButton.icon(
+                  onPressed: isDownloading ? null : onDownload,
+                  icon: isDownloading
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(PhosphorIconsBold.download),
+                  label: Text(isDownloading ? 'Generating PDF...' : 'Download Payslip', style: const TextStyle(fontWeight: FontWeight.w700)),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(60),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class ValidatedField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
   final String? hint;
-  final IconData? prefixIcon;
+  final Object? prefixIcon;
   final TextInputType? keyboardType;
   final bool enabled;
   final bool readOnly;
@@ -138,8 +139,8 @@ class _ValidatedFieldState extends State<ValidatedField> {
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     prefixIcon: widget.prefixIcon != null
-                        ? Icon(
-                            widget.prefixIcon,
+                        ? PhosphorIcon(
+                            widget.prefixIcon!,
                             size: 20,
                             color: hasError
                                 ? cs.error

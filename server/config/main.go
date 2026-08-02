@@ -10,17 +10,25 @@ import (
 var AllConfig AppConfig
 
 type AppConfig struct {
-	IsDevelopment           bool     `envconfig:"IS_DEVELOPMENT"`
-	Debug                   bool     `envconfig:"DEBUG"`
-	Env                     string   `envconfig:"APP_ENV"`
-	Port                    string   `envconfig:"APP_PORT"`
-	Secret                  string   `envconfig:"JWT_SECRET"`
-	TokenTTL                int      `envconfig:"TOKEN_TTL" default:"72"`
+	IsDevelopment           bool   `envconfig:"IS_DEVELOPMENT"`
+	Debug                   bool   `envconfig:"DEBUG"`
+	Env                     string `envconfig:"APP_ENV"`
+	Port                    string `envconfig:"APP_PORT"`
+	Secret                  string `envconfig:"JWT_SECRET"`
+	TokenTTL                int    `envconfig:"TOKEN_TTL" default:"72"`
 	DB                      DBConfig
 	AllowedOrigin           string `envconfig:"ALLOWED_ORIGIN" default:"*"`
 	FirebaseCredentialsPath string `envconfig:"FIREBASE_CREDENTIALS_PATH"`
 	FirebaseCredBase64      string `envconfig:"FIREBASE_CRED_BASE64"`
 	FirebaseProjectID       string `envconfig:"FIREBASE_PROJECT_ID"`
+	CloudinaryCloudName     string `envconfig:"CLOUDINARY_CLOUD_NAME"`
+	CloudinaryAPIKey        string `envconfig:"CLOUDINARY_API_KEY"`
+	CloudinaryAPISecret     string `envconfig:"CLOUDINARY_API_SECRET"`
+}
+
+// CloudinaryEnabled reports whether Cloudinary upload credentials are configured.
+func (c AppConfig) CloudinaryEnabled() bool {
+	return c.CloudinaryCloudName != "" && c.CloudinaryAPIKey != "" && c.CloudinaryAPISecret != ""
 }
 
 func GetConfig() AppConfig {

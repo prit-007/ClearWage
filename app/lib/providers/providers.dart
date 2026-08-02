@@ -18,6 +18,7 @@ import '../services/advance_request_service.dart';
 import '../services/payroll_service.dart';
 import '../services/settings_service.dart';
 import '../services/profile_service.dart';
+import '../services/document_service.dart';
 
 final sessionExpiredProvider = StateProvider<bool>((ref) => false);
 
@@ -150,4 +151,8 @@ final settingsServiceProvider = Provider<SettingsService>((ref) {
 
 final profileServiceProvider = Provider<ProfileService>((ref) {
   return ProfileService(ref.watch(apiClientProvider));
+});
+
+final documentServiceProvider = Provider<DocumentService>((ref) {
+  return DocumentService(ref.watch(apiClientProvider));
 });

@@ -116,6 +116,21 @@ func (mr *MockQuerierMockRecorder) CreateEmployee(ctx, arg any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateEmployee", reflect.TypeOf((*MockQuerier)(nil).CreateEmployee), ctx, arg)
 }
 
+// CreateEmployeeDocument mocks base method.
+func (m *MockQuerier) CreateEmployeeDocument(ctx context.Context, arg repositories.CreateEmployeeDocumentParams) (repositories.EmployeeDocument, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateEmployeeDocument", ctx, arg)
+	ret0, _ := ret[0].(repositories.EmployeeDocument)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateEmployeeDocument indicates an expected call of CreateEmployeeDocument.
+func (mr *MockQuerierMockRecorder) CreateEmployeeDocument(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateEmployeeDocument", reflect.TypeOf((*MockQuerier)(nil).CreateEmployeeDocument), ctx, arg)
+}
+
 // CreateHoliday mocks base method.
 func (m *MockQuerier) CreateHoliday(ctx context.Context, arg repositories.CreateHolidayParams) (repositories.Holiday, error) {
 	m.ctrl.T.Helper()
@@ -189,6 +204,20 @@ func (m *MockQuerier) CreateTenant(ctx context.Context, arg repositories.CreateT
 func (mr *MockQuerierMockRecorder) CreateTenant(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTenant", reflect.TypeOf((*MockQuerier)(nil).CreateTenant), ctx, arg)
+}
+
+// DeleteEmployeeDocument mocks base method.
+func (m *MockQuerier) DeleteEmployeeDocument(ctx context.Context, arg repositories.DeleteEmployeeDocumentParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteEmployeeDocument", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteEmployeeDocument indicates an expected call of DeleteEmployeeDocument.
+func (mr *MockQuerierMockRecorder) DeleteEmployeeDocument(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteEmployeeDocument", reflect.TypeOf((*MockQuerier)(nil).DeleteEmployeeDocument), ctx, arg)
 }
 
 // DeleteHoliday mocks base method.
@@ -368,6 +397,21 @@ func (mr *MockQuerierMockRecorder) GetDailyJamaTotal(ctx, tenantID, date any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDailyJamaTotal", reflect.TypeOf((*MockQuerier)(nil).GetDailyJamaTotal), ctx, tenantID, date)
 }
 
+// GetEmployeeDocumentByType mocks base method.
+func (m *MockQuerier) GetEmployeeDocumentByType(ctx context.Context, arg repositories.GetEmployeeDocumentByTypeParams) (repositories.EmployeeDocument, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmployeeDocumentByType", ctx, arg)
+	ret0, _ := ret[0].(repositories.EmployeeDocument)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmployeeDocumentByType indicates an expected call of GetEmployeeDocumentByType.
+func (mr *MockQuerierMockRecorder) GetEmployeeDocumentByType(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeDocumentByType", reflect.TypeOf((*MockQuerier)(nil).GetEmployeeDocumentByType), ctx, arg)
+}
+
 // GetLeavePolicyByTenant mocks base method.
 func (m *MockQuerier) GetLeavePolicyByTenant(ctx context.Context, tenantID string) (repositories.LeavePolicy, error) {
 	m.ctrl.T.Helper()
@@ -501,6 +545,21 @@ func (m *MockQuerier) ListAttendanceByEmployeeMonth(ctx context.Context, arg rep
 func (mr *MockQuerierMockRecorder) ListAttendanceByEmployeeMonth(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAttendanceByEmployeeMonth", reflect.TypeOf((*MockQuerier)(nil).ListAttendanceByEmployeeMonth), ctx, arg)
+}
+
+// ListEmployeeDocumentsByEmployee mocks base method.
+func (m *MockQuerier) ListEmployeeDocumentsByEmployee(ctx context.Context, arg repositories.ListEmployeeDocumentsByEmployeeParams) ([]repositories.EmployeeDocument, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListEmployeeDocumentsByEmployee", ctx, arg)
+	ret0, _ := ret[0].([]repositories.EmployeeDocument)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListEmployeeDocumentsByEmployee indicates an expected call of ListEmployeeDocumentsByEmployee.
+func (mr *MockQuerierMockRecorder) ListEmployeeDocumentsByEmployee(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEmployeeDocumentsByEmployee", reflect.TypeOf((*MockQuerier)(nil).ListEmployeeDocumentsByEmployee), ctx, arg)
 }
 
 // ListEmployeesByTenant mocks base method.

@@ -34,12 +34,12 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 	var items []Attendance
 	err := q.db.Insert("attendance").Rows(row).
 		OnConflict(goqu.DoUpdate("(tenant_id, employee_id, date)", goqu.Record{
-			"shift_id":                goqu.L("COALESCE(?, shift_id)", excluded("shift_id")),
-			"status":                  excluded("status"),
-			"overtime_hours":          excluded("overtime_hours"),
+			"shift_id":                 goqu.L("COALESCE(?, shift_id)", excluded("shift_id")),
+			"status":                   excluded("status"),
+			"overtime_hours":           excluded("overtime_hours"),
 			"overtime_rate_multiplier": excluded("overtime_rate_multiplier"),
-			"units_produced":          excluded("units_produced"),
-			"updated_at":              goqu.L("now()"),
+			"units_produced":           excluded("units_produced"),
+			"updated_at":               goqu.L("now()"),
 		})).
 		Returning(goqu.Star()).Executor().ScanStructsContext(ctx, &items)
 	return items, err
@@ -71,14 +71,26 @@ func (q *GoquQuerier) CreateAttendance(ctx context.Context, arg CreateAttendance
 func (q *GoquQuerier) CreateEmployee(ctx context.Context, arg CreateEmployeeParams) (Employee, error) {
 	var e Employee
 	rec := goqu.Record{
-		"tenant_id":          arg.TenantID,
-		"name":               arg.Name,
-		"phone":              arg.Phone,
-		"designation":        arg.Designation,
-		"wage_type":          arg.WageType,
-		"wage_amount":        arg.WageAmount,
-		"daily_target_units": arg.DailyTargetUnits,
-		"role":               arg.Role,
+		"tenant_id":               arg.TenantID,
+		"name":                    arg.Name,
+		"phone":                   arg.Phone,
+		"designation":             arg.Designation,
+		"wage_type":               arg.WageType,
+		"wage_amount":             arg.WageAmount,
+		"daily_target_units":      arg.DailyTargetUnits,
+		"date_of_joining":         arg.DateOfJoining,
+		"pan_number":              arg.PanNumber,
+		"aadhaar_number":          arg.AadhaarNumber,
+		"pf_number":               arg.PfNumber,
+		"bank_account_number":     arg.BankAccountNumber,
+		"bank_ifsc":               arg.BankIfsc,
+		"upi_id":                  arg.UpiID,
+		"emergency_contact_name":  arg.EmergencyContactName,
+		"emergency_contact_phone": arg.EmergencyContactPhone,
+		"health_notes":            arg.HealthNotes,
+		"current_address":         arg.CurrentAddress,
+		"permanent_address":       arg.PermanentAddress,
+		"role":                    arg.Role,
 	}
 	found, err := q.db.Insert("employees").Rows(rec).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &e)
 	if err != nil {
@@ -88,6 +100,79 @@ func (q *GoquQuerier) CreateEmployee(ctx context.Context, arg CreateEmployeePara
 		return Employee{}, errors.New("insert did not return a row")
 	}
 	return e, nil
+}
+
+func (q *GoquQuerier) CreateEmployeeDocument(ctx context.Context, arg CreateEmployeeDocumentParams) (EmployeeDocument, error) {
+	var d EmployeeDocument
+	found, err := q.db.Insert("employee_documents").Rows(goqu.Record{
+		"tenant_id":     arg.TenantID,
+		"employee_id":   arg.EmployeeID,
+		"doc_type":      arg.DocType,
+		"file_path":     arg.FilePath,
+		"public_id":     arg.PublicID,
+		"original_name": arg.OriginalName,
+	}).OnConflict(goqu.DoUpdate("", goqu.Record{
+		"file_path":     arg.FilePath,
+		"public_id":     arg.PublicID,
+		"original_name": arg.OriginalName,
+	}).Where(goqu.Ex{
+		"employee_id": arg.EmployeeID,
+		"doc_type":    arg.DocType,
+	})).
+		Returning(goqu.Star()).Executor().ScanStructContext(ctx, &d)
+	if err != nil {
+		return EmployeeDocument{}, err
+	}
+	if !found {
+		return EmployeeDocument{}, errors.New("insert did not return a row")
+	}
+	return d, nil
+}
+
+func (q *GoquQuerier) DeleteEmployeeDocument(ctx context.Context, arg DeleteEmployeeDocumentParams) error {
+	res, err := q.db.Delete("employee_documents").Where(
+		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("employee_id").Eq(arg.EmployeeID),
+		goqu.C("doc_type").Eq(arg.DocType),
+	).Executor().ExecContext(ctx)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (q *GoquQuerier) GetEmployeeDocumentByType(ctx context.Context, arg GetEmployeeDocumentByTypeParams) (EmployeeDocument, error) {
+	var d EmployeeDocument
+	found, err := q.db.Select(goqu.Star()).From("employee_documents").Where(
+		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("employee_id").Eq(arg.EmployeeID),
+		goqu.C("doc_type").Eq(arg.DocType),
+	).Executor().ScanStructContext(ctx, &d)
+	if err != nil {
+		return EmployeeDocument{}, err
+	}
+	if !found {
+		return EmployeeDocument{}, ErrNotFound
+	}
+	return d, nil
+}
+
+func (q *GoquQuerier) ListEmployeeDocumentsByEmployee(ctx context.Context, arg ListEmployeeDocumentsByEmployeeParams) ([]EmployeeDocument, error) {
+	var docs []EmployeeDocument
+	if err := q.db.Select(goqu.Star()).From("employee_documents").Where(
+		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("employee_id").Eq(arg.EmployeeID),
+	).Order(goqu.C("uploaded_at").Asc()).Executor().ScanStructsContext(ctx, &docs); err != nil {
+		return nil, err
+	}
+	return docs, nil
 }
 
 func (q *GoquQuerier) CreateHoliday(ctx context.Context, arg CreateHolidayParams) (Holiday, error) {
@@ -692,31 +777,31 @@ func (q *GoquQuerier) UpdateAttendance(ctx context.Context, arg UpdateAttendance
 
 func (q *GoquQuerier) UpdateEmployee(ctx context.Context, arg UpdateEmployeeParams) (Employee, error) {
 	rec := goqu.Record{
-		"name":                     arg.Name,
-		"phone":                    arg.Phone,
-		"designation":              arg.Designation,
-		"wage_type":                arg.WageType,
-		"wage_amount":              arg.WageAmount,
-		"default_shift_id":         arg.DefaultShiftID,
-		"piece_rate_item_name":     arg.PieceRateItemName,
-		"piece_rate_per_unit":      arg.PieceRatePerUnit,
-		"daily_target_units":       arg.DailyTargetUnits,
-		"date_of_joining":          arg.DateOfJoining,
-		"pan_number":               arg.PanNumber,
-		"aadhaar_number":           arg.AadhaarNumber,
-		"pf_number":                arg.PfNumber,
-		"photo_url":                arg.PhotoUrl,
-		"bank_account_number":      arg.BankAccountNumber,
-		"bank_ifsc":                arg.BankIfsc,
-		"upi_id":                   arg.UpiID,
-		"emergency_contact_name":   arg.EmergencyContactName,
-		"emergency_contact_phone":  arg.EmergencyContactPhone,
-		"health_notes":             arg.HealthNotes,
-		"current_address":          arg.CurrentAddress,
-		"permanent_address":        arg.PermanentAddress,
-		"role":                     arg.Role,
-		"is_active":                arg.IsActive,
-		"updated_at":               goqu.L("now()"),
+		"name":                    arg.Name,
+		"phone":                   arg.Phone,
+		"designation":             arg.Designation,
+		"wage_type":               arg.WageType,
+		"wage_amount":             arg.WageAmount,
+		"default_shift_id":        arg.DefaultShiftID,
+		"piece_rate_item_name":    arg.PieceRateItemName,
+		"piece_rate_per_unit":     arg.PieceRatePerUnit,
+		"daily_target_units":      arg.DailyTargetUnits,
+		"date_of_joining":         arg.DateOfJoining,
+		"pan_number":              arg.PanNumber,
+		"aadhaar_number":          arg.AadhaarNumber,
+		"pf_number":               arg.PfNumber,
+		"photo_url":               arg.PhotoUrl,
+		"bank_account_number":     arg.BankAccountNumber,
+		"bank_ifsc":               arg.BankIfsc,
+		"upi_id":                  arg.UpiID,
+		"emergency_contact_name":  arg.EmergencyContactName,
+		"emergency_contact_phone": arg.EmergencyContactPhone,
+		"health_notes":            arg.HealthNotes,
+		"current_address":         arg.CurrentAddress,
+		"permanent_address":       arg.PermanentAddress,
+		"role":                    arg.Role,
+		"is_active":               arg.IsActive,
+		"updated_at":              goqu.L("now()"),
 	}
 	var e Employee
 	found, err := q.db.Update("employees").Set(rec).Where(
@@ -812,10 +897,10 @@ func (q *GoquQuerier) UpdateShift(ctx context.Context, arg UpdateShiftParams) (S
 func (q *GoquQuerier) UpdateSyncEventStatus(ctx context.Context, arg UpdateSyncEventStatusParams) (SyncQueue, error) {
 	var s SyncQueue
 	found, err := q.db.Update("sync_queue").Set(goqu.Record{
-		"status":       arg.Status,
+		"status":        arg.Status,
 		"error_message": arg.ErrorMessage,
-		"retry_count":  goqu.L("CASE WHEN ? = 'failed' THEN retry_count + 1 ELSE retry_count END", arg.Status),
-		"updated_at":   goqu.L("now()"),
+		"retry_count":   goqu.L("CASE WHEN ? = 'failed' THEN retry_count + 1 ELSE retry_count END", arg.Status),
+		"updated_at":    goqu.L("now()"),
 	}).Where(
 		goqu.C("id").Eq(arg.ID),
 		goqu.C("tenant_id").Eq(arg.TenantID),
@@ -868,26 +953,26 @@ func (q *GoquQuerier) GetTenantConfig(ctx context.Context, tenantID string) (Ten
 
 func (q *GoquQuerier) UpsertTenantConfig(ctx context.Context, arg UpsertTenantConfigParams) (TenantConfig, error) {
 	row := goqu.Record{
-		"tenant_id":              arg.TenantID,
-		"ot_trigger":             arg.OTTrigger,
-		"ot_threshold_hours":     arg.OTThresholdHours,
-		"ot_multiplier_default":  arg.OTMultiplierDefault,
-		"ot_rounding":            arg.OTRounding,
-		"wage_basis":             arg.WageBasis,
-		"week_off_paid":          arg.WeekOffPaid,
-		"weekly_offs":            arg.WeeklyOffs,
+		"tenant_id":             arg.TenantID,
+		"ot_trigger":            arg.OTTrigger,
+		"ot_threshold_hours":    arg.OTThresholdHours,
+		"ot_multiplier_default": arg.OTMultiplierDefault,
+		"ot_rounding":           arg.OTRounding,
+		"wage_basis":            arg.WageBasis,
+		"week_off_paid":         arg.WeekOffPaid,
+		"weekly_offs":           arg.WeeklyOffs,
 	}
 	var tc TenantConfig
 	found, err := q.db.Insert("tenant_config").Rows(row).
 		OnConflict(goqu.DoUpdate("tenant_id", goqu.Record{
-			"ot_trigger":             arg.OTTrigger,
-			"ot_threshold_hours":     arg.OTThresholdHours,
-			"ot_multiplier_default":  arg.OTMultiplierDefault,
-			"ot_rounding":            arg.OTRounding,
-			"wage_basis":             arg.WageBasis,
-			"week_off_paid":          arg.WeekOffPaid,
-			"weekly_offs":            arg.WeeklyOffs,
-			"updated_at":             goqu.L("now()"),
+			"ot_trigger":            arg.OTTrigger,
+			"ot_threshold_hours":    arg.OTThresholdHours,
+			"ot_multiplier_default": arg.OTMultiplierDefault,
+			"ot_rounding":           arg.OTRounding,
+			"wage_basis":            arg.WageBasis,
+			"week_off_paid":         arg.WeekOffPaid,
+			"weekly_offs":           arg.WeeklyOffs,
+			"updated_at":            goqu.L("now()"),
 		})).
 		Returning(goqu.Star()).Executor().ScanStructContext(ctx, &tc)
 	if err != nil {

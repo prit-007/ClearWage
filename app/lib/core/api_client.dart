@@ -69,6 +69,23 @@ class ApiClient {
     return _handle(await http.delete(uri, headers: _headers).timeout(_timeout));
   }
 
+  Future<Map<String, dynamic>> postMultipart(
+    String path, {
+    required List<http.MultipartFile> files,
+    Map<String, String>? fields,
+  }) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final req = http.MultipartRequest('POST', uri);
+    if (_token != null) {
+      req.headers['Authorization'] = 'Bearer $_token';
+    }
+    if (fields != null) req.fields.addAll(fields);
+    req.files.addAll(files);
+    final streamed = await req.send().timeout(_timeout);
+    final res = await http.Response.fromStream(streamed);
+    return _handle(res);
+  }
+
   Map<String, dynamic> _handle(http.Response response) {
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode >= 200 && response.statusCode < 300) {

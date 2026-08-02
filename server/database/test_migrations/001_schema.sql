@@ -43,6 +43,20 @@ CREATE TABLE IF NOT EXISTS employees (
 CREATE INDEX IF NOT EXISTS idx_employees_tenant_created ON employees (tenant_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_employees_phone ON employees (phone);
 
+CREATE TABLE IF NOT EXISTS employee_documents (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    employee_id TEXT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    doc_type TEXT NOT NULL CHECK (doc_type IN ('aadhaar', 'pan', 'bank')),
+    file_path TEXT NOT NULL,
+    public_id TEXT,
+    original_name TEXT,
+    uploaded_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (employee_id, doc_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_employee_documents_tenant_employee ON employee_documents (tenant_id, employee_id);
+
 CREATE TABLE IF NOT EXISTS shifts (
     id TEXT PRIMARY KEY,
     tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,

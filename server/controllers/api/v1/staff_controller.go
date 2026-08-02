@@ -85,6 +85,15 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	claims := middlewares.GetClaims(r.Context())
 
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
 	var employeeID string
 	if claims != nil {
 		employeeID = claims.EmployeeID
@@ -102,6 +111,11 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 
 func (ctrl *StaffController) List(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
 
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
@@ -138,6 +152,12 @@ func (ctrl *StaffController) Get(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	employeeID := chi.URLParam(r, "id")
 
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" && claims.EmployeeID != employeeID {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
 	employee, err := ctrl.staffService.GetEmployee(r.Context(), employeeID, tenantID)
 	if err != nil {
 		utils.JSONFail(w, http.StatusNotFound, "employee not found")
@@ -156,6 +176,12 @@ func (ctrl *StaffController) Get(w http.ResponseWriter, r *http.Request) {
 func (ctrl *StaffController) Profile(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	employeeID := chi.URLParam(r, "id")
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" && claims.EmployeeID != employeeID {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
 
 	profile, err := ctrl.staffService.GetProfile(r.Context(), employeeID, tenantID)
 	if err != nil {

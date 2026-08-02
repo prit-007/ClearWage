@@ -92,6 +92,10 @@ func (c *AttendanceController) Create(w http.ResponseWriter, r *http.Request) {
 		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
 
 	var req createAttendanceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -161,6 +165,12 @@ func (c *AttendanceController) ListByDate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
 	date := r.URL.Query().Get("date")
 	if date == "" {
 		utils.JSONFail(w, http.StatusBadRequest, "date query parameter is required")
@@ -206,6 +216,12 @@ func (c *AttendanceController) ListByEmployee(w http.ResponseWriter, r *http.Req
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
 		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
@@ -268,6 +284,10 @@ func (c *AttendanceController) Update(w http.ResponseWriter, r *http.Request) {
 		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
 
 	id := chi.URLParam(r, "id")
 	var req createAttendanceRequest
@@ -312,6 +332,16 @@ func (c *AttendanceController) BulkUpsert(w http.ResponseWriter, r *http.Request
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
 		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 

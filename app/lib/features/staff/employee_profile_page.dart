@@ -25,6 +25,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
   late final TabController _tabCtrl;
   Map<String, dynamic>? _profile;
   List<Map<String, dynamic>>? _attendance;
+  Map<String, dynamic>? _attSummary;
   List<Map<String, dynamic>>? _ledger;
   double? _balance;
   bool _loading = true;
@@ -51,6 +52,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
     final profile = (overview['profile'] as Map<String, dynamic>?)?.cast<String, dynamic>();
     final ledger = (overview['ledger'] as Map<String, dynamic>?)?.cast<String, dynamic>() ?? {};
     final attendanceData = (overview['attendance'] as Map<String, dynamic>?)?.cast<String, dynamic>() ?? {};
+    final attSummary = (attendanceData['summary'] as Map<String, dynamic>?)?.cast<String, dynamic>() ?? {};
     final attList = ((attendanceData['recent'] as List<dynamic>?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
     final ledgerList = ((ledger['recent'] as List<dynamic>?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
     final bal = ((ledger['balance'] as num?)?.toDouble()) ?? 0.0;
@@ -59,6 +61,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
       setState(() {
         _profile = profile;
         _attendance = attList;
+        _attSummary = attSummary;
         _ledger = ledgerList;
         _balance = bal;
         _loading = false;
@@ -289,7 +292,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
               physics: const BouncingScrollPhysics(),
               children: [
                 _InfoTab(cs: cs, tt: tt, profile: _profile, employeeId: widget.employeeId, canEdit: isAdmin),
-                _AttendanceTab(cs: cs, tt: tt, attendanceList: _attendance),
+                _AttendanceTab(cs: cs, tt: tt, attendanceList: _attendance, summary: _attSummary),
                 _LedgerTab(cs: cs, tt: tt, ledgerList: _ledger, balance: _balance),
               ],
             ),
@@ -958,15 +961,25 @@ class _AttendanceTab extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final List<Map<String, dynamic>>? attendanceList;
-  const _AttendanceTab({required this.cs, required this.tt, this.attendanceList});
+  final Map<String, dynamic>? summary;
+  const _AttendanceTab({required this.cs, required this.tt, this.attendanceList, this.summary});
 
   @override
   Widget build(BuildContext context) {
     final list = attendanceList ?? [];
-    final present = list.where((a) => a['status'] == 'present').length;
-    final absent = list.where((a) => a['status'] == 'absent').length;
-    final halfDay = list.where((a) => a['status'] == 'half_day').length;
-    final total = list.isNotEmpty ? list.length : 1;
+    final s = summary ?? const {};
+    final present = summary != null
+        ? (s['present'] as num?)?.toInt() ?? 0
+        : list.where((a) => a['status'] == 'present').length;
+    final absent = summary != null
+        ? (s['absent'] as num?)?.toInt() ?? 0
+        : list.where((a) => a['status'] == 'absent').length;
+    final halfDay = summary != null
+        ? (s['half_day'] as num?)?.toInt() ?? 0
+        : list.where((a) => a['status'] == 'half_day').length;
+    final total = summary != null
+        ? (s['total'] as num?)?.toInt() ?? (present + absent + halfDay)
+        : (list.isNotEmpty ? list.length : 1);
     final pct = total > 0 ? present / total : 0.0;
     final recent = list.take(5).toList();
 

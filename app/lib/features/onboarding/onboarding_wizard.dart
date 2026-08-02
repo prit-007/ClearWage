@@ -18,6 +18,8 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   final _addressCtrl = TextEditingController();
   final _contactCtrl = TextEditingController();
   final _pageCtrl = PageController();
+  int _otTrigger = 8;
+  bool _weekOffPaid = true;
 
   @override
   void dispose() {
@@ -30,7 +32,7 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
 
   bool _creatingShifts = false;
 
-  Future<void> _createDefaultShifts() async {
+  Future<void> _setupFactory() async {
     if (_creatingShifts) return;
     setState(() => _creatingShifts = true);
     try {
@@ -45,12 +47,12 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
           {'name': 'Night Shift', 'start_time': '22:00', 'end_time': '06:00', 'crosses_midnight': true, 'grace_period_minutes': 15, 'is_default': false},
         ],
         'ot_settings': {
-          'ot_trigger': 'after_shift_end',
-          'ot_threshold_hours': 0,
+          'ot_trigger': _otTrigger == 0 ? "after_shift_end" : "after_threshold",
+          'ot_threshold_hours': _otTrigger.toDouble(),
           'ot_multiplier_default': 1.5,
           'ot_rounding': 30,
           'wage_basis': 'calendar',
-          'week_off_paid': false,
+          'week_off_paid': _weekOffPaid,
           'weekly_offs': '0,6',
         },
         'leave_policy': {'paid_leave_days_per_year': 12, 'unpaid_leave_days_per_year': 0},
@@ -78,7 +80,7 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
       setState(() => _currentStep++);
     } else {
       HapticFeedback.heavyImpact();
-      _createDefaultShifts().then((_) {
+      _setupFactory().then((_) {
         if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
       });
     }
@@ -153,7 +155,17 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
                 _AnimatedStepWrapper(
                     step: 2,
                     currentStep: _currentStep,
-                    child: _StepPolicies(cs: cs, tt: tt)),
+                    child: _StepPolicies(
+                        cs: cs,
+                        tt: tt,
+                        otTrigger: _otTrigger,
+                        weekOffPaid: _weekOffPaid,
+                        onChanged: (sel) {
+                          setState(() {
+                            _otTrigger = sel.$1;
+                            _weekOffPaid = sel.$2;
+                          });
+                        })),
                 _AnimatedStepWrapper(
                     step: 3,
                     currentStep: _currentStep,
@@ -162,7 +174,9 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
                         tt: tt,
                         companyName: _companyNameCtrl,
                         addressCtrl: _addressCtrl,
-                        contactCtrl: _contactCtrl)),
+                        contactCtrl: _contactCtrl,
+                        otTrigger: _otTrigger,
+                        weekOffPaid: _weekOffPaid)),
               ],
             ),
           ),
@@ -517,16 +531,14 @@ class _PremiumTimePicker extends StatelessWidget {
   }
 }
 
-class _StepPolicies extends StatefulWidget {
+class _StepPolicies extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  const _StepPolicies({required this.cs, required this.tt});
-  @override
-  State<_StepPolicies> createState() => _StepPoliciesState();
-}
+  final int otTrigger;
+  final bool weekOffPaid;
+  final ValueChanged<(int, bool)> onChanged;
 
-class _StepPoliciesState extends State<_StepPolicies> {
-  int _otTrigger = 9;
+  const _StepPolicies({required this.cs, required this.tt, required this.otTrigger, required this.weekOffPaid, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -534,66 +546,94 @@ class _StepPoliciesState extends State<_StepPolicies> {
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       children: [
         Text('Payroll Rules',
-            style: widget.tt.headlineSmall?.copyWith(
+            style: tt.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w800, letterSpacing: -0.5)),
         const SizedBox(height: 8),
         Text('Set up overtime and calculation rules.',
-            style: widget.tt.bodyLarge
-                ?.copyWith(color: widget.cs.onSurfaceVariant)),
+            style: tt.bodyLarge
+                ?.copyWith(color: cs.onSurfaceVariant)),
         const SizedBox(height: 32),
         Text('When does Overtime start?',
-            style: widget.tt.titleMedium
+            style: tt.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 16),
         _PremiumRadioCard(
-            cs: widget.cs,
+            cs: cs,
             title: 'After 8 Hours',
             subtitle: 'Standard global industrial rule',
             value: 8,
-            groupValue: _otTrigger,
-            onChanged: (v) => _updateOT(v)),
+            groupValue: otTrigger,
+            onChanged: (v) => onChanged((v ?? 8, weekOffPaid))),
         const SizedBox(height: 12),
         _PremiumRadioCard(
-            cs: widget.cs,
+            cs: cs,
             title: 'After 9 Hours',
             subtitle: 'Includes 1 hour unpaid break',
             value: 9,
-            groupValue: _otTrigger,
-            onChanged: (v) => _updateOT(v)),
+            groupValue: otTrigger,
+            onChanged: (v) => onChanged((v ?? 9, weekOffPaid))),
         const SizedBox(height: 12),
         _PremiumRadioCard(
-            cs: widget.cs,
+            cs: cs,
             title: 'No Overtime',
             subtitle: 'Fixed wages only, regardless of hours',
             value: 0,
-            groupValue: _otTrigger,
-            onChanged: (v) => _updateOT(v)),
+            groupValue: otTrigger,
+            onChanged: (v) => onChanged((v ?? 0, weekOffPaid))),
         const SizedBox(height: 32),
         Text('Additional Configurations',
-            style: widget.tt.titleMedium
+            style: tt.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 16),
         _PremiumSwitch(
-            cs: widget.cs,
+            cs: cs,
             title: 'Enable Week-Off Pay',
             subtitle:
                 'Pay workers for Sunday if they work Mon-Sat',
-            initial: true),
-        _PremiumSwitch(
-            cs: widget.cs,
-            title: 'Allow Advance (Jama)',
-            subtitle:
-                'Workers can request mid-month advances',
-            initial: true),
+            value: weekOffPaid,
+            onChanged: (v) => onChanged((otTrigger, v))),
       ],
     );
   }
+}
 
-  void _updateOT(int? v) {
-    if (v != null) {
-      HapticFeedback.selectionClick();
-      setState(() => _otTrigger = v);
-    }
+class _PremiumSwitch extends StatelessWidget {
+  final ColorScheme cs;
+  final String title, subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _PremiumSwitch({required this.cs, required this.title, required this.subtitle, required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(subtitle,
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant)),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: value,
+            activeThumbColor: cs.primary,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -667,74 +707,22 @@ class _PremiumRadioCard extends StatelessWidget {
   }
 }
 
-class _PremiumSwitch extends StatefulWidget {
-  final ColorScheme cs;
-  final String title, subtitle;
-  final bool initial;
-  const _PremiumSwitch(
-      {required this.cs,
-      required this.title,
-      required this.subtitle,
-      required this.initial});
-  @override
-  State<_PremiumSwitch> createState() => _PremiumSwitchState();
-}
-
-class _PremiumSwitchState extends State<_PremiumSwitch> {
-  late bool _val;
-  @override
-  void initState() {
-    super.initState();
-    _val = widget.initial;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(widget.title,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 2),
-                Text(widget.subtitle,
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: widget.cs.onSurfaceVariant)),
-              ],
-            ),
-          ),
-          Switch.adaptive(
-            value: _val,
-            activeThumbColor: widget.cs.primary,
-            onChanged: (v) {
-              HapticFeedback.lightImpact();
-              setState(() => _val = v);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _StepReview extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final TextEditingController companyName;
   final TextEditingController addressCtrl;
   final TextEditingController contactCtrl;
+  final int otTrigger;
+  final bool weekOffPaid;
   const _StepReview(
       {required this.cs,
       required this.tt,
       required this.companyName,
       required this.addressCtrl,
-      required this.contactCtrl});
+      required this.contactCtrl,
+      required this.otTrigger,
+      required this.weekOffPaid});
 
   @override
   Widget build(BuildContext context) {
@@ -771,9 +759,10 @@ class _StepReview extends StatelessWidget {
             icon: PhosphorIconsDuotone.calculator,
             title: 'Payroll Policies',
             items: [
-              'Overtime starts after 9 Hours',
-              'Advance Requests Allowed',
-              'Week-Off Pay Enabled'
+              otTrigger == 0
+                  ? 'Overtime: Disabled'
+                  : 'Overtime starts after $otTrigger Hours',
+              weekOffPaid ? 'Week-Off Pay Enabled' : 'Week-Off Pay Disabled',
             ]),
         const SizedBox(height: 32),
         Container(

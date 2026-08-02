@@ -62,10 +62,10 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
     HapticFeedback.heavyImpact();
     setState(() => _locking = true);
     try {
-      final employees = (_data?['employees'] as List<dynamic>?) ?? [];
+      final entries = (_data?['entries'] as List<dynamic>?) ?? [];
       final adjustments = _rowControllers.asMap().entries.map((e) => {
-        'employee_id': employees[e.key]['employee_id'],
-        'net_pay': double.tryParse(e.value.text.trim()) ?? (employees[e.key]['net'] as num?)?.toDouble() ?? 0,
+        'employee_id': entries[e.key]['employee_id'],
+        'net_pay': double.tryParse(e.value.text.trim()) ?? (entries[e.key]['net_payable'] as num?)?.toDouble() ?? 0,
       }).toList();
       await ref.read(payrollServiceProvider).lockMonth(startDate: _startStr, endDate: _endStr, adjustments: adjustments);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payroll locked successfully')));
@@ -74,6 +74,16 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
     } finally {
       if (mounted) setState(() => _locking = false);
     }
+  }
+
+  double _summaryGross() {
+    final entries = (_data?['entries'] as List<dynamic>?) ?? [];
+    return entries.fold<double>(0, (sum, e) => sum + ((e['gross_wages'] as num?)?.toDouble() ?? 0));
+  }
+
+  double _summaryUdhaar() {
+    final entries = (_data?['entries'] as List<dynamic>?) ?? [];
+    return entries.fold<double>(0, (sum, e) => sum + ((e['total_udhaar'] as num?)?.toDouble() ?? 0));
   }
 
   @override
@@ -88,10 +98,10 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
     for (final c in _rowControllers) {
       c.dispose();
     }
-    final emps = (data['employees'] as List<dynamic>?) ?? [];
+    final emps = (data['entries'] as List<dynamic>?) ?? [];
     _rowControllers = List.generate(emps.length, (i) {
       final emp = emps[i] as Map<String, dynamic>;
-      return TextEditingController(text: (emp['net'] as num?)?.toStringAsFixed(0) ?? '0');
+      return TextEditingController(text: (emp['net_payable'] as num?)?.toStringAsFixed(0) ?? '0');
     });
   }
 
@@ -187,9 +197,9 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                     child: _PayrollSummaryGlassCard(cs: cs, tt: tt,
-                      gross: (_data?['total_gross'] as num?)?.toDouble() ?? 0,
-                      udhaar: (_data?['total_udhaar'] as num?)?.toDouble() ?? 0,
-                      net: (_data?['total_net'] as num?)?.toDouble() ?? 0,
+                      gross: _summaryGross(),
+                      udhaar: _summaryUdhaar(),
+                      net: (_data?['total_wage'] as num?)?.toDouble() ?? 0,
                     ),
                   ),
                 ),
@@ -214,16 +224,16 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        final emps = (_data?['employees'] as List<dynamic>?) ?? [];
+                        final emps = (_data?['entries'] as List<dynamic>?) ?? [];
                         final emp = emps[index] as Map<String, dynamic>;
                         return _EditablePayrollRow(
                           cs: cs, tt: tt,
                           name: emp['name'] as String? ?? '',
-                          gross: '₹${(emp['gross'] as num?)?.toStringAsFixed(0) ?? '0'}',
+                          gross: '₹${(emp['gross_wages'] as num?)?.toStringAsFixed(0) ?? '0'}',
                           controller: _rowControllers[index],
                         );
                       },
-                      childCount: ((_data?['employees'] as List<dynamic>?) ?? []).length,
+                      childCount: ((_data?['entries'] as List<dynamic>?) ?? []).length,
                     ),
                   ),
                 ),

@@ -900,9 +900,11 @@ Auto-creates a ledger entry of type `udhaar` for the approved amount.
 
 #### `POST /api/v1/payroll/lock`
 
-**Request:** `{ "start_date": "2026-10-01", "end_date": "2026-10-31" }`
+**Request:** `{ "start_date": "2026-10-01", "end_date": "2026-10-31", "adjustments": [{ "employee_id": "uuid", "net_pay": 9500 }] }`
 
-**Frontend**: `PayrollService.lockMonth()` → `PayrollPreviewScreen` lock button (currently calls nothing).
+`adjustments` is optional; when provided, the `net_pay` value overrides the calculated net for the matching employee. The endpoint writes `wage` ledger entries (using adjusted net) for every employee in the period, then locks the attendance month.
+
+**Frontend**: `PayrollService.lockMonth()` → `PayrollPreviewScreen` lock button ("Lock & Generate Slips").
 
 ---
 

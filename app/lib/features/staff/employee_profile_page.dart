@@ -476,7 +476,14 @@ class _InfoTab extends StatelessWidget {
     final wageAmount = profile?['wage_amount']?.toString() ?? '0';
     final designation = profile?['designation'] as String? ?? profile?['role'] as String? ?? '';
     final manager = profile?['manager_name'] as String? ?? 'Not assigned';
-    final shiftName = profile?['shift_name'] as String? ?? 'Not assigned';
+    final shiftName = profile?['shift_name'] as String?;
+    final shiftStart = profile?['shift_start_time'] as String?;
+    final shiftEnd = profile?['shift_end_time'] as String?;
+    final shiftLabel = shiftName != null && shiftName.isNotEmpty
+        ? (shiftStart != null && shiftStart.isNotEmpty
+            ? '$shiftName ($shiftStart–$shiftEnd)'
+            : shiftName)
+        : 'Not assigned';
 
     final kyc = <String, String>{
       'PAN Number': profile?['pan_number'] as String? ?? '—',
@@ -502,7 +509,7 @@ class _InfoTab extends StatelessWidget {
             title: 'Employment Details',
             data: {
               'Designation': designation,
-              'Shift': shiftName,
+              'Shift': shiftLabel,
               'Manager': manager,
             }),
         _EditorialInfoBlock(

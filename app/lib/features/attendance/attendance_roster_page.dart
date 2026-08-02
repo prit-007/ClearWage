@@ -12,6 +12,7 @@ import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/tactile_toggle.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/employee_avatar.dart';
+import '../../models/shift_model.dart';
 
 enum _AttStatus { present, absent, halfDay }
 
@@ -24,8 +25,23 @@ class AttendanceRosterPage extends ConsumerStatefulWidget {
 class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   DateTime _selectedDate = DateTime.now();
   bool _saving = false;
+  List<Shift> _shifts = [];
+  List<Map<String, dynamic>>? _cachedRows;
 
   String get _dateStr => DateFormat('yyyy-MM-dd').format(_selectedDate);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadShifts();
+  }
+
+  Future<void> _loadShifts() async {
+    try {
+      final shifts = await ref.read(shiftServiceProvider).list();
+      if (mounted) setState(() => _shifts = shifts);
+    } catch (_) {}
+  }
 
   Future<void> _markRemainingPresent() async {
     if (_saving) return;
@@ -70,11 +86,33 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     setState(() => _saving = false);
   }
 
-  Future<void> _updateAttendance(Attendance att, _AttStatus newStatus, double ot) async {
+  Future<void> _updateAttendance(Attendance att, _AttStatus newStatus, double ot, {String? shiftId}) async {
     try {
       final statusMap = {_AttStatus.present: 'present', _AttStatus.absent: 'absent', _AttStatus.halfDay: 'half_day'};
       await ref.read(attendanceServiceProvider).update(att.id, {
         'status': statusMap[newStatus],
+        'overtime_hours': ot.toStringAsFixed(1),
+        'shift_id': shiftId,
+      });
+      ref.invalidate(rosterByDateProvider(_dateStr));
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
+  }
+
+  Future<void> _createAttendance(Employee emp, _AttStatus status, double ot, {String? shiftId}) async {
+    final chosenShift = shiftId ?? emp.defaultShiftId;
+    if (chosenShift == null || chosenShift.isEmpty) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No shift assigned. Choose a shift or edit staff profile to assign one.')));
+      return;
+    }
+    try {
+      final statusMap = {_AttStatus.present: 'present', _AttStatus.absent: 'absent', _AttStatus.halfDay: 'half_day'};
+      await ref.read(attendanceServiceProvider).create({
+        'employee_id': emp.id,
+        'date': _dateStr,
+        'shift_id': chosenShift,
+        'status': statusMap[status],
         'overtime_hours': ot.toStringAsFixed(1),
       });
       ref.invalidate(rosterByDateProvider(_dateStr));
@@ -83,24 +121,48 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     }
   }
 
-  Future<void> _createAttendance(Employee emp, _AttStatus status, double ot) async {
-    if (emp.defaultShiftId == null || emp.defaultShiftId!.isEmpty) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No shift assigned. Edit staff profile to assign one.')));
-      return;
+  Widget _buildRosterBody({required ColorScheme cs, required TextTheme tt}) {
+    final rows = _cachedRows ?? <Map<String, dynamic>>[];
+    final merged = rows.map((r) => _rosterRowToMerged(r, _dateStr)).toList();
+
+    if (merged.isEmpty) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.3), shape: BoxShape.circle),
+                child: PhosphorIcon(PhosphorIconsDuotone.usersThree, size: 56, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+              ),
+              const SizedBox(height: 24),
+              Text('No Active Staff', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              Text('Add employees from the directory to start tracking.', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+            ],
+          ),
+        ),
+      );
     }
-    try {
-      final statusMap = {_AttStatus.present: 'present', _AttStatus.absent: 'absent', _AttStatus.halfDay: 'half_day'};
-      await ref.read(attendanceServiceProvider).create({
-        'employee_id': emp.id,
-        'date': _dateStr,
-        'shift_id': emp.defaultShiftId!,
-        'status': statusMap[status],
-        'overtime_hours': ot.toStringAsFixed(1),
-      });
-      ref.invalidate(rosterByDateProvider(_dateStr));
-    } catch (e) {
-      if (mounted) showError(context, e);
-    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 140),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final row = merged[index];
+            return FluidSlideIn(
+              delay: (index * 50).clamp(0, 400).toInt(),
+              child: row.attendance != null
+                  ? _PremiumAttendanceCard(cs: cs, tt: tt, employee: row.employee, attendance: row.attendance!, shifts: _shifts, onUpdate: (att, status, ot, shiftId) => _updateAttendance(att, status, ot, shiftId: shiftId))
+                  : _UnmarkedEmployeeCard(cs: cs, tt: tt, employee: row.employee, shifts: _shifts, onMark: (status, ot, shiftId) => _createAttendance(row.employee, status, ot, shiftId: shiftId)),
+            );
+          },
+          childCount: merged.length,
+        ),
+      ),
+    );
   }
 
   @override
@@ -206,10 +268,12 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
               ),
 
               rosterAsync.when(
-                loading: () => const SliverPadding(
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  sliver: ShimmerLoading(itemCount: 6, height: 160),
-                ),
+                loading: () => _cachedRows != null
+                    ? _buildRosterBody(cs: cs, tt: tt)
+                    : const SliverPadding(
+                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                        sliver: ShimmerLoading(itemCount: 6, height: 160),
+                      ),
                 error: (e, _) => SliverFillRemaining(
                   child: Center(
                     child: Column(
@@ -225,46 +289,8 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                   ),
                 ),
                 data: (rows) {
-                  final merged = rows.map((r) => _rosterRowToMerged(r, _dateStr)).toList();
-
-                  if (merged.isEmpty) {
-                    return SliverFillRemaining(
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.3), shape: BoxShape.circle),
-                              child: PhosphorIcon(PhosphorIconsDuotone.usersThree, size: 56, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
-                            ),
-                            const SizedBox(height: 24),
-                            Text('No Active Staff', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-                            const SizedBox(height: 8),
-                            Text('Add employees from the directory to start tracking.', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  return SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 140),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final row = merged[index];
-                          return FluidSlideIn(
-                            delay: (index * 50).clamp(0, 400).toInt(),
-                            child: row.attendance != null
-                                ? _PremiumAttendanceCard(cs: cs, tt: tt, employee: row.employee, attendance: row.attendance!, onUpdate: _updateAttendance)
-                                : _UnmarkedEmployeeCard(cs: cs, tt: tt, employee: row.employee, onMark: (status, ot) => _createAttendance(row.employee, status, ot)),
-                          );
-                        },
-                        childCount: merged.length,
-                      ),
-                    ),
-                  );
+                  _cachedRows = rows;
+                  return _buildRosterBody(cs: cs, tt: tt);
                 },
               ),
             ],
@@ -302,7 +328,21 @@ class _MergedRow {
   const _MergedRow({required this.employee, this.attendance});
 }
 
+String _buildShiftLabel(String? name, String? start, String? end) {
+  if (name == null || name.isEmpty) return 'No shift assigned';
+  if (start == null || start.isEmpty) return name;
+  return '$name ($start\u2013$end)';
+}
+
 _MergedRow _rosterRowToMerged(Map<String, dynamic> row, String date) {
+  final defaultShiftId = row['default_shift_id'] as String?;
+  final attendanceShiftId = row['attendance_shift_id'] as String?;
+  final resolvedShiftId = attendanceShiftId?.isNotEmpty == true
+      ? attendanceShiftId
+      : defaultShiftId;
+  final shiftName = row['shift_name'] as String?;
+  final shiftStart = row['shift_start_time'] as String?;
+  final shiftEnd = row['shift_end_time'] as String?;
   final employee = Employee(
     id: row['employee_id'] as String? ?? '',
     name: row['name'] as String? ?? '',
@@ -313,8 +353,8 @@ _MergedRow _rosterRowToMerged(Map<String, dynamic> row, String date) {
     photoUrl: row['photo_url'] as String?,
     role: row['role'] as String? ?? 'employee',
     isActive: row['is_active'] as bool? ?? true,
-    defaultShiftId: row['default_shift_id'] as String?,
-    shiftName: row['shift_name'] as String?,
+    defaultShiftId: defaultShiftId,
+    shiftName: _buildShiftLabel(shiftName, shiftStart, shiftEnd),
   );
   final attId = row['attendance_id'] as String?;
   if (attId == null || attId.isEmpty) {
@@ -328,7 +368,10 @@ _MergedRow _rosterRowToMerged(Map<String, dynamic> row, String date) {
       employeeName: employee.name,
       employeePhoto: row['photo_url'] as String?,
       date: date,
-      shiftId: employee.defaultShiftId ?? '',
+      shiftId: resolvedShiftId ?? '',
+      shiftName: shiftName,
+      shiftStartTime: shiftStart,
+      shiftEndTime: shiftEnd,
       status: row['status'] as String? ?? 'present',
       checkInTime: row['check_in_time'] as String?,
       checkOutTime: row['check_out_time'] as String?,
@@ -343,9 +386,10 @@ class _UnmarkedEmployeeCard extends StatefulWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final Employee employee;
-  final Future<void> Function(_AttStatus status, double ot) onMark;
+  final List<Shift> shifts;
+  final Future<void> Function(_AttStatus status, double ot, String? shiftId) onMark;
 
-  const _UnmarkedEmployeeCard({required this.cs, required this.tt, required this.employee, required this.onMark});
+  const _UnmarkedEmployeeCard({required this.cs, required this.tt, required this.employee, required this.shifts, required this.onMark});
 
   @override
   State<_UnmarkedEmployeeCard> createState() => _UnmarkedEmployeeCardState();
@@ -355,6 +399,13 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
   final _otCtrl = TextEditingController();
   bool _saving = false;
   _AttStatus? _optimisticStatus;
+  String? _shiftId;
+
+  @override
+  void initState() {
+    super.initState();
+    _shiftId = widget.employee.defaultShiftId;
+  }
 
   @override
   void dispose() {
@@ -369,7 +420,7 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
       _saving = true;
       _optimisticStatus = status;
     });
-    widget.onMark(status, double.tryParse(_otCtrl.text) ?? 0).then((_) {
+    widget.onMark(status, double.tryParse(_otCtrl.text) ?? 0, _shiftId).then((_) {
       if (mounted) setState(() => _saving = false);
     }).catchError((_) {
       if (mounted) {
@@ -422,7 +473,50 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _ShiftDropdown(
+                  cs: widget.cs,
+                  shifts: widget.shifts,
+                  selectedId: _shiftId,
+                  onChanged: (id) => setState(() => _shiftId = id),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 76, height: 46,
+                decoration: BoxDecoration(
+                  color: widget.cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _otCtrl.text.isNotEmpty && double.tryParse(_otCtrl.text) == null
+                        ? widget.cs.error.withValues(alpha: 0.5)
+                        : widget.cs.outlineVariant.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: TextField(
+                  controller: _otCtrl,
+                  textAlign: TextAlign.center,
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: _otCtrl.text.isNotEmpty && double.tryParse(_otCtrl.text) == null ? widget.cs.error : widget.cs.onSurface),
+                  decoration: InputDecoration(
+                    hintText: 'OT (hrs)',
+                    hintStyle: TextStyle(fontSize: 12, color: widget.cs.onSurfaceVariant, fontWeight: FontWeight.w600),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 11),
+                  ),
+                  onChanged: (_) {
+                    if (mounted) setState(() {});
+                    HapticFeedback.selectionClick();
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(child: TactileToggle(label: 'P', color: const Color(0xFF10B981), isSelected: _optimisticStatus == _AttStatus.present, onTap: () => _mark(_AttStatus.present))),
@@ -451,9 +545,10 @@ class _PremiumAttendanceCard extends StatefulWidget {
   final TextTheme tt;
   final Employee employee;
   final Attendance attendance;
-  final Future<void> Function(Attendance att, _AttStatus newStatus, double ot)? onUpdate;
+  final List<Shift> shifts;
+  final Future<void> Function(Attendance att, _AttStatus newStatus, double ot, String? shiftId)? onUpdate;
 
-  const _PremiumAttendanceCard({required this.cs, required this.tt, required this.employee, required this.attendance, this.onUpdate});
+  const _PremiumAttendanceCard({required this.cs, required this.tt, required this.employee, required this.attendance, required this.shifts, this.onUpdate});
 
   @override
   State<_PremiumAttendanceCard> createState() => _PremiumAttendanceCardState();
@@ -463,11 +558,13 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
   late _AttStatus _status;
   final _otCtrl = TextEditingController();
   bool _saving = false;
+  late String? _shiftId;
 
   @override
   void initState() {
     super.initState();
     _status = _mapStatus(widget.attendance.status);
+    _shiftId = widget.attendance.shiftId.isNotEmpty ? widget.attendance.shiftId : widget.employee.defaultShiftId;
     _otCtrl.text = widget.attendance.overtimeHours > 0 ? widget.attendance.overtimeHours.toStringAsFixed(1).replaceAll('.0', '') : '';
   }
 
@@ -494,12 +591,32 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
       _status = s;
       _saving = true;
     });
-    widget.onUpdate?.call(widget.attendance, s, double.tryParse(_otCtrl.text) ?? 0).then((_) {
+    widget.onUpdate?.call(widget.attendance, s, double.tryParse(_otCtrl.text) ?? 0, _shiftId).then((_) {
       if (mounted) setState(() => _saving = false);
     }).catchError((_) {
       if (mounted) {
         setState(() {
           _status = previous;
+          _saving = false;
+        });
+      }
+    });
+  }
+
+  void _changeShift(String? id) {
+    if (id == null || id == _shiftId || _saving) return;
+    HapticFeedback.selectionClick();
+    final previous = _shiftId;
+    setState(() {
+      _shiftId = id;
+      _saving = true;
+    });
+    widget.onUpdate?.call(widget.attendance, _status, double.tryParse(_otCtrl.text) ?? 0, id).then((_) {
+      if (mounted) setState(() => _saving = false);
+    }).catchError((_) {
+      if (mounted) {
+        setState(() {
+          _shiftId = previous;
           _saving = false;
         });
       }
@@ -563,12 +680,19 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                     if (mounted) setState(() {});
                     HapticFeedback.selectionClick();
                   },
-                  onSubmitted: (_) => widget.onUpdate?.call(widget.attendance, _status, double.tryParse(_otCtrl.text) ?? 0),
+                  onSubmitted: (_) => widget.onUpdate?.call(widget.attendance, _status, double.tryParse(_otCtrl.text) ?? 0, _shiftId),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+          _ShiftDropdown(
+            cs: widget.cs,
+            shifts: widget.shifts,
+            selectedId: _shiftId,
+            onChanged: _changeShift,
+          ),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(child: TactileToggle(label: 'P', color: const Color(0xFF10B981), isSelected: _status == _AttStatus.present, onTap: () => _updateStatus(_AttStatus.present))),
@@ -579,6 +703,96 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+String _shiftName(List<Shift> shifts, String? id) {
+  if (id == null || id.isEmpty) return 'No shift assigned';
+  for (final s in shifts) {
+    if (s.id == id) return s.name;
+  }
+  return 'Unknown shift';
+}
+
+class _ShiftDropdown extends StatelessWidget {
+  final ColorScheme cs;
+  final List<Shift> shifts;
+  final String? selectedId;
+  final ValueChanged<String?> onChanged;
+
+  const _ShiftDropdown({required this.cs, required this.shifts, required this.selectedId, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    if (shifts.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            PhosphorIcon(PhosphorIconsDuotone.clock, size: 18, color: cs.onSurfaceVariant),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(_shiftName(shifts, selectedId), overflow: TextOverflow.ellipsis, style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13)),
+            ),
+          ],
+        ),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String?>(
+          value: selectedId,
+          isExpanded: true,
+          isDense: true,
+          icon: Icon(PhosphorIconsRegular.caretDown, size: 16, color: cs.onSurfaceVariant),
+          hint: Row(
+            children: [
+              PhosphorIcon(PhosphorIconsDuotone.clock, size: 18, color: cs.onSurfaceVariant),
+              const SizedBox(width: 10),
+              Text('Select shift', style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13)),
+            ],
+          ),
+          items: [
+            DropdownMenuItem<String?>(
+              value: null,
+              child: Row(
+                children: [
+                  PhosphorIcon(PhosphorIconsDuotone.xCircle, size: 18, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 10),
+                  Text('No shift', style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13)),
+                ],
+              ),
+            ),
+            ...shifts.map((s) => DropdownMenuItem<String?>(
+              value: s.id,
+              child: Row(
+                children: [
+                  PhosphorIcon(PhosphorIconsDuotone.clock, size: 18, color: cs.primary),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(s.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13))),
+                  if (s.startTime.isNotEmpty && s.endTime.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Text('${s.startTime}–${s.endTime}', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                  ],
+                ],
+              ),
+            )),
+          ],
+          onChanged: onChanged,
+        ),
       ),
     );
   }

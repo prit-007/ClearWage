@@ -15,14 +15,14 @@ type ActivityLog struct {
 }
 
 type AdvanceRequest struct {
-	ID           string    `json:"id" db:"id"`
-	TenantID     string    `json:"tenant_id" db:"tenant_id"`
-	EmployeeID   string    `json:"employee_id" db:"employee_id"`
-	Amount       float64   `json:"amount" db:"amount"`
-	Status       string    `json:"status" db:"status"`
-	Note         *string   `json:"note" db:"note"`
-	ApprovedBy   *string   `json:"approved_by" db:"approved_by"`
-	DeniedBy     *string   `json:"denied_by" db:"denied_by"`
+	ID            string    `json:"id" db:"id"`
+	TenantID      string    `json:"tenant_id" db:"tenant_id"`
+	EmployeeID    string    `json:"employee_id" db:"employee_id"`
+	Amount        float64   `json:"amount" db:"amount"`
+	Status        string    `json:"status" db:"status"`
+	Note          *string   `json:"note" db:"note"`
+	ApprovedBy    *string   `json:"approved_by" db:"approved_by"`
+	DeniedBy      *string   `json:"denied_by" db:"denied_by"`
 	EmployeeName  *string   `json:"employee_name" db:"employee_name"`
 	EmployeePhoto *string   `json:"employee_photo" db:"employee_photo"`
 	CreatedAt     time.Time `json:"created_at" db:"created_at"`
@@ -165,24 +165,26 @@ type Tenant struct {
 }
 
 type RosterRow struct {
-	EmployeeID      string     `json:"employee_id" db:"employee_id"`
-	Name            string     `json:"name" db:"name"`
-	Phone           string     `json:"phone" db:"phone"`
-	PhotoURL        *string    `json:"photo_url" db:"photo_url"`
-	Designation     *string    `json:"designation" db:"designation"`
-	Role            string     `json:"role" db:"role"`
-	IsActive        bool       `json:"is_active" db:"is_active"`
-	DefaultShiftID  *string    `json:"default_shift_id" db:"default_shift_id"`
-	ShiftName       *string    `json:"shift_name" db:"shift_name"`
-	ShiftStartTime  *string    `json:"shift_start_time" db:"shift_start_time"`
-	ShiftEndTime    *string    `json:"shift_end_time" db:"shift_end_time"`
-	AttendanceID    *string    `json:"attendance_id" db:"attendance_id"`
-	Status          *string    `json:"status" db:"status"`
-	CheckInTime     *time.Time `json:"check_in_time" db:"check_in_time"`
-	CheckOutTime    *time.Time `json:"check_out_time" db:"check_out_time"`
-	OvertimeHours   *float64   `json:"overtime_hours" db:"overtime_hours"`
-	IsLocked        *bool      `json:"is_locked" db:"is_locked"`
-	ComputedWage    *float64   `json:"computed_wage" db:"computed_wage"`
+	EmployeeID        string     `json:"employee_id" db:"employee_id"`
+	Name              string     `json:"name" db:"name"`
+	Phone             string     `json:"phone" db:"phone"`
+	PhotoURL          *string    `json:"photo_url" db:"photo_url"`
+	Designation       *string    `json:"designation" db:"designation"`
+	Role              string     `json:"role" db:"role"`
+	IsActive          bool       `json:"is_active" db:"is_active"`
+	DefaultShiftID    *string    `json:"default_shift_id" db:"default_shift_id"`
+	AttendanceShiftID *string    `json:"attendance_shift_id" db:"attendance_shift_id"`
+	ShiftID           *string    `json:"shift_id" db:"shift_id"`
+	ShiftName         *string    `json:"shift_name" db:"shift_name"`
+	ShiftStartTime    *string    `json:"shift_start_time" db:"shift_start_time"`
+	ShiftEndTime      *string    `json:"shift_end_time" db:"shift_end_time"`
+	AttendanceID      *string    `json:"attendance_id" db:"attendance_id"`
+	Status            *string    `json:"status" db:"status"`
+	CheckInTime       *time.Time `json:"check_in_time" db:"check_in_time"`
+	CheckOutTime      *time.Time `json:"check_out_time" db:"check_out_time"`
+	OvertimeHours     *float64   `json:"overtime_hours" db:"overtime_hours"`
+	IsLocked          *bool      `json:"is_locked" db:"is_locked"`
+	ComputedWage      *float64   `json:"computed_wage" db:"computed_wage"`
 }
 
 type LedgerSummaryRange struct {

@@ -547,9 +547,11 @@ func (q *GoquQuerier) ListRosterByDate(ctx context.Context, tenantID string, dat
 	e := goqu.T("employees")
 	s := goqu.T("shifts")
 	a := goqu.T("attendance")
+	as := goqu.T("shifts").As("as")
 	err := q.db.From(e).
 		LeftJoin(s, goqu.On(e.Col("default_shift_id").Eq(s.Col("id")), s.Col("tenant_id").Eq(e.Col("tenant_id")))).
 		LeftJoin(a, goqu.On(a.Col("employee_id").Eq(e.Col("id")), a.Col("tenant_id").Eq(e.Col("tenant_id")), a.Col("date").Eq(date))).
+		LeftJoin(as, goqu.On(a.Col("shift_id").Eq(as.Col("id")), a.Col("tenant_id").Eq(as.Col("tenant_id")))).
 		Where(
 			e.Col("tenant_id").Eq(tenantID),
 			e.Col("is_active").Eq(true),
@@ -563,9 +565,11 @@ func (q *GoquQuerier) ListRosterByDate(ctx context.Context, tenantID string, dat
 			e.Col("role"),
 			e.Col("is_active"),
 			e.Col("default_shift_id"),
-			s.Col("name").As("shift_name"),
-			s.Col("start_time").As("shift_start_time"),
-			s.Col("end_time").As("shift_end_time"),
+			a.Col("shift_id").As("attendance_shift_id"),
+			goqu.COALESCE(a.Col("shift_id"), e.Col("default_shift_id")).As("shift_id"),
+			goqu.COALESCE(as.Col("name"), s.Col("name")).As("shift_name"),
+			goqu.COALESCE(as.Col("start_time"), s.Col("start_time")).As("shift_start_time"),
+			goqu.COALESCE(as.Col("end_time"), s.Col("end_time")).As("shift_end_time"),
 			a.Col("id").As("attendance_id"),
 			a.Col("status"),
 			a.Col("check_in_time"),

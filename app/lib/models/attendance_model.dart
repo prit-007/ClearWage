@@ -11,6 +11,9 @@ class Attendance {
   final double overtimeHours;
   final double computedWage;
   final bool isLocked;
+  final String? shiftName;
+  final String? shiftStartTime;
+  final String? shiftEndTime;
 
   Attendance({
     required this.id,
@@ -25,6 +28,9 @@ class Attendance {
     required this.overtimeHours,
     required this.computedWage,
     required this.isLocked,
+    this.shiftName,
+    this.shiftStartTime,
+    this.shiftEndTime,
   });
 
   factory Attendance.fromJson(Map<String, dynamic> json) => Attendance(
@@ -40,6 +46,9 @@ class Attendance {
         overtimeHours: (json['overtime_hours'] as num?)?.toDouble() ?? 0,
         computedWage: (json['computed_wage'] as num?)?.toDouble() ?? 0,
         isLocked: json['is_locked'] as bool? ?? false,
+        shiftName: json['shift_name'] as String?,
+        shiftStartTime: json['shift_start_time'] as String?,
+        shiftEndTime: json['shift_end_time'] as String?,
       );
 
   Map<String, dynamic> toJson() => {

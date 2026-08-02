@@ -92,7 +92,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
   Widget build(BuildContext context) {
     if (!_listenerRegistered) {
       _listenerRegistered = true;
-      ref.listen(ledgerRefreshProvider, (_, __) => _fetch());
+      ref.listen(ledgerRefreshProvider, (_, _) => _fetch());
     }
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;

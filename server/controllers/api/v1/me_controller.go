@@ -60,6 +60,40 @@ func (ctrl *MeController) Profile(w http.ResponseWriter, r *http.Request) {
 	utils.JSONSuccess(w, http.StatusOK, profile)
 }
 
+// Overview returns the authenticated employee's aggregated dashboard: staff profile,
+// ledger summary, attendance summary, documents, and the tenant name.
+//
+// Success (200): utils.Response with map{overview, tenant}
+// Failure (401): utils.Response — missing or invalid JWT / tenant context
+// Failure (500): utils.Response — database or service error
+func (ctrl *MeController) Overview(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || claims.EmployeeID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "employee claims not found")
+		return
+	}
+
+	overview, err := ctrl.staffSvc.GetOverview(r.Context(), claims.EmployeeID, tenantID)
+	if err != nil {
+		ctrl.logger.Error().Err(err).Msg("failed to get my overview")
+		utils.JSONError(w, http.StatusInternalServerError, "failed to get overview")
+		return
+	}
+
+	tenant, err := ctrl.staffSvc.GetTenant(r.Context(), tenantID)
+	if err != nil {
+		ctrl.logger.Error().Err(err).Msg("failed to get tenant")
+		utils.JSONError(w, http.StatusInternalServerError, "failed to get tenant")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, map[string]interface{}{
+		"overview": overview,
+		"tenant":   tenant,
+	})
+}
+
 func (ctrl *MeController) Attendance(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	claims := middlewares.GetClaims(r.Context())

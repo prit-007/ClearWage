@@ -5,6 +5,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../providers/providers.dart';
 import '../../core/helpers.dart';
+import '../../core/widgets/employee_avatar.dart';
 
 class NewLedgerEntryScreen extends ConsumerStatefulWidget {
   const NewLedgerEntryScreen({super.key});
@@ -149,12 +150,12 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                                 selected: isSelected,
                                 selectedTileColor: cs.primaryContainer.withValues(alpha: 0.3),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                leading: CircleAvatar(
+                                leading: EmployeeAvatar(
+                                  name: emp.name,
+                                  photoUrl: emp.photoUrl,
+                                  radius: 20,
                                   backgroundColor: cs.primaryContainer,
-                                  child: Text(
-                                    emp.name.isNotEmpty ? emp.name[0].toUpperCase() : '?',
-                                    style: TextStyle(fontWeight: FontWeight.w700, color: cs.primary),
-                                  ),
+                                  textColor: cs.primary,
                                 ),
                                 title: Text(emp.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                                 subtitle: emp.designation != null ? Text(emp.designation!) : null,

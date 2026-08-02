@@ -13,10 +13,6 @@ final dashboardDataProvider = FutureProvider.autoDispose<DashboardData>((ref) {
   return ref.watch(dashboardServiceProvider).get();
 });
 
-final attendanceTrendsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
-  return ref.watch(reportServiceProvider).attendanceTrends(days: 14);
-});
-
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
@@ -50,7 +46,9 @@ class DashboardScreen extends ConsumerWidget {
                   FilledButton.icon(
                     icon: const Icon(PhosphorIconsFill.arrowClockwise),
                     label: const Text('Retry'),
-                    onPressed: () => ref.invalidate(dashboardDataProvider),
+                    onPressed: () {
+                      ref.invalidate(dashboardDataProvider);
+                    },
                   ),
                 ],
               ),
@@ -123,7 +121,7 @@ class DashboardScreen extends ConsumerWidget {
                                   icon: PhosphorIconsDuotone.wallet,
                                   label: 'Payroll (MTD)',
                                       value:
-                                          '\u20B9${data.dailyJamaTotal.toStringAsFixed(0)}',
+                                          '\u20B9${data.wageBillMtd.toStringAsFixed(0)}',
                                   color: cs.primary,
                                 ),
                               ),
@@ -160,7 +158,7 @@ class DashboardScreen extends ConsumerWidget {
                             ),
                           ),
                         const SizedBox(height: 32),
-                        _AttendanceTrendChart(cs: cs, tt: tt),
+                        _AttendanceTrendChart(cs: cs, tt: tt, trends: data.trends),
                         const SizedBox(height: 40),
                         Text('Quick Actions',
                             style: tt.titleLarge?.copyWith(
@@ -508,21 +506,17 @@ class _ActivityTile extends StatelessWidget {
 class _AttendanceTrendChart extends ConsumerWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  const _AttendanceTrendChart({required this.cs, required this.tt});
+  final List<Map<String, dynamic>> trends;
+  const _AttendanceTrendChart({required this.cs, required this.tt, required this.trends});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(attendanceTrendsProvider);
-    return async.when(
-      loading: () => const SizedBox(height: 200, child: Center(child: CircularProgressIndicator())),
-      error: (_, _) => const SizedBox.shrink(),
-      data: (trends) {
-        if (trends.isEmpty) return const SizedBox.shrink();
-        final maxY = trends.fold<int>(0, (m, t) => [
-          m,
-          (t['present'] as num?)?.toInt() ?? 0,
-          (t['absent'] as num?)?.toInt() ?? 0,
-        ].reduce((a, b) => a > b ? a : b));
+    if (trends.isEmpty) return const SizedBox.shrink();
+    final maxY = trends.fold<int>(0, (m, t) => [
+      m,
+      (t['present'] as num?)?.toInt() ?? 0,
+      (t['absent'] as num?)?.toInt() ?? 0,
+    ].reduce((a, b) => a > b ? a : b));
         final chartMax = (maxY * 1.3).ceilToDouble().clamp(5, double.infinity).toDouble();
 
         return FluidSlideIn(
@@ -608,8 +602,6 @@ class _AttendanceTrendChart extends ConsumerWidget {
             ],
           ),
         );
-      },
-    );
   }
 }
 

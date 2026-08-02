@@ -5,8 +5,8 @@ class DashboardService {
   final ApiClient _client;
   DashboardService(this._client);
 
-  Future<DashboardData> get() async {
-    final res = await _client.get('/api/v1/dashboard');
+  Future<DashboardData> get({int trendsDays = 14}) async {
+    final res = await _client.get('/api/v1/dashboard', query: {'days': '$trendsDays'});
     return DashboardData.fromJson(res['data'] as Map<String, dynamic>? ?? {});
   }
 }

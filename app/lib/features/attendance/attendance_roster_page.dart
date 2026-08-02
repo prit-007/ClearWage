@@ -11,6 +11,7 @@ import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/tactile_toggle.dart';
 import '../../core/helpers.dart';
+import '../../core/widgets/employee_avatar.dart';
 
 enum _AttStatus { present, absent, halfDay }
 
@@ -54,7 +55,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     if (records.isNotEmpty) {
       try {
         await ref.read(attendanceServiceProvider).bulkUpsert(records);
-        ref.invalidate(attendanceByDateProvider(_dateStr));
+        ref.invalidate(rosterByDateProvider(_dateStr));
       } catch (e) {
         if (mounted) showError(context, e);
         setState(() => _saving = false);
@@ -76,7 +77,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
         'status': statusMap[newStatus],
         'overtime_hours': ot.toStringAsFixed(1),
       });
-      ref.invalidate(attendanceByDateProvider(_dateStr));
+      ref.invalidate(rosterByDateProvider(_dateStr));
     } catch (e) {
       if (mounted) showError(context, e);
     }
@@ -96,7 +97,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
         'status': statusMap[status],
         'overtime_hours': ot.toStringAsFixed(1),
       });
-      ref.invalidate(attendanceByDateProvider(_dateStr));
+      ref.invalidate(rosterByDateProvider(_dateStr));
     } catch (e) {
       if (mounted) showError(context, e);
     }
@@ -106,8 +107,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final employeesAsync = ref.watch(employeeListProvider);
-    final attendanceAsync = ref.watch(attendanceByDateProvider(_dateStr));
+    final rosterAsync = ref.watch(rosterByDateProvider(_dateStr));
     final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
 
     return Scaffold(
@@ -118,12 +118,8 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
           backgroundColor: cs.surface,
           onRefresh: () async {
             HapticFeedback.mediumImpact();
-            ref.invalidate(employeeListProvider);
-            ref.invalidate(attendanceByDateProvider(_dateStr));
-            await Future.wait([
-              ref.read(employeeListProvider.future),
-              ref.read(attendanceByDateProvider(_dateStr).future),
-            ]);
+            ref.invalidate(rosterByDateProvider(_dateStr));
+            await ref.read(rosterByDateProvider(_dateStr).future);
           },
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
@@ -149,7 +145,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                     icon: Icon(PhosphorIconsBold.arrowsClockwise, color: cs.primary),
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      ref.invalidate(attendanceByDateProvider(_dateStr));
+                      ref.invalidate(rosterByDateProvider(_dateStr));
                     },
                   ),
                   const SizedBox(width: 8),
@@ -209,7 +205,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                 ),
               ),
 
-              employeesAsync.when(
+              rosterAsync.when(
                 loading: () => const SliverPadding(
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                   sliver: ShimmerLoading(itemCount: 6, height: 160),
@@ -222,16 +218,14 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                         PhosphorIcon(PhosphorIconsDuotone.warningCircle, size: 48, color: cs.error),
                         const SizedBox(height: 16),
                         Text('Failed to load roster', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 8),
+                        Text('$e', style: tt.bodySmall, textAlign: TextAlign.center),
                       ],
                     ),
                   ),
                 ),
-                data: (employees) {
-                  final attendance = attendanceAsync.valueOrNull ?? [];
-                  final merged = employees.map((emp) {
-                    final att = attendance.where((a) => a.employeeId == emp.id).firstOrNull;
-                    return _MergedRow(employee: emp, attendance: att);
-                  }).toList();
+                data: (rows) {
+                  final merged = rows.map((r) => _rosterRowToMerged(r, _dateStr)).toList();
 
                   if (merged.isEmpty) {
                     return SliverFillRemaining(
@@ -308,6 +302,43 @@ class _MergedRow {
   const _MergedRow({required this.employee, this.attendance});
 }
 
+_MergedRow _rosterRowToMerged(Map<String, dynamic> row, String date) {
+  final employee = Employee(
+    id: row['employee_id'] as String? ?? '',
+    name: row['name'] as String? ?? '',
+    phone: row['phone'] as String? ?? '',
+    designation: row['designation'] as String?,
+    wageType: '',
+    wageAmount: 0,
+    photoUrl: row['photo_url'] as String?,
+    role: row['role'] as String? ?? 'employee',
+    isActive: row['is_active'] as bool? ?? true,
+    defaultShiftId: row['default_shift_id'] as String?,
+    shiftName: row['shift_name'] as String?,
+  );
+  final attId = row['attendance_id'] as String?;
+  if (attId == null || attId.isEmpty) {
+    return _MergedRow(employee: employee);
+  }
+  return _MergedRow(
+    employee: employee,
+    attendance: Attendance(
+      id: attId,
+      employeeId: employee.id,
+      employeeName: employee.name,
+      employeePhoto: row['photo_url'] as String?,
+      date: date,
+      shiftId: employee.defaultShiftId ?? '',
+      status: row['status'] as String? ?? 'present',
+      checkInTime: row['check_in_time'] as String?,
+      checkOutTime: row['check_out_time'] as String?,
+      overtimeHours: (row['overtime_hours'] as num?)?.toDouble() ?? 0,
+      computedWage: (row['computed_wage'] as num?)?.toDouble() ?? 0,
+      isLocked: row['is_locked'] as bool? ?? false,
+    ),
+  );
+}
+
 class _UnmarkedEmployeeCard extends StatefulWidget {
   final ColorScheme cs;
   final TextTheme tt;
@@ -352,8 +383,6 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
 
   @override
   Widget build(BuildContext context) {
-    final initials = getInitials(widget.employee.name);
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -367,10 +396,10 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
         children: [
           Row(
             children: [
-              CircleAvatar(
+              EmployeeAvatar(
+                name: widget.employee.name,
+                photoUrl: widget.employee.photoUrl,
                 radius: 24,
-                backgroundColor: widget.cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                child: Text(initials, style: TextStyle(fontWeight: FontWeight.w900, color: widget.cs.onSurface, fontSize: 14)),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -408,6 +437,10 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
     );
   }
 }
+
+final rosterByDateProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, date) {
+  return ref.watch(attendanceServiceProvider).roster(date);
+});
 
 final attendanceByDateProvider = FutureProvider.autoDispose.family<List<Attendance>, String>((ref, date) {
   return ref.watch(attendanceServiceProvider).listByDate(date, limit: 100000);
@@ -475,8 +508,6 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
 
   @override
   Widget build(BuildContext context) {
-    final initials = getInitials(widget.employee.name);
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -489,10 +520,10 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
         children: [
           Row(
             children: [
-              CircleAvatar(
+              EmployeeAvatar(
+                name: widget.employee.name,
+                photoUrl: widget.employee.photoUrl,
                 radius: 24,
-                backgroundColor: widget.cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                child: Text(initials, style: TextStyle(fontWeight: FontWeight.w900, color: widget.cs.onSurface, fontSize: 14)),
               ),
               const SizedBox(width: 16),
               Expanded(

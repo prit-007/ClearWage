@@ -161,6 +161,27 @@ type GetBalanceByEmployeeParams struct {
 	TenantID   string `json:"tenant_id"`
 }
 
+type GetEmployeeAttendanceSummaryParams struct {
+	TenantID   string `json:"tenant_id"`
+	EmployeeID string `json:"employee_id"`
+	StartDate  string `json:"start_date"`
+	EndDate    string `json:"end_date"`
+}
+
+type GetEmployeeLedgerSummaryParams struct {
+	TenantID   string `json:"tenant_id"`
+	EmployeeID string `json:"employee_id"`
+	StartDate  string `json:"start_date"`
+	EndDate    string `json:"end_date"`
+}
+
+type UpdateTenantProfileParams struct {
+	ID      string  `json:"id"`
+	Name    string  `json:"name"`
+	Phone   string  `json:"phone"`
+	Address *string `json:"address"`
+}
+
 type ListAttendanceByDateParams struct {
 	TenantID string `json:"tenant_id"`
 	Date     string `json:"date"`
@@ -401,8 +422,11 @@ type Querier interface {
 	FindTenantByPhone(ctx context.Context, phone string) (Tenant, error)
 	GetBalanceByEmployee(ctx context.Context, arg GetBalanceByEmployeeParams) (float64, error)
 	GetDailyJamaTotal(ctx context.Context, tenantID string, date string) (float64, error)
+	GetEmployeeAttendanceSummary(ctx context.Context, arg GetEmployeeAttendanceSummaryParams) (EmployeeAttendanceSummary, error)
 	GetEmployeeDocumentByType(ctx context.Context, arg GetEmployeeDocumentByTypeParams) (EmployeeDocument, error)
+	GetEmployeeLedgerSummary(ctx context.Context, arg GetEmployeeLedgerSummaryParams) (LedgerSummaryRange, error)
 	GetLeavePolicyByTenant(ctx context.Context, tenantID string) (LeavePolicy, error)
+	GetLedgerSummaryRange(ctx context.Context, tenantID string, startDate string, endDate string) (LedgerSummaryRange, error)
 	GetStaffProfile(ctx context.Context, arg GetStaffProfileParams) (StaffProfile, error)
 	GetTenantConfig(ctx context.Context, tenantID string) (TenantConfig, error)
 	GetTotalOutstanding(ctx context.Context, tenantID string) (float64, error)
@@ -417,6 +441,7 @@ type Querier interface {
 	ListLedgerByEmployeeMonth(ctx context.Context, arg ListLedgerByEmployeeMonthParams) ([]Ledger, error)
 	ListLedgerByTenant(ctx context.Context, arg ListLedgerByTenantParams) ([]Ledger, error)
 	ListPendingSyncEvents(ctx context.Context, arg ListPendingSyncEventsParams) ([]SyncQueue, error)
+	ListRosterByDate(ctx context.Context, tenantID string, date string) ([]RosterRow, error)
 	ListShiftsByTenant(ctx context.Context, arg ListShiftsByTenantParams) ([]Shift, error)
 	LockAttendanceMonth(ctx context.Context, arg LockAttendanceMonthParams) error
 	SoftDeleteEmployee(ctx context.Context, arg SoftDeleteEmployeeParams) error
@@ -428,6 +453,7 @@ type Querier interface {
 	UpdateEmployeePhotoURL(ctx context.Context, arg UpdateEmployeePhotoURLParams) (Employee, error)
 	UpdateShift(ctx context.Context, arg UpdateShiftParams) (Shift, error)
 	UpdateSyncEventStatus(ctx context.Context, arg UpdateSyncEventStatusParams) (SyncQueue, error)
+	UpdateTenantProfile(ctx context.Context, arg UpdateTenantProfileParams) error
 	UpsertLeavePolicy(ctx context.Context, arg UpsertLeavePolicyParams) (LeavePolicy, error)
 	UpsertTenantConfig(ctx context.Context, arg UpsertTenantConfigParams) (TenantConfig, error)
 }

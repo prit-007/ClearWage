@@ -23,9 +23,10 @@ type AdvanceRequest struct {
 	Note         *string   `json:"note" db:"note"`
 	ApprovedBy   *string   `json:"approved_by" db:"approved_by"`
 	DeniedBy     *string   `json:"denied_by" db:"denied_by"`
-	EmployeeName *string   `json:"employee_name" db:"employee_name"`
-	CreatedAt    time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
+	EmployeeName  *string   `json:"employee_name" db:"employee_name"`
+	EmployeePhoto *string   `json:"employee_photo" db:"employee_photo"`
+	CreatedAt     time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type Attendance struct {
@@ -45,6 +46,7 @@ type Attendance struct {
 	EditedBy               *string    `json:"edited_by" db:"edited_by"`
 	EditedAt               *time.Time `json:"edited_at" db:"edited_at"`
 	EmployeeName           *string    `json:"employee_name" db:"employee_name"`
+	EmployeePhoto          *string    `json:"employee_photo" db:"employee_photo"`
 	CreatedAt              time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt              time.Time  `json:"updated_at" db:"updated_at"`
 }
@@ -122,6 +124,7 @@ type Ledger struct {
 	LinkedPayrollMonth *string   `json:"linked_payroll_month" db:"linked_payroll_month"`
 	CreatedBy          string    `json:"created_by" db:"created_by"`
 	EmployeeName       *string   `json:"employee_name" db:"employee_name"`
+	EmployeePhoto      *string   `json:"employee_photo" db:"employee_photo"`
 	CreatedAt          time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt          time.Time `json:"updated_at" db:"updated_at"`
 }
@@ -156,8 +159,46 @@ type Tenant struct {
 	ID        string    `json:"id" db:"id"`
 	Name      string    `json:"name" db:"name"`
 	Phone     string    `json:"phone" db:"phone"`
+	Address   *string   `json:"address" db:"address"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+}
+
+type RosterRow struct {
+	EmployeeID      string     `json:"employee_id" db:"employee_id"`
+	Name            string     `json:"name" db:"name"`
+	Phone           string     `json:"phone" db:"phone"`
+	PhotoURL        *string    `json:"photo_url" db:"photo_url"`
+	Designation     *string    `json:"designation" db:"designation"`
+	Role            string     `json:"role" db:"role"`
+	IsActive        bool       `json:"is_active" db:"is_active"`
+	DefaultShiftID  *string    `json:"default_shift_id" db:"default_shift_id"`
+	ShiftName       *string    `json:"shift_name" db:"shift_name"`
+	ShiftStartTime  *string    `json:"shift_start_time" db:"shift_start_time"`
+	ShiftEndTime    *string    `json:"shift_end_time" db:"shift_end_time"`
+	AttendanceID    *string    `json:"attendance_id" db:"attendance_id"`
+	Status          *string    `json:"status" db:"status"`
+	CheckInTime     *time.Time `json:"check_in_time" db:"check_in_time"`
+	CheckOutTime    *time.Time `json:"check_out_time" db:"check_out_time"`
+	OvertimeHours   *float64   `json:"overtime_hours" db:"overtime_hours"`
+	IsLocked        *bool      `json:"is_locked" db:"is_locked"`
+	ComputedWage    *float64   `json:"computed_wage" db:"computed_wage"`
+}
+
+type LedgerSummaryRange struct {
+	JamaTotal   float64 `json:"jama_total" db:"jama_total"`
+	UdhaarTotal float64 `json:"udhaar_total" db:"udhaar_total"`
+	EntryCount  int32   `json:"entry_count" db:"entry_count"`
+}
+
+type EmployeeAttendanceSummary struct {
+	Total     int32   `json:"total" db:"total"`
+	Present   int32   `json:"present" db:"present"`
+	Absent    int32   `json:"absent" db:"absent"`
+	HalfDay   int32   `json:"half_day" db:"half_day"`
+	PaidLeave int32   `json:"paid_leave" db:"paid_leave"`
+	WeekOff   int32   `json:"week_off" db:"week_off"`
+	Percent   float64 `json:"percent" db:"percent"`
 }
 
 type TenantConfig struct {

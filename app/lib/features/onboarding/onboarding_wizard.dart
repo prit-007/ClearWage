@@ -34,11 +34,30 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
     if (_creatingShifts) return;
     setState(() => _creatingShifts = true);
     try {
-      final svc = ref.read(shiftServiceProvider);
-      await svc.create({'name': 'General Shift', 'start_time': '08:00', 'end_time': '17:00', 'grace_period_minutes': 15, 'is_default': true});
-      await svc.create({'name': 'Night Shift', 'start_time': '22:00', 'end_time': '06:00', 'crosses_midnight': true, 'grace_period_minutes': 15, 'is_default': false});
+      final svc = ref.read(onboardingServiceProvider);
+      final address = _addressCtrl.text.trim();
+      await svc.setup({
+        'factory_name': _companyNameCtrl.text.trim(),
+        'factory_phone': _contactCtrl.text.trim(),
+        'factory_address': address.isEmpty ? null : address,
+        'shifts': [
+          {'name': 'General Shift', 'start_time': '08:00', 'end_time': '17:00', 'grace_period_minutes': 15, 'is_default': true},
+          {'name': 'Night Shift', 'start_time': '22:00', 'end_time': '06:00', 'crosses_midnight': true, 'grace_period_minutes': 15, 'is_default': false},
+        ],
+        'ot_settings': {
+          'ot_trigger': 'after_shift_end',
+          'ot_threshold_hours': 0,
+          'ot_multiplier_default': 1.5,
+          'ot_rounding': 30,
+          'wage_basis': 'calendar',
+          'week_off_paid': false,
+          'weekly_offs': '0,6',
+        },
+        'leave_policy': {'paid_leave_days_per_year': 12, 'unpaid_leave_days_per_year': 0},
+        'holidays': <Map<String, dynamic>>[],
+      });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to create default shifts: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save setup: $e')));
     } finally {
       if (mounted) setState(() => _creatingShifts = false);
     }

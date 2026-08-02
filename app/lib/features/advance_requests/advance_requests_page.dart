@@ -5,6 +5,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/advance_request_model.dart';
 import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/widgets/employee_avatar.dart';
 import '../../core/helpers.dart';
 
 const int _pageSize = 20;
@@ -378,10 +379,10 @@ class _AdvanceRequestCard extends StatelessWidget {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    CircleAvatar(
+                    EmployeeAvatar(
+                      name: request.employeeName,
+                      photoUrl: request.employeePhoto,
                       radius: 20,
-                      backgroundColor: cs.primaryContainer.withValues(alpha: 0.5),
-                      child: Text(request.employeeName.isNotEmpty ? request.employeeName[0] : '?', style: TextStyle(fontWeight: FontWeight.w800, color: cs.primary)),
                     ),
                     const SizedBox(width: 12),
                     Expanded(

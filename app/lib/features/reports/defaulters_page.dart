@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
-import '../../core/helpers.dart';
+import '../../core/widgets/employee_avatar.dart';
 
 final defaultersProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   return ref.watch(reportServiceProvider).defaulters();
@@ -118,9 +118,9 @@ class _DefaulterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = data['name'] as String? ?? data['employee_name'] as String? ?? 'Unknown';
-    final outstanding = (data['outstanding'] as num?)?.toDouble() ?? 0;
-    final wage = (data['wage'] as num?)?.toDouble() ?? data['wage_amount'] as num? ?? 0;
-    final initials = getInitials(name);
+    final outstanding = (data['outstanding_balance'] as num?)?.toDouble() ?? (data['outstanding'] as num?)?.toDouble() ?? 0;
+    final wage = (data['monthly_wage'] as num?)?.toDouble() ?? (data['wage'] as num?)?.toDouble() ?? data['wage_amount'] as num? ?? 0;
+    final photoUrl = data['photo_url'] as String?;
     const dangerColor = Color(0xFFEF4444);
 
     return Container(
@@ -137,10 +137,12 @@ class _DefaulterCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                CircleAvatar(
+                EmployeeAvatar(
+                  name: name,
+                  photoUrl: photoUrl,
                   radius: 24,
                   backgroundColor: dangerColor.withValues(alpha: 0.1),
-                  child: Text(initials, style: const TextStyle(fontWeight: FontWeight.w800, color: dangerColor, fontSize: 14)),
+                  textColor: dangerColor,
                 ),
                 const SizedBox(width: 16),
                 Expanded(

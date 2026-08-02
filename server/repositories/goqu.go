@@ -269,6 +269,15 @@ func (q *GoquQuerier) CreateTenant(ctx context.Context, arg CreateTenantParams) 
 	return t, nil
 }
 
+func (q *GoquQuerier) UpdateTenantProfile(ctx context.Context, arg UpdateTenantProfileParams) error {
+	record := goqu.Record{"name": arg.Name, "phone": arg.Phone}
+	if arg.Address != nil {
+		record["address"] = *arg.Address
+	}
+	_, err := q.db.Update("tenants").Set(record).Where(goqu.C("id").Eq(arg.ID)).Executor().ExecContext(ctx)
+	return err
+}
+
 func (q *GoquQuerier) DeleteHoliday(ctx context.Context, arg DeleteHolidayParams) error {
 	_, err := q.db.Delete("holidays").Where(
 		goqu.C("id").Eq(arg.ID),
@@ -437,6 +446,71 @@ func (q *GoquQuerier) GetBalanceByEmployee(ctx context.Context, arg GetBalanceBy
 	return balance, nil
 }
 
+func (q *GoquQuerier) GetEmployeeLedgerSummary(ctx context.Context, arg GetEmployeeLedgerSummaryParams) (LedgerSummaryRange, error) {
+	var s LedgerSummaryRange
+	_, err := q.db.From("ledger").
+		Select(
+			goqu.L("COALESCE(SUM(CASE WHEN type = 'jama' THEN amount ELSE 0 END), 0)").As("jama_total"),
+			goqu.L("COALESCE(SUM(CASE WHEN type = 'udhaar' THEN amount ELSE 0 END), 0)").As("udhaar_total"),
+			goqu.L("COUNT(*)").As("entry_count"),
+		).
+		Where(
+			goqu.C("tenant_id").Eq(arg.TenantID),
+			goqu.C("employee_id").Eq(arg.EmployeeID),
+			goqu.C("date").Gte(arg.StartDate),
+			goqu.C("date").Lte(arg.EndDate),
+		).
+		ScanStructContext(ctx, &s)
+	if err != nil {
+		return LedgerSummaryRange{}, err
+	}
+	return s, nil
+}
+
+func (q *GoquQuerier) GetLedgerSummaryRange(ctx context.Context, tenantID string, startDate string, endDate string) (LedgerSummaryRange, error) {
+	var s LedgerSummaryRange
+	_, err := q.db.From("ledger").
+		Select(
+			goqu.L("COALESCE(SUM(CASE WHEN type = 'jama' THEN amount ELSE 0 END), 0)").As("jama_total"),
+			goqu.L("COALESCE(SUM(CASE WHEN type = 'udhaar' THEN amount ELSE 0 END), 0)").As("udhaar_total"),
+			goqu.L("COUNT(*)").As("entry_count"),
+		).
+		Where(
+			goqu.C("tenant_id").Eq(tenantID),
+			goqu.C("date").Gte(startDate),
+			goqu.C("date").Lte(endDate),
+		).
+		ScanStructContext(ctx, &s)
+	if err != nil {
+		return LedgerSummaryRange{}, err
+	}
+	return s, nil
+}
+
+func (q *GoquQuerier) GetEmployeeAttendanceSummary(ctx context.Context, arg GetEmployeeAttendanceSummaryParams) (EmployeeAttendanceSummary, error) {
+	var s EmployeeAttendanceSummary
+	_, err := q.db.From("attendance").
+		Select(
+			goqu.L("COUNT(*)").As("total"),
+			goqu.L("COALESCE(SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END), 0)").As("present"),
+			goqu.L("COALESCE(SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END), 0)").As("absent"),
+			goqu.L("COALESCE(SUM(CASE WHEN status = 'half_day' THEN 1 ELSE 0 END), 0)").As("half_day"),
+			goqu.L("COALESCE(SUM(CASE WHEN status = 'paid_leave' THEN 1 ELSE 0 END), 0)").As("paid_leave"),
+			goqu.L("COALESCE(SUM(CASE WHEN status = 'week_off' THEN 1 ELSE 0 END), 0)").As("week_off"),
+		).
+		Where(
+			goqu.C("tenant_id").Eq(arg.TenantID),
+			goqu.C("employee_id").Eq(arg.EmployeeID),
+			goqu.C("date").Gte(arg.StartDate),
+			goqu.C("date").Lte(arg.EndDate),
+		).
+		ScanStructContext(ctx, &s)
+	if err != nil {
+		return EmployeeAttendanceSummary{}, err
+	}
+	return s, nil
+}
+
 func (q *GoquQuerier) GetLeavePolicyByTenant(ctx context.Context, tenantID string) (LeavePolicy, error) {
 	var l LeavePolicy
 	found, err := q.db.From("leave_policies").Where(goqu.C("tenant_id").Eq(tenantID)).ScanStructContext(ctx, &l)
@@ -462,8 +536,45 @@ func (q *GoquQuerier) ListAttendanceByDate(ctx context.Context, arg ListAttendan
 		Select(
 			att.Col("*"),
 			emp.Col("name").As("employee_name"),
+			emp.Col("photo_url").As("employee_photo"),
 		).
 		Order(att.Col("employee_id").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
+	return items, err
+}
+
+func (q *GoquQuerier) ListRosterByDate(ctx context.Context, tenantID string, date string) ([]RosterRow, error) {
+	var items []RosterRow
+	e := goqu.T("employees")
+	s := goqu.T("shifts")
+	a := goqu.T("attendance")
+	err := q.db.From(e).
+		LeftJoin(s, goqu.On(e.Col("default_shift_id").Eq(s.Col("id")), s.Col("tenant_id").Eq(e.Col("tenant_id")))).
+		LeftJoin(a, goqu.On(a.Col("employee_id").Eq(e.Col("id")), a.Col("tenant_id").Eq(e.Col("tenant_id")), a.Col("date").Eq(date))).
+		Where(
+			e.Col("tenant_id").Eq(tenantID),
+			e.Col("is_active").Eq(true),
+		).
+		Select(
+			e.Col("id").As("employee_id"),
+			e.Col("name"),
+			e.Col("phone"),
+			e.Col("photo_url"),
+			e.Col("designation"),
+			e.Col("role"),
+			e.Col("is_active"),
+			e.Col("default_shift_id"),
+			s.Col("name").As("shift_name"),
+			s.Col("start_time").As("shift_start_time"),
+			s.Col("end_time").As("shift_end_time"),
+			a.Col("id").As("attendance_id"),
+			a.Col("status"),
+			a.Col("check_in_time"),
+			a.Col("check_out_time"),
+			a.Col("overtime_hours"),
+			a.Col("is_locked"),
+			a.Col("computed_wage"),
+		).
+		Order(e.Col("name").Asc()).ScanStructsContext(ctx, &items)
 	return items, err
 }
 
@@ -481,6 +592,7 @@ func (q *GoquQuerier) ListAttendanceByDateRange(ctx context.Context, arg ListAtt
 		Select(
 			att.Col("*"),
 			emp.Col("name").As("employee_name"),
+			emp.Col("photo_url").As("employee_photo"),
 		).
 		Order(att.Col("date").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
@@ -501,6 +613,7 @@ func (q *GoquQuerier) ListAttendanceByEmployeeMonth(ctx context.Context, arg Lis
 		Select(
 			att.Col("*"),
 			emp.Col("name").As("employee_name"),
+			emp.Col("photo_url").As("employee_photo"),
 		).
 		Order(att.Col("date").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
@@ -555,6 +668,7 @@ func (q *GoquQuerier) ListLedgerByEmployeeMonth(ctx context.Context, arg ListLed
 		Select(
 			l.Col("*"),
 			emp.Col("name").As("employee_name"),
+			emp.Col("photo_url").As("employee_photo"),
 		).
 		Order(l.Col("date").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err
@@ -628,6 +742,7 @@ func (q *GoquQuerier) ListAdvanceRequestsByTenant(ctx context.Context, arg ListA
 		Select(
 			ar.Col("*"),
 			emp.Col("name").As("employee_name"),
+			emp.Col("photo_url").As("employee_photo"),
 		)
 	if arg.Status != "" {
 		query = query.Where(ar.Col("status").Eq(arg.Status))
@@ -690,6 +805,7 @@ func (q *GoquQuerier) ListLedgerByTenant(ctx context.Context, arg ListLedgerByTe
 		Select(
 			l.Col("*"),
 			emp.Col("name").As("employee_name"),
+			emp.Col("photo_url").As("employee_photo"),
 		).
 		Order(l.Col("date").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
 	return items, err

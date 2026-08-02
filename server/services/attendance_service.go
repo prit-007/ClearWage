@@ -78,6 +78,10 @@ func (s *AttendanceService) ListByDate(ctx context.Context, tenantID, date strin
 	})
 }
 
+func (s *AttendanceService) RosterByDate(ctx context.Context, tenantID, date string) ([]repositories.RosterRow, error) {
+	return s.querier.ListRosterByDate(ctx, tenantID, date)
+}
+
 func (s *AttendanceService) ListByEmployeeMonth(ctx context.Context, employeeID, tenantID, startDate, endDate string, limit, offset int32) ([]repositories.Attendance, error) {
 	return s.querier.ListAttendanceByEmployeeMonth(ctx, repositories.ListAttendanceByEmployeeMonthParams{
 		EmployeeID: employeeID,

@@ -19,6 +19,7 @@ import '../services/payroll_service.dart';
 import '../services/settings_service.dart';
 import '../services/profile_service.dart';
 import '../services/document_service.dart';
+import '../services/onboarding_service.dart';
 
 final sessionExpiredProvider = StateProvider<bool>((ref) => false);
 
@@ -104,7 +105,7 @@ final staffServiceProvider = Provider<StaffService>((ref) {
 });
 
 final employeeListProvider = FutureProvider.autoDispose<List<Employee>>((ref) {
-  return ref.watch(staffServiceProvider).list(limit: 10000);
+  return ref.watch(staffServiceProvider).list(limit: 100000);
 });
 
 final attendanceServiceProvider = Provider<AttendanceService>((ref) {
@@ -155,4 +156,8 @@ final profileServiceProvider = Provider<ProfileService>((ref) {
 
 final documentServiceProvider = Provider<DocumentService>((ref) {
   return DocumentService(ref.watch(apiClientProvider));
+});
+
+final onboardingServiceProvider = Provider<OnboardingService>((ref) {
+  return OnboardingService(ref.watch(apiClientProvider));
 });

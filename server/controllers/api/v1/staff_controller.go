@@ -38,6 +38,7 @@ type createStaffRequest struct {
 	WageType              string  `json:"wage_type"`
 	WageAmount            string  `json:"wage_amount"`
 	Role                  string  `json:"role,omitempty"`
+	DefaultShiftID        *string `json:"default_shift_id,omitempty"`
 	DailyTargetUnits      *int32  `json:"daily_target_units,omitempty"`
 	DateOfJoining         *string `json:"date_of_joining,omitempty"`
 	PanNumber             *string `json:"pan_number,omitempty"`
@@ -140,6 +141,14 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.DefaultShiftID != nil && *req.DefaultShiftID != "" {
+		if _, err := ctrl.staffService.AssignDefaultShift(r.Context(), employee.ID, *req.DefaultShiftID, tenantID); err != nil {
+			ctrl.logger.Error().Err(err).Msg("failed to assign default shift")
+			utils.JSONError(w, http.StatusInternalServerError, "failed to assign default shift")
+			return
+		}
+	}
+
 	utils.JSONSuccess(w, http.StatusOK, employee)
 }
 
@@ -157,7 +166,7 @@ func (ctrl *StaffController) List(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")
 
 	limit, _ := strconv.Atoi(limitStr)
-	if limit <= 0 || limit > 100 {
+	if limit <= 0 || limit > 100000 {
 		limit = 20
 	}
 	offset, _ := strconv.Atoi(offsetStr)
@@ -224,6 +233,38 @@ func (ctrl *StaffController) Profile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.JSONSuccess(w, http.StatusOK, profile)
+}
+
+// Overview returns a single-employee dashboard payload combining the staff profile,
+// live balance, month-to-date jama, attendance summary, and recent documents.
+//
+// Path param: id (string) — Employee UUID
+// Success (200): utils.Response with services.EmployeeOverview payload
+// Failure (401): utils.Response — missing or invalid JWT / tenant context
+// Failure (403): utils.Response — "employee" role viewing another employee
+// Failure (404): utils.Response — employee not found
+func (ctrl *StaffController) Overview(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	employeeID := chi.URLParam(r, "id")
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" && claims.EmployeeID != employeeID {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	overview, err := ctrl.staffService.GetOverview(r.Context(), employeeID, tenantID)
+	if err != nil {
+		utils.JSONFail(w, http.StatusNotFound, "employee not found")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, overview)
 }
 
 // AssignManager sets the reporting manager for an employee.
@@ -311,6 +352,14 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 		ctrl.logger.Error().Err(err).Msg("failed to update employee")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to update employee")
 		return
+	}
+
+	if req.DefaultShiftID != nil {
+		if _, err := ctrl.staffService.AssignDefaultShift(r.Context(), employeeID, *req.DefaultShiftID, tenantID); err != nil {
+			ctrl.logger.Error().Err(err).Msg("failed to assign default shift")
+			utils.JSONError(w, http.StatusInternalServerError, "failed to assign default shift")
+			return
+		}
 	}
 
 	utils.JSONSuccess(w, http.StatusOK, employee)

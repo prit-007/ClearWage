@@ -5,6 +5,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/ledger_model.dart';
 import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/widgets/employee_avatar.dart';
 
 const int _pageSize = 20;
 
@@ -17,6 +18,7 @@ class LedgerListScreen extends ConsumerStatefulWidget {
 class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
   final ScrollController _scrollCtrl = ScrollController();
   List<LedgerEntry> _entries = [];
+  LedgerSummary? _summary;
   bool _loading = true;
   bool _loadingMore = false;
   bool _hasMore = true;
@@ -58,9 +60,16 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
     try {
       final svc = ref.read(ledgerServiceProvider);
       final entries = await svc.listByTenant(startDate: _startDate, endDate: _endDate, limit: _pageSize, offset: 0);
+      LedgerSummary? summary;
+      try {
+        summary = await svc.getSummary(startDate: _startDate, endDate: _endDate);
+      } catch (_) {
+        summary = null;
+      }
       if (mounted) {
         setState(() {
           _entries = entries;
+          _summary = summary;
           _hasMore = entries.length >= _pageSize;
           _loading = false;
         });
@@ -204,6 +213,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'ledger_list_fab',
         onPressed: () => Navigator.pushNamed(context, '/new_ledger'),
         backgroundColor: cs.primary,
         icon: Icon(PhosphorIconsBold.plus, color: cs.onPrimary),
@@ -214,10 +224,15 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
 
   Widget _buildSummary(ColorScheme cs, TextTheme tt) {
     double jama = 0, udhaar = 0;
-    for (final e in _entries) {
-      if (e.isJama) { jama += e.amount; } else { udhaar += e.amount; }
+    if (_summary != null) {
+      jama = _summary!.jamaTotal;
+      udhaar = _summary!.udhaarTotal;
+    } else {
+      for (final e in _entries) {
+        if (e.isJama) { jama += e.amount; } else { udhaar += e.amount; }
+      }
     }
-    final net = jama - udhaar;
+    final net = _summary != null ? _summary!.netBalance : jama - udhaar;
     final isPositive = net >= 0;
 
     return Padding(
@@ -314,12 +329,6 @@ class _LedgerRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isJama = entry.isJama;
     final amtColor = isJama ? const Color(0xFF10B981) : const Color(0xFFEF4444);
-    final initials = entry.employeeName
-        .split(' ')
-        .map((e) => e.isNotEmpty ? e[0] : '')
-        .take(2)
-        .join()
-        .toUpperCase();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -330,10 +339,10 @@ class _LedgerRow extends StatelessWidget {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
+        leading: EmployeeAvatar(
+          name: entry.employeeName,
+          photoUrl: entry.employeePhoto,
           radius: 22,
-          backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-          child: Text(initials, style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface, fontSize: 13)),
         ),
         title: Text(entry.employeeName, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
         subtitle: Row(

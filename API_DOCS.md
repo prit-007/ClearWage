@@ -14,10 +14,10 @@
 │                          │       │   TenantMiddleware       │
 └──────────────────────────┘       └───────────┬──────────────┘
                                                 │
-                                        ┌───────▼──────┐
-                                        │  PostgreSQL   │
-                                         │  (17 migrations)│
-                                        └──────────────┘
+                                        ┌──────────────────┐
+                                        │ PostgreSQL (18    │
+                                        │ migrations)       │
+                                        └──────────────────┘
 ```
 
 ### Server
@@ -224,13 +224,14 @@ All staff endpoints require `AuthMiddleware` + `TenantMiddleware`. Every employe
 | `POST` | `/api/v1/staff/{id}/documents/{type}` | `uploadCtrl.UploadDocument` | Upload/replace KYC doc (aadhaar\|pan\|bank, jpg/png/pdf) |
 | `DELETE` | `/api/v1/staff/{id}/documents/{type}` | `uploadCtrl.DeleteDocument` | Delete KYC doc + stored asset |
 | `GET` | `/api/v1/staff/{id}/profile` | `staffCtrl.Profile` | Full profile with manager + shift info |
+| `GET` | `/api/v1/staff/{id}/overview` | `staffCtrl.Overview` | Composite: profile + ledger summary + attendance summary + documents |
 | `PUT` | `/api/v1/staff/{id}/manager` | `staffCtrl.AssignManager` | Set/remove reporting manager |
 
 ---
 
 #### `GET /api/v1/staff`
 
-**Query Params:** `limit` (int, max 100, default 20), `offset` (int, default 0), `q` (search string), `status` (filter)
+**Query Params:** `limit` (int, max 100000, default 20), `offset` (int, default 0), `q` (search string), `status` (filter)
 
 **Success:** Returns array of employee objects:
 ```json
@@ -259,6 +260,7 @@ All staff endpoints require `AuthMiddleware` + `TenantMiddleware`. Every employe
   "name": "Rahul Sharma", "phone": "+919876543210",
   "designation": "Operator", "wage_type": "daily", "wage_amount": "450",
   "daily_target_units": 100,
+  "default_shift_id": "uuid",
   "date_of_joining": "2024-01-15", "pan_number": "ABCDE1234F",
   "aadhaar_number": "123412341234", "pf_number": "MH/123/4567",
   "bank_account_number": "00012345678901", "bank_ifsc": "SBIN0001234",
@@ -268,7 +270,8 @@ All staff endpoints require `AuthMiddleware` + `TenantMiddleware`. Every employe
 }
 ```
 **Required:** `name`, `phone`, `wage_type`, `wage_amount`
-**Optional KYC:** `date_of_joining`, `pan_number`, `aadhaar_number`, `pf_number`, `bank_account_number`, `bank_ifsc`, `upi_id`, `emergency_contact_name`, `emergency_contact_phone`, `health_notes`, `current_address`, `permanent_address`
+**Optional KYC:** `default_shift_id`, `date_of_joining`, `pan_number`, `aadhaar_number`, `pf_number`, `bank_account_number`, `bank_ifsc`, `upi_id`, `emergency_contact_name`, `emergency_contact_phone`, `health_notes`, `current_address`, `permanent_address`
+**Note:** When `default_shift_id` is provided, it is assigned in the same request (no separate shift PUT needed).
 
 **Frontend**: `StaffService.create()` → `AddEmployeeScreen` (premium form with wage type toggle, KYC & Financial section, Emergency & Address section, haptic feedback, glassmorphism fields).
 
@@ -361,6 +364,36 @@ Returns extended profile with manager info and default shift details.
 
 ---
 
+#### `GET /api/v1/staff/{id}/overview`
+
+Composite payload replacing up to 5 separate calls on `EmployeeProfileScreen`. Blocks "employee" role viewing another employee (403); "employee" can view self.
+
+**Success:**
+```json
+{
+  "status": "success",
+  "data": {
+    "profile": { "id": "uuid", "name": "Rahul", "...": "..." },
+    "ledger": {
+      "balance": 2700.0,
+      "jama_total": 99000.0,
+      "udhaar_total": 96300.0,
+      "recent": [ { "id": "uuid", "type": "jama", "amount": 450.0 } ]
+    },
+    "attendance": {
+      "summary": { "total": 21, "present": 19, "absent": 1, "half_day": 1, "percent": 90.5 },
+      "recent": [ { "id": "uuid", "status": "present", "date": "2026-10-24" } ]
+    },
+    "documents": [ { "id": "uuid", "doc_type": "aadhaar" } ]
+  }
+}
+```
+**Failure (404):** employee not found.
+
+**Frontend**: `StaffService.getOverview()` → `EmployeeProfileScreen._loadProfile()` (single composite load).
+
+---
+
 #### `PUT /api/v1/staff/{id}/manager`
 
 **Request:** `{ "manager_id": "uuid" }` — set to empty string to unassign.
@@ -377,6 +410,7 @@ All `/api/v1/me` endpoints use the authenticated user's `employee_id` from JWT c
 | Method | Path | Handler | Description |
 |--------|------|---------|-------------|
 | `GET` | `/api/v1/me` | `meCtrl.Profile` | Own profile (same as staff profile) |
+| `GET` | `/api/v1/me/overview` | `meCtrl.Overview` | Composite: own profile + ledger + attendance + documents + tenant |
 | `GET` | `/api/v1/me/attendance` | `meCtrl.Attendance` | Own attendance records within date range |
 | `GET` | `/api/v1/me/ledger` | `meCtrl.Ledger` | Own ledger entries + current balance |
 | `GET` | `/api/v1/me/payslip` | `meCtrl.Payslip` | Download PDF payslip |
@@ -389,6 +423,14 @@ All `/api/v1/me` endpoints use the authenticated user's `employee_id` from JWT c
 Returns the authenticated user's full profile (staff profile shape).
 
 **Frontend**: Called in `MyProfileScreen` using `ApiClient.get('/api/v1/me')` directly. Shows name, phone, role, factory name, and sign-out button.
+
+---
+
+#### `GET /api/v1/me/overview`
+
+Own-profile composite returning `{ overview: { profile, ledger, attendance, documents }, tenant }`. The `tenant.name` provides the factory name which `/me` alone omitted (previously shown as "Unknown").
+
+**Frontend**: `ProfileService.getOverview()` → `myProfileProvider` in `MyProfileScreen` (flattens profile + `tenant.name` for display).
 
 ---
 
@@ -506,6 +548,7 @@ Returns 500 if shift is still assigned as default shift to any employee.
 | Method | Path | Handler | Description |
 |--------|------|---------|-------------|
 | `GET` | `/api/v1/attendance` | `attCtrl.ListByDate` | All attendance for a date |
+| `GET` | `/api/v1/attendance/roster` | `attCtrl.Roster` | Composite daily roster: employees + shift + attendance |
 | `GET` | `/api/v1/attendance/{id}` | `attCtrl.ListByEmployee` | Employee attendance within date range |
 | `POST` | `/api/v1/attendance` | `attCtrl.Create` | Create single attendance record |
 | `PUT` | `/api/v1/attendance/{id}` | `attCtrl.Update` | Update attendance record |
@@ -535,6 +578,29 @@ Returns 500 if shift is still assigned as default shift to any employee.
 **Valid status values:** `present`, `absent`, `half_day`, `paid_leave`, `week_off`
 
 **Frontend**: `AttendanceService.listByDate()` → `todayAttendanceProvider` → `AttendanceRosterPage` (bottom nav tab 2 — daily roster with segmented status buttons).
+
+---
+
+#### `GET /api/v1/attendance/roster`
+
+**Query Params:** `date` (required, YYYY-MM-DD). Blocks "employee" role (403).
+
+**Success:** Roster rows combining employee, their shift, and that day's attendance (nullable attendance fields when unmarked):
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "employee_id": "uuid", "name": "Rahul Sharma", "phone": "+919876543210",
+      "designation": "Operator", "role": "employee", "is_active": true,
+      "default_shift_id": "uuid", "shift_name": "Morning", "shift_start_time": "08:00",
+      "attendance_id": null, "status": null
+    }
+  ]
+}
+```
+
+**Frontend**: `AttendanceService.roster()` → `rosterByDateProvider` → `AttendanceRosterPage` (replaces the prior client-side staff + attendance join that skipped employees without a loaded shift).
 
 ---
 
@@ -600,6 +666,7 @@ The ledger tracks two transaction types:
 |--------|------|---------|-------------|
 | `POST` | `/api/v1/ledger` | `ledgerCtrl.CreateEntry` | Create a ledger entry |
 | `GET` | `/api/v1/ledger` | `ledgerCtrl.ListByTenant` | All entries across tenant in date range |
+| `GET` | `/api/v1/ledger/summary` | `ledgerCtrl.Summary` | Composite aggregated jama/udhaar + net + outstanding |
 | `GET` | `/api/v1/ledger/total-outstanding` | `ledgerCtrl.GetTotalOutstanding` | Total outstanding across all employees |
 | `GET` | `/api/v1/ledger/{id}` | `ledgerCtrl.ListByEmployee` | Entries for one employee in date range |
 | `GET` | `/api/v1/ledger/{id}/balance` | `ledgerCtrl.GetBalance` | Current balance for one employee |
@@ -638,6 +705,22 @@ The ledger tracks two transaction types:
 ```
 
 **Frontend**: `LedgerService.listByTenant()` → `ledgerListProvider` → `LedgerListScreen` (bottom nav tab 3 — glassmorphism summary card, staggered rows, green/red color-coding).
+
+---
+
+#### `GET /api/v1/ledger/summary`
+
+**Query Params:** `start_date`, `end_date` (required). Blocks "employee" role (403). Returns full-range totals independent of ledger pagination.
+
+**Success:**
+```json
+{ "status": "success", "data": {
+  "jama_total": 99000.0, "udhaar_total": 96300.0,
+  "net_balance": 2700.0, "total_outstanding": 42600.0, "entry_count": 240
+} }
+```
+
+**Frontend**: `LedgerService.getSummary(startDate, endDate)` → `LedgerListScreen` summary card (replace of summing only the loaded 20-page subset, which produced a wrong net when >20 entries).
 
 ---
 
@@ -818,34 +901,42 @@ Both must be non-negative.
 
 #### `GET /api/v1/dashboard`
 
+**Query Params:** `days` (optional — when present, the response includes inline `attendance_percentage` trends for the last N days).
+
 **Success:**
 ```json
 {
   "status": "success",
   "data": {
     "total_staff": 25, "present": 22, "absent": 2, "on_leave": 1,
-    "daily_jama_total": 9900.0, "total_outstanding": 42600.0,
+    "attendance_percentage": 88.0,
+    "daily_jama_total": 9900.0, "wage_bill_mtd": 185000.0,
+    "total_outstanding": 42600.0,
     "recent_activity": [
       { "action": "employee_created", "entity_type": "Rahul Sharma joined",
         "created_at": "2026-10-24T10:30:00Z" }
-    ]
+    ],
+    "trends": [ { "date": "2026-10-11", "present": 20, "absent": 2 } ] (when ?days=N)
   }
 }
 ```
 
-**Frontend**: `DashboardService.get()` → `DashboardData.fromJson()` → `DashboardScreen` (bottom nav tab 0 — premium glassmorphism stat cards, macro-typography attendance percentage, animated progress bar, GSAP-style sweep, duotone icons).
+**Frontend**: `DashboardService.get()` → `DashboardData.fromJson()` → `DashboardScreen` (bottom nav tab 0 — premium glassmorphism stat cards, macro-typography attendance percentage, animated progress bar, GSAP-style sweep, duotone icons). The screen now makes **one** call (`/dashboard?days=14`) — the trends chart reads the inline `data.trends` instead of a separate `/reports/attendance-trends` call, and the "Payroll (MTD)" card uses `wage_bill_mtd` (was incorrectly showing `daily_jama_total`).
 
 Note: `DashboardData.fromJson` maps backend field names:
 ```
-total_staff      → totalWorkforce
-present          → presentToday
-absent           → absentToday
-on_leave         → onLeave
-daily_jama_total → totalJama
-total_outstanding→ totalUdhaar
+total_staff          → totalWorkforce
+present              → presentToday
+absent               → absentToday
+on_leave             → onLeave
+attendance_percentage→ attendancePercentage
+daily_jama_total     → dailyJamaTotal
+wage_bill_mtd        → wageBillMtd
+total_outstanding    → totalOutstanding
+trends               → trends
 ```
 
-Attendance percentage is computed: `present / total_staff * 100`
+Attendance percentage comes from the backend (`attendance_percentage`); the client falls back to `present / total_staff * 100` if absent.
 
 ---
 
@@ -942,7 +1033,7 @@ Auto-creates a ledger entry of type `udhaar` for the approved amount.
 
 `adjustments` is optional; when provided, the `net_pay` value overrides the calculated net for the matching employee. The endpoint writes `wage` ledger entries (using adjusted net) for every employee in the period, then locks the attendance month.
 
-**Frontend**: `PayrollService.lockMonth()` → `PayrollPreviewScreen` lock button ("Lock & Generate Slips").
+**Frontend**: `PayrollService.lockMonth()` → `PayrollPreviewScreen` lock button ("Lock Payroll").
 
 ---
 
@@ -999,22 +1090,52 @@ Serves static files from `./uploads/` directory. The `{file}` param is the filen
 
 ---
 
+### 17. Onboarding (Auth + Tenant)
+
+#### `POST /api/v1/onboarding/setup`
+
+Atomic post-registration setup: factory profile, default shifts, OT settings, leave policy, and holidays in one request. Blocks "employee" role (403).
+
+**Request:**
+```json
+{
+  "factory_name": "Vivek Fabrics",
+  "factory_phone": "+91-9876543210",
+  "factory_address": "Shed 12, MIDC",
+  "shifts": [
+    { "name": "General Shift", "start_time": "08:00", "end_time": "17:00", "grace_period_minutes": 15, "is_default": true }
+  ],
+  "ot_settings": { "ot_trigger": "after_shift_end", "ot_threshold_hours": 0, "ot_multiplier_default": 1.5, "ot_rounding": 30, "wage_basis": "calendar", "week_off_paid": false, "weekly_offs": "0,6" },
+  "leave_policy": { "paid_leave_days_per_year": 12, "unpaid_leave_days_per_year": 0 },
+  "holidays": [ { "name": "Diwali", "date": "2026-10-31", "is_recurring": false } ]
+}
+```
+
+**Success (200):** `{ "status": "success", "data": { "message": "setup complete" } }`
+**Failure (400):** malformed JSON; **401:** unauthenticated; **403:** employee role; **500:** DB error.
+
+**Frontend**: `OnboardingService.setup()` → `OnboardingWizard` step 3 (`_createDefaultShifts`) — sends company name/phone/address + shifts + OT + leave defaults so no wizard data is dropped.
+
+---
+
 ## Frontend Service Layer Summary
 
 | Service File | Backend Group | Methods |
 |-------------|---------------|---------|
 | `auth_service.dart` | Auth | `signInWithFirebase()`, `register()`, `logout()`, `deleteAccount()` |
-| `staff_service.dart` | Staff | `list()`, `get()`, `create()`, `update()`, `delete()`, `getProfile()`, `assignManager()` |
-| `attendance_service.dart` | Attendance | `listByDate()`, `listByEmployee()`, `create()`, `update()`, `bulkUpsert()`, `lockMonth()` |
+| `staff_service.dart` | Staff | `list()`, `get()`, `create()`, `update()`, `delete()`, `getProfile()`, `getOverview()`, `assignManager()` |
+| `attendance_service.dart` | Attendance | `listByDate()`, `roster()`, `listByEmployee()`, `create()`, `update()`, `bulkUpsert()`, `lockMonth()` |
 | `shift_service.dart` | Shifts | `list()`, `get()`, `create()`, `update()`, `delete()` |
 | `ledger_service.dart` | Ledger | `listByTenant()`, `listByEmployee()`, `create()`, `getSummary()`, `getBalance()`, `settleAccount()` |
-| `dashboard_service.dart` | Dashboard | `get()` |
+| `dashboard_service.dart` | Dashboard | `get(trendsDays)` → `/dashboard?days=` |
 | `report_service.dart` | Reports | `dailySummary()`, `employeeMonthly()`, `wageBillTrends()`, `defaulters()` |
 | `holiday_service.dart` | Holidays | `list()`, `create()`, `delete()` |
 | `leave_policy_service.dart` | Leave Policies | `get()`, `upsert()` |
 | `advance_request_service.dart` | Advance Requests | `list()`, `create()`, `approve()`, `deny()` |
 | `payroll_service.dart` | Payroll | `calculate()`, `generatePayslip()`, `lockMonth()` |
 | `settings_service.dart` | Settings | `getPayrollSettings()`, `upsertPayrollSettings()` |
+| `profile_service.dart` | Me | `getOverview()` → `/me/overview` |
+| `onboarding_service.dart` | Onboarding | `setup()` → `POST /onboarding/setup` |
 
 ---
 
@@ -1028,9 +1149,9 @@ Serves static files from `./uploads/` directory. The `{file}` param is the filen
 | `/home` tab 0 | `DashboardScreen` | `GET /dashboard` | ✅ Wired |
 | `/home` tab 1 | `StaffDirectoryScreen` | `GET /staff` | ✅ Wired |
 | `/add_employee` | `AddEmployeeScreen` | `POST /staff` | ✅ Wired |
-| `/employee/{id}` | `EmployeeProfileScreen` | `GET /staff/{id}`, `GET /staff/{id}/profile` | ✅ Wired |
-| `/home` tab 2 | `AttendanceRosterPage` | `GET /attendance?date=` | ✅ Wired |
-| `/home` tab 3 | `LedgerListScreen` | `GET /ledger`, `GET /ledger/total-outstanding` | ✅ Wired |
+| `/employee/{id}` | `EmployeeProfileScreen` | `GET /staff/{id}/overview` | ✅ Wired |
+| `/home` tab 2 | `AttendanceRosterPage` | `GET /attendance/roster?date=` | ✅ Wired |
+| `/home` tab 3 | `LedgerListScreen` | `GET /ledger`, `GET /ledger/summary` | ✅ Wired |
 | `/new_ledger` | `NewLedgerEntryScreen` | `POST /ledger` | ✅ Wired |
 | `/home` tab 4 | `ReportsHubScreen` | — (navigation hub) | ✅ Built |
 | `/reports/daily-summary` | `DailySummaryScreen` | `GET /reports/daily` | ✅ Wired |
@@ -1043,16 +1164,16 @@ Serves static files from `./uploads/` directory. The `{file}` param is the filen
 | `/advance-requests` | `AdvanceRequestsScreen` | `GET /advance-requests`, approve/deny | ✅ Wired |
 | `/leave-policy` | `LeavePolicyScreen` | `GET/PUT /leave-policies` | ✅ Wired |
 | `/payroll-settings` | `PayrollSettingsScreen` | `GET/PUT /settings/payroll` | ✅ Wired |
-| `/my-profile` | `MyProfileScreen` | `GET /me` | ✅ Wired |
-| `/onboarding` | `OnboardingWizard` | — (UI only, 4-step wizard) | ✅ Built |
+| `/my-profile` | `MyProfileScreen` | `GET /me/overview` | ✅ Wired |
+| `/onboarding` | `OnboardingWizard` | `POST /onboarding/setup` (step 3) | ✅ Wired |
 
 **Key:** ✅ = Fully wired with backend, 🚧 = Route exists but not yet connected to live data
 
 ---
 
-## Database Schema (17 Migrations)
+## Database Schema (20 Migrations)
 
-The database has 17 goose migrations creating:
+The database has 20 goose migrations creating:
 - `tenants` — factory accounts
 - `employees` — worker profiles with wage config
 - `shifts` — shift templates (start/end time, grace period, cross-midnight)

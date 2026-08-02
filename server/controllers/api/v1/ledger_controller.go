@@ -205,6 +205,50 @@ func (c *LedgerController) GetTotalOutstanding(w http.ResponseWriter, r *http.Re
 	utils.JSONSuccess(w, http.StatusOK, map[string]float64{"total_outstanding": total})
 }
 
+// Summary returns the aggregated jama/udhaar totals and net balance for the tenant
+// within a date range, plus the running total outstanding across all employees.
+//
+// Query params: start_date, end_date (required, YYYY-MM-DD)
+// Success (200): utils.Response with services.LedgerSummary payload
+// Failure (400): utils.Response — missing/invalid date range
+// Failure (401): utils.Response — missing or invalid JWT / tenant context
+// Failure (403): utils.Response — caller has "employee" role
+// Failure (500): utils.Response — database or service error
+func (c *LedgerController) Summary(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	startDate := r.URL.Query().Get("start_date")
+	endDate := r.URL.Query().Get("end_date")
+	if startDate == "" || endDate == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
+		return
+	}
+
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	summary, err := c.ledgerService.GetSummary(r.Context(), tenantID, startDate, endDate)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to get ledger summary")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to get ledger summary")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, summary)
+}
+
 type settleRequest struct {
 	Date string `json:"date"`
 }

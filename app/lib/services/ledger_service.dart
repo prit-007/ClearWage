@@ -34,8 +34,11 @@ class LedgerService {
     return LedgerEntry.fromJson(res['data'] as Map<String, dynamic>? ?? {});
   }
 
-  Future<LedgerSummary> getSummary() async {
-    final res = await _client.get('/api/v1/ledger/total-outstanding');
+  Future<LedgerSummary> getSummary({required String startDate, required String endDate}) async {
+    final res = await _client.get('/api/v1/ledger/summary', query: {
+      'start_date': startDate,
+      'end_date': endDate,
+    });
     return LedgerSummary.fromJson(res['data'] as Map<String, dynamic>? ?? {});
   }
 

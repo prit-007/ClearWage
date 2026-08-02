@@ -40,39 +40,20 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
   }
 
   Future<void> _loadProfile() async {
-    final now = DateTime.now();
-    final start = '${now.year}-01-01';
-    final end = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-
     final svc = ref.read(staffServiceProvider);
-    final attSvc = ref.read(attendanceServiceProvider);
-    final ledgerSvc = ref.read(ledgerServiceProvider);
 
-    final dataF = _fetch(() => svc.getProfile(widget.employeeId));
-    final empF = _fetch(() => svc.get(widget.employeeId).then((e) => e.toJson()));
-    final attF = _fetch(() => attSvc.listByEmployee(widget.employeeId, startDate: start, endDate: end).then((l) => l.map((a) => a.toJson()).toList()));
-    final ledF = _fetch(() => ledgerSvc.listByEmployee(widget.employeeId, startDate: start, endDate: end).then((l) => l.map((e) => e.toJson()).toList()));
-    final balF = _fetch(() => ledgerSvc.getBalance(widget.employeeId));
-
-    final data = await dataF;
-    final empJson = await empF;
-    if (empJson == null && data == null) {
+    final overview = await _fetch(() => svc.getOverview(widget.employeeId));
+    if (overview == null) {
       if (mounted) setState(() => _loading = false);
       return;
     }
-    final attList = await attF ?? [];
-    final ledgerList = await ledF ?? [];
-    final bal = await balF ?? 0.0;
 
-    var profile = data ?? empJson;
-    if (data != null && empJson != null) profile = {...data, ...empJson};
-
-    if (profile?['shift_name'] == null && profile?['default_shift_id'] != null) {
-      try {
-        final shift = await ref.read(shiftServiceProvider).get(profile!['default_shift_id'].toString());
-        profile['shift_name'] = shift.name;
-      } catch (_) {}
-    }
+    final profile = (overview['profile'] as Map<String, dynamic>?)?.cast<String, dynamic>();
+    final ledger = (overview['ledger'] as Map<String, dynamic>?)?.cast<String, dynamic>() ?? {};
+    final attendanceData = (overview['attendance'] as Map<String, dynamic>?)?.cast<String, dynamic>() ?? {};
+    final attList = ((attendanceData['recent'] as List<dynamic>?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
+    final ledgerList = ((ledger['recent'] as List<dynamic>?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
+    final bal = ((ledger['balance'] as num?)?.toDouble()) ?? 0.0;
 
     if (mounted) {
       setState(() {

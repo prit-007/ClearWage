@@ -2,6 +2,7 @@ class AdvanceRequest {
   final String id;
   final String employeeId;
   final String employeeName;
+  final String? employeePhoto;
   final double amount;
   final String note;
   final String status;
@@ -11,6 +12,7 @@ class AdvanceRequest {
     required this.id,
     required this.employeeId,
     required this.employeeName,
+    this.employeePhoto,
     required this.amount,
     required this.note,
     required this.status,
@@ -25,6 +27,7 @@ class AdvanceRequest {
         id: json['id'] as String? ?? '',
         employeeId: json['employee_id'] as String? ?? '',
         employeeName: json['employee_name'] as String? ?? '',
+        employeePhoto: json['employee_photo'] as String?,
         amount: (json['amount'] as num?)?.toDouble() ?? 0,
         note: json['note'] as String? ?? '',
         status: json['status'] as String? ?? 'pending',

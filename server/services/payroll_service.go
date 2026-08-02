@@ -35,6 +35,11 @@ type PayrollResult struct {
 	TotalWage float64        `json:"total_wage"`
 }
 
+type PayrollAdjustment struct {
+	EmployeeID string
+	NetPay     float64
+}
+
 type PayrollService struct {
 	querier repositories.Querier
 }
@@ -244,20 +249,35 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 }
 
 func (s *PayrollService) FinalizePayroll(ctx context.Context, tenantID, startDate, endDate string) error {
+	return s.FinalizeAndLock(ctx, tenantID, startDate, endDate, nil)
+}
+
+func (s *PayrollService) FinalizeAndLock(ctx context.Context, tenantID, startDate, endDate string, adjustments []PayrollAdjustment) error {
 	result, err := s.Calculate(ctx, tenantID, startDate, endDate)
 	if err != nil {
 		return err
 	}
 
+	adjustByEmployee := make(map[string]float64, len(adjustments))
+	for _, a := range adjustments {
+		if a.EmployeeID != "" {
+			adjustByEmployee[a.EmployeeID] = a.NetPay
+		}
+	}
+
 	month := payrollMonth(startDate)
 
 	for _, entry := range result.Entries {
+		amount := entry.NetPayable
+		if adj, ok := adjustByEmployee[entry.EmployeeID]; ok {
+			amount = adj
+		}
 		_, err := s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
 			TenantID:           tenantID,
 			EmployeeID:         entry.EmployeeID,
 			Date:               endDate,
 			Type:               "wage",
-			Amount:             entry.NetPayable,
+			Amount:             amount,
 			Note:               nil,
 			LinkedPayrollMonth: &month,
 			CreatedBy:          "system",

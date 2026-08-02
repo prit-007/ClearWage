@@ -374,6 +374,7 @@ func TestStaffCreate_Unauthorized(t *testing.T) {
 	})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/staff", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))
 	rec := httptest.NewRecorder()
 
 	staffCtrl.Create(rec, req)

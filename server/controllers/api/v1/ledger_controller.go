@@ -90,6 +90,12 @@ func (c *LedgerController) ListByEmployee(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
 	employeeID := chi.URLParam(r, "id")
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
@@ -122,6 +128,12 @@ func (c *LedgerController) GetBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
 	employeeID := chi.URLParam(r, "id")
 
 	balance, err := c.ledgerService.GetBalance(r.Context(), employeeID, tenantID)
@@ -138,6 +150,12 @@ func (c *LedgerController) ListByTenant(w http.ResponseWriter, r *http.Request) 
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
 		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
@@ -168,6 +186,12 @@ func (c *LedgerController) GetTotalOutstanding(w http.ResponseWriter, r *http.Re
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
 		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 

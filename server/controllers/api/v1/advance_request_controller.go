@@ -111,6 +111,12 @@ func (c *AdvanceRequestController) List(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
 	status := r.URL.Query().Get("status")
 	limit, offset := parseLimitOffset(r)
 	requests, err := c.advanceRequestService.ListRequests(r.Context(), tenantID, status, limit, offset)

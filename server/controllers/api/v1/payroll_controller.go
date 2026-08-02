@@ -26,8 +26,14 @@ func NewPayrollController(payrollService *services.PayrollService, logger *zerol
 }
 
 type payrollRequest struct {
-	StartDate string `json:"start_date"`
-	EndDate   string `json:"end_date"`
+	StartDate   string              `json:"start_date"`
+	EndDate     string              `json:"end_date"`
+	Adjustments []payrollAdjustment `json:"adjustments"`
+}
+
+type payrollAdjustment struct {
+	EmployeeID string  `json:"employee_id"`
+	NetPay     float64 `json:"net_pay"`
 }
 
 func (c *PayrollController) Calculate(w http.ResponseWriter, r *http.Request) {
@@ -144,8 +150,13 @@ func (c *PayrollController) LockMonth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := c.payrollService.LockMonth(r.Context(), tenantID, req.StartDate, req.EndDate); err != nil {
-		c.logger.Error().Err(err).Msg("failed to lock attendance month")
+	adj := make([]services.PayrollAdjustment, 0, len(req.Adjustments))
+	for _, a := range req.Adjustments {
+		adj = append(adj, services.PayrollAdjustment{EmployeeID: a.EmployeeID, NetPay: a.NetPay})
+	}
+
+	if err := c.payrollService.FinalizeAndLock(r.Context(), tenantID, req.StartDate, req.EndDate, adj); err != nil {
+		c.logger.Error().Err(err).Msg("failed to lock payroll month")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to lock month")
 		return
 	}

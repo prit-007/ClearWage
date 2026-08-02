@@ -21,6 +21,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
   bool _loadingMore = false;
   bool _hasMore = true;
   String? _error;
+  bool _listenerRegistered = false;
 
   String get _startDate {
     final now = DateTime.now();
@@ -37,7 +38,6 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
     super.initState();
     _scrollCtrl.addListener(_onScroll);
     _fetch();
-    ref.listen(ledgerRefreshProvider, (_, _) => _fetch());
   }
 
   @override
@@ -90,6 +90,10 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_listenerRegistered) {
+      _listenerRegistered = true;
+      ref.listen(ledgerRefreshProvider, (_, __) => _fetch());
+    }
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 

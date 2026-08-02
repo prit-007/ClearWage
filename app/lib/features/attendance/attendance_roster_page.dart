@@ -302,6 +302,12 @@ class _MergedRow {
   const _MergedRow({required this.employee, this.attendance});
 }
 
+String _buildShiftLabel(String? name, String? start, String? end) {
+  if (name == null || name.isEmpty) return 'No shift assigned';
+  if (start == null || start.isEmpty) return name;
+  return '$name ($start\u2013$end)';
+}
+
 _MergedRow _rosterRowToMerged(Map<String, dynamic> row, String date) {
   final employee = Employee(
     id: row['employee_id'] as String? ?? '',
@@ -314,7 +320,11 @@ _MergedRow _rosterRowToMerged(Map<String, dynamic> row, String date) {
     role: row['role'] as String? ?? 'employee',
     isActive: row['is_active'] as bool? ?? true,
     defaultShiftId: row['default_shift_id'] as String?,
-    shiftName: row['shift_name'] as String?,
+    shiftName: _buildShiftLabel(
+      row['shift_name'] as String?,
+      row['shift_start_time'] as String?,
+      row['shift_end_time'] as String?,
+    ),
   );
   final attId = row['attendance_id'] as String?;
   if (attId == null || attId.isEmpty) {

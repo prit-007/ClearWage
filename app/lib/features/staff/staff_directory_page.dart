@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/employee_model.dart';
 import '../../providers/providers.dart';
+import '../../core/app_config.dart';
 import 'employee_profile_page.dart';
 import 'add_employee_page.dart';
 import '../../core/widgets/fluid_slide_in.dart';
@@ -55,7 +56,13 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
   }
 
   Future<void> _fetch() async {
-    setState(() { _loading = true; _error = null; _offset = 0; _hasMore = true; _allEmployees = []; });
+    setState(() {
+      _loading = true;
+      _error = null;
+      _offset = 0;
+      _hasMore = true;
+      _allEmployees = [];
+    });
     try {
       final staffService = ref.read(staffServiceProvider);
       final employees = await staffService.list(limit: _pageSize, offset: 0);
@@ -68,12 +75,18 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
     }
   }
 
   Future<void> _loadMore() async {
     if (_loadingMore || !_hasMore) return;
+    HapticFeedback.lightImpact();
     setState(() => _loadingMore = true);
     try {
       final staffService = ref.read(staffServiceProvider);
@@ -110,16 +123,23 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
     try {
       final staffService = ref.read(staffServiceProvider);
       final employees = await staffService.list(limit: 100000, offset: 0);
-      if (mounted) setState(() { _allEmployees = employees; _hasMore = false; });
+      if (mounted) {
+        setState(() {
+          _allEmployees = employees;
+          _hasMore = false;
+        });
+      }
     } catch (_) {}
   }
 
   List<Employee> get _filtered {
     if (_searchQuery.isEmpty) return _allEmployees;
-    return _allEmployees.where((e) =>
-      e.name.toLowerCase().contains(_searchQuery) ||
-      (e.designation?.toLowerCase().contains(_searchQuery) ?? false) ||
-      e.role.toLowerCase().contains(_searchQuery)).toList();
+    return _allEmployees
+        .where((e) =>
+            e.name.toLowerCase().contains(_searchQuery) ||
+            (e.designation?.toLowerCase().contains(_searchQuery) ?? false) ||
+            e.role.toLowerCase().contains(_searchQuery))
+        .toList();
   }
 
   @override
@@ -181,10 +201,16 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(PhosphorIconsFill.warningCircle, size: 48, color: cs.error),
+                      PhosphorIcon(PhosphorIconsDuotone.warningCircle, size: 48, color: cs.error),
                       const SizedBox(height: 16),
-                      Text('Failed to load staff', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      Text('Failed to load staff', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
                       Text('$_error', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                      const SizedBox(height: 16),
+                      FilledButton.tonalIcon(
+                        onPressed: _fetch,
+                        icon: const Icon(PhosphorIconsFill.arrowClockwise, size: 18),
+                        label: const Text('Retry'),
+                      ),
                     ],
                   ),
                 ),
@@ -194,7 +220,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
                 SliverFillRemaining(child: _EmptySearchState(cs: cs, tt: tt, isSearching: _searchQuery.isNotEmpty))
               else
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
@@ -213,7 +239,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
                             ),
                             ...List.generate(staffList.length, (i) {
                               return FluidSlideIn(
-                                delay: (index * 20 + i * 50).clamp(0, 400),
+                                delay: (index * 20 + i * 50).clamp(0, 400).toInt(),
                                 child: _StaffDirectoryTile(cs: cs, tt: tt, employee: staffList[i]),
                               );
                             }),
@@ -225,12 +251,20 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
                   ),
                 ),
               if (_loadingMore)
-                SliverToBoxAdapter(
+                const SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary)),
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: CircularProgressIndicator(strokeWidth: 2.5),
+                      ),
+                    ),
                   ),
-                ),
+                )
+              else
+                const SliverToBoxAdapter(child: SizedBox(height: 120)),
             ],
           ],
         ),
@@ -360,7 +394,7 @@ class _PremiumSearchBarState extends State<_PremiumSearchBar> {
   }
 }
 
-class _StaffDirectoryTile extends StatelessWidget {
+class _StaffDirectoryTile extends ConsumerWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final Employee employee;
@@ -368,10 +402,11 @@ class _StaffDirectoryTile extends StatelessWidget {
   const _StaffDirectoryTile({required this.cs, required this.tt, required this.employee});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDaily = employee.wageType == 'daily';
     final typeColor = isDaily ? const Color(0xFF10B981) : const Color(0xFF3B82F6);
     final initials = getInitials(employee.name);
+    final photoUrl = resolveMediaUrl(employee.photoUrl ?? '', ref.watch(serverUrlProvider));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -396,7 +431,10 @@ class _StaffDirectoryTile extends StatelessWidget {
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: cs.primaryContainer.withValues(alpha: 0.4),
-                  child: Text(initials, style: TextStyle(fontWeight: FontWeight.w800, color: cs.primary, fontSize: 14)),
+                  backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                  child: photoUrl.isNotEmpty
+                      ? null
+                      : Text(initials, style: TextStyle(fontWeight: FontWeight.w800, color: cs.primary, fontSize: 14)),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -455,8 +493,8 @@ class _EmptySearchState extends StatelessWidget {
               color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              isSearching ? PhosphorIconsFill.magnifyingGlass : PhosphorIconsFill.usersThree,
+            child: PhosphorIcon(
+              isSearching ? PhosphorIconsDuotone.magnifyingGlass : PhosphorIconsDuotone.usersThree,
               size: 56,
               color: cs.onSurfaceVariant.withValues(alpha: 0.5),
             ),

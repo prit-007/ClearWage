@@ -1,11 +1,14 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
 import '../../models/employee_model.dart';
 import '../../models/shift_model.dart';
+import '../../core/app_config.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../core/helpers.dart';
@@ -37,6 +40,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   late String _wageType;
   late String _role;
   bool _saving = false;
+  String? _photoPath;
   List<Shift> _shifts = [];
   String? _selectedShiftId;
 
@@ -109,6 +113,57 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     return null;
   }
 
+  Future<void> _pickPhoto() async {
+    HapticFeedback.selectionClick();
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Theme.of(context).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: PhosphorIcon(PhosphorIconsDuotone.camera, color: Theme.of(context).colorScheme.primary),
+                title: const Text('Capture with Camera', style: TextStyle(fontWeight: FontWeight.w700)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                onTap: () => Navigator.pop(ctx, 'camera'),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: PhosphorIcon(PhosphorIconsDuotone.image, color: Theme.of(context).colorScheme.primary),
+                title: const Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.w700)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                onTap: () => Navigator.pop(ctx, 'gallery'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (source == null || !mounted) return;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
+        imageQuality: 70,
+        maxWidth: 1200,
+        maxHeight: 1200,
+      );
+      if (picked != null && mounted) setState(() => _photoPath = picked.path);
+    } catch (_) {
+      if (mounted) showError(context, 'Could not pick photo');
+    }
+  }
+
   Future<void> _save() async {
     final error = _validateAll();
     if (error != null) {
@@ -146,10 +201,16 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
         if (_selectedShiftId != null && _selectedShiftId != e.defaultShiftId) {
           await ref.read(shiftServiceProvider).assignDefaultShift(e.id, _selectedShiftId!);
         }
+        if (_photoPath != null) {
+          await ref.read(staffServiceProvider).uploadPhoto(e.id, _photoPath!);
+        }
       } else {
         final created = await ref.read(staffServiceProvider).create(body);
         if (_selectedShiftId != null) {
           await ref.read(shiftServiceProvider).assignDefaultShift(created.id, _selectedShiftId!);
+        }
+        if (_photoPath != null) {
+          await ref.read(staffServiceProvider).uploadPhoto(created.id, _photoPath!);
         }
       }
       ref.invalidate(employeeListProvider);
@@ -173,6 +234,18 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       initialDate: _dojCtrl.text.isNotEmpty ? (DateTime.tryParse(_dojCtrl.text) ?? now) : now,
       firstDate: DateTime(1990),
       lastDate: now,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: Theme.of(context).colorScheme.primary,
+              onPrimary: Theme.of(context).colorScheme.onPrimary,
+              surface: Theme.of(context).colorScheme.surface,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() => _dojCtrl.text = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}');
@@ -193,7 +266,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
           icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(widget.employee != null ? 'Edit Employee' : 'Onboard Staff', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+        title: Text(widget.employee != null ? 'Edit Profile' : 'Onboard Staff', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5)),
         centerTitle: true,
       ),
       body: Stack(
@@ -205,114 +278,146 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
               FluidSlideIn(
                 delay: 0,
                 child: Center(
-                  child: Container(
-                    width: 100, height: 100,
-                    decoration: BoxDecoration(
-                      color: cs.primaryContainer.withValues(alpha: 0.4),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: cs.primary.withValues(alpha: 0.2), width: 2),
+                  child: GestureDetector(
+                    onTap: _pickPhoto,
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: cs.primary.withValues(alpha: 0.2), width: 4),
+                          ),
+                          child: CircleAvatar(
+                            radius: 56,
+                            backgroundColor: cs.primaryContainer.withValues(alpha: 0.4),
+                            backgroundImage: _photoPath != null
+                                ? FileImage(File(_photoPath!))
+                                : ((widget.employee?.photoUrl?.isNotEmpty ?? false)
+                                    ? NetworkImage(resolveMediaUrl(widget.employee!.photoUrl!, ref.read(serverUrlProvider)))
+                                    : null),
+                            child: (_photoPath == null && !(widget.employee?.photoUrl?.isNotEmpty ?? false))
+                                ? PhosphorIcon(PhosphorIconsDuotone.userPlus, size: 48, color: cs.primary)
+                                : null,
+                          ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: cs.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: cs.surfaceContainerLowest, width: 3),
+                            ),
+                            child: Icon(PhosphorIconsFill.camera, size: 18, color: cs.onPrimary),
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Icon(PhosphorIconsFill.userPlus, size: 40, color: cs.primary),
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
-              FluidSlideIn(delay: 100, child: ValidatedField(controller: _nameCtrl, label: 'Full Name', prefixIcon: PhosphorIconsRegular.user, validator: (v) => v == null || v.trim().isEmpty ? 'Enter employee name' : null)),
-              FluidSlideIn(delay: 200, child: ValidatedField(controller: _phoneCtrl, label: 'Phone Number', prefixIcon: PhosphorIconsRegular.phone, keyboardType: TextInputType.phone, validator: (v) {
+              const SizedBox(height: 48),
+
+              FluidSlideIn(
+                delay: 100,
+                child: Text('CORE IDENTITY', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w900, color: cs.primary, letterSpacing: 1.0)),
+              ),
+              const SizedBox(height: 16),
+              FluidSlideIn(delay: 150, child: ValidatedField(controller: _nameCtrl, label: 'Full Name', prefixIcon: PhosphorIconsDuotone.user, validator: (v) => v == null || v.trim().isEmpty ? 'Enter employee name' : null)),
+              FluidSlideIn(delay: 200, child: ValidatedField(controller: _phoneCtrl, label: 'Phone Number', prefixIcon: PhosphorIconsDuotone.phone, keyboardType: TextInputType.phone, validator: (v) {
                 final p = v?.trim() ?? '';
                 if (p.isEmpty) return null;
                 if (p.length < 10) return 'Enter a valid phone number';
                 return null;
               })),
-              FluidSlideIn(delay: 300, child: ValidatedField(controller: _desigCtrl, label: 'Designation / Role', prefixIcon: PhosphorIconsRegular.briefcase)),
-              const SizedBox(height: 16),
+              FluidSlideIn(delay: 250, child: ValidatedField(controller: _desigCtrl, label: 'Designation / Title', prefixIcon: PhosphorIconsDuotone.briefcase)),
+
+              const SizedBox(height: 32),
+
               FluidSlideIn(
-                delay: 400,
-                child: Text('WAGE CONFIGURATION', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w800, color: cs.primary, letterSpacing: 1.0)),
+                delay: 300,
+                child: Text('COMPENSATION & ROLE', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w900, color: cs.primary, letterSpacing: 1.0)),
               ),
               const SizedBox(height: 16),
               FluidSlideIn(
-                delay: 500,
+                delay: 350,
                 child: Row(
                   children: [
-                    _TactileWageCard(cs: cs, label: 'Daily Wage', icon: PhosphorIconsFill.sun, isSelected: _wageType == 'daily', onTap: () => _updateWage('daily')),
+                    _TactileWageCard(cs: cs, label: 'Daily Wage', icon: PhosphorIconsDuotone.sun, isSelected: _wageType == 'daily', onTap: () => _updateWage('daily')),
                     const SizedBox(width: 16),
-                    _TactileWageCard(cs: cs, label: 'Fixed Monthly', icon: PhosphorIconsFill.calendarBlank, isSelected: _wageType == 'monthly', onTap: () => _updateWage('monthly')),
+                    _TactileWageCard(cs: cs, label: 'Fixed Monthly', icon: PhosphorIconsDuotone.calendarBlank, isSelected: _wageType == 'monthly', onTap: () => _updateWage('monthly')),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              FluidSlideIn(delay: 600, child: ValidatedField(controller: _wageCtrl, label: 'Wage Amount (₹)', prefixIcon: PhosphorIconsRegular.coins, keyboardType: TextInputType.number, validator: (v) {
+              FluidSlideIn(delay: 400, child: ValidatedField(controller: _wageCtrl, label: 'Wage Amount (₹)', prefixIcon: PhosphorIconsDuotone.coins, keyboardType: TextInputType.number, validator: (v) {
                 if (v == null || v.trim().isEmpty) return null;
                 final amt = double.tryParse(v.trim());
                 if (amt == null || amt <= 0) return 'Enter a valid amount';
                 return null;
               })),
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
               FluidSlideIn(
-                delay: 700,
-                child: Text('SHIFT ASSIGNMENT', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w800, color: cs.primary, letterSpacing: 1.0)),
-              ),
-              const SizedBox(height: 12),
-              FluidSlideIn(
-                delay: 800,
+                delay: 450,
                 child: _ShiftSelector(
                   shifts: _shifts,
                   selectedId: _selectedShiftId,
                   onChanged: (id) => setState(() => _selectedShiftId = id),
                 ),
               ),
-              if (ref.watch(userInfoProvider)?.isAdmin ?? false) ...[
+              if ((ref.watch(userInfoProvider)?.isAdmin ?? false) && _role != 'owner') ...[
                 const SizedBox(height: 24),
                 FluidSlideIn(
-                  delay: 900,
-                  child: Text('ROLE', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w800, color: cs.primary, letterSpacing: 1.0)),
-                ),
-                const SizedBox(height: 12),
-                FluidSlideIn(
-                  delay: 1000,
+                  delay: 500,
                   child: _RoleSelector(role: _role, onChanged: (r) => setState(() => _role = r)),
                 ),
               ],
-              const SizedBox(height: 24),
+
+              const SizedBox(height: 48),
+
               FluidSlideIn(
-                delay: 1100,
-                child: Text('KYC & FINANCIAL', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w800, color: cs.primary, letterSpacing: 1.0)),
+                delay: 550,
+                child: Text('KYC & FINANCIAL', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w900, color: cs.primary, letterSpacing: 1.0)),
               ),
               const SizedBox(height: 16),
               FluidSlideIn(
-                delay: 1200,
+                delay: 600,
                 child: InkWell(
                   onTap: _pickDoj,
                   borderRadius: BorderRadius.circular(16),
                   child: ValidatedField(
                     controller: _dojCtrl,
                     label: 'Date of Joining',
-                    prefixIcon: PhosphorIconsRegular.calendarBlank,
+                    prefixIcon: PhosphorIconsDuotone.calendarPlus,
                     readOnly: true,
                     hint: 'Tap to select date',
                   ),
                 ),
               ),
-              FluidSlideIn(delay: 1300, child: ValidatedField(controller: _panCtrl, label: 'PAN Number', prefixIcon: PhosphorIconsRegular.identificationCard)),
-              FluidSlideIn(delay: 1400, child: ValidatedField(controller: _aadhaarCtrl, label: 'Aadhaar Number', prefixIcon: PhosphorIconsRegular.fingerprint, keyboardType: TextInputType.number)),
-              FluidSlideIn(delay: 1500, child: ValidatedField(controller: _pfCtrl, label: 'PF / UAN Number', prefixIcon: PhosphorIconsRegular.shieldStar)),
-              FluidSlideIn(delay: 1600, child: ValidatedField(controller: _bankCtrl, label: 'Bank Account Number', prefixIcon: PhosphorIconsRegular.bank, keyboardType: TextInputType.number)),
-              FluidSlideIn(delay: 1700, child: ValidatedField(controller: _ifscCtrl, label: 'Bank IFSC', prefixIcon: PhosphorIconsRegular.bank)),
-              FluidSlideIn(delay: 1800, child: ValidatedField(controller: _upiCtrl, label: 'UPI ID', prefixIcon: PhosphorIconsRegular.qrCode)),
-              const SizedBox(height: 24),
+              FluidSlideIn(delay: 650, child: ValidatedField(controller: _panCtrl, label: 'PAN Number', prefixIcon: PhosphorIconsDuotone.identificationCard)),
+              FluidSlideIn(delay: 700, child: ValidatedField(controller: _aadhaarCtrl, label: 'Aadhaar Number', prefixIcon: PhosphorIconsDuotone.fingerprint, keyboardType: TextInputType.number)),
+              FluidSlideIn(delay: 750, child: ValidatedField(controller: _pfCtrl, label: 'PF / UAN Number', prefixIcon: PhosphorIconsDuotone.shieldCheck)),
+              FluidSlideIn(delay: 800, child: ValidatedField(controller: _bankCtrl, label: 'Bank Account Number', prefixIcon: PhosphorIconsDuotone.bank, keyboardType: TextInputType.number)),
+              FluidSlideIn(delay: 850, child: ValidatedField(controller: _ifscCtrl, label: 'Bank IFSC', prefixIcon: PhosphorIconsDuotone.buildings)),
+              FluidSlideIn(delay: 900, child: ValidatedField(controller: _upiCtrl, label: 'UPI ID', prefixIcon: PhosphorIconsDuotone.qrCode)),
+
+              const SizedBox(height: 48),
+
               FluidSlideIn(
-                delay: 1900,
-                child: Text('EMERGENCY & ADDRESS', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w800, color: cs.primary, letterSpacing: 1.0)),
+                delay: 950,
+                child: Text('EMERGENCY & ADDRESS', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w900, color: cs.primary, letterSpacing: 1.0)),
               ),
               const SizedBox(height: 16),
-              FluidSlideIn(delay: 2000, child: ValidatedField(controller: _emergencyNameCtrl, label: 'Emergency Contact Name', prefixIcon: PhosphorIconsRegular.userCircle)),
-              FluidSlideIn(delay: 2100, child: ValidatedField(controller: _emergencyPhoneCtrl, label: 'Emergency Contact Phone', prefixIcon: PhosphorIconsRegular.phone, keyboardType: TextInputType.phone)),
-              FluidSlideIn(delay: 2200, child: ValidatedField(controller: _currentAddrCtrl, label: 'Current Address', prefixIcon: PhosphorIconsRegular.house, maxLines: 2)),
-              FluidSlideIn(delay: 2300, child: ValidatedField(controller: _permAddrCtrl, label: 'Permanent Address', prefixIcon: PhosphorIconsRegular.mapPin, maxLines: 2)),
-              FluidSlideIn(delay: 2400, child: ValidatedField(controller: _healthCtrl, label: 'Health Notes', prefixIcon: PhosphorIconsRegular.firstAid, maxLines: 2)),
+              FluidSlideIn(delay: 1000, child: ValidatedField(controller: _emergencyNameCtrl, label: 'Emergency Contact Name', prefixIcon: PhosphorIconsDuotone.userFocus)),
+              FluidSlideIn(delay: 1050, child: ValidatedField(controller: _emergencyPhoneCtrl, label: 'Emergency Contact Phone', prefixIcon: PhosphorIconsDuotone.phoneCall, keyboardType: TextInputType.phone)),
+              FluidSlideIn(delay: 1100, child: ValidatedField(controller: _currentAddrCtrl, label: 'Current Address', prefixIcon: PhosphorIconsDuotone.house, maxLines: 2)),
+              FluidSlideIn(delay: 1150, child: ValidatedField(controller: _permAddrCtrl, label: 'Permanent Address', prefixIcon: PhosphorIconsDuotone.mapPin, maxLines: 2)),
+              FluidSlideIn(delay: 1200, child: ValidatedField(controller: _healthCtrl, label: 'Health Notes', prefixIcon: PhosphorIconsDuotone.firstAid, maxLines: 2)),
             ],
           ),
+
           Positioned(
             bottom: 0, left: 0, right: 0,
             child: ClipRect(
@@ -333,7 +438,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     ),
                     child: _saving
                         ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Save Employee Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                        : Text(widget.employee != null ? 'Update Profile' : 'Onboard Employee', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                   ),
                 ),
               ),
@@ -348,7 +453,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
 class _TactileWageCard extends StatelessWidget {
   final ColorScheme cs;
   final String label;
-  final IconData icon;
+  final Object icon;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -370,9 +475,9 @@ class _TactileWageCard extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Icon(icon, color: isSelected ? cs.primary : cs.onSurfaceVariant, size: 28),
+              PhosphorIcon(icon, color: isSelected ? cs.primary : cs.onSurfaceVariant, size: 28),
               const SizedBox(height: 12),
-              Text(label, style: TextStyle(fontWeight: FontWeight.w700, color: isSelected ? cs.primary : cs.onSurfaceVariant, fontSize: 13)),
+              Text(label, style: TextStyle(fontWeight: FontWeight.w800, color: isSelected ? cs.primary : cs.onSurfaceVariant, fontSize: 13, letterSpacing: -0.3)),
             ],
           ),
         ),
@@ -395,54 +500,59 @@ class _ShiftSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String?>(
-          value: selectedId,
-          isExpanded: true,
-          icon: Icon(PhosphorIconsRegular.caretDown, color: cs.onSurfaceVariant),
-          hint: Row(
-            children: [
-              Icon(PhosphorIconsRegular.clock, size: 20, color: cs.onSurfaceVariant),
-              const SizedBox(width: 12),
-              Text('Select shift', style: TextStyle(color: cs.onSurfaceVariant)),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Default Shift', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
           ),
-          items: [
-            DropdownMenuItem<String?>(
-              value: null,
-              child: Row(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String?>(
+              value: selectedId,
+              isExpanded: true,
+              icon: Icon(PhosphorIconsRegular.caretDown, color: cs.onSurfaceVariant),
+              hint: Row(
                 children: [
-                  Icon(PhosphorIconsRegular.xCircle, size: 20, color: cs.onSurfaceVariant),
+                  PhosphorIcon(PhosphorIconsDuotone.clock, size: 20, color: cs.onSurfaceVariant),
                   const SizedBox(width: 12),
-                  Text('No shift', style: TextStyle(color: cs.onSurfaceVariant)),
+                  Text('Assign Shift', style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
                 ],
               ),
-            ),
-            ...shifts.map((s) => DropdownMenuItem<String?>(
-              value: s.id,
-              child: Row(
-                children: [
-                  Icon(PhosphorIconsRegular.clock, size: 20, color: cs.primary),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+              items: [
+                DropdownMenuItem<String?>(
+                  value: null,
+                  child: Row(
+                    children: [
+                      PhosphorIcon(PhosphorIconsDuotone.xCircle, size: 20, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 12),
+                      Text('No shift assigned', style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Text('${s.startTime}-${s.endTime}', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                ],
-              ),
-            )),
-          ],
-          onChanged: onChanged,
+                ),
+                ...shifts.map((s) => DropdownMenuItem<String?>(
+                  value: s.id,
+                  child: Row(
+                    children: [
+                      PhosphorIcon(PhosphorIconsDuotone.clock, size: 20, color: cs.primary),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w700))),
+                      const SizedBox(width: 8),
+                      Text('${s.startTime}-${s.endTime}', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                )),
+              ],
+              onChanged: onChanged,
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -456,25 +566,50 @@ class _RoleSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: role,
-          isExpanded: true,
-          icon: Icon(PhosphorIconsRegular.caretDown, color: cs.onSurfaceVariant),
-          items: const [
-            DropdownMenuItem(value: 'employee', child: Text('Employee', style: TextStyle(fontWeight: FontWeight.w600))),
-            DropdownMenuItem(value: 'manager', child: Text('Manager', style: TextStyle(fontWeight: FontWeight.w600))),
-          ],
-          onChanged: (v) { if (v != null) onChanged(v); },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('System Access Level', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: role,
+              isExpanded: true,
+              icon: Icon(PhosphorIconsRegular.caretDown, color: cs.onSurfaceVariant),
+              items: [
+                DropdownMenuItem(
+                  value: 'employee',
+                  child: Row(
+                    children: [
+                      PhosphorIcon(PhosphorIconsDuotone.user, size: 20, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 12),
+                      const Text('Standard Employee', style: TextStyle(fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: 'manager',
+                  child: Row(
+                    children: [
+                      PhosphorIcon(PhosphorIconsDuotone.shieldStar, size: 20, color: cs.primary),
+                      const SizedBox(width: 12),
+                      const Text('Manager / Supervisor', style: TextStyle(fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+              ],
+              onChanged: (v) { if (v != null) onChanged(v); },
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }

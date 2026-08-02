@@ -6,11 +6,20 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/providers.dart';
 import '../../models/employee_model.dart';
+import '../../core/app_config.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import 'add_employee_page.dart';
+
+String _resolveMediaUrl(String url, String baseUrl) {
+  if (url.isEmpty) return url;
+  final u = Uri.tryParse(url);
+  if (u != null && u.hasScheme) return url;
+  return '$baseUrl$url';
+}
 
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -229,7 +238,7 @@ class _EmployeeProfileScreenState
               controller: _tabCtrl,
               physics: const BouncingScrollPhysics(),
               children: [
-                _InfoTab(cs: cs, tt: tt, profile: _profile, employeeId: widget.employeeId),
+                _InfoTab(cs: cs, tt: tt, profile: _profile, employeeId: widget.employeeId, canEdit: ref.watch(userInfoProvider)?.isAdmin ?? false),
                 _AttendanceTab(cs: cs, tt: tt, attendanceList: _attendance),
                 _LedgerTab(cs: cs, tt: tt, ledgerList: _ledger, balance: _balance),
               ],
@@ -387,7 +396,8 @@ class _InfoTab extends StatelessWidget {
   final TextTheme tt;
   final Map<String, dynamic>? profile;
   final String employeeId;
-  const _InfoTab({required this.cs, required this.tt, this.profile, required this.employeeId});
+  final bool canEdit;
+  const _InfoTab({required this.cs, required this.tt, this.profile, required this.employeeId, required this.canEdit});
 
   @override
   Widget build(BuildContext context) {
@@ -443,7 +453,7 @@ class _InfoTab extends StatelessWidget {
               style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
         ),
         const SizedBox(height: 16),
-        _DocumentVault(employeeId: employeeId),
+        _DocumentVault(employeeId: employeeId, canEdit: canEdit),
         const SizedBox(height: 8),
       ],
     );
@@ -452,7 +462,8 @@ class _InfoTab extends StatelessWidget {
 
 class _DocumentVault extends ConsumerStatefulWidget {
   final String employeeId;
-  const _DocumentVault({required this.employeeId});
+  final bool canEdit;
+  const _DocumentVault({required this.employeeId, required this.canEdit});
 
   @override
   ConsumerState<_DocumentVault> createState() => _DocumentVaultState();
@@ -565,7 +576,7 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
   }
 
   Future<void> _view(Map<String, dynamic> doc) async {
-    final url = doc['file_path'] as String? ?? '';
+    final url = _resolveMediaUrl(doc['file_path'] as String? ?? '', ref.read(serverUrlProvider));
     if (url.isEmpty) return;
     await Navigator.of(context).push(
       MaterialPageRoute(
@@ -622,6 +633,8 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
             icon: icon,
             doc: _docFor(type),
             uploading: _uploadingType == type,
+            canEdit: widget.canEdit,
+            baseUrl: ref.watch(serverUrlProvider),
             onUpload: () => _upload(type),
             onView: _docFor(type) == null ? null : () => _view(_docFor(type)!),
             onDelete: _docFor(type) == null ? null : () => _delete(type),
@@ -639,6 +652,8 @@ class _DocumentCard extends StatelessWidget {
   final String icon;
   final Map<String, dynamic>? doc;
   final bool uploading;
+  final bool canEdit;
+  final String baseUrl;
   final VoidCallback onUpload;
   final VoidCallback? onView;
   final VoidCallback? onDelete;
@@ -651,6 +666,8 @@ class _DocumentCard extends StatelessWidget {
     required this.icon,
     required this.doc,
     required this.uploading,
+    required this.canEdit,
+    required this.baseUrl,
     required this.onUpload,
     this.onView,
     this.onDelete,
@@ -675,7 +692,7 @@ class _DocumentCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.network(
-                filePath,
+                _resolveMediaUrl(filePath, baseUrl),
                 width: 56,
                 height: 56,
                 fit: BoxFit.cover,
@@ -714,8 +731,8 @@ class _DocumentCard extends StatelessWidget {
             const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
           else if (doc != null) ...[
             IconButton(onPressed: onView, icon: Icon(Icons.visibility_outlined, color: cs.onSurfaceVariant)),
-            IconButton(onPressed: onDelete, icon: Icon(Icons.delete_outline_rounded, color: cs.error)),
-          ] else
+            if (canEdit) IconButton(onPressed: onDelete, icon: Icon(Icons.delete_outline_rounded, color: cs.error)),
+          ] else if (canEdit)
             FilledButton.tonal(onPressed: onUpload, child: const Text('Upload')),
         ],
       ),
@@ -755,6 +772,15 @@ class _DocumentViewerPage extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.picture_as_pdf_rounded, size: 96, color: Colors.white70),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: () async {
+                      final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                      if (!ok && context.mounted) showError(context, 'Could not open document');
+                    },
+                    icon: const Icon(Icons.open_in_new_rounded),
+                    label: const Text('Open document'),
+                  ),
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),

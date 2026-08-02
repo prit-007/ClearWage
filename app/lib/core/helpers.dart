@@ -4,6 +4,13 @@ String getInitials(String name) {
   return name.split(' ').where((e) => e.isNotEmpty).map((e) => e[0]).take(2).join().toUpperCase();
 }
 
+String resolveMediaUrl(String url, String baseUrl) {
+  if (url.isEmpty) return url;
+  final u = Uri.tryParse(url);
+  if (u != null && u.hasScheme) return url;
+  return '$baseUrl$url';
+}
+
 void showError(BuildContext context, Object? e) {
   if (context.mounted) {
     final msg = e is FlutterError ? e.message : '$e';

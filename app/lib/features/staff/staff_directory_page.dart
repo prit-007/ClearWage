@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/employee_model.dart';
 import '../../providers/providers.dart';
+import '../../core/app_config.dart';
 import 'employee_profile_page.dart';
 import 'add_employee_page.dart';
 import '../../core/widgets/fluid_slide_in.dart';
@@ -360,7 +361,7 @@ class _PremiumSearchBarState extends State<_PremiumSearchBar> {
   }
 }
 
-class _StaffDirectoryTile extends StatelessWidget {
+class _StaffDirectoryTile extends ConsumerWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final Employee employee;
@@ -368,10 +369,11 @@ class _StaffDirectoryTile extends StatelessWidget {
   const _StaffDirectoryTile({required this.cs, required this.tt, required this.employee});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDaily = employee.wageType == 'daily';
     final typeColor = isDaily ? const Color(0xFF10B981) : const Color(0xFF3B82F6);
     final initials = getInitials(employee.name);
+    final photoUrl = resolveMediaUrl(employee.photoUrl ?? '', ref.watch(serverUrlProvider));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -396,7 +398,10 @@ class _StaffDirectoryTile extends StatelessWidget {
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: cs.primaryContainer.withValues(alpha: 0.4),
-                  child: Text(initials, style: TextStyle(fontWeight: FontWeight.w800, color: cs.primary, fontSize: 14)),
+                  backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                  child: photoUrl.isNotEmpty
+                      ? null
+                      : Text(initials, style: TextStyle(fontWeight: FontWeight.w800, color: cs.primary, fontSize: 14)),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

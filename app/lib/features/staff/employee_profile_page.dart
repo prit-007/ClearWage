@@ -14,13 +14,6 @@ import '../../core/helpers.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import 'add_employee_page.dart';
 
-String _resolveMediaUrl(String url, String baseUrl) {
-  if (url.isEmpty) return url;
-  final u = Uri.tryParse(url);
-  if (u != null && u.hasScheme) return url;
-  return '$baseUrl$url';
-}
-
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
   const EmployeeProfileScreen(
@@ -95,6 +88,58 @@ class _EmployeeProfileScreenState
 
   Future<T?> _fetch<T>(Future<T> Function() fn) async {
     try { return await fn(); } catch (_) { return null; }
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    HapticFeedback.selectionClick();
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_rounded),
+              title: const Text('Capture with Camera'),
+              onTap: () => Navigator.pop(ctx, 'camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.pop(ctx, 'gallery'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    String? path;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
+        imageQuality: 70,
+        maxWidth: 1200,
+        maxHeight: 1200,
+      );
+      path = picked?.path;
+    } catch (_) {
+      if (mounted) showError(context, 'Could not pick photo');
+      return;
+    }
+    if (path == null || !mounted) return;
+
+    try {
+      final url = await ref.read(staffServiceProvider).uploadPhoto(widget.employeeId, path);
+      if (mounted) {
+        setState(() => _profile?['photo_url'] = url);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Photo updated')));
+      }
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
   }
 
   @override
@@ -203,7 +248,7 @@ class _EmployeeProfileScreenState
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 24, vertical: 8),
-                  child: _EditorialProfileHeader(cs: cs, tt: tt, name: name, initials: initials, designation: designation, phone: phone),
+                  child: _EditorialProfileHeader(cs: cs, tt: tt, name: name, initials: initials, designation: designation, phone: phone, photoUrl: resolveMediaUrl(_profile?['photo_url'] as String? ?? '', ref.read(serverUrlProvider)), canEditPhoto: ref.watch(userInfoProvider)?.isAdmin ?? false, onEditPhoto: _pickAndUploadPhoto),
                 ),
               ),
               SliverPersistentHeader(
@@ -328,10 +373,14 @@ class _EditorialProfileHeader extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final String name, initials, designation, phone;
+  final String photoUrl;
+  final bool canEditPhoto;
+  final VoidCallback onEditPhoto;
   const _EditorialProfileHeader({
     required this.cs, required this.tt,
     required this.name, required this.initials,
     required this.designation, required this.phone,
+    required this.photoUrl, required this.canEditPhoto, required this.onEditPhoto,
   });
 
   @override
@@ -346,13 +395,38 @@ class _EditorialProfileHeader extends StatelessWidget {
               border: Border.all(
                   color: cs.primary.withValues(alpha: 0.2),
                   width: 2)),
-          child: CircleAvatar(
-            radius: 48,
-            backgroundColor: cs.primaryContainer,
-            child: Text(initials,
-                style: tt.headlineMedium?.copyWith(
-                    color: cs.onPrimaryContainer,
-                    fontWeight: FontWeight.w800)),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              CircleAvatar(
+                radius: 48,
+                backgroundColor: cs.primaryContainer,
+                backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                child: photoUrl.isNotEmpty
+                    ? null
+                    : Text(initials,
+                        style: tt.headlineMedium?.copyWith(
+                            color: cs.onPrimaryContainer,
+                            fontWeight: FontWeight.w800)),
+              ),
+              if (canEditPhoto)
+                Positioned(
+                  right: -6,
+                  bottom: -6,
+                  child: GestureDetector(
+                    onTap: onEditPhoto,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: cs.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: cs.surfaceContainerLowest, width: 2),
+                      ),
+                      child: Icon(PhosphorIconsFill.camera, size: 16, color: cs.onPrimary),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 16),
@@ -472,6 +546,7 @@ class _DocumentVault extends ConsumerStatefulWidget {
 class _DocumentVaultState extends ConsumerState<_DocumentVault> {
   List<Map<String, dynamic>> _docs = [];
   bool _loading = true;
+  String? _error;
   String? _uploadingType;
 
   static const _types = [
@@ -487,6 +562,10 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
   }
 
   Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final docs = await ref.read(documentServiceProvider).listDocuments(widget.employeeId);
       if (mounted) {
@@ -495,8 +574,13 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
           _loading = false;
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = '$e';
+        });
+      }
     }
   }
 
@@ -576,7 +660,7 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
   }
 
   Future<void> _view(Map<String, dynamic> doc) async {
-    final url = _resolveMediaUrl(doc['file_path'] as String? ?? '', ref.read(serverUrlProvider));
+    final url = resolveMediaUrl(doc['file_path'] as String? ?? '', ref.read(serverUrlProvider));
     if (url.isEmpty) return;
     await Navigator.of(context).push(
       MaterialPageRoute(
@@ -619,6 +703,32 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
         child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.errorContainer.withValues(alpha: 0.4)),
+        ),
+        child: Column(
+          children: [
+            Icon(PhosphorIconsFill.warningCircle, size: 40, color: cs.error),
+            const SizedBox(height: 12),
+            Text('Could not load documents', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text('$_error', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton.tonalIcon(
+              onPressed: _load,
+              icon: const Icon(PhosphorIconsFill.arrowClockwise, size: 18),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
       );
     }
 
@@ -692,7 +802,7 @@ class _DocumentCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.network(
-                _resolveMediaUrl(filePath, baseUrl),
+                resolveMediaUrl(filePath, baseUrl),
                 width: 56,
                 height: 56,
                 fit: BoxFit.cover,

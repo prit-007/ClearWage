@@ -1,3 +1,4 @@
+import 'package:http/http.dart' as http;
 import '../core/api_client.dart';
 import '../models/employee_model.dart';
 
@@ -36,6 +37,12 @@ class StaffService {
   Future<Map<String, dynamic>> getProfile(String id) async {
     final res = await _client.get('/api/v1/staff/$id/profile');
     return res['data'] as Map<String, dynamic>? ?? {};
+  }
+
+  Future<String> uploadPhoto(String id, String filePath) async {
+    final file = await http.MultipartFile.fromPath('file', filePath);
+    final res = await _client.postMultipart('/api/v1/staff/$id/upload-photo', files: [file]);
+    return (res['data'] as Map<String, dynamic>?)?['photo_url'] as String? ?? '';
   }
 
   Future<void> assignManager(String id, String managerId) async {

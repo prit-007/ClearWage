@@ -1,11 +1,14 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
 import '../../models/employee_model.dart';
 import '../../models/shift_model.dart';
+import '../../core/app_config.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../core/helpers.dart';
@@ -37,6 +40,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   late String _wageType;
   late String _role;
   bool _saving = false;
+  String? _photoPath;
   List<Shift> _shifts = [];
   String? _selectedShiftId;
 
@@ -109,6 +113,44 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     return null;
   }
 
+  Future<void> _pickPhoto() async {
+    HapticFeedback.selectionClick();
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_rounded),
+              title: const Text('Capture with Camera'),
+              onTap: () => Navigator.pop(ctx, 'camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.pop(ctx, 'gallery'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
+        imageQuality: 70,
+        maxWidth: 1200,
+        maxHeight: 1200,
+      );
+      if (picked != null && mounted) setState(() => _photoPath = picked.path);
+    } catch (_) {
+      if (mounted) showError(context, 'Could not pick photo');
+    }
+  }
+
   Future<void> _save() async {
     final error = _validateAll();
     if (error != null) {
@@ -146,10 +188,16 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
         if (_selectedShiftId != null && _selectedShiftId != e.defaultShiftId) {
           await ref.read(shiftServiceProvider).assignDefaultShift(e.id, _selectedShiftId!);
         }
+        if (_photoPath != null) {
+          await ref.read(staffServiceProvider).uploadPhoto(e.id, _photoPath!);
+        }
       } else {
         final created = await ref.read(staffServiceProvider).create(body);
         if (_selectedShiftId != null) {
           await ref.read(shiftServiceProvider).assignDefaultShift(created.id, _selectedShiftId!);
+        }
+        if (_photoPath != null) {
+          await ref.read(staffServiceProvider).uploadPhoto(created.id, _photoPath!);
         }
       }
       ref.invalidate(employeeListProvider);
@@ -205,14 +253,37 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
               FluidSlideIn(
                 delay: 0,
                 child: Center(
-                  child: Container(
-                    width: 100, height: 100,
-                    decoration: BoxDecoration(
-                      color: cs.primaryContainer.withValues(alpha: 0.4),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: cs.primary.withValues(alpha: 0.2), width: 2),
+                  child: GestureDetector(
+                    onTap: _pickPhoto,
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: cs.primaryContainer.withValues(alpha: 0.4),
+                          backgroundImage: _photoPath != null
+                              ? FileImage(File(_photoPath!))
+                              : ((widget.employee?.photoUrl?.isNotEmpty ?? false)
+                                  ? NetworkImage(resolveMediaUrl(widget.employee!.photoUrl!, ref.read(serverUrlProvider)))
+                                  : null),
+                          child: (_photoPath == null && !(widget.employee?.photoUrl?.isNotEmpty ?? false))
+                              ? Icon(PhosphorIconsFill.userPlus, size: 40, color: cs.primary)
+                              : null,
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: cs.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: cs.surfaceContainerLowest, width: 2),
+                            ),
+                            child: Icon(PhosphorIconsFill.camera, size: 16, color: cs.onPrimary),
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Icon(PhosphorIconsFill.userPlus, size: 40, color: cs.primary),
                   ),
                 ),
               ),

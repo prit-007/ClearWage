@@ -2,9 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/token_storage.dart';
+import '../../core/app_config.dart';
 import '../../models/attendance_model.dart';
 import '../../providers/providers.dart';
 import '../../core/helpers.dart';
@@ -36,6 +38,62 @@ class MyProfileScreen extends ConsumerStatefulWidget {
 class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
   bool _downloading = false;
+  bool _uploadingPhoto = false;
+
+  Future<void> _pickAndUploadPhoto(String employeeId) async {
+    HapticFeedback.selectionClick();
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_rounded),
+              title: const Text('Capture with Camera'),
+              onTap: () => Navigator.pop(ctx, 'camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.pop(ctx, 'gallery'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    String? path;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
+        imageQuality: 70,
+        maxWidth: 1200,
+        maxHeight: 1200,
+      );
+      path = picked?.path;
+    } catch (_) {
+      if (mounted) showError(context, 'Could not pick photo');
+      return;
+    }
+    if (path == null || !mounted) return;
+
+    setState(() => _uploadingPhoto = true);
+    try {
+      await ref.read(staffServiceProvider).uploadPhoto(employeeId, path);
+      if (mounted) {
+        showSuccess(context, 'Photo updated');
+        ref.invalidate(myProfileProvider);
+      }
+    } catch (e) {
+      if (mounted) showError(context, e);
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
+    }
+  }
 
   @override
   void initState() {
@@ -116,6 +174,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
           final name = data['name'] as String? ?? 'User';
           final role = data['role'] as String? ?? '';
           final initials = getInitials(name);
+          final photoUrl = resolveMediaUrl(data['photo_url'] as String? ?? '', ref.watch(serverUrlProvider));
+          final employeeId = data['id'] as String? ?? '';
 
           return NestedScrollView(
             physics: const BouncingScrollPhysics(),
@@ -138,10 +198,37 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
                             shape: BoxShape.circle,
                             border: Border.all(color: cs.primary.withValues(alpha: 0.2), width: 2),
                           ),
-                          child: CircleAvatar(
-                            radius: 40,
-                            backgroundColor: cs.primaryContainer,
-                            child: Text(initials, style: tt.headlineMedium?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w800)),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              CircleAvatar(
+                                radius: 40,
+                                backgroundColor: cs.primaryContainer,
+                                backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                                child: photoUrl.isNotEmpty
+                                    ? null
+                                    : Text(initials, style: tt.headlineMedium?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w800)),
+                              ),
+                              if (employeeId.isNotEmpty)
+                                Positioned(
+                                  right: -6,
+                                  bottom: -6,
+                                  child: GestureDetector(
+                                    onTap: _uploadingPhoto ? null : () => _pickAndUploadPhoto(employeeId),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: cs.primary,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: cs.surface, width: 2),
+                                      ),
+                                      child: _uploadingPhoto
+                                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                          : Icon(PhosphorIconsFill.camera, size: 16, color: cs.onPrimary),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 12),

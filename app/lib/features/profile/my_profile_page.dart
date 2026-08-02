@@ -13,8 +13,17 @@ import '../../providers/providers.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
-final myProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) {
-  return ref.watch(profileServiceProvider).getProfile();
+final myProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  final res = await ref.watch(profileServiceProvider).getOverview();
+  final overview = (res['overview'] as Map<String, dynamic>?) ?? {};
+  final profile = (overview['profile'] as Map<String, dynamic>?) ?? {};
+  final tenant = (res['tenant'] as Map<String, dynamic>?) ?? {};
+  return <String, dynamic>{
+    ...profile,
+    'factory_name': tenant['name'],
+    'tenant_name': tenant['name'],
+    'email': profile['email'],
+  };
 });
 
 final myAttendanceProvider = FutureProvider.autoDispose<List<Attendance>>((ref) {

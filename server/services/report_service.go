@@ -46,6 +46,7 @@ type Defaulter struct {
 	EmployeeID          string  `json:"employee_id"`
 	Name                string  `json:"name"`
 	Phone               string  `json:"phone"`
+	PhotoURL            *string `json:"photo_url"`
 	OutstandingBalance  float64 `json:"outstanding_balance"`
 	MonthlyWage         float64 `json:"monthly_wage"`
 }
@@ -252,6 +253,7 @@ func (s *ReportService) DefaultersList(ctx context.Context, tenantID string) ([]
 				EmployeeID:          e.ID,
 				Name:                e.Name,
 				Phone:               e.Phone,
+				PhotoURL:            e.PhotoUrl,
 				OutstandingBalance:  balance,
 				MonthlyWage:         monthlyWage,
 			})

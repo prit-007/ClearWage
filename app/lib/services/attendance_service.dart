@@ -5,6 +5,12 @@ class AttendanceService {
   final ApiClient _client;
   AttendanceService(this._client);
 
+  Future<List<Map<String, dynamic>>> roster(String date) async {
+    final res = await _client.get('/api/v1/attendance/roster', query: {'date': date});
+    final list = (res['data'] as List<dynamic>?) ?? [];
+    return list.map((e) => (e as Map).cast<String, dynamic>()).toList();
+  }
+
   Future<List<Attendance>> listByDate(String date, {int? limit, int? offset}) async {
     final query = <String, String>{'date': date};
     if (limit != null) query['limit'] = limit.toString();

@@ -6,6 +6,7 @@ import '../../providers/providers.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
+import '../../core/widgets/employee_avatar.dart';
 
 class PayrollPreviewScreen extends ConsumerStatefulWidget {
   const PayrollPreviewScreen({super.key});
@@ -229,6 +230,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                         return _EditablePayrollRow(
                           cs: cs, tt: tt,
                           name: emp['name'] as String? ?? '',
+                          photoUrl: emp['photo_url'] as String?,
                           gross: '₹${(emp['gross_wages'] as num?)?.toStringAsFixed(0) ?? '0'}',
                           controller: _rowControllers[index],
                         );
@@ -241,7 +243,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
             ],
           ),
           BottomBlurBar(
-            child: LoadingButton(loading: _locking, onPressed: _lockPayroll, label: 'Lock & Generate Slips', icon: PhosphorIconsBold.lockKey, backgroundColor: const Color(0xFF10B981)),
+            child: LoadingButton(loading: _locking, onPressed: _lockPayroll, label: 'Lock Payroll', icon: PhosphorIconsBold.lockKey, backgroundColor: const Color(0xFF10B981)),
           ),
         ],
       ),
@@ -326,9 +328,10 @@ class _EditablePayrollRow extends StatefulWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final String name, gross;
+  final String? photoUrl;
   final TextEditingController controller;
 
-  const _EditablePayrollRow({required this.cs, required this.tt, required this.name, required this.gross, required this.controller});
+  const _EditablePayrollRow({required this.cs, required this.tt, required this.name, required this.gross, this.photoUrl, required this.controller});
 
   @override
   State<_EditablePayrollRow> createState() => _EditablePayrollRowState();
@@ -355,8 +358,6 @@ class _EditablePayrollRowState extends State<_EditablePayrollRow> {
 
   @override
   Widget build(BuildContext context) {
-    final initials = getInitials(widget.name);
-
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       margin: const EdgeInsets.only(bottom: 12),
@@ -369,10 +370,10 @@ class _EditablePayrollRowState extends State<_EditablePayrollRow> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            CircleAvatar(
+            EmployeeAvatar(
+              name: widget.name,
+              photoUrl: widget.photoUrl,
               radius: 20,
-              backgroundColor: widget.cs.surfaceContainerHighest,
-              child: Text(initials, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: widget.cs.onSurface)),
             ),
             const SizedBox(width: 16),
             Expanded(

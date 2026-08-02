@@ -182,6 +182,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
         'wage_type': _wageType,
         'wage_amount': _wageCtrl.text.trim().isEmpty ? '0' : _wageCtrl.text.trim(),
         'role': _role,
+        'default_shift_id': _selectedShiftId,
         'date_of_joining': _dojCtrl.text.trim().isEmpty ? null : _dojCtrl.text.trim(),
         'pan_number': _panCtrl.text.trim().isEmpty ? null : _panCtrl.text.trim(),
         'aadhaar_number': _aadhaarCtrl.text.trim().isEmpty ? null : _aadhaarCtrl.text.trim(),
@@ -198,17 +199,11 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       final e = widget.employee;
       if (e != null) {
         await ref.read(staffServiceProvider).update(e.id, body);
-        if (_selectedShiftId != null && _selectedShiftId != e.defaultShiftId) {
-          await ref.read(shiftServiceProvider).assignDefaultShift(e.id, _selectedShiftId!);
-        }
         if (_photoPath != null) {
           await ref.read(staffServiceProvider).uploadPhoto(e.id, _photoPath!);
         }
       } else {
         final created = await ref.read(staffServiceProvider).create(body);
-        if (_selectedShiftId != null) {
-          await ref.read(shiftServiceProvider).assignDefaultShift(created.id, _selectedShiftId!);
-        }
         if (_photoPath != null) {
           await ref.read(staffServiceProvider).uploadPhoto(created.id, _photoPath!);
         }

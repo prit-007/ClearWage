@@ -291,3 +291,51 @@ func TestAttendanceService_LockMonth_DBError(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 }
+
+func TestAttendanceService_RosterByDate(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewAttendanceService(mockQuerier)
+
+	present := "present"
+	rows := []repositories.RosterRow{
+		{EmployeeID: "e1", Name: "Rahul", Status: &present},
+		{EmployeeID: "e2", Name: "Sunita"},
+	}
+	mockQuerier.EXPECT().
+		ListRosterByDate(gomock.Any(), "t1", "2025-01-15").
+		Return(rows, nil)
+
+	got, err := svc.RosterByDate(context.Background(), "t1", "2025-01-15")
+	if err != nil {
+		t.Fatalf("RosterByDate failed: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected 2 rows, got %d", len(got))
+	}
+	if got[0].Status == nil || *got[0].Status != "present" {
+		t.Errorf("expected first row status present, got %v", got[0].Status)
+	}
+	if got[1].Status != nil {
+		t.Errorf("expected second row to be unmarked, got %v", got[1].Status)
+	}
+}
+
+func TestAttendanceService_RosterByDate_DBError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewAttendanceService(mockQuerier)
+
+	mockQuerier.EXPECT().
+		ListRosterByDate(gomock.Any(), "t1", "2025-01-15").
+		Return(nil, errors.New("db error"))
+
+	_, err := svc.RosterByDate(context.Background(), "t1", "2025-01-15")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}

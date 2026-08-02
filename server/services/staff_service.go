@@ -3,7 +3,9 @@ package services
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
+	"time"
 
 	"github.com/vivek-app/vivek_app/repositories"
 )
@@ -265,6 +267,130 @@ func (s *StaffService) GetProfile(ctx context.Context, employeeID, tenantID stri
 	return s.querier.GetStaffProfile(ctx, repositories.GetStaffProfileParams{
 		ID:       employeeID,
 		TenantID: tenantID,
+	})
+}
+
+func (s *StaffService) GetTenant(ctx context.Context, tenantID string) (repositories.Tenant, error) {
+	return s.querier.FindTenantByID(ctx, tenantID)
+}
+
+type EmployeeLedgerOverview struct {
+	Balance     float64               `json:"balance"`
+	JamaTotal   float64               `json:"jama_total"`
+	UdhaarTotal float64               `json:"udhaar_total"`
+	Recent      []repositories.Ledger `json:"recent"`
+}
+
+type EmployeeAttendanceOverview struct {
+	Summary repositories.EmployeeAttendanceSummary `json:"summary"`
+	Recent  []repositories.Attendance              `json:"recent"`
+}
+
+type EmployeeOverview struct {
+	Profile    repositories.StaffProfile       `json:"profile"`
+	Ledger     EmployeeLedgerOverview          `json:"ledger"`
+	Attendance EmployeeAttendanceOverview      `json:"attendance"`
+	Documents  []repositories.EmployeeDocument `json:"documents"`
+}
+
+func (s *StaffService) GetOverview(ctx context.Context, employeeID, tenantID string) (EmployeeOverview, error) {
+	profile, err := s.querier.GetStaffProfile(ctx, repositories.GetStaffProfileParams{
+		ID:       employeeID,
+		TenantID: tenantID,
+	})
+	if err != nil {
+		return EmployeeOverview{}, err
+	}
+
+	balance, err := s.querier.GetBalanceByEmployee(ctx, repositories.GetBalanceByEmployeeParams{
+		EmployeeID: employeeID,
+		TenantID:   tenantID,
+	})
+	if err != nil {
+		return EmployeeOverview{}, err
+	}
+
+	now := time.Now()
+	startDate := fmt.Sprintf("%d-01-01", now.Year())
+	endDate := now.Format("2006-01-02")
+
+	ledgerSummary, err := s.querier.GetEmployeeLedgerSummary(ctx, repositories.GetEmployeeLedgerSummaryParams{
+		TenantID:   tenantID,
+		EmployeeID: employeeID,
+		StartDate:  startDate,
+		EndDate:    endDate,
+	})
+	if err != nil {
+		return EmployeeOverview{}, err
+	}
+
+	recentLedger, err := s.querier.ListLedgerByEmployeeMonth(ctx, repositories.ListLedgerByEmployeeMonthParams{
+		EmployeeID: employeeID,
+		TenantID:   tenantID,
+		StartDate:  startDate,
+		EndDate:    endDate,
+		Limit:      5,
+		Offset:     0,
+	})
+	if err != nil {
+		return EmployeeOverview{}, err
+	}
+
+	attSummary, err := s.querier.GetEmployeeAttendanceSummary(ctx, repositories.GetEmployeeAttendanceSummaryParams{
+		TenantID:   tenantID,
+		EmployeeID: employeeID,
+		StartDate:  startDate,
+		EndDate:    endDate,
+	})
+	if err != nil {
+		return EmployeeOverview{}, err
+	}
+
+	recentAttendance, err := s.querier.ListAttendanceByEmployeeMonth(ctx, repositories.ListAttendanceByEmployeeMonthParams{
+		EmployeeID: employeeID,
+		TenantID:   tenantID,
+		StartDate:  startDate,
+		EndDate:    endDate,
+		Limit:      5,
+		Offset:     0,
+	})
+	if err != nil {
+		return EmployeeOverview{}, err
+	}
+
+	documents, err := s.querier.ListEmployeeDocumentsByEmployee(ctx, repositories.ListEmployeeDocumentsByEmployeeParams{
+		TenantID:   tenantID,
+		EmployeeID: employeeID,
+	})
+	if err != nil {
+		return EmployeeOverview{}, err
+	}
+
+	if attSummary.Total > 0 {
+		attSummary.Percent = math.Round(float64(attSummary.Present) / float64(attSummary.Total) * 100)
+	}
+
+	return EmployeeOverview{
+		Profile: profile,
+		Ledger: EmployeeLedgerOverview{
+			Balance:     balance,
+			JamaTotal:   ledgerSummary.JamaTotal,
+			UdhaarTotal: ledgerSummary.UdhaarTotal,
+			Recent:      recentLedger,
+		},
+		Attendance: EmployeeAttendanceOverview{
+			Summary: attSummary,
+			Recent:  recentAttendance,
+		},
+		Documents: documents,
+	}, nil
+}
+
+func (s *StaffService) AssignDefaultShift(ctx context.Context, employeeID, shiftID, tenantID string) (repositories.Employee, error) {
+	return s.querier.UpdateEmployeeDefaultShift(ctx, repositories.UpdateEmployeeDefaultShiftParams{
+		DefaultShiftID: shiftID,
+		ID:             employeeID,
+		TenantID:       tenantID,
 	})
 }
 

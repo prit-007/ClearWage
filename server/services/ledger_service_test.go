@@ -155,3 +155,55 @@ func TestLedgerService_ListByEmployeeMonth_DBError(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 }
+
+func TestLedgerService_GetSummary(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewLedgerService(mockQuerier)
+
+	mockQuerier.EXPECT().
+		GetLedgerSummaryRange(gomock.Any(), "t1", "2025-01-01", "2025-01-31").
+		Return(repositories.LedgerSummaryRange{JamaTotal: 100, UdhaarTotal: 40, EntryCount: 3}, nil)
+	mockQuerier.EXPECT().
+		GetTotalOutstanding(gomock.Any(), "t1").
+		Return(25.0, nil)
+
+	s, err := svc.GetSummary(context.Background(), "t1", "2025-01-01", "2025-01-31")
+	if err != nil {
+		t.Fatalf("GetSummary failed: %v", err)
+	}
+	if s.JamaTotal != 100 {
+		t.Errorf("expected jama 100, got %v", s.JamaTotal)
+	}
+	if s.UdhaarTotal != 40 {
+		t.Errorf("expected udhaar 40, got %v", s.UdhaarTotal)
+	}
+	if s.NetBalance != 60 {
+		t.Errorf("expected net 60, got %v", s.NetBalance)
+	}
+	if s.TotalOutstanding != 25 {
+		t.Errorf("expected outstanding 25, got %v", s.TotalOutstanding)
+	}
+	if s.EntryCount != 3 {
+		t.Errorf("expected entry count 3, got %v", s.EntryCount)
+	}
+}
+
+func TestLedgerService_GetSummary_RangeError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewLedgerService(mockQuerier)
+
+	mockQuerier.EXPECT().
+		GetLedgerSummaryRange(gomock.Any(), "t1", "2025-01-01", "2025-01-31").
+		Return(repositories.LedgerSummaryRange{}, errors.New("db error"))
+
+	_, err := svc.GetSummary(context.Background(), "t1", "2025-01-01", "2025-01-31")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}

@@ -193,6 +193,50 @@ func (c *AttendanceController) ListByDate(w http.ResponseWriter, r *http.Request
 	utils.JSONSuccess(w, http.StatusOK, attendance)
 }
 
+// Roster returns the daily roster for a given date: every active employee joined with
+// their default shift and (if present) that day's attendance record. Employees without
+// a record have nil attendance fields so the client can render "unmarked" state.
+//
+// Query param: date (string, required) — YYYY-MM-DD format
+// Success (200): utils.Response with []RosterRow payload
+// Failure (400): utils.Response — missing/invalid date parameter
+// Failure (401): utils.Response — missing or invalid JWT / tenant context
+// Failure (403): utils.Response — caller has "employee" role
+// Failure (500): utils.Response — database or service error
+func (c *AttendanceController) Roster(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	date := r.URL.Query().Get("date")
+	if date == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "date query parameter is required")
+		return
+	}
+
+	if !utils.ValidateDate(date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	rows, err := c.attendanceService.RosterByDate(r.Context(), tenantID, date)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to list roster")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to list roster")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, rows)
+}
+
 // ListByEmployee returns attendance records for a specific employee within a date range.
 // The employee must belong to the authenticated tenant.
 //

@@ -68,6 +68,32 @@ func (s *LedgerService) GetTotalOutstanding(ctx context.Context, tenantID string
 	return s.querier.GetTotalOutstanding(ctx, tenantID)
 }
 
+type LedgerSummary struct {
+	JamaTotal        float64 `json:"jama_total"`
+	UdhaarTotal      float64 `json:"udhaar_total"`
+	NetBalance       float64 `json:"net_balance"`
+	TotalOutstanding float64 `json:"total_outstanding"`
+	EntryCount       int32   `json:"entry_count"`
+}
+
+func (s *LedgerService) GetSummary(ctx context.Context, tenantID, startDate, endDate string) (LedgerSummary, error) {
+	rangeSummary, err := s.querier.GetLedgerSummaryRange(ctx, tenantID, startDate, endDate)
+	if err != nil {
+		return LedgerSummary{}, err
+	}
+	outstanding, err := s.querier.GetTotalOutstanding(ctx, tenantID)
+	if err != nil {
+		return LedgerSummary{}, err
+	}
+	return LedgerSummary{
+		JamaTotal:        rangeSummary.JamaTotal,
+		UdhaarTotal:      rangeSummary.UdhaarTotal,
+		NetBalance:       rangeSummary.JamaTotal - rangeSummary.UdhaarTotal,
+		TotalOutstanding: outstanding,
+		EntryCount:       rangeSummary.EntryCount,
+	}, nil
+}
+
 func (s *LedgerService) SettleEmployee(ctx context.Context, employeeID, tenantID, date, createdBy string) (repositories.Ledger, error) {
 	balance, err := s.querier.GetBalanceByEmployee(ctx, repositories.GetBalanceByEmployeeParams{
 		EmployeeID: employeeID,

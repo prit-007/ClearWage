@@ -300,3 +300,104 @@ func TestLedgerGetBalance_Unauthorized(t *testing.T) {
 		t.Errorf("expected 401, got %d", rec.Code)
 	}
 }
+
+func TestLedgerSummary_Success(t *testing.T) {
+	ctrl, mockQuerier, cleanup := setupLedgerTest(t)
+	defer cleanup()
+
+	mockQuerier.EXPECT().
+		GetLedgerSummaryRange(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(repositories.LedgerSummaryRange{JamaTotal: 100, UdhaarTotal: 40, EntryCount: 3}, nil)
+	mockQuerier.EXPECT().
+		GetTotalOutstanding(gomock.Any(), gomock.Any()).
+		Return(25.0, nil)
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/ledger/summary", ctrl.Summary)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ledger/summary?start_date=2025-01-01&end_date=2025-01-31", nil)
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var resp map[string]interface{}
+	json.NewDecoder(rec.Body).Decode(&resp)
+	data := resp["data"].(map[string]interface{})
+	if data["net_balance"].(float64) != 60 {
+		t.Errorf("expected net_balance 60, got %v", data["net_balance"])
+	}
+}
+
+func TestLedgerSummary_MissingDates(t *testing.T) {
+	ctrl, _, cleanup := setupLedgerTest(t)
+	defer cleanup()
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/ledger/summary", ctrl.Summary)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ledger/summary?start_date=2025-01-01", nil)
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestLedgerSummary_EmployeeRole(t *testing.T) {
+	ctrl, _, cleanup := setupLedgerTest(t)
+	defer cleanup()
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/ledger/summary", ctrl.Summary)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ledger/summary?start_date=2025-01-01&end_date=2025-01-31", nil)
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "employee"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("expected 403, got %d", rec.Code)
+	}
+}
+
+func TestLedgerSummary_Unauthorized(t *testing.T) {
+	ctrl, _, cleanup := setupLedgerTest(t)
+	defer cleanup()
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/ledger/summary", ctrl.Summary)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ledger/summary?start_date=2025-01-01&end_date=2025-01-31", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d", rec.Code)
+	}
+}
+
+func TestLedgerSummary_DBError(t *testing.T) {
+	ctrl, mockQuerier, cleanup := setupLedgerTest(t)
+	defer cleanup()
+
+	mockQuerier.EXPECT().
+		GetLedgerSummaryRange(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(repositories.LedgerSummaryRange{}, errors.New("db error"))
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/ledger/summary", ctrl.Summary)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ledger/summary?start_date=2025-01-01&end_date=2025-01-31", nil)
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500, got %d", rec.Code)
+	}
+}

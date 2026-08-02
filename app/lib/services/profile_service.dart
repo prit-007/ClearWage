@@ -10,6 +10,11 @@ class ProfileService {
     return res['data'] as Map<String, dynamic>? ?? {};
   }
 
+  Future<Map<String, dynamic>> getOverview() async {
+    final res = await _client.get('/api/v1/me/overview');
+    return res['data'] as Map<String, dynamic>? ?? {};
+  }
+
   Future<List<Attendance>> getAttendance({required String start, required String end}) async {
     final res = await _client.get('/api/v1/me/attendance', query: {'start_date': start, 'end_date': end});
     final list = (res['data'] as List<dynamic>?) ?? [];

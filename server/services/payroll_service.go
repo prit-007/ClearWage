@@ -17,6 +17,7 @@ import (
 type PayrollEntry struct {
 	EmployeeID    string  `json:"employee_id"`
 	Name          string  `json:"name"`
+	PhotoURL      *string `json:"photo_url"`
 	WageType      string  `json:"wage_type"`
 	WageAmount    float64 `json:"wage_amount"`
 	DaysPresent   int     `json:"days_present"`
@@ -227,6 +228,7 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 		entries = append(entries, PayrollEntry{
 			EmployeeID:    emp.ID,
 			Name:          emp.Name,
+			PhotoURL:      emp.PhotoUrl,
 			WageType:      emp.WageType,
 			WageAmount:    emp.WageAmount,
 			DaysPresent:   present,

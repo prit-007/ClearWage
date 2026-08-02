@@ -50,7 +50,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
   }
 
   void _onScroll() {
-    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200 && !_loadingMore && _hasMore && _searchQuery.isEmpty) {
+    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200 && !_loadingMore && _hasMore) {
       _loadMore();
     }
   }
@@ -65,7 +65,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
     });
     try {
       final staffService = ref.read(staffServiceProvider);
-      final employees = await staffService.list(limit: _pageSize, offset: 0);
+      final employees = await staffService.list(limit: _pageSize, offset: 0, query: _searchQuery);
       if (mounted) {
         setState(() {
           _allEmployees = employees;
@@ -90,7 +90,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
     setState(() => _loadingMore = true);
     try {
       final staffService = ref.read(staffServiceProvider);
-      final employees = await staffService.list(limit: _pageSize, offset: _offset);
+      final employees = await staffService.list(limit: _pageSize, offset: _offset, query: _searchQuery);
       if (mounted) {
         setState(() {
           _allEmployees.addAll(employees);
@@ -113,23 +113,8 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
     setState(() => _searchQuery = v.toLowerCase());
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
-      if (v.isNotEmpty && _allEmployees.length < 100) {
-        _fetchAllForSearch();
-      }
+      if (mounted) _fetch();
     });
-  }
-
-  Future<void> _fetchAllForSearch() async {
-    try {
-      final staffService = ref.read(staffServiceProvider);
-      final employees = await staffService.list(limit: 100000, offset: 0);
-      if (mounted) {
-        setState(() {
-          _allEmployees = employees;
-          _hasMore = false;
-        });
-      }
-    } catch (_) {}
   }
 
   List<Employee> get _filtered {
@@ -271,6 +256,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
       ),
       floatingActionButton: isAdmin
           ? FloatingActionButton(
+              heroTag: 'staff_directory_fab',
               onPressed: () async {
                 HapticFeedback.heavyImpact();
                 final result = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AddEmployeeScreen()));

@@ -29,8 +29,7 @@ class LedgerEntry {
         employeePhoto: json['employee_photo'] as String?,
         date: json['date'] as String? ?? '',
         type: json['type'] as String? ?? '',
-        amount: (json['amount'] as num?)?.toDouble() ??
-            (json['amount'] is String ? double.tryParse(json['amount'] as String) ?? 0 : 0),
+        amount: (json['amount'] as num?)?.toDouble() ?? 0,
         note: json['note'] as String?,
       );
 

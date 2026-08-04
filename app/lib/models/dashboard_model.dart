@@ -1,3 +1,5 @@
+import 'report_models.dart';
+
 class DashboardData {
   final int totalWorkforce;
   final int presentToday;
@@ -8,7 +10,7 @@ class DashboardData {
   final double wageBillMtd;
   final double totalOutstanding;
   final List<ActivityItem> recentActivity;
-  final List<Map<String, dynamic>> trends;
+  final List<AttendanceTrendItem> trends;
 
   DashboardData({
     required this.totalWorkforce,
@@ -45,7 +47,9 @@ class DashboardData {
               ?.map((e) => ActivityItem.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      trends: rawTrends.map((e) => (e as Map).cast<String, dynamic>()).toList(),
+      trends: rawTrends
+          .map((e) => AttendanceTrendItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

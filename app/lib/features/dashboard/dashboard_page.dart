@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../models/dashboard_model.dart';
+import '../../models/report_models.dart';
 import '../../providers/providers.dart';
 import '../staff/add_employee_page.dart';
 import '../../core/widgets/fluid_slide_in.dart';
@@ -506,7 +507,7 @@ class _ActivityTile extends StatelessWidget {
 class _AttendanceTrendChart extends ConsumerWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  final List<Map<String, dynamic>> trends;
+  final List<AttendanceTrendItem> trends;
   const _AttendanceTrendChart({required this.cs, required this.tt, required this.trends});
 
   @override
@@ -514,8 +515,8 @@ class _AttendanceTrendChart extends ConsumerWidget {
     if (trends.isEmpty) return const SizedBox.shrink();
     final maxY = trends.fold<int>(0, (m, t) => [
       m,
-      (t['present'] as num?)?.toInt() ?? 0,
-      (t['absent'] as num?)?.toInt() ?? 0,
+      t.present,
+      t.absent,
     ].reduce((a, b) => a > b ? a : b));
         final chartMax = (maxY * 1.3).ceilToDouble().clamp(5, double.infinity).toDouble();
 
@@ -543,7 +544,7 @@ class _AttendanceTrendChart extends ConsumerWidget {
                           getTitlesWidget: (value, _) {
                             final i = value.toInt();
                             if (i < 0 || i >= trends.length) return const SizedBox.shrink();
-                            final date = trends[i]['date'] as String? ?? '';
+                            final date = trends[i].date;
                             final day = date.length >= 10 ? date.substring(8, 10) : date;
                             return Padding(
                               padding: const EdgeInsets.only(top: 4),
@@ -567,8 +568,8 @@ class _AttendanceTrendChart extends ConsumerWidget {
                     ),
                     borderData: FlBorderData(show: false),
                     barGroups: List.generate(trends.length, (i) {
-                      final present = (trends[i]['present'] as num?)?.toDouble() ?? 0;
-                      final absent = (trends[i]['absent'] as num?)?.toDouble() ?? 0;
+                      final present = trends[i].present.toDouble();
+                      final absent = trends[i].absent.toDouble();
                       return BarChartGroupData(
                         x: i,
                         barRods: [

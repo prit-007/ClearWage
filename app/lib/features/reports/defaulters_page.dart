@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
+import '../../models/report_models.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
 
-final defaultersProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+final defaultersProvider = FutureProvider.autoDispose<List<DefaulterItem>>((ref) {
   return ref.watch(reportServiceProvider).defaulters();
 });
 
@@ -111,16 +112,16 @@ class DefaultersScreen extends ConsumerWidget {
 class _DefaulterCard extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  final Map<String, dynamic> data;
+  final DefaulterItem data;
 
   const _DefaulterCard({required this.cs, required this.tt, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    final name = data['name'] as String? ?? data['employee_name'] as String? ?? 'Unknown';
-    final outstanding = (data['outstanding_balance'] as num?)?.toDouble() ?? (data['outstanding'] as num?)?.toDouble() ?? 0;
-    final wage = (data['monthly_wage'] as num?)?.toDouble() ?? (data['wage'] as num?)?.toDouble() ?? data['wage_amount'] as num? ?? 0;
-    final photoUrl = data['photo_url'] as String?;
+    final name = data.name;
+    final outstanding = data.outstandingBalance;
+    final wage = data.monthlyWage;
+    final photoUrl = data.photoUrl;
     const dangerColor = Color(0xFFEF4444);
 
     return Container(

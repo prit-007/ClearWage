@@ -3,13 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
+import '../../models/payroll_models.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/premium_macro_field.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
 
-final payrollSettingsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+final payrollSettingsProvider = FutureProvider.autoDispose<PayrollSettings>((ref) async {
   return await ref.watch(settingsServiceProvider).getPayrollSettings();
 });
 
@@ -45,17 +46,16 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
     super.dispose();
   }
 
-  void _initFromData(Map<String, dynamic> data) {
-    if (_loaded || data.isEmpty) return;
+  void _initFromData(PayrollSettings data) {
+    if (_loaded) return;
     _loaded = true;
-    _thresholdCtrl.text = (data['ot_threshold_hours'] as num? ?? 8).toString();
-    _otMultiplierCtrl.text = (data['ot_multiplier_default'] as num? ?? 1.5).toString();
-    _roundingCtrl.text = (data['ot_rounding'] as num? ?? 0).toString();
-    _otTrigger = data['ot_trigger'] as String? ?? 'after_shift_end';
-    _wageBasis = data['wage_basis'] as String? ?? 'calendar';
-    _weekOffPaid = data['week_off_paid'] as bool? ?? false;
-    final wo = data['weekly_offs'] as String? ?? '0';
-    _weeklyOffs = wo.split(',').map((s) => int.tryParse(s.trim()) ?? 0).toList();
+    _thresholdCtrl.text = data.otThresholdHours.toString();
+    _otMultiplierCtrl.text = data.otMultiplierDefault.toString();
+    _roundingCtrl.text = data.otRounding;
+    _otTrigger = data.otTrigger;
+    _wageBasis = data.wageBasis;
+    _weekOffPaid = data.weekOffPaid;
+    _weeklyOffs = [data.weeklyOffs];
   }
 
   String? _thresholdError;

@@ -60,7 +60,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
         'employee_id': _selectedEmployeeId!,
         'date': dateStr,
         'type': _isJama ? 'jama' : 'udhaar',
-        'amount': _amountController.text.trim(),
+        'amount': double.tryParse(_amountController.text.trim()) ?? 0,
         'note': _noteController.text.trim(),
       });
       ref.read(ledgerRefreshProvider.notifier).state++;

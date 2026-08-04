@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/providers.dart';
+import '../dashboard/dashboard_page.dart';
 import '../../models/employee_model.dart';
 import '../../core/app_config.dart';
 import '../../core/helpers.dart';
@@ -321,6 +322,8 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                         HapticFeedback.lightImpact();
                         try {
                           await ref.read(ledgerServiceProvider).settleAccount(widget.employeeId);
+                          ref.invalidate(dashboardDataProvider);
+                          ref.read(ledgerRefreshProvider.notifier).state++;
                           if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account settled')));
                           if (mounted) _loadProfile();
                         } catch (e) {
@@ -1123,7 +1126,7 @@ class _LedgerTab extends StatelessWidget {
           ...recent.map((e) => _LedgerEntryRow(
                 cs: cs,
                 isJama: e['type'] == 'jama',
-                amount: (e['amount'] as num?)?.toInt() ?? 0,
+                amount: (e['amount'] as num?)?.toDouble() ?? 0,
                 date: e['date'] as String? ?? '',
               )),
       ],
@@ -1134,7 +1137,7 @@ class _LedgerTab extends StatelessWidget {
 class _LedgerEntryRow extends StatelessWidget {
   final ColorScheme cs;
   final bool isJama;
-  final int amount;
+  final double amount;
   final String date;
 
   const _LedgerEntryRow({required this.cs, required this.isJama, required this.amount, required this.date});
@@ -1161,7 +1164,7 @@ class _LedgerEntryRow extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          Text('${isJama ? '+' : '-'}₹$amount', style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: -0.5)),
+          Text('${isJama ? '+' : '-'}\u20B9${amount.toStringAsFixed(0)}', style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: -0.5)),
         ],
       ),
     );

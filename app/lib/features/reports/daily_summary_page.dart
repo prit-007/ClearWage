@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
+import '../../models/report_models.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
-final dailySummaryProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) {
+final dailySummaryProvider = FutureProvider.autoDispose<DailySummaryData>((ref) {
   final now = DateTime.now();
   final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
   return ref.watch(reportServiceProvider).dailySummary(date: date);
@@ -62,12 +63,12 @@ class DailySummaryScreen extends ConsumerWidget {
                 ),
               ),
               data: (data) {
-                final total = (data['total_workers'] as num?)?.toInt() ?? 0;
-                final present = (data['present'] as num?)?.toInt() ?? 0;
-                final absent = (data['absent'] as num?)?.toInt() ?? 0;
-                final onLeave = (data['on_leave'] as num?)?.toInt() ?? 0;
-                final wageBill = (data['total_wage_bill'] as num?)?.toDouble() ?? 0;
-                final attendancePct = total > 0 ? (present / total) * 100 : 0.0;
+                final total = data.totalWorkers;
+                final present = data.present;
+                final absent = data.absent;
+                final onLeave = data.onLeave;
+                final wageBill = data.totalWageBill;
+                final attendancePct = data.attendancePercentage;
 
                 return SliverPadding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),

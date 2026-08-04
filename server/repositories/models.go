@@ -224,3 +224,19 @@ type StaffProfile struct {
 	ShiftStart   *string `json:"shift_start_time" db:"shift_start_time"`
 	ShiftEnd     *string `json:"shift_end_time" db:"shift_end_time"`
 }
+
+type DashboardSnapshot struct {
+	TotalStaff       int
+	AttendanceCount  int
+	Present          int
+	Absent           int
+	OnLeave          int
+	DailyJamaTotal   float64
+	WageBillMTD      float64
+	TotalOutstanding float64
+}
+
+type EmployeeBalance struct {
+	EmployeeID string
+	Balance    float64
+}

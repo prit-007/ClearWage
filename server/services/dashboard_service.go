@@ -32,32 +32,10 @@ func NewDashboardService(querier repositories.Querier) *DashboardService {
 
 func (s *DashboardService) GetDashboard(ctx context.Context, tenantID string) (DashboardData, error) {
 	today := time.Now().Format("2006-01-02")
+	now := time.Now()
+	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
 
-	employees, err := s.querier.ListEmployeesByTenant(ctx, repositories.ListEmployeesByTenantParams{
-		TenantID: tenantID,
-		Limit:    listAll,
-		Offset:   0,
-	})
-	if err != nil {
-		return DashboardData{}, err
-	}
-
-	attendance, err := s.querier.ListAttendanceByDate(ctx, repositories.ListAttendanceByDateParams{
-		TenantID: tenantID,
-		Date:     today,
-		Limit:    listAll,
-		Offset:   0,
-	})
-	if err != nil {
-		return DashboardData{}, err
-	}
-
-	jamaTotal, err := s.querier.GetDailyJamaTotal(ctx, tenantID, today)
-	if err != nil {
-		return DashboardData{}, err
-	}
-
-	outstanding, err := s.querier.GetTotalOutstanding(ctx, tenantID)
+	snapshot, err := s.querier.GetDashboardSnapshot(ctx, tenantID, today, monthStart)
 	if err != nil {
 		return DashboardData{}, err
 	}
@@ -71,43 +49,24 @@ func (s *DashboardService) GetDashboard(ctx context.Context, tenantID string) (D
 		return DashboardData{}, err
 	}
 
-	now := time.Now()
-	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
-	wageBillMTD, err := s.querier.GetLedgerSummaryRange(ctx, tenantID, monthStart, today)
-	if err != nil {
-		return DashboardData{}, err
-	}
-
-	present := 0
-	absent := 0
-	onLeave := 0
-	for _, a := range attendance {
-		switch a.Status {
-		case "present":
-			present++
-		case "absent":
-			absent++
-		case "paid_leave", "week_off":
-			onLeave++
-		}
-	}
-	idleStaff := len(employees) - len(attendance)
+	idleStaff := snapshot.TotalStaff - snapshot.AttendanceCount
+	absent := snapshot.Absent + idleStaff
 
 	attendancePercentage := 0.0
-	if len(employees) > 0 {
-		attendancePercentage = math.Round(float64(present) / float64(len(employees)) * 100)
+	if snapshot.TotalStaff > 0 {
+		attendancePercentage = math.Round(float64(snapshot.Present) / float64(snapshot.TotalStaff) * 100)
 	}
 
 	return DashboardData{
 		Date:                 today,
-		TotalStaff:           len(employees),
-		Present:              present,
-		Absent:               absent + idleStaff,
-		OnLeave:              onLeave,
+		TotalStaff:           snapshot.TotalStaff,
+		Present:              snapshot.Present,
+		Absent:               absent,
+		OnLeave:              snapshot.OnLeave,
 		AttendancePercentage: attendancePercentage,
-		DailyJamaTotal:       jamaTotal,
-		WageBillMTD:          wageBillMTD.JamaTotal,
-		TotalOutstanding:     outstanding,
+		DailyJamaTotal:       snapshot.DailyJamaTotal,
+		WageBillMTD:          snapshot.WageBillMTD,
+		TotalOutstanding:     snapshot.TotalOutstanding,
 		RecentActivity:       activity,
 	}, nil
 }

@@ -397,6 +397,21 @@ func (mr *MockQuerierMockRecorder) GetDailyJamaTotal(ctx, tenantID, date any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDailyJamaTotal", reflect.TypeOf((*MockQuerier)(nil).GetDailyJamaTotal), ctx, tenantID, date)
 }
 
+// GetDashboardSnapshot mocks base method.
+func (m *MockQuerier) GetDashboardSnapshot(ctx context.Context, tenantID, today, monthStart string) (repositories.DashboardSnapshot, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDashboardSnapshot", ctx, tenantID, today, monthStart)
+	ret0, _ := ret[0].(repositories.DashboardSnapshot)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDashboardSnapshot indicates an expected call of GetDashboardSnapshot.
+func (mr *MockQuerierMockRecorder) GetDashboardSnapshot(ctx, tenantID, today, monthStart any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDashboardSnapshot", reflect.TypeOf((*MockQuerier)(nil).GetDashboardSnapshot), ctx, tenantID, today, monthStart)
+}
+
 // GetEmployeeAttendanceSummary mocks base method.
 func (m *MockQuerier) GetEmployeeAttendanceSummary(ctx context.Context, arg repositories.GetEmployeeAttendanceSummaryParams) (repositories.EmployeeAttendanceSummary, error) {
 	m.ctrl.T.Helper()
@@ -590,6 +605,21 @@ func (m *MockQuerier) ListAttendanceByEmployeeMonth(ctx context.Context, arg rep
 func (mr *MockQuerierMockRecorder) ListAttendanceByEmployeeMonth(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAttendanceByEmployeeMonth", reflect.TypeOf((*MockQuerier)(nil).ListAttendanceByEmployeeMonth), ctx, arg)
+}
+
+// ListEmployeeBalances mocks base method.
+func (m *MockQuerier) ListEmployeeBalances(ctx context.Context, tenantID string) ([]repositories.EmployeeBalance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListEmployeeBalances", ctx, tenantID)
+	ret0, _ := ret[0].([]repositories.EmployeeBalance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListEmployeeBalances indicates an expected call of ListEmployeeBalances.
+func (mr *MockQuerierMockRecorder) ListEmployeeBalances(ctx, tenantID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEmployeeBalances", reflect.TypeOf((*MockQuerier)(nil).ListEmployeeBalances), ctx, tenantID)
 }
 
 // ListEmployeeDocumentsByEmployee mocks base method.

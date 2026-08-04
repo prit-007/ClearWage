@@ -23,6 +23,7 @@ import (
 	ctrl "github.com/vivek-app/vivek_app/controllers/api/v1"
 	mw "github.com/vivek-app/vivek_app/middlewares"
 	"github.com/vivek-app/vivek_app/repositories"
+	sqldb "github.com/vivek-app/vivek_app/repositories/db"
 	"github.com/vivek-app/vivek_app/services"
 )
 
@@ -44,7 +45,8 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			sqlDB.SetConnMaxIdleTime(time.Duration(cfg.DB.ConnMaxIdleTimeMinutes) * time.Minute)
 
 			goquDB := goqu.Dialect("postgres").DB(sqlDB)
-			querier := repositories.NewGoquQuerier(goquDB)
+			dbQueries := sqldb.New(sqlDB)
+			querier := repositories.NewGoquQuerier(goquDB, dbQueries)
 
 			r := chi.NewRouter()
 

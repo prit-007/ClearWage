@@ -174,3 +174,66 @@ func TestReportService_EmployeeMonthly_EmptyAttendance(t *testing.T) {
 		t.Errorf("expected 0 attendance, got %d", len(report.Attendance))
 	}
 }
+
+func TestReportService_DefaultersList(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewReportService(mockQuerier)
+
+	mockQuerier.EXPECT().
+		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Employee{
+			{ID: "e1", Name: "Alice", Phone: "111", WageType: "monthly", WageAmount: 30000},
+			{ID: "e2", Name: "Bob", Phone: "222", WageType: "daily", WageAmount: 1000},
+		}, nil)
+	mockQuerier.EXPECT().
+		ListEmployeeBalances(gomock.Any(), "t1").
+		Return([]repositories.EmployeeBalance{
+			{EmployeeID: "e1", Balance: 35000},
+			{EmployeeID: "e2", Balance: 28000},
+		}, nil)
+
+	defaulters, err := svc.DefaultersList(context.Background(), "t1")
+	if err != nil {
+		t.Fatalf("DefaultersList failed: %v", err)
+	}
+	if len(defaulters) != 2 {
+		t.Fatalf("expected 2 defaulters, got %d", len(defaulters))
+	}
+	if defaulters[0].OutstandingBalance != 35000 {
+		t.Errorf("expected 35000, got %v", defaulters[0].OutstandingBalance)
+	}
+	// Bob's monthly wage = 1000*26 = 26000, balance 28000 > 26000
+	if defaulters[1].OutstandingBalance != 28000 {
+		t.Errorf("expected 28000, got %v", defaulters[1].OutstandingBalance)
+	}
+}
+
+func TestReportService_DefaultersList_None(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewReportService(mockQuerier)
+
+	mockQuerier.EXPECT().
+		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Employee{
+			{ID: "e1", Name: "Alice", WageType: "monthly", WageAmount: 30000},
+		}, nil)
+	mockQuerier.EXPECT().
+		ListEmployeeBalances(gomock.Any(), "t1").
+		Return([]repositories.EmployeeBalance{
+			{EmployeeID: "e1", Balance: 10000},
+		}, nil)
+
+	defaulters, err := svc.DefaultersList(context.Background(), "t1")
+	if err != nil {
+		t.Fatalf("DefaultersList failed: %v", err)
+	}
+	if len(defaulters) != 0 {
+		t.Errorf("expected 0 defaulters, got %d", len(defaulters))
+	}
+}

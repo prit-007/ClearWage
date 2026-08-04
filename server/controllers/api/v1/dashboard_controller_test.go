@@ -31,23 +31,15 @@ func TestDashboardGet_WithoutTrends(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
-		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
-		Return([]repositories.Employee{{ID: "e1"}}, nil)
-	mockQuerier.EXPECT().
-		ListAttendanceByDate(gomock.Any(), gomock.Any()).
-		Return([]repositories.Attendance{{EmployeeID: "e1", Status: "present"}}, nil)
-	mockQuerier.EXPECT().
-		GetDailyJamaTotal(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(450.0, nil)
-	mockQuerier.EXPECT().
-		GetTotalOutstanding(gomock.Any(), gomock.Any()).
-		Return(5000.0, nil)
+		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
+		Return(repositories.DashboardSnapshot{
+			TotalStaff: 1, AttendanceCount: 1, Present: 1,
+			Absent: 0, OnLeave: 0, DailyJamaTotal: 450.0,
+			WageBillMTD: 9000, TotalOutstanding: 5000.0,
+		}, nil)
 	mockQuerier.EXPECT().
 		ListActivityLogsByTenant(gomock.Any(), gomock.Any()).
 		Return([]repositories.ActivityLog{}, nil)
-	mockQuerier.EXPECT().
-		GetLedgerSummaryRange(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(repositories.LedgerSummaryRange{JamaTotal: 9000}, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/dashboard", nil)
 	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))
@@ -74,23 +66,15 @@ func TestDashboardGet_WithTrends(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
-		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
-		Return([]repositories.Employee{{ID: "e1"}}, nil)
-	mockQuerier.EXPECT().
-		ListAttendanceByDate(gomock.Any(), gomock.Any()).
-		Return([]repositories.Attendance{{EmployeeID: "e1", Status: "present"}}, nil)
-	mockQuerier.EXPECT().
-		GetDailyJamaTotal(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(450.0, nil)
-	mockQuerier.EXPECT().
-		GetTotalOutstanding(gomock.Any(), gomock.Any()).
-		Return(5000.0, nil)
+		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
+		Return(repositories.DashboardSnapshot{
+			TotalStaff: 1, AttendanceCount: 1, Present: 1,
+			Absent: 0, OnLeave: 0, DailyJamaTotal: 450.0,
+			WageBillMTD: 9000, TotalOutstanding: 5000.0,
+		}, nil)
 	mockQuerier.EXPECT().
 		ListActivityLogsByTenant(gomock.Any(), gomock.Any()).
 		Return([]repositories.ActivityLog{}, nil)
-	mockQuerier.EXPECT().
-		GetLedgerSummaryRange(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(repositories.LedgerSummaryRange{JamaTotal: 9000}, nil)
 	mockQuerier.EXPECT().
 		ListAttendanceByDateRange(gomock.Any(), gomock.Any()).
 		Return([]repositories.Attendance{{EmployeeID: "e1", Status: "present", Date: "2025-01-15"}}, nil)
@@ -132,8 +116,8 @@ func TestDashboardGet_DBError(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
-		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
-		Return(nil, errors.New("db error"))
+		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
+		Return(repositories.DashboardSnapshot{}, errors.New("db error"))
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/dashboard", nil)
 	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))

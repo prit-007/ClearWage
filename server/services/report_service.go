@@ -233,13 +233,19 @@ func (s *ReportService) DefaultersList(ctx context.Context, tenantID string) ([]
 		return nil, err
 	}
 
+	balances, err := s.querier.ListEmployeeBalances(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	balanceMap := make(map[string]float64, len(balances))
+	for _, b := range balances {
+		balanceMap[b.EmployeeID] = b.Balance
+	}
+
 	var defaulters []Defaulter
 	for _, e := range employees {
-		balance, err := s.querier.GetBalanceByEmployee(ctx, repositories.GetBalanceByEmployeeParams{
-			EmployeeID: e.ID,
-			TenantID:   tenantID,
-		})
-		if err != nil {
+		balance, ok := balanceMap[e.ID]
+		if !ok {
 			continue
 		}
 
@@ -250,12 +256,12 @@ func (s *ReportService) DefaultersList(ctx context.Context, tenantID string) ([]
 
 		if balance > monthlyWage {
 			defaulters = append(defaulters, Defaulter{
-				EmployeeID:          e.ID,
-				Name:                e.Name,
-				Phone:               e.Phone,
-				PhotoURL:            e.PhotoUrl,
-				OutstandingBalance:  balance,
-				MonthlyWage:         monthlyWage,
+				EmployeeID:         e.ID,
+				Name:               e.Name,
+				Phone:              e.Phone,
+				PhotoURL:           e.PhotoUrl,
+				OutstandingBalance: balance,
+				MonthlyWage:        monthlyWage,
 			})
 		}
 	}

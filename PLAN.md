@@ -65,22 +65,23 @@ Legend: `[ ]` = pending, `[x]` = finished.
 ## Phase B — Adopt sqlc (largest effort)
 
 ### B1. Tooling
-- [ ] Add `sqlc.yaml` (`schema: database/migrations`, `queries: database/queries`, package `db`, `sql_package: pgx/v5`, `emit_interface: true`).
-- [ ] Add `sqlc` to a `Makefile generate` target + `go:generate` directives; regenerate `mockgen` mock.
+- [x] Add `sqlc.yaml` (`schema: database/migrations`, `queries: database/queries`, package `db`, `sql_package: "database/sql"`, `emit_interface: true`).
+- [x] Add `sqlc` to a `Makefile generate` target + `go:generate` directives; regenerate `mockgen` mock.
 - [ ] CI: run `sqlc generate` + `git diff --exit-code` to keep generated code in sync.
 
 ### B2. Architecture — adapter, not rewrite
-- [ ] Keep `repositories/models.go` + `repositories.Querier` as the service-facing contract.
-- [ ] New generated package `repositories/db` (sqlc types/queries).
-- [ ] New `repositories/pg_querier.go` (`PGQuerier` wrapping `db.Queries`, converting sqlc → domain types; contains all date/type mapping).
-- [ ] Switch `cli/api.go` from `NewGoquQuerier` → new implementation.
-- [ ] Regenerate mock; service/controller tests stay green.
+- [x] Keep `repositories/models.go` + `repositories.Querier` as the service-facing contract.
+- [x] New generated package `repositories/db` (sqlc types/queries) using `database/sql` DBTX so it shares the same pool as goqu.
+- [x] New `repositories/sql.go` (`GoquQuerier` methods backed by `db.Queries`, converting sqlc → domain types; contains all uuid/date mapping).
+- [x] Switch `cli/api.go` to pass `db.Queries` to `GoquQuerier` constructor.
+- [x] Regenerate mock; service/controller tests stay green.
 
 ### B3. Query rewrites (hot + N+1 first)
-- [ ] `GetBalancesByTenant` (`GROUP BY employee_id`) kills N+1 in `DefaultersList`.
+- [x] `ListEmployeeBalances` (`GROUP BY employee_id`) kills N+1 in `DefaultersList`.
+- [x] `GetDashboardSnapshot` (single CTE) kills 6 sequential queries in `DashboardService.GetDashboard`.
 - [ ] `WageBillTrends` becomes one grouped SQL query (kill per-month loop).
-- [ ] Dashboard rewritten as 1–2 SQL CTEs (kill 6 sequential queries).
 - [ ] `DailySummary` aggregation pushed into SQL (stop pulling 100k rows).
+- [ ] Roster rewrite (deferred: must verify `time` → `"HH:MM"` format contract via live DB).
 - [ ] Trim `SELECT *` to needed columns on list/profile paths.
 - [ ] Migrate remaining CRUD to sqlc in batches, tests green each batch; remove goqu when done.
 

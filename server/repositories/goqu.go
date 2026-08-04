@@ -7,16 +7,18 @@ import (
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
+	"github.com/vivek-app/vivek_app/repositories/db"
 )
 
 var ErrNotFound = errors.New("not found")
 
 type GoquQuerier struct {
-	db *goqu.Database
+	db   *goqu.Database
+	sqlc *db.Queries
 }
 
-func NewGoquQuerier(db *goqu.Database) *GoquQuerier {
-	return &GoquQuerier{db: db}
+func NewGoquQuerier(goquDB *goqu.Database, sqlc *db.Queries) *GoquQuerier {
+	return &GoquQuerier{db: goquDB, sqlc: sqlc}
 }
 
 func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAttendanceParams) ([]Attendance, error) {

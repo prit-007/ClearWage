@@ -1,3 +1,5 @@
+import '../core/helpers.dart';
+
 class AdvanceRequest {
   final String id;
   final String employeeId;
@@ -28,7 +30,7 @@ class AdvanceRequest {
         employeeId: json['employee_id'] as String? ?? '',
         employeeName: json['employee_name'] as String? ?? '',
         employeePhoto: json['employee_photo'] as String?,
-        amount: (json['amount'] as num?)?.toDouble() ?? 0,
+        amount: safeToDouble(json['amount']),
         note: json['note'] as String? ?? '',
         status: json['status'] as String? ?? 'pending',
         createdAt: json['created_at'] as String? ?? '',

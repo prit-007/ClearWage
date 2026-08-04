@@ -68,7 +68,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
       final entries = (_data?['entries'] as List<dynamic>?) ?? [];
       final adjustments = _rowControllers.asMap().entries.map((e) => {
         'employee_id': entries[e.key]['employee_id'],
-        'net_pay': double.tryParse(e.value.text.trim()) ?? (entries[e.key]['net_payable'] as num?)?.toDouble() ?? 0,
+        'net_pay': double.tryParse(e.value.text.trim()) ?? safeToDouble(entries[e.key]['net_payable']),
       }).toList();
       await ref.read(payrollServiceProvider).lockMonth(startDate: _startStr, endDate: _endStr, adjustments: adjustments);
       ref.invalidate(dashboardDataProvider);
@@ -83,12 +83,12 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
 
   double _summaryGross() {
     final entries = (_data?['entries'] as List<dynamic>?) ?? [];
-    return entries.fold<double>(0, (sum, e) => sum + ((e['gross_wages'] as num?)?.toDouble() ?? 0));
+    return entries.fold<double>(0, (sum, e) => sum + safeToDouble(e['gross_wages']));
   }
 
   double _summaryUdhaar() {
     final entries = (_data?['entries'] as List<dynamic>?) ?? [];
-    return entries.fold<double>(0, (sum, e) => sum + ((e['total_udhaar'] as num?)?.toDouble() ?? 0));
+    return entries.fold<double>(0, (sum, e) => sum + safeToDouble(e['total_udhaar']));
   }
 
   @override
@@ -106,7 +106,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
     final emps = (data['entries'] as List<dynamic>?) ?? [];
     _rowControllers = List.generate(emps.length, (i) {
       final emp = emps[i] as Map<String, dynamic>;
-      return TextEditingController(text: (emp['net_payable'] as num?)?.toStringAsFixed(0) ?? '0');
+      return TextEditingController(text: safeToInt(emp['net_payable']).toString());
     });
   }
 
@@ -204,7 +204,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                     child: _PayrollSummaryGlassCard(cs: cs, tt: tt,
                       gross: _summaryGross(),
                       udhaar: _summaryUdhaar(),
-                      net: (_data?['total_wage'] as num?)?.toDouble() ?? 0,
+                      net: safeToDouble(_data?['total_wage']),
                     ),
                   ),
                 ),
@@ -235,7 +235,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                           cs: cs, tt: tt,
                           name: emp['name'] as String? ?? '',
                           photoUrl: emp['photo_url'] as String?,
-                          gross: '₹${(emp['gross_wages'] as num?)?.toStringAsFixed(0) ?? '0'}',
+                          gross: '₹${safeToInt(emp['gross_wages'])}',
                           controller: _rowControllers[index],
                         );
                       },

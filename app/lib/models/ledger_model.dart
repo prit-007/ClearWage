@@ -1,3 +1,5 @@
+import '../core/helpers.dart';
+
 class LedgerEntry {
   final String id;
   final String employeeId;
@@ -29,7 +31,7 @@ class LedgerEntry {
         employeePhoto: json['employee_photo'] as String?,
         date: json['date'] as String? ?? '',
         type: json['type'] as String? ?? '',
-        amount: (json['amount'] as num?)?.toDouble() ?? 0,
+        amount: safeToDouble(json['amount']),
         note: json['note'] as String?,
       );
 
@@ -58,10 +60,10 @@ class LedgerSummary {
   });
 
   factory LedgerSummary.fromJson(Map<String, dynamic> json) => LedgerSummary(
-        jamaTotal: (json['jama_total'] as num?)?.toDouble() ?? 0,
-        udhaarTotal: (json['udhaar_total'] as num?)?.toDouble() ?? 0,
-        netBalance: (json['net_balance'] as num?)?.toDouble() ?? 0,
-        totalOutstanding: (json['total_outstanding'] as num?)?.toDouble() ?? 0,
-        entryCount: (json['entry_count'] as num?)?.toInt() ?? 0,
+        jamaTotal: safeToDouble(json['jama_total']),
+        udhaarTotal: safeToDouble(json['udhaar_total']),
+        netBalance: safeToDouble(json['net_balance']),
+        totalOutstanding: safeToDouble(json['total_outstanding']),
+        entryCount: safeToInt(json['entry_count']),
       );
 }

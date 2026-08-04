@@ -1,3 +1,5 @@
+import '../core/helpers.dart';
+
 class Attendance {
   final String id;
   final String employeeId;
@@ -43,8 +45,8 @@ class Attendance {
         status: json['status'] as String? ?? 'present',
         checkInTime: json['check_in_time'] as String?,
         checkOutTime: json['check_out_time'] as String?,
-        overtimeHours: (json['overtime_hours'] as num?)?.toDouble() ?? 0,
-        computedWage: (json['computed_wage'] as num?)?.toDouble() ?? 0,
+        overtimeHours: safeToDouble(json['overtime_hours']),
+        computedWage: safeToDouble(json['computed_wage']),
         isLocked: json['is_locked'] as bool? ?? false,
         shiftName: json['shift_name'] as String?,
         shiftStartTime: json['shift_start_time'] as String?,

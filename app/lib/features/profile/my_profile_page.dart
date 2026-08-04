@@ -631,7 +631,7 @@ class _MyLedgerTab extends ConsumerWidget {
         ),
       ),
       data: (data) {
-        final balance = (data['balance'] as num?)?.toDouble() ?? 0;
+        final balance = safeToDouble(data['balance']);
         final entries = (data['entries'] as List<dynamic>?) ?? [];
 
         return ListView(
@@ -678,7 +678,7 @@ class _LedgerEntryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isJama = entry['type'] == 'jama';
-    final amount = (entry['amount'] as num?)?.toDouble() ?? 0;
+    final amount = safeToDouble(entry['amount']);
     final date = entry['date'] as String? ?? '';
     final color = isJama ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 

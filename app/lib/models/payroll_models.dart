@@ -1,3 +1,5 @@
+import '../core/helpers.dart';
+
 class PayrollResult {
   final double totalWage;
   final List<PayrollEntry> entries;
@@ -8,7 +10,7 @@ class PayrollResult {
   });
 
   factory PayrollResult.fromJson(Map<String, dynamic> json) => PayrollResult(
-        totalWage: (json['total_wage'] as num?)?.toDouble() ?? 0,
+        totalWage: safeToDouble(json['total_wage']),
         entries: (json['entries'] as List<dynamic>?)
                 ?.map((e) => PayrollEntry.fromJson(e as Map<String, dynamic>))
                 .toList() ??
@@ -42,9 +44,9 @@ class PayrollEntry {
         employeeId: json['employee_id'] as String? ?? '',
         name: json['name'] as String? ?? '',
         photoUrl: json['photo_url'] as String?,
-        grossWages: (json['gross_wages'] as num?)?.toDouble() ?? 0,
-        netPayable: (json['net_payable'] as num?)?.toDouble() ?? 0,
-        totalUdhaar: (json['total_udhaar'] as num?)?.toDouble() ?? 0,
+        grossWages: safeToDouble(json['gross_wages']),
+        netPayable: safeToDouble(json['net_payable']),
+        totalUdhaar: safeToDouble(json['total_udhaar']),
       );
 
   Map<String, dynamic> toJson() => {
@@ -76,13 +78,13 @@ class PayrollSettings {
   });
 
   factory PayrollSettings.fromJson(Map<String, dynamic> json) => PayrollSettings(
-        otThresholdHours: (json['ot_threshold_hours'] as num?)?.toDouble() ?? 8,
-        otMultiplierDefault: (json['ot_multiplier_default'] as num?)?.toDouble() ?? 2,
+        otThresholdHours: safeToDouble(json['ot_threshold_hours']) != 0 ? safeToDouble(json['ot_threshold_hours']) : 8,
+        otMultiplierDefault: safeToDouble(json['ot_multiplier_default']) != 0 ? safeToDouble(json['ot_multiplier_default']) : 2,
         otRounding: json['ot_rounding'] as String? ?? 'nearest',
         otTrigger: json['ot_trigger'] as String? ?? 'above_threshold',
         wageBasis: json['wage_basis'] as String? ?? 'monthly',
         weekOffPaid: json['week_off_paid'] as bool? ?? true,
-        weeklyOffs: (json['weekly_offs'] as num?)?.toInt() ?? 1,
+        weeklyOffs: safeToInt(json['weekly_offs']) != 0 ? safeToInt(json['weekly_offs']) : 1,
       );
 
   Map<String, dynamic> toJson() => {

@@ -1,3 +1,4 @@
+import '../core/helpers.dart';
 import 'report_models.dart';
 
 class DashboardData {
@@ -26,10 +27,10 @@ class DashboardData {
   });
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
-    final total = (json['total_staff'] as num?)?.toInt() ?? 0;
-    final present = (json['present'] as num?)?.toInt() ?? 0;
-    final absent = (json['absent'] as num?)?.toInt() ?? 0;
-    final onLeave = (json['on_leave'] as num?)?.toInt() ?? 0;
+    final total = safeToInt(json['total_staff']);
+    final present = safeToInt(json['present']);
+    final absent = safeToInt(json['absent']);
+    final onLeave = safeToInt(json['on_leave']);
     final pct = json['attendance_percentage'] is num
         ? (json['attendance_percentage'] as num).toDouble()
         : (total > 0 ? (present / total) * 100 : 0.0);
@@ -40,9 +41,9 @@ class DashboardData {
       absentToday: absent,
       onLeave: onLeave,
       attendancePercentage: pct,
-      dailyJamaTotal: (json['daily_jama_total'] as num?)?.toDouble() ?? 0,
-      wageBillMtd: (json['wage_bill_mtd'] as num?)?.toDouble() ?? 0,
-      totalOutstanding: (json['total_outstanding'] as num?)?.toDouble() ?? 0,
+      dailyJamaTotal: safeToDouble(json['daily_jama_total']),
+      wageBillMtd: safeToDouble(json['wage_bill_mtd']),
+      totalOutstanding: safeToDouble(json['total_outstanding']),
       recentActivity: (json['recent_activity'] as List<dynamic>?)
               ?.map((e) => ActivityItem.fromJson(e as Map<String, dynamic>))
               .toList() ??

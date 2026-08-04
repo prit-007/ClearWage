@@ -1,3 +1,5 @@
+import '../core/helpers.dart';
+
 class LeavePolicy {
   final int paidLeaveDaysPerYear;
   final int unpaidLeaveDaysPerYear;
@@ -8,8 +10,8 @@ class LeavePolicy {
   });
 
   factory LeavePolicy.fromJson(Map<String, dynamic> json) => LeavePolicy(
-        paidLeaveDaysPerYear: (json['paid_leave_days_per_year'] as num?)?.toInt() ?? 0,
-        unpaidLeaveDaysPerYear: (json['unpaid_leave_days_per_year'] as num?)?.toInt() ?? 0,
+        paidLeaveDaysPerYear: safeToInt(json['paid_leave_days_per_year']),
+        unpaidLeaveDaysPerYear: safeToInt(json['unpaid_leave_days_per_year']),
       );
 
   Map<String, dynamic> toJson() => {

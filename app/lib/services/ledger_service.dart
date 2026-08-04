@@ -1,4 +1,5 @@
 import '../core/api_client.dart';
+import '../core/helpers.dart';
 import '../models/ledger_model.dart';
 
 class LedgerService {
@@ -45,7 +46,7 @@ class LedgerService {
   Future<double> getBalance(String employeeId) async {
     final res = await _client.get('/api/v1/ledger/$employeeId/balance');
     final data = res['data'] as Map<String, dynamic>? ?? {};
-    return (data['balance'] as num?)?.toDouble() ?? 0;
+    return safeToDouble(data['balance']);
   }
 
   Future<void> settleAccount(String employeeId) async {

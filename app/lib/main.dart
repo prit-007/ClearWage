@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'core/logger.dart';
 import 'features/attendance/attendance_roster_page.dart' as roster;
 import 'features/dashboard/dashboard_page.dart';
 import 'features/staff/staff_directory_page.dart';
@@ -27,12 +29,26 @@ import 'providers/providers.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+
+  FlutterError.onError = (details) {
+    AppLogger.error(
+      'Flutter error',
+      details.exception,
+      details.stack,
+    );
+  };
+
   try {
     await Firebase.initializeApp();
   } catch (e) {
-    // Firebase initialization errors are handled gracefully at runtime
+    AppLogger.error('Firebase initialization failed', e);
   }
-  runApp(const ProviderScope(child: FactoryWorkforceApp()));
+
+  runZonedGuarded(() {
+    runApp(const ProviderScope(child: FactoryWorkforceApp()));
+  }, (error, stackTrace) {
+    AppLogger.error('Uncaught zone error', error, stackTrace);
+  });
 }
 
 class FactoryWorkforceApp extends ConsumerWidget {

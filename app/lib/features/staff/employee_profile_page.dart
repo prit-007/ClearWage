@@ -12,6 +12,7 @@ import '../dashboard/dashboard_page.dart';
 import '../../models/employee_model.dart';
 import '../../core/app_config.dart';
 import '../../core/helpers.dart';
+import '../../core/logger.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import 'add_employee_page.dart';
 
@@ -56,7 +57,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
     final attSummary = (attendanceData['summary'] as Map<String, dynamic>?)?.cast<String, dynamic>() ?? {};
     final attList = ((attendanceData['recent'] as List<dynamic>?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
     final ledgerList = ((ledger['recent'] as List<dynamic>?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
-    final bal = ((ledger['balance'] as num?)?.toDouble()) ?? 0.0;
+    final bal = safeToDouble(ledger['balance']);
 
     if (mounted) {
       setState(() {
@@ -71,7 +72,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
   }
 
   Future<T?> _fetch<T>(Future<T> Function() fn) async {
-    try { return await fn(); } catch (_) { return null; }
+    try { return await fn(); } catch (e, st) { AppLogger.error('Profile fetch failed', e, st); return null; }
   }
 
   Future<void> _pickAndUploadPhoto() async {
@@ -979,16 +980,16 @@ class _AttendanceTab extends StatelessWidget {
     final list = attendanceList ?? [];
     final s = summary ?? const {};
     final present = summary != null
-        ? (s['present'] as num?)?.toInt() ?? 0
+        ? safeToInt(s['present'])
         : list.where((a) => a['status'] == 'present').length;
     final absent = summary != null
-        ? (s['absent'] as num?)?.toInt() ?? 0
+        ? safeToInt(s['absent'])
         : list.where((a) => a['status'] == 'absent').length;
     final halfDay = summary != null
-        ? (s['half_day'] as num?)?.toInt() ?? 0
+        ? safeToInt(s['half_day'])
         : list.where((a) => a['status'] == 'half_day').length;
     final total = summary != null
-        ? (s['total'] as num?)?.toInt() ?? (present + absent + halfDay)
+        ? safeToInt(s['total']) != 0 ? safeToInt(s['total']) : (present + absent + halfDay)
         : (list.isNotEmpty ? list.length : 1);
     final pct = total > 0 ? present / total : 0.0;
     final recent = list.take(5).toList();
@@ -1126,7 +1127,7 @@ class _LedgerTab extends StatelessWidget {
           ...recent.map((e) => _LedgerEntryRow(
                 cs: cs,
                 isJama: e['type'] == 'jama',
-                amount: (e['amount'] as num?)?.toDouble() ?? 0,
+                amount: safeToDouble(e['amount']),
                 date: e['date'] as String? ?? '',
               )),
       ],

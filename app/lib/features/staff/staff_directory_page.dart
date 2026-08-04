@@ -12,6 +12,7 @@ import 'add_employee_page.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/helpers.dart';
+import '../../core/logger.dart';
 
 const int _pageSize = 20;
 
@@ -99,7 +100,8 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
           _loadingMore = false;
         });
       }
-    } catch (_) {
+    } catch (e, st) {
+      AppLogger.error('Staff load-more failed', e, st);
       if (mounted) setState(() => _loadingMore = false);
     }
   }

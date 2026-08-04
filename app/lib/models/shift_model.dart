@@ -1,3 +1,5 @@
+import '../core/helpers.dart';
+
 class Shift {
   final String id;
   final String name;
@@ -23,7 +25,7 @@ class Shift {
         startTime: json['start_time'] as String? ?? '',
         endTime: json['end_time'] as String? ?? '',
         crossesMidnight: json['crosses_midnight'] as bool? ?? false,
-        gracePeriodMinutes: (json['grace_period_minutes'] as num?)?.toInt() ?? 0,
+        gracePeriodMinutes: safeToInt(json['grace_period_minutes']),
         isDefault: json['is_default'] as bool? ?? false,
       );
 

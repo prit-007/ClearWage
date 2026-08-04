@@ -1,3 +1,5 @@
+import '../core/helpers.dart';
+
 class RosterRow {
   final String employeeId;
   final String name;
@@ -60,8 +62,8 @@ class RosterRow {
         status: json['status'] as String?,
         checkInTime: json['check_in_time'] as String?,
         checkOutTime: json['check_out_time'] as String?,
-        overtimeHours: (json['overtime_hours'] as num?)?.toDouble() ?? 0,
-        computedWage: (json['computed_wage'] as num?)?.toDouble() ?? 0,
+        overtimeHours: safeToDouble(json['overtime_hours']),
+        computedWage: safeToDouble(json['computed_wage']),
         isLocked: json['is_locked'] as bool? ?? false,
       );
 }

@@ -1,3 +1,5 @@
+import '../core/helpers.dart';
+
 class DailySummaryData {
   final int totalWorkers;
   final int present;
@@ -16,11 +18,11 @@ class DailySummaryData {
   double get attendancePercentage => totalWorkers > 0 ? (present / totalWorkers) * 100 : 0.0;
 
   factory DailySummaryData.fromJson(Map<String, dynamic> json) => DailySummaryData(
-        totalWorkers: (json['total_workers'] as num?)?.toInt() ?? 0,
-        present: (json['present'] as num?)?.toInt() ?? 0,
-        absent: (json['absent'] as num?)?.toInt() ?? 0,
-        onLeave: (json['on_leave'] as num?)?.toInt() ?? 0,
-        totalWageBill: (json['total_wage_bill'] as num?)?.toDouble() ?? 0,
+        totalWorkers: safeToInt(json['total_workers']),
+        present: safeToInt(json['present']),
+        absent: safeToInt(json['absent']),
+        onLeave: safeToInt(json['on_leave']),
+        totalWageBill: safeToDouble(json['total_wage_bill']),
       );
 }
 
@@ -40,11 +42,14 @@ class DefaulterItem {
   factory DefaulterItem.fromJson(Map<String, dynamic> json) => DefaulterItem(
         name: json['name'] as String? ?? json['employee_name'] as String? ?? 'Unknown',
         photoUrl: json['photo_url'] as String?,
-        outstandingBalance: (json['outstanding_balance'] as num?)?.toDouble() ??
-            (json['outstanding'] as num?)?.toDouble() ?? 0,
-        monthlyWage: (json['monthly_wage'] as num?)?.toDouble() ??
-            (json['wage'] as num?)?.toDouble() ??
-            (json['wage_amount'] as num?)?.toDouble() ?? 0,
+        outstandingBalance: safeToDouble(json['outstanding_balance']) != 0
+            ? safeToDouble(json['outstanding_balance'])
+            : safeToDouble(json['outstanding']),
+        monthlyWage: safeToDouble(json['monthly_wage']) != 0
+            ? safeToDouble(json['monthly_wage'])
+            : safeToDouble(json['wage']) != 0
+                ? safeToDouble(json['wage'])
+                : safeToDouble(json['wage_amount']),
       );
 }
 
@@ -59,7 +64,7 @@ class WageBillTrendItem {
 
   factory WageBillTrendItem.fromJson(Map<String, dynamic> json) => WageBillTrendItem(
         month: json['month'] as String? ?? '',
-        totalWages: (json['total_wages'] as num?)?.toDouble() ?? 0,
+        totalWages: safeToDouble(json['total_wages']),
       );
 }
 
@@ -76,7 +81,7 @@ class AttendanceTrendItem {
 
   factory AttendanceTrendItem.fromJson(Map<String, dynamic> json) => AttendanceTrendItem(
         date: json['date'] as String? ?? '',
-        present: (json['present'] as num?)?.toInt() ?? 0,
-        absent: (json['absent'] as num?)?.toInt() ?? 0,
+        present: safeToInt(json['present']),
+        absent: safeToInt(json['absent']),
       );
 }

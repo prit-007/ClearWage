@@ -47,23 +47,31 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     if (_saving) return;
     setState(() => _saving = true);
     HapticFeedback.heavyImpact();
-    final employees = ref.read(employeeListProvider).valueOrNull ?? [];
-    final attendanceList = ref.read(attendanceByDateProvider(_dateStr)).valueOrNull ?? [];
+    final rows = _cachedRows ?? [];
     final date = _dateStr;
-    final unmarked = employees.where((emp) => !attendanceList.any((a) => a.employeeId == emp.id)).toList();
-    final noShift = unmarked.where((e) => e.defaultShiftId == null || e.defaultShiftId!.isEmpty).toList();
-    final withShift = unmarked.where((e) => e.defaultShiftId != null && e.defaultShiftId!.isNotEmpty).toList();
+    final unmarkedRows = rows.where((r) {
+      final attId = r['attendance_id'] as String?;
+      return attId == null || attId.isEmpty;
+    }).toList();
+    final noShift = unmarkedRows.where((r) {
+      final shiftId = r['default_shift_id'] as String?;
+      return shiftId == null || shiftId.isEmpty;
+    }).toList();
+    final withShift = unmarkedRows.where((r) {
+      final shiftId = r['default_shift_id'] as String?;
+      return shiftId != null && shiftId.isNotEmpty;
+    }).toList();
 
-    if (unmarked.isEmpty) {
+    if (unmarkedRows.isEmpty) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('All employees already marked')));
       setState(() => _saving = false);
       return;
     }
 
-    final records = withShift.map((emp) => ({
-      'employee_id': emp.id,
+    final records = withShift.map((r) => ({
+      'employee_id': r['employee_id'] as String,
       'date': date,
-      'shift_id': emp.defaultShiftId!,
+      'shift_id': r['default_shift_id'] as String,
       'status': 'present',
       'overtime_hours': '0',
     })).toList();
@@ -534,10 +542,6 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
 
 final rosterByDateProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, date) {
   return ref.watch(attendanceServiceProvider).roster(date);
-});
-
-final attendanceByDateProvider = FutureProvider.autoDispose.family<List<Attendance>, String>((ref, date) {
-  return ref.watch(attendanceServiceProvider).listByDate(date, limit: 100000);
 });
 
 class _PremiumAttendanceCard extends StatefulWidget {

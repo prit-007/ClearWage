@@ -8,15 +8,22 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
+	"github.com/vivek-app/vivek_app/pkg/cache"
 	"github.com/vivek-app/vivek_app/repositories"
+	"golang.org/x/sync/singleflight"
 )
 
 type StaffService struct {
 	querier repositories.Querier
+	cache   *cache.TTL
+	sf      singleflight.Group
 }
 
 func NewStaffService(querier repositories.Querier) *StaffService {
-	return &StaffService{querier: querier}
+	return &StaffService{
+		querier: querier,
+		cache:   cache.New(10 * time.Second),
+	}
 }
 
 // EmployeeProfileDetails carries optional KYC/personal fields for an employee.
@@ -295,6 +302,24 @@ type EmployeeOverview struct {
 }
 
 func (s *StaffService) GetOverview(ctx context.Context, employeeID, tenantID string) (EmployeeOverview, error) {
+	cacheKey := fmt.Sprintf("overview:%s:%s", tenantID, employeeID)
+	if cached, ok := s.cache.Get(cacheKey); ok {
+		return cached.(EmployeeOverview), nil
+	}
+
+	v, err, _ := s.sf.Do(cacheKey, func() (interface{}, error) {
+		return s.fetchOverview(ctx, employeeID, tenantID)
+	})
+	if err != nil {
+		return EmployeeOverview{}, err
+	}
+
+	result := v.(EmployeeOverview)
+	s.cache.Set(cacheKey, result)
+	return result, nil
+}
+
+func (s *StaffService) fetchOverview(ctx context.Context, employeeID, tenantID string) (EmployeeOverview, error) {
 	profile, err := s.querier.GetStaffProfile(ctx, repositories.GetStaffProfileParams{
 		ID:       employeeID,
 		TenantID: tenantID,

@@ -6,7 +6,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/vivek-app/vivek_app/pkg/cache"
 	"github.com/vivek-app/vivek_app/repositories"
+	"golang.org/x/sync/singleflight"
 )
 
 func parseFloat(s, field string) (float64, error) {
@@ -22,10 +24,15 @@ func parseFloat(s, field string) (float64, error) {
 
 type AttendanceService struct {
 	querier repositories.Querier
+	cache   *cache.TTL
+	sf      singleflight.Group
 }
 
 func NewAttendanceService(querier repositories.Querier) *AttendanceService {
-	return &AttendanceService{querier: querier}
+	return &AttendanceService{
+		querier: querier,
+		cache:   cache.New(10 * time.Second),
+	}
 }
 
 func (s *AttendanceService) resolveShiftID(ctx context.Context, tenantID, employeeID, shiftID string) *string {
@@ -79,7 +86,21 @@ func (s *AttendanceService) ListByDate(ctx context.Context, tenantID, date strin
 }
 
 func (s *AttendanceService) RosterByDate(ctx context.Context, tenantID, date string) ([]repositories.RosterRow, error) {
-	return s.querier.ListRosterByDate(ctx, tenantID, date)
+	cacheKey := fmt.Sprintf("roster:%s:%s", tenantID, date)
+	if cached, ok := s.cache.Get(cacheKey); ok {
+		return cached.([]repositories.RosterRow), nil
+	}
+
+	v, err, _ := s.sf.Do(cacheKey, func() (interface{}, error) {
+		return s.querier.ListRosterByDate(ctx, tenantID, date)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := v.([]repositories.RosterRow)
+	s.cache.Set(cacheKey, result)
+	return result, nil
 }
 
 func (s *AttendanceService) ListByEmployeeMonth(ctx context.Context, employeeID, tenantID, startDate, endDate string, limit, offset int32) ([]repositories.Attendance, error) {

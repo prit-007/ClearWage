@@ -2,11 +2,14 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"time"
 
 	"github.com/shopspring/decimal"
+	"github.com/vivek-app/vivek_app/pkg/cache"
 	"github.com/vivek-app/vivek_app/repositories"
+	"golang.org/x/sync/singleflight"
 )
 
 type DashboardData struct {
@@ -25,14 +28,40 @@ type DashboardData struct {
 
 type DashboardService struct {
 	querier repositories.Querier
+	cache   *cache.TTL
+	sf      singleflight.Group
 }
 
 func NewDashboardService(querier repositories.Querier) *DashboardService {
-	return &DashboardService{querier: querier}
+	return &DashboardService{
+		querier: querier,
+		cache:   cache.New(10 * time.Second),
+	}
 }
 
 func (s *DashboardService) GetDashboard(ctx context.Context, tenantID string) (DashboardData, error) {
 	today := time.Now().Format("2006-01-02")
+
+	// Check cache first.
+	cacheKey := fmt.Sprintf("dashboard:%s:%s", tenantID, today)
+	if cached, ok := s.cache.Get(cacheKey); ok {
+		return cached.(DashboardData), nil
+	}
+
+	// Use singleflight to deduplicate concurrent requests for the same key.
+	v, err, _ := s.sf.Do(cacheKey, func() (interface{}, error) {
+		return s.fetchDashboard(ctx, tenantID, today)
+	})
+	if err != nil {
+		return DashboardData{}, err
+	}
+
+	result := v.(DashboardData)
+	s.cache.Set(cacheKey, result)
+	return result, nil
+}
+
+func (s *DashboardService) fetchDashboard(ctx context.Context, tenantID, today string) (DashboardData, error) {
 	now := time.Now()
 	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
 

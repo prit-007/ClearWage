@@ -2,16 +2,21 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/shopspring/decimal"
+	"github.com/vivek-app/vivek_app/pkg/cache"
 	"github.com/vivek-app/vivek_app/repositories"
+	"golang.org/x/sync/singleflight"
 )
 
-const listAll int32 = 100000
+const listAll int32 = 1000000
 
 type ReportService struct {
 	querier repositories.Querier
+	cache   *cache.TTL
+	sf      singleflight.Group
 }
 
 type DailySummary = repositories.DailySummary
@@ -42,11 +47,28 @@ type Defaulter struct {
 }
 
 func NewReportService(querier repositories.Querier) *ReportService {
-	return &ReportService{querier: querier}
+	return &ReportService{
+		querier: querier,
+		cache:   cache.New(10 * time.Second),
+	}
 }
 
 func (s *ReportService) DailySummary(ctx context.Context, tenantID, date string) (DailySummary, error) {
-	return s.querier.GetDailySummary(ctx, tenantID, date)
+	cacheKey := fmt.Sprintf("daily_summary:%s:%s", tenantID, date)
+	if cached, ok := s.cache.Get(cacheKey); ok {
+		return cached.(DailySummary), nil
+	}
+
+	v, err, _ := s.sf.Do(cacheKey, func() (interface{}, error) {
+		return s.querier.GetDailySummary(ctx, tenantID, date)
+	})
+	if err != nil {
+		return DailySummary{}, err
+	}
+
+	result := v.(DailySummary)
+	s.cache.Set(cacheKey, result)
+	return result, nil
 }
 
 func (s *ReportService) EmployeeMonthly(ctx context.Context, tenantID, employeeID, startDate, endDate string) (EmployeeMonthlyReport, error) {

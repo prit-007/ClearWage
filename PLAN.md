@@ -79,24 +79,24 @@ Legend: `[ ]` = pending, `[x]` = finished.
 ### B3. Query rewrites (hot + N+1 first)
 - [x] `ListEmployeeBalances` (`GROUP BY employee_id`) kills N+1 in `DefaultersList`.
 - [x] `GetDashboardSnapshot` (single CTE) kills 6 sequential queries in `DashboardService.GetDashboard`.
-- [ ] `WageBillTrends` becomes one grouped SQL query (kill per-month loop).
-- [ ] `DailySummary` aggregation pushed into SQL (stop pulling 100k rows).
+- [x] `WageBillTrends` becomes one grouped SQL query (kill per-month loop).
+- [x] `DailySummary` aggregation pushed into SQL (stop pulling 100k rows).
 - [ ] Roster rewrite (deferred: must verify `time` → `"HH:MM"` format contract via live DB).
 - [ ] Trim `SELECT *` to needed columns on list/profile paths.
 - [ ] Migrate remaining CRUD to sqlc in batches, tests green each batch; remove goqu when done.
 
 ## Phase C — Decimal money (correctness)
 
-- [ ] Add `github.com/shopspring/decimal`; `sqlc.yaml` override `numeric → decimal.Decimal`.
-- [ ] Domain monetary fields → `decimal.Decimal` (`wage_amount`, `amount`, overtime, computed wages, balances/summaries).
-- [ ] Update math in `payroll_service`, `report_service`, `attendance_service`.
-- [ ] Update service test expectations (TDD); verify JSON still emits numbers (no API break).
+- [x] Add `github.com/shopspring/decimal`; `sqlc.yaml` override `numeric → decimal.Decimal`.
+- [x] Domain monetary fields → `decimal.Decimal` (`wage_amount`, `amount`, overtime, computed wages, balances/summaries).
+- [x] Update math in `payroll_service`, `report_service`, `attendance_service`.
+- [x] Update service test expectations (TDD); verify JSON still emits numbers (no API break).
 
 ## Phase D — Scale features
 
-- [ ] D1: lightweight TTL read cache (`sync.Map`, no new dependency) + `singleflight` on dashboard / roster / daily-summary / staff overview.
-- [ ] D2: keyset pagination for `ledger` and `attendance` lists (replace `OFFSET` / `listAll=100000`).
-- [ ] D3: slow-query logging (duration threshold) in `RequestLogger`; keep pprof hook enabled-by-flag.
+- [x] D1: lightweight TTL read cache (`sync.Map`, no new dependency) + `singleflight` on dashboard / roster / daily-summary / staff overview.
+- [x] D2: keyset pagination for `ledger` and `attendance` lists (replace `OFFSET` / `listAll=100000`).
+- [x] D3: slow-query logging (duration threshold) in `RequestLogger`; keep pprof hook enabled-by-flag.
 
 ---
 

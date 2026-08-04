@@ -15,6 +15,7 @@ type Querier interface {
 	GetDashboardSnapshot(ctx context.Context, arg GetDashboardSnapshotParams) (GetDashboardSnapshotRow, error)
 	GetWageBillTrends(ctx context.Context, arg GetWageBillTrendsParams) ([]GetWageBillTrendsRow, error)
 	ListEmployeeBalances(ctx context.Context, tenantID uuid.UUID) ([]ListEmployeeBalancesRow, error)
+	ListRosterByDate(ctx context.Context, arg ListRosterByDateParams) ([]ListRosterByDateRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -622,6 +622,21 @@ func (mr *MockQuerierMockRecorder) ListAttendanceByDateRange(ctx, arg any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAttendanceByDateRange", reflect.TypeOf((*MockQuerier)(nil).ListAttendanceByDateRange), ctx, arg)
 }
 
+// ListAttendanceByDateRangeExplicit mocks base method.
+func (m *MockQuerier) ListAttendanceByDateRangeExplicit(ctx context.Context, tenantID, startDate, endDate string, limit, offset int32) ([]repositories.Attendance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAttendanceByDateRangeExplicit", ctx, tenantID, startDate, endDate, limit, offset)
+	ret0, _ := ret[0].([]repositories.Attendance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAttendanceByDateRangeExplicit indicates an expected call of ListAttendanceByDateRangeExplicit.
+func (mr *MockQuerierMockRecorder) ListAttendanceByDateRangeExplicit(ctx, tenantID, startDate, endDate, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAttendanceByDateRangeExplicit", reflect.TypeOf((*MockQuerier)(nil).ListAttendanceByDateRangeExplicit), ctx, tenantID, startDate, endDate, limit, offset)
+}
+
 // ListAttendanceByEmployeeMonth mocks base method.
 func (m *MockQuerier) ListAttendanceByEmployeeMonth(ctx context.Context, arg repositories.ListAttendanceByEmployeeMonthParams) ([]repositories.Attendance, error) {
 	m.ctrl.T.Helper()
@@ -635,6 +650,21 @@ func (m *MockQuerier) ListAttendanceByEmployeeMonth(ctx context.Context, arg rep
 func (mr *MockQuerierMockRecorder) ListAttendanceByEmployeeMonth(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAttendanceByEmployeeMonth", reflect.TypeOf((*MockQuerier)(nil).ListAttendanceByEmployeeMonth), ctx, arg)
+}
+
+// ListAttendanceByEmployeeMonthExplicit mocks base method.
+func (m *MockQuerier) ListAttendanceByEmployeeMonthExplicit(ctx context.Context, employeeID, tenantID, startDate, endDate string, limit, offset int32) ([]repositories.Attendance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAttendanceByEmployeeMonthExplicit", ctx, employeeID, tenantID, startDate, endDate, limit, offset)
+	ret0, _ := ret[0].([]repositories.Attendance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAttendanceByEmployeeMonthExplicit indicates an expected call of ListAttendanceByEmployeeMonthExplicit.
+func (mr *MockQuerierMockRecorder) ListAttendanceByEmployeeMonthExplicit(ctx, employeeID, tenantID, startDate, endDate, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAttendanceByEmployeeMonthExplicit", reflect.TypeOf((*MockQuerier)(nil).ListAttendanceByEmployeeMonthExplicit), ctx, employeeID, tenantID, startDate, endDate, limit, offset)
 }
 
 // ListEmployeeBalances mocks base method.
@@ -682,6 +712,21 @@ func (mr *MockQuerierMockRecorder) ListEmployeesByTenant(ctx, arg any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEmployeesByTenant", reflect.TypeOf((*MockQuerier)(nil).ListEmployeesByTenant), ctx, arg)
 }
 
+// ListEmployeesByTenantExplicit mocks base method.
+func (m *MockQuerier) ListEmployeesByTenantExplicit(ctx context.Context, tenantID string, limit, offset int32) ([]repositories.Employee, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListEmployeesByTenantExplicit", ctx, tenantID, limit, offset)
+	ret0, _ := ret[0].([]repositories.Employee)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListEmployeesByTenantExplicit indicates an expected call of ListEmployeesByTenantExplicit.
+func (mr *MockQuerierMockRecorder) ListEmployeesByTenantExplicit(ctx, tenantID, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEmployeesByTenantExplicit", reflect.TypeOf((*MockQuerier)(nil).ListEmployeesByTenantExplicit), ctx, tenantID, limit, offset)
+}
+
 // ListHolidaysByTenant mocks base method.
 func (m *MockQuerier) ListHolidaysByTenant(ctx context.Context, arg repositories.ListHolidaysByTenantParams) ([]repositories.Holiday, error) {
 	m.ctrl.T.Helper()
@@ -712,6 +757,21 @@ func (mr *MockQuerierMockRecorder) ListLedgerByEmployeeMonth(ctx, arg any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLedgerByEmployeeMonth", reflect.TypeOf((*MockQuerier)(nil).ListLedgerByEmployeeMonth), ctx, arg)
 }
 
+// ListLedgerByEmployeeMonthExplicit mocks base method.
+func (m *MockQuerier) ListLedgerByEmployeeMonthExplicit(ctx context.Context, employeeID, tenantID, startDate, endDate string, limit, offset int32) ([]repositories.Ledger, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListLedgerByEmployeeMonthExplicit", ctx, employeeID, tenantID, startDate, endDate, limit, offset)
+	ret0, _ := ret[0].([]repositories.Ledger)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListLedgerByEmployeeMonthExplicit indicates an expected call of ListLedgerByEmployeeMonthExplicit.
+func (mr *MockQuerierMockRecorder) ListLedgerByEmployeeMonthExplicit(ctx, employeeID, tenantID, startDate, endDate, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLedgerByEmployeeMonthExplicit", reflect.TypeOf((*MockQuerier)(nil).ListLedgerByEmployeeMonthExplicit), ctx, employeeID, tenantID, startDate, endDate, limit, offset)
+}
+
 // ListLedgerByTenant mocks base method.
 func (m *MockQuerier) ListLedgerByTenant(ctx context.Context, arg repositories.ListLedgerByTenantParams) ([]repositories.Ledger, error) {
 	m.ctrl.T.Helper()
@@ -725,6 +785,21 @@ func (m *MockQuerier) ListLedgerByTenant(ctx context.Context, arg repositories.L
 func (mr *MockQuerierMockRecorder) ListLedgerByTenant(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLedgerByTenant", reflect.TypeOf((*MockQuerier)(nil).ListLedgerByTenant), ctx, arg)
+}
+
+// ListLedgerByTenantExplicit mocks base method.
+func (m *MockQuerier) ListLedgerByTenantExplicit(ctx context.Context, tenantID, startDate, endDate string, limit, offset int32) ([]repositories.Ledger, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListLedgerByTenantExplicit", ctx, tenantID, startDate, endDate, limit, offset)
+	ret0, _ := ret[0].([]repositories.Ledger)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListLedgerByTenantExplicit indicates an expected call of ListLedgerByTenantExplicit.
+func (mr *MockQuerierMockRecorder) ListLedgerByTenantExplicit(ctx, tenantID, startDate, endDate, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLedgerByTenantExplicit", reflect.TypeOf((*MockQuerier)(nil).ListLedgerByTenantExplicit), ctx, tenantID, startDate, endDate, limit, offset)
 }
 
 // ListPendingSyncEvents mocks base method.

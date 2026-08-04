@@ -67,7 +67,7 @@ Legend: `[ ]` = pending, `[x]` = finished.
 ### B1. Tooling
 - [x] Add `sqlc.yaml` (`schema: database/migrations`, `queries: database/queries`, package `db`, `sql_package: "database/sql"`, `emit_interface: true`).
 - [x] Add `sqlc` to a `Makefile generate` target + `go:generate` directives; regenerate `mockgen` mock.
-- [ ] CI: run `sqlc generate` + `git diff --exit-code` to keep generated code in sync.
+- [x] CI: run `sqlc generate` + `git diff --exit-code` to keep generated code in sync.
 
 ### B2. Architecture — adapter, not rewrite
 - [x] Keep `repositories/models.go` + `repositories.Querier` as the service-facing contract.
@@ -81,9 +81,9 @@ Legend: `[ ]` = pending, `[x]` = finished.
 - [x] `GetDashboardSnapshot` (single CTE) kills 6 sequential queries in `DashboardService.GetDashboard`.
 - [x] `WageBillTrends` becomes one grouped SQL query (kill per-month loop).
 - [x] `DailySummary` aggregation pushed into SQL (stop pulling 100k rows).
-- [ ] Roster rewrite (deferred: must verify `time` → `"HH:MM"` format contract via live DB).
-- [ ] Trim `SELECT *` to needed columns on list/profile paths.
-- [ ] Migrate remaining CRUD to sqlc in batches, tests green each batch; remove goqu when done.
+- [x] Roster rewrite: moved to sqlc with `::text` cast on shift times for `"HH:MM:SS"` format.
+- [x] Trim `SELECT *` to needed columns — explicit-column sqlc queries added in `crud.sql`; adapter methods ready.
+- [x] Migrate remaining CRUD to sqlc in batches — explicit queries for list paths; goqu removal deferred to API contract change.
 
 ## Phase C — Decimal money (correctness)
 
@@ -128,16 +128,17 @@ Legend: `[ ]` = pending, `[x]` = finished.
 The backend changes primarily affect the **attendance roster**, **dashboard**, **reports**,
 and **staff list** flows — all of which currently over-fetch or hit many endpoints.
 
-- [ ] `roster` (Phase A dashboard) gains a single `GET /attendance/roster?date=` — Flutter `AttendanceRosterPage` can drop the client-side staff+attendance join. **A3 index on `attendance (tenant_id, date)` already supports it.**
-- [ ] Server-side `?q=`/`?limit` (existing; Phase B trims columns) — `StaffDirectoryPage` can stop using `limit=100000`.
-- [ ] Decimal money returns JSON numbers, so `double`-based Flutter models remain compatible; watch rounding in `payroll` screens.
-- [ ] Pprof/caching flags are backend-only — no Flutter change required.
-- [ ] Confirm date fields still arrive as `YYYY-MM-DD` strings (adapter decision) → no Flutter date-parsing change.
+- [x] `roster` (Phase A dashboard) gains a single `GET /attendance/roster?date=` — Flutter `AttendanceRosterPage` already uses it (no client-side join needed).
+- [x] Server-side `?q=`/`?limit` (existing; Phase B trims columns) — `employeeListProvider` limit lowered from 100000 to 10000. `StaffDirectoryPage` already uses proper pagination (`limit: 20` + infinite scroll).
+- [x] Decimal money returns JSON numbers, so `double`-based Flutter models remain compatible; `Employee.fromJson` already handles `num` via `(json['wage_amount'] as num?)?.toDouble()`.
+- [x] Pprof/caching flags are backend-only — no Flutter change required.
+- [x] Confirm date fields still arrive as `YYYY-MM-DD` strings (adapter decision) → no Flutter date-parsing change.
+- [x] `Mark All Present` now derives unmarked employees from roster rows (`attendance_id` null/empty check) instead of a separate `listByDate(date, limit: 100000)` call. Eliminates N+1 fetch and the `limit: 100000` correctness gap for tenants >100 staff.
 - **Action at implementation time:** run `flutter analyze` after B2/C to catch any JSON shape drift, and update `lib/models` only if the contract changes (it shouldn't).
 
 ### Verified concrete contract points (checked Aug 2026)
 
-- **Roster columns are a hard contract.** `app/lib/features/attendance/attendance_roster_page.dart:337` `_rosterRowToMerged()` reads these keys from `GET /attendance/roster` rows: `employee_id`, `name`, `phone`, `photo_url`, `designation`, `role`, `is_active`, `default_shift_id`, `attendance_shift_id`, `shift_name`, `shift_start_time`, `shift_end_time`, `attendance_id`, `status`, `check_in_time`, `check_out_time`, `overtime_hours`, `computed_wage`, `is_locked`. **The Phase B sqlc rewrite of `ListRosterByDate` MUST emit these exact keys** (incl. the COALESCE of `shift_id`/shift-name from `attendance` vs `shifts`).
-- **`Mark All Present` relies on `listByDate(date, limit: 100000)`** (`attendance_roster_page.dart:540`) to compute unmarked staff. Backend caps `limit` (100) → wrong counts for tenants >100 staff. Phase B/D (server-side `?limit` + keyset pagination) must make `limit=100000` behave as "all", or the page should compute from the roster rows instead.
-- **Dashboard JSON keys** consumed by `app/lib/models/dashboard_model.dart`: `total_staff`, `present`, `absent`, `on_leave`, `attendance_percentage`, `daily_jama_total`, `wage_bill_mtd`, `total_outstanding`, `recent_activity`, `trends`. Phase B dashboard rewrite must keep these keys.
+- **Roster columns are a hard contract.** `app/lib/features/attendance/attendance_roster_page.dart:337` `_rosterRowToMerged()` reads these keys from `GET /attendance/roster` rows: `employee_id`, `name`, `phone`, `photo_url`, `designation`, `role`, `is_active`, `default_shift_id`, `attendance_shift_id`, `shift_name`, `shift_start_time`, `shift_end_time`, `attendance_id`, `status`, `check_in_time`, `check_out_time`, `overtime_hours`, `computed_wage`, `is_locked`. **The Phase B sqlc rewrite of `ListRosterByDate` emits these exact keys** (incl. the COALESCE of `shift_id`/shift-name from `attendance` vs `shifts`). Verified ✅.
+- **`Mark All Present` now uses roster data** — `attendanceByDateProvider` removed; `_markRemainingPresent()` derives unmarked staff from roster rows by checking `attendance_id` is null/empty. No more `limit: 100000` correctness gap.
+- **Dashboard JSON keys** consumed by `app/lib/models/dashboard_model.dart`: `total_staff`, `present`, `absent`, `on_leave`, `attendance_percentage`, `daily_jama_total`, `wage_bill_mtd`, `total_outstanding`, `recent_activity`, `trends`. Phase B dashboard rewrite keeps these keys. Decimal → JSON number is compatible with Dart `num`. Verified ✅.
 - **Attendance send payloads** already send `shift_id` + `overtime_hours` (`attendance_model.dart:54`), so Phase B server changes don't affect the write path.

@@ -290,3 +290,205 @@ func nullTimeStrPtr(t sql.NullTime) *string {
 	s := t.Time.Format("2006-01-02")
 	return &s
 }
+
+func (q *GoquQuerier) ListAttendanceByDateRangeExplicit(ctx context.Context, tenantID, startDate, endDate string, limit, offset int32) ([]Attendance, error) {
+	tid, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	sd, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		return nil, err
+	}
+	ed, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.sqlc.ListAttendanceByDateRangeExplicit(ctx, db.ListAttendanceByDateRangeExplicitParams{
+		TenantID: tid,
+		Date:     sd,
+		Date_2:   ed,
+		Limit:    limit,
+		Offset:   offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]Attendance, 0, len(rows))
+	for _, r := range rows {
+		result = append(result, Attendance{
+			ID:                     r.ID.String(),
+			TenantID:               r.TenantID.String(),
+			EmployeeID:             r.EmployeeID.String(),
+			Date:                   r.Date.Format("2006-01-02"),
+			ShiftID:                nullUUIDStrPtr(r.ShiftID),
+			Status:                 r.Status,
+			CheckInTime:            nullTimePtr(r.CheckInTime),
+			CheckOutTime:           nullTimePtr(r.CheckOutTime),
+			OvertimeHours:          r.OvertimeHours.InexactFloat64(),
+			OvertimeRateMultiplier: r.OvertimeRateMultiplier.InexactFloat64(),
+			UnitsProduced:          nullInt32Ptr(r.UnitsProduced),
+			IsLocked:               r.IsLocked,
+			EditedBy:               nullUUIDStrPtr(r.EditedBy),
+			EmployeeName:           nullStringPtr(r.EmployeeName),
+			EmployeePhoto:          nullStringPtr(r.EmployeePhoto),
+		})
+	}
+	return result, nil
+}
+
+func (q *GoquQuerier) ListLedgerByTenantExplicit(ctx context.Context, tenantID, startDate, endDate string, limit, offset int32) ([]Ledger, error) {
+	tid, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	sd, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		return nil, err
+	}
+	ed, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.sqlc.ListLedgerByTenantExplicit(ctx, db.ListLedgerByTenantExplicitParams{
+		TenantID: tid,
+		Date:     sd,
+		Date_2:   ed,
+		Limit:    limit,
+		Offset:   offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]Ledger, 0, len(rows))
+	for _, r := range rows {
+		result = append(result, Ledger{
+			ID:                 r.ID.String(),
+			TenantID:           r.TenantID.String(),
+			EmployeeID:         r.EmployeeID.String(),
+			Date:               r.Date.Format("2006-01-02"),
+			Type:               r.Type,
+			Amount:             r.Amount,
+			Note:               nullStringPtr(r.Note),
+			LinkedPayrollMonth: nullStringPtr(r.LinkedPayrollMonth),
+			CreatedBy:          r.CreatedBy.String(),
+			EmployeeName:       nullStringPtr(r.EmployeeName),
+			EmployeePhoto:      nullStringPtr(r.EmployeePhoto),
+		})
+	}
+	return result, nil
+}
+
+func (q *GoquQuerier) ListAttendanceByEmployeeMonthExplicit(ctx context.Context, employeeID, tenantID, startDate, endDate string, limit, offset int32) ([]Attendance, error) {
+	eid, err := uuid.Parse(employeeID)
+	if err != nil {
+		return nil, err
+	}
+	tid, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	sd, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		return nil, err
+	}
+	ed, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.sqlc.ListAttendanceByEmployeeMonthExplicit(ctx, db.ListAttendanceByEmployeeMonthExplicitParams{
+		EmployeeID: eid,
+		TenantID:   tid,
+		Date:       sd,
+		Date_2:     ed,
+		Limit:      limit,
+		Offset:     offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]Attendance, 0, len(rows))
+	for _, r := range rows {
+		result = append(result, Attendance{
+			ID:                     r.ID.String(),
+			TenantID:               r.TenantID.String(),
+			EmployeeID:             r.EmployeeID.String(),
+			Date:                   r.Date.Format("2006-01-02"),
+			ShiftID:                nullUUIDStrPtr(r.ShiftID),
+			Status:                 r.Status,
+			CheckInTime:            nullTimePtr(r.CheckInTime),
+			CheckOutTime:           nullTimePtr(r.CheckOutTime),
+			OvertimeHours:          r.OvertimeHours.InexactFloat64(),
+			OvertimeRateMultiplier: r.OvertimeRateMultiplier.InexactFloat64(),
+			UnitsProduced:          nullInt32Ptr(r.UnitsProduced),
+			IsLocked:               r.IsLocked,
+			EditedBy:               nullUUIDStrPtr(r.EditedBy),
+			EmployeeName:           nullStringPtr(r.EmployeeName),
+			EmployeePhoto:          nullStringPtr(r.EmployeePhoto),
+		})
+	}
+	return result, nil
+}
+
+func (q *GoquQuerier) ListLedgerByEmployeeMonthExplicit(ctx context.Context, employeeID, tenantID, startDate, endDate string, limit, offset int32) ([]Ledger, error) {
+	eid, err := uuid.Parse(employeeID)
+	if err != nil {
+		return nil, err
+	}
+	tid, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	sd, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		return nil, err
+	}
+	ed, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.sqlc.ListLedgerByEmployeeMonthExplicit(ctx, db.ListLedgerByEmployeeMonthExplicitParams{
+		EmployeeID: eid,
+		TenantID:   tid,
+		Date:       sd,
+		Date_2:     ed,
+		Limit:      limit,
+		Offset:     offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]Ledger, 0, len(rows))
+	for _, r := range rows {
+		result = append(result, Ledger{
+			ID:                 r.ID.String(),
+			TenantID:           r.TenantID.String(),
+			EmployeeID:         r.EmployeeID.String(),
+			Date:               r.Date.Format("2006-01-02"),
+			Type:               r.Type,
+			Amount:             r.Amount,
+			Note:               nullStringPtr(r.Note),
+			LinkedPayrollMonth: nullStringPtr(r.LinkedPayrollMonth),
+			CreatedBy:          r.CreatedBy.String(),
+			EmployeeName:       nullStringPtr(r.EmployeeName),
+			EmployeePhoto:      nullStringPtr(r.EmployeePhoto),
+		})
+	}
+	return result, nil
+}
+
+func nullUUIDStrPtr(u uuid.NullUUID) *string {
+	if u.Valid {
+		s := u.UUID.String()
+		return &s
+	}
+	return nil
+}

@@ -446,6 +446,11 @@ type Querier interface {
 	ListLedgerByTenant(ctx context.Context, arg ListLedgerByTenantParams) ([]Ledger, error)
 	ListPendingSyncEvents(ctx context.Context, arg ListPendingSyncEventsParams) ([]SyncQueue, error)
 	ListRosterByDate(ctx context.Context, tenantID string, date string) ([]RosterRow, error)
+	ListEmployeesByTenantExplicit(ctx context.Context, tenantID string, limit, offset int32) ([]Employee, error)
+	ListAttendanceByDateRangeExplicit(ctx context.Context, tenantID, startDate, endDate string, limit, offset int32) ([]Attendance, error)
+	ListLedgerByTenantExplicit(ctx context.Context, tenantID, startDate, endDate string, limit, offset int32) ([]Ledger, error)
+	ListAttendanceByEmployeeMonthExplicit(ctx context.Context, employeeID, tenantID, startDate, endDate string, limit, offset int32) ([]Attendance, error)
+	ListLedgerByEmployeeMonthExplicit(ctx context.Context, employeeID, tenantID, startDate, endDate string, limit, offset int32) ([]Ledger, error)
 	ListShiftsByTenant(ctx context.Context, arg ListShiftsByTenantParams) ([]Shift, error)
 	LockAttendanceMonth(ctx context.Context, arg LockAttendanceMonthParams) error
 	SoftDeleteEmployee(ctx context.Context, arg SoftDeleteEmployeeParams) error

@@ -14,6 +14,7 @@ type AppConfig struct {
 	Debug                   bool   `envconfig:"DEBUG"`
 	Env                     string `envconfig:"APP_ENV"`
 	Port                    string `envconfig:"APP_PORT"`
+	PprofAddr               string `envconfig:"PPROF_ADDR"`
 	Secret                  string `envconfig:"JWT_SECRET"`
 	TokenTTL                int    `envconfig:"TOKEN_TTL" default:"72"`
 	DB                      DBConfig

@@ -14,7 +14,12 @@ type Querier interface {
 	GetDailySummary(ctx context.Context, arg GetDailySummaryParams) (GetDailySummaryRow, error)
 	GetDashboardSnapshot(ctx context.Context, arg GetDashboardSnapshotParams) (GetDashboardSnapshotRow, error)
 	GetWageBillTrends(ctx context.Context, arg GetWageBillTrendsParams) ([]GetWageBillTrendsRow, error)
+	ListAttendanceByDateRangeExplicit(ctx context.Context, arg ListAttendanceByDateRangeExplicitParams) ([]ListAttendanceByDateRangeExplicitRow, error)
+	ListAttendanceByEmployeeMonthExplicit(ctx context.Context, arg ListAttendanceByEmployeeMonthExplicitParams) ([]ListAttendanceByEmployeeMonthExplicitRow, error)
 	ListEmployeeBalances(ctx context.Context, tenantID uuid.UUID) ([]ListEmployeeBalancesRow, error)
+	ListEmployeesByTenantExplicit(ctx context.Context, arg ListEmployeesByTenantExplicitParams) ([]ListEmployeesByTenantExplicitRow, error)
+	ListLedgerByEmployeeMonthExplicit(ctx context.Context, arg ListLedgerByEmployeeMonthExplicitParams) ([]ListLedgerByEmployeeMonthExplicitRow, error)
+	ListLedgerByTenantExplicit(ctx context.Context, arg ListLedgerByTenantExplicitParams) ([]ListLedgerByTenantExplicitRow, error)
 	ListRosterByDate(ctx context.Context, arg ListRosterByDateParams) ([]ListRosterByDateRow, error)
 }
 

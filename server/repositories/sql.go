@@ -224,3 +224,69 @@ func nullNumericPtr(s sql.NullString) *float64 {
 	}
 	return &f
 }
+
+// ListEmployeesByTenantExplicit returns employees with explicit column selection
+// (replaces the implicit SELECT * from goqu).
+func (q *GoquQuerier) ListEmployeesByTenantExplicit(ctx context.Context, tenantID string, limit, offset int32) ([]Employee, error) {
+	tid, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.sqlc.ListEmployeesByTenantExplicit(ctx, db.ListEmployeesByTenantExplicitParams{
+		TenantID: tid,
+		Limit:    limit,
+		Offset:   offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]Employee, 0, len(rows))
+	for _, r := range rows {
+		result = append(result, Employee{
+			ID:                    r.ID.String(),
+			TenantID:              r.TenantID.String(),
+			Name:                  r.Name,
+			Phone:                 r.Phone,
+			Designation:           nullStringPtr(r.Designation),
+			WageType:              r.WageType,
+			WageAmount:            r.WageAmount,
+			DefaultShiftID:        nullUUIDPtr(r.DefaultShiftID),
+			ManagerID:             nullUUIDPtr(r.ManagerID),
+			PieceRateItemName:     nullStringPtr(r.PieceRateItemName),
+			DailyTargetUnits:      nullInt32Ptr(r.DailyTargetUnits),
+			DateOfJoining:         nullTimeStrPtr(r.DateOfJoining),
+			PanNumber:             nullStringPtr(r.PanNumber),
+			AadhaarNumber:         nullStringPtr(r.AadhaarNumber),
+			PfNumber:              nullStringPtr(r.PfNumber),
+			PhotoUrl:              nullStringPtr(r.PhotoUrl),
+			BankAccountNumber:     nullStringPtr(r.BankAccountNumber),
+			BankIfsc:              nullStringPtr(r.BankIfsc),
+			UpiID:                 nullStringPtr(r.UpiID),
+			EmergencyContactName:  nullStringPtr(r.EmergencyContactName),
+			EmergencyContactPhone: nullStringPtr(r.EmergencyContactPhone),
+			HealthNotes:           nullStringPtr(r.HealthNotes),
+			CurrentAddress:        nullStringPtr(r.CurrentAddress),
+			PermanentAddress:      nullStringPtr(r.PermanentAddress),
+			Role:                  r.Role,
+			IsActive:              r.IsActive,
+		})
+	}
+	return result, nil
+}
+
+func nullInt32Ptr(n sql.NullInt32) *int32 {
+	if n.Valid {
+		return &n.Int32
+	}
+	return nil
+}
+
+func nullTimeStrPtr(t sql.NullTime) *string {
+	if !t.Valid {
+		return nil
+	}
+	s := t.Time.Format("2006-01-02")
+	return &s
+}

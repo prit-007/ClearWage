@@ -1,107 +1,143 @@
-# Optimization Plan — Composite Endpoints for the Frontend
+# Backend Optimization Plan — vivek_app
 
 ## Goal
 
-The Flutter app makes many small, overlapping HTTP calls per screen and hides several
-data-mismatch bugs behind mock/stale docs. This plan introduces **composite endpoints**
-(1 request → everything a screen needs), **enriches** existing payloads, and **fixes**
-frontend/backend contract bugs — all implemented **TDD-first** (write failing tests,
-then implement).
+Unlock the Go backend's true potential: cut p95 latency, reduce DB load, and remove
+monetary-precision bugs. Strategy:
 
-## Frontend → Backend mapping (as of 2026-08)
+- **Tune the DB pool + PostgreSQL schema** (infrastructure wins first).
+- **Replace the runtime-built goqu query layer with sqlc** (prepared, typed SQL).
+- **Fix N+1 / fetch-then-compute patterns** by pushing aggregation into SQL.
+- **Adopt `decimal` for all money** (no float64 sums).
+- **Add read caching, keyset pagination, and profiling** at medium scale (50–500 tenants).
 
-| Screen | Calls today | Problem | Target |
-|--------|-------------|---------|--------|
-| `DashboardPage` | `GET /dashboard` + `GET /reports/attendance-trends?days=14` | 2 calls; "Payroll (MTD)" card renders `daily_jama_total`; pull-to-refresh skips the chart | 1 enriched call |
-| `StaffDirectoryPage` | `GET /staff?limit=20&offset=N`, `GET /staff?limit=100000` for search | Backend caps `limit` at 100 → fetch-all returns only 20; search filters locally | server-side `?q=` |
-| `EmployeeProfilePage` | `profile`, `get`, `attendance?YTD`, `ledger?YTD`, `ledger/balance`, `shifts/{id}`, `documents` (7 calls) | YTD fetch for 5 rows; shift fetched separately; heavy imperative reload | `GET /staff/{id}/overview` |
-| `AddEmployeePage` | `POST /staff` + `PUT /staff/{id}/default-shift` + photo (3 calls) | non-atomic save | accept `default_shift_id` in create/update |
-| `AttendanceRosterPage` | `GET /staff?limit=10000` + `GET /attendance?date=` + client join | `staff` list returns 20 (limit cap) and **no `shift_name`** → employees skipped; refetch per tap | `GET /attendance/roster?date=` |
-| `LedgerListPage` | `GET /ledger?start&end` (paginated 20) | summary card computed from loaded pages only → wrong when >20 entries | `GET /ledger/summary` |
-| `MyProfilePage` | `GET /me`, `GET /me/attendance`, `GET /me/ledger` (3 calls) | `/me` missing `tenant_name`/`email` → "Unknown" | `GET /me/overview` |
-| `OnboardingWizard` | `POST /shifts` ×2 | company address/contact, OT policy, leave policy, holidays all lost | `POST /onboarding/setup` |
-| `DefaultersScreen` | `GET /reports/defaulters` | frontend reads `outstanding`/`wage`, backend sends `outstanding_balance`/`monthly_wage` → all ₹0 | frontend key fix |
+Implemented **TDD-first**: write the failing test, then implement, and keep
+`go test ./...` + `golangci-lint` green after every batch.
+
+## Locked-in decisions
+
+- **Dates** stay as `"2006-01-02"` strings via the repository adapter. **Do not break the API contract.**
+- **Migration runner:** keep **goose**; use **plain `CREATE INDEX`** (no `CONCURRENTLY`) for now.
+- **DB pool defaults:** `MaxOpenConns=50`, `MaxIdleConns=10`, `ConnMaxLifetime=30m`, `ConnMaxIdleTime=5m`, DSN gains `default_query_exec_mode=cache_statement`.
+- **CI Go version:** pin to **`1.26.x`** (matches `go.mod`'s `go 1.26.5`; currently CI is on `1.22`).
+
+## Scope / out of scope
+
+- **sync_queue worker:** `/api/v1/sync/pending` is polled by the mobile app; there is no
+  backend consumer, so a background worker is **out of scope** without new product behavior.
 
 ---
 
-## Phase 1 — Backend: repository queries + migration (TDD)
+# Checklist
 
-### 1.1 Migration `server/database/migrations/00020_add_tenant_address.sql`
-- `ALTER TABLE tenants ADD COLUMN address text;` (+ Down).
+Legend: `[ ]` = pending, `[x]` = finished.
 
-### 1.2 New result structs in `server/repositories/models.go`
-- `RosterRow` — employee fields + `shift_name`, `shift_start_time`, `shift_end_time`,
-  nullable `attendance_id/status/check_in/check_out/overtime_hours/is_locked`.
-- `LedgerSummaryRange` — `{ jama_total, udhaar_total, entry_count }`.
-- `EmployeeAttendanceSummary` — counts per status + `total` + `percent`.
-- `EmployeeLedgerSummary` — `{ balance, jama_total, udhaar_total, recent []Ledger }`.
-- `EmployeeOverview` — `{ profile StaffProfile, ledger EmployeeLedgerSummary,
-  attendance EmployeeAttendanceSummary, documents []EmployeeDocument }`.
+## Phase 0 — Baseline & tooling
 
-### 1.3 New interface methods in `server/repositories/querier.go` (+ impl in `goqu.go`)
-- `ListRosterByDate(ctx, tenantID, date) ([]RosterRow, error)` — employees LEFT JOIN
-  shifts LEFT JOIN attendance for date.
-- `GetEmployeeLedgerSummary(ctx, arg) (LedgerSummaryRange, error)` — SUM by type for
-  employee + range.
-- `GetLedgerSummaryRange(ctx, tenantID, startDate, endDate) (LedgerSummaryRange, error)` —
-  SUM by type for tenant + range.
-- `GetEmployeeAttendanceSummary(ctx, tenantID, employeeID, startDate, endDate)
-  (EmployeeAttendanceSummary, error)` — status counts + percent.
-- `UpdateTenantAddress(ctx, tenantID, address) error` (or fold into CreateTenant).
+- [x] Wire `net/http/pprof` behind `PPROF_ADDR` config (separate internal HTTP server, default off).
+- [x] Record pre-change baseline: `go test ./...` green; note p95 on hot endpoints via `wrk`/`ab` + `EXPLAIN ANALYZE` for top-5 queries. *(verified test-suite green; latency benchmark deferred until a live env)*
+- [x] Pin CI `go-version` to `1.26.x` in `.github/workflows/ci.yml` (matches go.mod).
+- [x] Re-run `go build ./...` + `go test ./...` to confirm toolchain alignment.
 
-### 1.4 TDD
-- Write repository tests in `server/repositories/` using the test DB harness
-  (`server/tests/db`), or unit tests on the service layer with the regenerated mock.
-- Regenerate mock: `mockgen -package mocks -destination mocks/querier.go
-  github.com/vivek-app/vivek_app/repositories Querier`.
+## Phase A — Infrastructure + schema
 
-## Phase 2 — Backend: services + controllers + routes (TDD)
+### A1. DB connection pool tuning
+- [x] Add env config fields: `DB_MAX_CONNS`, `DB_MAX_IDLE_CONNS`, `DB_CONN_MAX_LIFETIME`, `DB_CONN_MAX_IDLE_TIME` (with defaults 50/10/30m/5m) in `config/main.go` (added to `config/db.go` `DBConfig`).
+- [x] Apply pool settings in `cli/api.go` (`SetMaxOpenConns` etc.).
+- [x] Append `default_query_exec_mode=cache_statement` to the DSN in `config/db.go:ConnectionString()`.
+- [x] Unit-test the `ConnectionString()` merge (TDD) so the DSN won't double-append.
+- [x] Write a repository/service test asserting pool config is honored (or config test for defaults). *(covered: `config/db_test.go` + envconfig default tags)*
 
-### 2.1 New / enriched endpoints
+### A2. HTTP server hardening
+- [x] Add `ReadHeaderTimeout: 5s` to the `http.Server` in `cli/api.go`.
 
-| Method | Path | Handler | Composes |
-|--------|------|---------|----------|
-| `GET` | `/api/v1/attendance/roster?date=` | `attCtrl.Roster` | `AttendanceService.RosterByDate` |
-| `GET` | `/api/v1/staff/{id}/overview` | `staffCtrl.Overview` | `StaffService.GetOverview` |
-| `GET` | `/api/v1/ledger/summary?start_date&end_date` | `ledgerCtrl.Summary` | `LedgerService.GetSummary` |
-| `GET` | `/api/v1/dashboard?days=14` | enrich `DashboardData` | + `attendance_percentage`, `wage_bill_mtd`, inline `trends` |
-| `GET` | `/api/v1/me/overview` | `meCtrl.Overview` | profile + tenant + month attendance + ledger |
-| `POST/PUT` | `/api/v1/staff` `/api/v1/staff/{id}` | extend `createStaffRequest` | optional `default_shift_id` in same tx |
-| `POST` | `/api/v1/onboarding/setup` | `OnboardingController.Setup` | factory + shifts + payroll settings + leave policy + holidays |
+### A3. Migration `00021` — indexes + trigram search
+- [x] `CREATE EXTENSION IF NOT EXISTS pg_trgm`.
+- [x] `ledger (tenant_id, date)` — `GetDailyJamaTotal`, `GetLedgerSummaryRange`.
+- [x] `ledger (tenant_id, employee_id, date)` — per-employee balance/summary.
+- [x] `sync_queue (tenant_id, status, created_at)` — `ListPendingSyncEvents`.
+- [x] `advance_requests (tenant_id, status, created_at)`.
+- [x] `employees (tenant_id, is_active)` — every list filters `is_active`.
+- [x] Gin trigram indexes on `employees(name)` and `employees(phone)` for `ILIKE '%q%'`.
+- [x] Include `-- +goose Down` for all of the above.
+- [x] TDD: migration smoke test runs cleanly against the test schema (no dup-index errors on re-run). *(fixed pgx driver import in `integration/testcontainer.go`; tests in `integration/migrations_test.go`)*
 
-### 2.2 Routing caveats (chi static-vs-param)
-- Register `/attendance/roster` **before** `GET /api/v1/attendance/{id}`.
-- Register `/ledger/summary` **before** `GET /api/v1/ledger/{id}`.
+## Phase B — Adopt sqlc (largest effort)
 
-### 2.3 TDD
-- Controller tests in `server/controllers/api/v1/*_test.go` (gomock, mirror existing
-  `setupXTest` + `withClaims` helpers) covering success, 400, 401, 403, 500.
+### B1. Tooling
+- [x] Add `sqlc.yaml` (`schema: database/migrations`, `queries: database/queries`, package `db`, `sql_package: "database/sql"`, `emit_interface: true`).
+- [x] Add `sqlc` to a `Makefile generate` target + `go:generate` directives; regenerate `mockgen` mock.
+- [ ] CI: run `sqlc generate` + `git diff --exit-code` to keep generated code in sync.
 
-## Phase 3 — Frontend correctness fixes (TDD)
+### B2. Architecture — adapter, not rewrite
+- [x] Keep `repositories/models.go` + `repositories.Querier` as the service-facing contract.
+- [x] New generated package `repositories/db` (sqlc types/queries) using `database/sql` DBTX so it shares the same pool as goqu.
+- [x] New `repositories/sql.go` (`GoquQuerier` methods backed by `db.Queries`, converting sqlc → domain types; contains all uuid/date mapping).
+- [x] Switch `cli/api.go` to pass `db.Queries` to `GoquQuerier` constructor.
+- [x] Regenerate mock; service/controller tests stay green.
 
-1. `server/controllers/api/v1/staff_controller.go:160` — allow `limit` up to 100000
-   (align with `parseAllLimitOffset`) so roster/search actually get all staff.
-2. `staff_directory_page.dart:112-143` — use server-side `?q=` with pagination instead of
-   `limit=100000` fetch-all.
-3. `defaulters_page.dart:121-122` — read `outstanding_balance` / `monthly_wage`.
-4. `attendance_model.dart:42-48` — `toJson()` must emit `shift_id`, `overtime_hours`.
-5. `dashboard_page.dart:60` — pull-to-refresh must also refresh the trends provider.
-6. `payroll_preview_page.dart:244` — relabel "Lock & Generate Slips" or wire
-   `generatePayslip`.
-7. Remove dead `attendance_analytics_page.dart` (unreferenced placeholder).
+### B3. Query rewrites (hot + N+1 first)
+- [x] `ListEmployeeBalances` (`GROUP BY employee_id`) kills N+1 in `DefaultersList`.
+- [x] `GetDashboardSnapshot` (single CTE) kills 6 sequential queries in `DashboardService.GetDashboard`.
+- [x] `WageBillTrends` becomes one grouped SQL query (kill per-month loop).
+- [x] `DailySummary` aggregation pushed into SQL (stop pulling 100k rows).
+- [ ] Roster rewrite (deferred: must verify `time` → `"HH:MM"` format contract via live DB).
+- [ ] Trim `SELECT *` to needed columns on list/profile paths.
+- [ ] Migrate remaining CRUD to sqlc in batches, tests green each batch; remove goqu when done.
 
-## Phase 4 — Frontend rewiring to composite endpoints (TDD)
+## Phase C — Decimal money (correctness)
 
-- `services`: add `attendance_service.roster()`, `staff_service.getOverview()`,
-  `ledger_service.getSummary()`, `profile_service.getOverview()`,
-  `dashboard_service` new fields, `staff` `default_shift_id`, `onboarding` setup.
-- `providers.dart`: add corresponding providers / invalidate correctly.
-- Screens: `DashboardPage`, `EmployeeProfilePage`, `AddEmployeePage`,
-  `AttendanceRosterPage`, `LedgerListPage`, `MyProfilePage`, `OnboardingWizard`.
-- Add Flutter widget/model unit tests where feasible.
+- [x] Add `github.com/shopspring/decimal`; `sqlc.yaml` override `numeric → decimal.Decimal`.
+- [x] Domain monetary fields → `decimal.Decimal` (`wage_amount`, `amount`, overtime, computed wages, balances/summaries).
+- [x] Update math in `payroll_service`, `report_service`, `attendance_service`.
+- [x] Update service test expectations (TDD); verify JSON still emits numbers (no API break).
 
-## Phase 5 — Verification & docs
+## Phase D — Scale features
 
-- `cd server && go build ./... && go test ./...`
+- [x] D1: lightweight TTL read cache (`sync.Map`, no new dependency) + `singleflight` on dashboard / roster / daily-summary / staff overview.
+- [x] D2: keyset pagination for `ledger` and `attendance` lists (replace `OFFSET` / `listAll=100000`).
+- [x] D3: slow-query logging (duration threshold) in `RequestLogger`; keep pprof hook enabled-by-flag.
+
+---
+
+# TDD workflow per item
+
+1. **Red** — write a failing test (repository/service/controller, mirroring existing patterns; regenerate `mockgen` mock when the `Querier` interface changes).
+2. **Green** — minimal implementation.
+3. **Refactor** — keep `gofmt`, `golangci-lint`, and `go test ./...` clean.
+4. Re-benchmark against the Phase 0 baseline; log the delta in the PR description.
+
+---
+
+# Verification & rollback
+
+- `cd server && go build ./... && go test ./... && golangci-lint run`
 - `cd app && flutter analyze && flutter test`
-- Update `API_DOCS.md` (new endpoints, corrected notes: payroll preview is live, not mock).
+- CI `.github/workflows/ci.yml`: lint + test + build (and, after B1, `sqlc generate` diff check).
+- Each phase is its own commit/PR:
+  - A1/A2 config-only (revert via env).
+  - A3 has a `-- +goose Down`.
+  - B swaps the querier behind one constructor.
+  - C is its own PR.
+  - D1 can be disabled via flag.
+
+---
+
+# Flutter app impact (checked against `app/`)
+
+The backend changes primarily affect the **attendance roster**, **dashboard**, **reports**,
+and **staff list** flows — all of which currently over-fetch or hit many endpoints.
+
+- [ ] `roster` (Phase A dashboard) gains a single `GET /attendance/roster?date=` — Flutter `AttendanceRosterPage` can drop the client-side staff+attendance join. **A3 index on `attendance (tenant_id, date)` already supports it.**
+- [ ] Server-side `?q=`/`?limit` (existing; Phase B trims columns) — `StaffDirectoryPage` can stop using `limit=100000`.
+- [ ] Decimal money returns JSON numbers, so `double`-based Flutter models remain compatible; watch rounding in `payroll` screens.
+- [ ] Pprof/caching flags are backend-only — no Flutter change required.
+- [ ] Confirm date fields still arrive as `YYYY-MM-DD` strings (adapter decision) → no Flutter date-parsing change.
+- **Action at implementation time:** run `flutter analyze` after B2/C to catch any JSON shape drift, and update `lib/models` only if the contract changes (it shouldn't).
+
+### Verified concrete contract points (checked Aug 2026)
+
+- **Roster columns are a hard contract.** `app/lib/features/attendance/attendance_roster_page.dart:337` `_rosterRowToMerged()` reads these keys from `GET /attendance/roster` rows: `employee_id`, `name`, `phone`, `photo_url`, `designation`, `role`, `is_active`, `default_shift_id`, `attendance_shift_id`, `shift_name`, `shift_start_time`, `shift_end_time`, `attendance_id`, `status`, `check_in_time`, `check_out_time`, `overtime_hours`, `computed_wage`, `is_locked`. **The Phase B sqlc rewrite of `ListRosterByDate` MUST emit these exact keys** (incl. the COALESCE of `shift_id`/shift-name from `attendance` vs `shifts`).
+- **`Mark All Present` relies on `listByDate(date, limit: 100000)`** (`attendance_roster_page.dart:540`) to compute unmarked staff. Backend caps `limit` (100) → wrong counts for tenants >100 staff. Phase B/D (server-side `?limit` + keyset pagination) must make `limit=100000` behave as "all", or the page should compute from the roster rows instead.
+- **Dashboard JSON keys** consumed by `app/lib/models/dashboard_model.dart`: `total_staff`, `present`, `absent`, `on_leave`, `attendance_percentage`, `daily_jama_total`, `wage_bill_mtd`, `total_outstanding`, `recent_activity`, `trends`. Phase B dashboard rewrite must keep these keys.
+- **Attendance send payloads** already send `shift_id` + `overtime_hours` (`attendance_model.dart:54`), so Phase B server changes don't affect the write path.

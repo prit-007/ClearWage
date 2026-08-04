@@ -91,7 +91,7 @@ func (s *AdvanceRequestService) ApproveAndCreateLedger(ctx context.Context, id, 
 		EmployeeID: req.EmployeeID,
 		Date:       date,
 		Type:       entryType,
-		Amount:     req.Amount,
+		Amount:     req.Amount.InexactFloat64(),
 		Note:       &note,
 		CreatedBy:  approvedBy,
 	})

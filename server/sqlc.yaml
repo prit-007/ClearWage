@@ -1,0 +1,16 @@
+version: "2"
+sql:
+  - engine: postgresql
+    schema: "database/migrations"
+    queries: "database/queries"
+    gen:
+      go:
+        package: db
+        out: "repositories/db"
+        sql_package: "database/sql"
+        emit_interface: true
+        emit_json_tags: true
+        emit_empty_slices: true
+        overrides:
+          - db_type: "pg_catalog.numeric"
+            go_type: "github.com/shopspring/decimal.Decimal"

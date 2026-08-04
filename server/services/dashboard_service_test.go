@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/mocks"
 	"github.com/vivek-app/vivek_app/repositories"
 	"go.uber.org/mock/gomock"
@@ -17,23 +18,15 @@ func TestDashboardService_GetDashboard(t *testing.T) {
 	svc := NewDashboardService(mockQuerier)
 
 	mockQuerier.EXPECT().
-		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
-		Return([]repositories.Employee{{ID: "e1"}, {ID: "e2"}}, nil)
-	mockQuerier.EXPECT().
-		ListAttendanceByDate(gomock.Any(), gomock.Any()).
-		Return([]repositories.Attendance{{EmployeeID: "e1", Status: "present"}}, nil)
-	mockQuerier.EXPECT().
-		GetDailyJamaTotal(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(450.0, nil)
-	mockQuerier.EXPECT().
-		GetTotalOutstanding(gomock.Any(), gomock.Any()).
-		Return(5000.0, nil)
+		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
+		Return(repositories.DashboardSnapshot{
+			TotalStaff: 2, AttendanceCount: 1, Present: 1,
+			Absent: 0, OnLeave: 0, DailyJamaTotal: decimal.NewFromFloat(450.0),
+			WageBillMTD: decimal.NewFromInt(9000), TotalOutstanding: decimal.NewFromFloat(5000.0),
+		}, nil)
 	mockQuerier.EXPECT().
 		ListActivityLogsByTenant(gomock.Any(), gomock.Any()).
 		Return([]repositories.ActivityLog{}, nil)
-	mockQuerier.EXPECT().
-		GetLedgerSummaryRange(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(repositories.LedgerSummaryRange{JamaTotal: 9000}, nil)
 
 	data, err := svc.GetDashboard(context.Background(), "t1")
 	if err != nil {
@@ -48,7 +41,7 @@ func TestDashboardService_GetDashboard(t *testing.T) {
 	if data.AttendancePercentage != 50 {
 		t.Errorf("expected attendance percentage 50, got %v", data.AttendancePercentage)
 	}
-	if data.WageBillMTD != 9000 {
+	if !data.WageBillMTD.Equal(decimal.NewFromInt(9000)) {
 		t.Errorf("expected wage bill MTD 9000, got %v", data.WageBillMTD)
 	}
 }
@@ -61,23 +54,15 @@ func TestDashboardService_GetDashboard_ZeroStaff(t *testing.T) {
 	svc := NewDashboardService(mockQuerier)
 
 	mockQuerier.EXPECT().
-		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
-		Return([]repositories.Employee{}, nil)
-	mockQuerier.EXPECT().
-		ListAttendanceByDate(gomock.Any(), gomock.Any()).
-		Return([]repositories.Attendance{}, nil)
-	mockQuerier.EXPECT().
-		GetDailyJamaTotal(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(0.0, nil)
-	mockQuerier.EXPECT().
-		GetTotalOutstanding(gomock.Any(), gomock.Any()).
-		Return(0.0, nil)
+		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
+		Return(repositories.DashboardSnapshot{
+			TotalStaff: 0, AttendanceCount: 0, Present: 0,
+			Absent: 0, OnLeave: 0, DailyJamaTotal: decimal.Zero,
+			WageBillMTD: decimal.Zero, TotalOutstanding: decimal.Zero,
+		}, nil)
 	mockQuerier.EXPECT().
 		ListActivityLogsByTenant(gomock.Any(), gomock.Any()).
 		Return([]repositories.ActivityLog{}, nil)
-	mockQuerier.EXPECT().
-		GetLedgerSummaryRange(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(repositories.LedgerSummaryRange{}, nil)
 
 	data, err := svc.GetDashboard(context.Background(), "t1")
 	if err != nil {

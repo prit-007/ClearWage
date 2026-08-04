@@ -7,15 +7,23 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/shopspring/decimal"
+	"github.com/vivek-app/vivek_app/pkg/cache"
 	"github.com/vivek-app/vivek_app/repositories"
+	"golang.org/x/sync/singleflight"
 )
 
 type StaffService struct {
 	querier repositories.Querier
+	cache   *cache.TTL
+	sf      singleflight.Group
 }
 
 func NewStaffService(querier repositories.Querier) *StaffService {
-	return &StaffService{querier: querier}
+	return &StaffService{
+		querier: querier,
+		cache:   cache.New(10 * time.Second),
+	}
 }
 
 // EmployeeProfileDetails carries optional KYC/personal fields for an employee.
@@ -102,7 +110,7 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 	}
 	wageAmt, parseErr := strconv.ParseFloat(wageAmount, 64)
 	if parseErr != nil || wageAmount == "" {
-		wageAmt = existing.WageAmount
+		wageAmt = existing.WageAmount.InexactFloat64()
 	}
 
 	var desig *string
@@ -179,7 +187,7 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 		WageAmount:            wageAmt,
 		DefaultShiftID:        existing.DefaultShiftID,
 		PieceRateItemName:     existing.PieceRateItemName,
-		PieceRatePerUnit:      existing.PieceRatePerUnit,
+		PieceRatePerUnit:      decimalPtrToFloat(existing.PieceRatePerUnit),
 		DailyTargetUnits:      dailyTargetUnits,
 		DateOfJoining:         dateOfJoining,
 		PanNumber:             panNumber,
@@ -276,8 +284,8 @@ func (s *StaffService) GetTenant(ctx context.Context, tenantID string) (reposito
 
 type EmployeeLedgerOverview struct {
 	Balance     float64               `json:"balance"`
-	JamaTotal   float64               `json:"jama_total"`
-	UdhaarTotal float64               `json:"udhaar_total"`
+	JamaTotal   decimal.Decimal       `json:"jama_total"`
+	UdhaarTotal decimal.Decimal       `json:"udhaar_total"`
 	Recent      []repositories.Ledger `json:"recent"`
 }
 
@@ -294,6 +302,24 @@ type EmployeeOverview struct {
 }
 
 func (s *StaffService) GetOverview(ctx context.Context, employeeID, tenantID string) (EmployeeOverview, error) {
+	cacheKey := fmt.Sprintf("overview:%s:%s", tenantID, employeeID)
+	if cached, ok := s.cache.Get(cacheKey); ok {
+		return cached.(EmployeeOverview), nil
+	}
+
+	v, err, _ := s.sf.Do(cacheKey, func() (interface{}, error) {
+		return s.fetchOverview(ctx, employeeID, tenantID)
+	})
+	if err != nil {
+		return EmployeeOverview{}, err
+	}
+
+	result := v.(EmployeeOverview)
+	s.cache.Set(cacheKey, result)
+	return result, nil
+}
+
+func (s *StaffService) fetchOverview(ctx context.Context, employeeID, tenantID string) (EmployeeOverview, error) {
 	profile, err := s.querier.GetStaffProfile(ctx, repositories.GetStaffProfileParams{
 		ID:       employeeID,
 		TenantID: tenantID,
@@ -411,4 +437,12 @@ func (s *StaffService) DeleteEmployee(ctx context.Context, employeeID, tenantID 
 		logActivity(ctx, s.querier, tenantID, employeeID, "deleted_employee", "employee", &employeeID, nil)
 	}
 	return err
+}
+
+func decimalPtrToFloat(d *decimal.Decimal) *float64 {
+	if d == nil {
+		return nil
+	}
+	v := d.InexactFloat64()
+	return &v
 }

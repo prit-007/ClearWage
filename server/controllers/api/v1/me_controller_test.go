@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/rs/zerolog"
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/config"
 	"github.com/vivek-app/vivek_app/mocks"
 	"github.com/vivek-app/vivek_app/repositories"
@@ -43,7 +44,7 @@ func TestMeOverview_Success(t *testing.T) {
 		Return(500.0, nil)
 	mockQuerier.EXPECT().
 		GetEmployeeLedgerSummary(gomock.Any(), gomock.Any()).
-		Return(repositories.LedgerSummaryRange{JamaTotal: 9000}, nil)
+		Return(repositories.LedgerSummaryRange{JamaTotal: decimal.NewFromInt(9000)}, nil)
 	mockQuerier.EXPECT().
 		ListLedgerByEmployeeMonth(gomock.Any(), gomock.Any()).
 		Return([]repositories.Ledger{}, nil)

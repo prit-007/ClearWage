@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/mocks"
 	"github.com/vivek-app/vivek_app/repositories"
 	"go.uber.org/mock/gomock"
@@ -18,12 +19,15 @@ func TestReportService_DailySummary(t *testing.T) {
 	svc := NewReportService(mockQuerier)
 
 	mockQuerier.EXPECT().
-		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
-		Return([]repositories.Employee{{Name: "A"}, {Name: "B"}}, nil)
-
-	mockQuerier.EXPECT().
-		ListAttendanceByDate(gomock.Any(), gomock.Any()).
-		Return([]repositories.Attendance{{Status: "present"}, {Status: "on_leave"}}, nil)
+		GetDailySummary(gomock.Any(), "00000000-0000-0000-0000-000000000001", "2025-01-15").
+		Return(repositories.DailySummary{
+			Date:          "2025-01-15",
+			TotalWorkers:  2,
+			Present:       1,
+			Absent:        1,
+			OnLeave:       0,
+			TotalWageBill: decimal.NewFromInt(1000),
+		}, nil)
 
 	summary, err := svc.DailySummary(context.Background(), "00000000-0000-0000-0000-000000000001", "2025-01-15")
 	if err != nil {
@@ -85,8 +89,8 @@ func TestReportService_DailySummary_DBError(t *testing.T) {
 	svc := NewReportService(mockQuerier)
 
 	mockQuerier.EXPECT().
-		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
-		Return(nil, errors.New("db error"))
+		GetDailySummary(gomock.Any(), "00000000-0000-0000-0000-000000000001", "2025-01-15").
+		Return(repositories.DailySummary{}, errors.New("db error"))
 
 	_, err := svc.DailySummary(context.Background(), "00000000-0000-0000-0000-000000000001", "2025-01-15")
 	if err == nil {
@@ -102,12 +106,11 @@ func TestReportService_DailySummary_Empty(t *testing.T) {
 	svc := NewReportService(mockQuerier)
 
 	mockQuerier.EXPECT().
-		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
-		Return([]repositories.Employee{}, nil)
-
-	mockQuerier.EXPECT().
-		ListAttendanceByDate(gomock.Any(), gomock.Any()).
-		Return([]repositories.Attendance{}, nil)
+		GetDailySummary(gomock.Any(), "00000000-0000-0000-0000-000000000001", "2025-01-15").
+		Return(repositories.DailySummary{
+			Date:         "2025-01-15",
+			TotalWorkers: 0,
+		}, nil)
 
 	summary, err := svc.DailySummary(context.Background(), "00000000-0000-0000-0000-000000000001", "2025-01-15")
 	if err != nil {
@@ -172,5 +175,68 @@ func TestReportService_EmployeeMonthly_EmptyAttendance(t *testing.T) {
 	}
 	if len(report.Attendance) != 0 {
 		t.Errorf("expected 0 attendance, got %d", len(report.Attendance))
+	}
+}
+
+func TestReportService_DefaultersList(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewReportService(mockQuerier)
+
+	mockQuerier.EXPECT().
+		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Employee{
+			{ID: "e1", Name: "Alice", Phone: "111", WageType: "monthly", WageAmount: decimal.NewFromInt(30000)},
+			{ID: "e2", Name: "Bob", Phone: "222", WageType: "daily", WageAmount: decimal.NewFromInt(1000)},
+		}, nil)
+	mockQuerier.EXPECT().
+		ListEmployeeBalances(gomock.Any(), "t1").
+		Return([]repositories.EmployeeBalance{
+			{EmployeeID: "e1", Balance: decimal.NewFromInt(35000)},
+			{EmployeeID: "e2", Balance: decimal.NewFromInt(28000)},
+		}, nil)
+
+	defaulters, err := svc.DefaultersList(context.Background(), "t1")
+	if err != nil {
+		t.Fatalf("DefaultersList failed: %v", err)
+	}
+	if len(defaulters) != 2 {
+		t.Fatalf("expected 2 defaulters, got %d", len(defaulters))
+	}
+	if defaulters[0].OutstandingBalance != 35000 {
+		t.Errorf("expected 35000, got %v", defaulters[0].OutstandingBalance)
+	}
+	// Bob's monthly wage = 1000*26 = 26000, balance 28000 > 26000
+	if defaulters[1].OutstandingBalance != 28000 {
+		t.Errorf("expected 28000, got %v", defaulters[1].OutstandingBalance)
+	}
+}
+
+func TestReportService_DefaultersList_None(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewReportService(mockQuerier)
+
+	mockQuerier.EXPECT().
+		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Employee{
+			{ID: "e1", Name: "Alice", WageType: "monthly", WageAmount: decimal.NewFromInt(30000)},
+		}, nil)
+	mockQuerier.EXPECT().
+		ListEmployeeBalances(gomock.Any(), "t1").
+		Return([]repositories.EmployeeBalance{
+			{EmployeeID: "e1", Balance: decimal.NewFromInt(10000)},
+		}, nil)
+
+	defaulters, err := svc.DefaultersList(context.Background(), "t1")
+	if err != nil {
+		t.Fatalf("DefaultersList failed: %v", err)
+	}
+	if len(defaulters) != 0 {
+		t.Errorf("expected 0 defaulters, got %d", len(defaulters))
 	}
 }

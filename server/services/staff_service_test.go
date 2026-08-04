@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/mocks"
 	"github.com/vivek-app/vivek_app/repositories"
 	"go.uber.org/mock/gomock"
@@ -21,7 +22,7 @@ func TestStaffService_CreateEmployee(t *testing.T) {
 		Name:       "John Doe",
 		Phone:      "+91-9876543210",
 		WageType:   "daily",
-		WageAmount: 500,
+		WageAmount: decimal.NewFromInt(500),
 	}
 
 	mockQuerier.EXPECT().
@@ -104,7 +105,7 @@ func TestStaffService_UpdateEmployee(t *testing.T) {
 	expected := repositories.Employee{Name: "Updated"}
 	mockQuerier.EXPECT().
 		FindEmployeeByID(gomock.Any(), gomock.Any()).
-		Return(repositories.Employee{WageType: "daily", WageAmount: 500}, nil)
+		Return(repositories.Employee{WageType: "daily", WageAmount: decimal.NewFromInt(500)}, nil)
 	mockQuerier.EXPECT().
 		UpdateEmployee(gomock.Any(), gomock.Any()).
 		Return(expected, nil)
@@ -130,7 +131,7 @@ func TestStaffService_UpdateEmployee_DBError(t *testing.T) {
 
 	mockQuerier.EXPECT().
 		FindEmployeeByID(gomock.Any(), gomock.Any()).
-		Return(repositories.Employee{WageType: "daily", WageAmount: 500}, nil)
+		Return(repositories.Employee{WageType: "daily", WageAmount: decimal.NewFromInt(500)}, nil)
 	mockQuerier.EXPECT().
 		UpdateEmployee(gomock.Any(), gomock.Any()).
 		Return(repositories.Employee{}, errors.New("db error"))
@@ -173,10 +174,10 @@ func TestStaffService_GetOverview(t *testing.T) {
 		Return(500.0, nil)
 	mockQuerier.EXPECT().
 		GetEmployeeLedgerSummary(gomock.Any(), gomock.Any()).
-		Return(repositories.LedgerSummaryRange{JamaTotal: 9000, UdhaarTotal: 2000, EntryCount: 5}, nil)
+		Return(repositories.LedgerSummaryRange{JamaTotal: decimal.NewFromInt(9000), UdhaarTotal: decimal.NewFromInt(2000), EntryCount: 5}, nil)
 	mockQuerier.EXPECT().
 		ListLedgerByEmployeeMonth(gomock.Any(), gomock.Any()).
-		Return([]repositories.Ledger{{Amount: 100}}, nil)
+		Return([]repositories.Ledger{{Amount: decimal.NewFromInt(100)}}, nil)
 	mockQuerier.EXPECT().
 		GetEmployeeAttendanceSummary(gomock.Any(), gomock.Any()).
 		Return(repositories.EmployeeAttendanceSummary{Total: 20, Present: 18, Absent: 2}, nil)
@@ -194,7 +195,7 @@ func TestStaffService_GetOverview(t *testing.T) {
 	if ov.Ledger.Balance != 500 {
 		t.Errorf("expected balance 500, got %v", ov.Ledger.Balance)
 	}
-	if ov.Ledger.JamaTotal != 9000 {
+	if !ov.Ledger.JamaTotal.Equal(decimal.NewFromInt(9000)) {
 		t.Errorf("expected jama 9000, got %v", ov.Ledger.JamaTotal)
 	}
 	if ov.Attendance.Summary.Total != 20 {

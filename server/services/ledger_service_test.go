@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/mocks"
 	"github.com/vivek-app/vivek_app/repositories"
 	"go.uber.org/mock/gomock"
@@ -165,7 +166,7 @@ func TestLedgerService_GetSummary(t *testing.T) {
 
 	mockQuerier.EXPECT().
 		GetLedgerSummaryRange(gomock.Any(), "t1", "2025-01-01", "2025-01-31").
-		Return(repositories.LedgerSummaryRange{JamaTotal: 100, UdhaarTotal: 40, EntryCount: 3}, nil)
+		Return(repositories.LedgerSummaryRange{JamaTotal: decimal.NewFromInt(100), UdhaarTotal: decimal.NewFromInt(40), EntryCount: 3}, nil)
 	mockQuerier.EXPECT().
 		GetTotalOutstanding(gomock.Any(), "t1").
 		Return(25.0, nil)
@@ -174,16 +175,16 @@ func TestLedgerService_GetSummary(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetSummary failed: %v", err)
 	}
-	if s.JamaTotal != 100 {
+	if !s.JamaTotal.Equal(decimal.NewFromInt(100)) {
 		t.Errorf("expected jama 100, got %v", s.JamaTotal)
 	}
-	if s.UdhaarTotal != 40 {
+	if !s.UdhaarTotal.Equal(decimal.NewFromInt(40)) {
 		t.Errorf("expected udhaar 40, got %v", s.UdhaarTotal)
 	}
-	if s.NetBalance != 60 {
+	if !s.NetBalance.Equal(decimal.NewFromInt(60)) {
 		t.Errorf("expected net 60, got %v", s.NetBalance)
 	}
-	if s.TotalOutstanding != 25 {
+	if !s.TotalOutstanding.Equal(decimal.NewFromFloat(25)) {
 		t.Errorf("expected outstanding 25, got %v", s.TotalOutstanding)
 	}
 	if s.EntryCount != 3 {

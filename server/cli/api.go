@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,6 +23,7 @@ import (
 	ctrl "github.com/vivek-app/vivek_app/controllers/api/v1"
 	mw "github.com/vivek-app/vivek_app/middlewares"
 	"github.com/vivek-app/vivek_app/repositories"
+	sqldb "github.com/vivek-app/vivek_app/repositories/db"
 	"github.com/vivek-app/vivek_app/services"
 )
 
@@ -37,8 +39,14 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			}
 			defer sqlDB.Close()
 
+			sqlDB.SetMaxOpenConns(cfg.DB.MaxConns)
+			sqlDB.SetMaxIdleConns(cfg.DB.MaxIdleConns)
+			sqlDB.SetConnMaxLifetime(time.Duration(cfg.DB.ConnMaxLifetimeMinutes) * time.Minute)
+			sqlDB.SetConnMaxIdleTime(time.Duration(cfg.DB.ConnMaxIdleTimeMinutes) * time.Minute)
+
 			goquDB := goqu.Dialect("postgres").DB(sqlDB)
-			querier := repositories.NewGoquQuerier(goquDB)
+			dbQueries := sqldb.New(sqlDB)
+			querier := repositories.NewGoquQuerier(goquDB, dbQueries)
 
 			r := chi.NewRouter()
 
@@ -236,11 +244,33 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			})
 
 			srv := &http.Server{
-				Addr:         cfg.Port,
-				Handler:      r,
-				ReadTimeout:  10 * time.Second,
-				WriteTimeout: 10 * time.Second,
-				IdleTimeout:  30 * time.Second,
+				Addr:              cfg.Port,
+				Handler:           r,
+				ReadTimeout:       10 * time.Second,
+				ReadHeaderTimeout: 5 * time.Second,
+				WriteTimeout:      10 * time.Second,
+				IdleTimeout:       30 * time.Second,
+			}
+
+			var pprofSrv *http.Server
+			if cfg.PprofAddr != "" {
+				mux := http.NewServeMux()
+				mux.HandleFunc("/debug/pprof/", pprof.Index)
+				mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+				mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+				mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+				mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+				pprofSrv = &http.Server{
+					Addr:              cfg.PprofAddr,
+					Handler:           mux,
+					ReadHeaderTimeout: 5 * time.Second,
+				}
+				go func() {
+					logger.Info().Str("addr", pprofSrv.Addr).Msg("pprof listening")
+					if err := pprofSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+						logger.Error().Err(err).Msg("pprof server failed")
+					}
+				}()
 			}
 
 			go func() {
@@ -259,6 +289,12 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			if err := srv.Shutdown(ctx); err != nil {
 				logger.Fatal().Err(err).Msg("Server shutdown failed")
+			}
+
+			if pprofSrv != nil {
+				if err := pprofSrv.Shutdown(ctx); err != nil {
+					logger.Error().Err(err).Msg("pprof shutdown failed")
+				}
 			}
 
 			logger.Info().Msg("Server stopped")

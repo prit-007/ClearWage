@@ -1,6 +1,10 @@
 package repositories
 
-import "time"
+import (
+	"time"
+
+	"github.com/shopspring/decimal"
+)
 
 type ActivityLog struct {
 	ID         string    `json:"id" db:"id"`
@@ -15,18 +19,18 @@ type ActivityLog struct {
 }
 
 type AdvanceRequest struct {
-	ID            string    `json:"id" db:"id"`
-	TenantID      string    `json:"tenant_id" db:"tenant_id"`
-	EmployeeID    string    `json:"employee_id" db:"employee_id"`
-	Amount        float64   `json:"amount" db:"amount"`
-	Status        string    `json:"status" db:"status"`
-	Note          *string   `json:"note" db:"note"`
-	ApprovedBy    *string   `json:"approved_by" db:"approved_by"`
-	DeniedBy      *string   `json:"denied_by" db:"denied_by"`
-	EmployeeName  *string   `json:"employee_name" db:"employee_name"`
-	EmployeePhoto *string   `json:"employee_photo" db:"employee_photo"`
-	CreatedAt     time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at" db:"updated_at"`
+	ID            string          `json:"id" db:"id"`
+	TenantID      string          `json:"tenant_id" db:"tenant_id"`
+	EmployeeID    string          `json:"employee_id" db:"employee_id"`
+	Amount        decimal.Decimal `json:"amount" db:"amount"`
+	Status        string          `json:"status" db:"status"`
+	Note          *string         `json:"note" db:"note"`
+	ApprovedBy    *string         `json:"approved_by" db:"approved_by"`
+	DeniedBy      *string         `json:"denied_by" db:"denied_by"`
+	EmployeeName  *string         `json:"employee_name" db:"employee_name"`
+	EmployeePhoto *string         `json:"employee_photo" db:"employee_photo"`
+	CreatedAt     time.Time       `json:"created_at" db:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at" db:"updated_at"`
 }
 
 type Attendance struct {
@@ -52,35 +56,35 @@ type Attendance struct {
 }
 
 type Employee struct {
-	ID                    string    `json:"id" db:"id"`
-	TenantID              string    `json:"tenant_id" db:"tenant_id"`
-	Name                  string    `json:"name" db:"name"`
-	Phone                 string    `json:"phone" db:"phone"`
-	Designation           *string   `json:"designation" db:"designation"`
-	WageType              string    `json:"wage_type" db:"wage_type"`
-	WageAmount            float64   `json:"wage_amount" db:"wage_amount"`
-	DefaultShiftID        *string   `json:"default_shift_id" db:"default_shift_id"`
-	ManagerID             *string   `json:"manager_id" db:"manager_id"`
-	PieceRateItemName     *string   `json:"piece_rate_item_name" db:"piece_rate_item_name"`
-	PieceRatePerUnit      *float64  `json:"piece_rate_per_unit" db:"piece_rate_per_unit"`
-	DailyTargetUnits      *int32    `json:"daily_target_units" db:"daily_target_units"`
-	DateOfJoining         *string   `json:"date_of_joining" db:"date_of_joining"`
-	PanNumber             *string   `json:"pan_number" db:"pan_number"`
-	AadhaarNumber         *string   `json:"aadhaar_number" db:"aadhaar_number"`
-	PfNumber              *string   `json:"pf_number" db:"pf_number"`
-	PhotoUrl              *string   `json:"photo_url" db:"photo_url"`
-	BankAccountNumber     *string   `json:"bank_account_number" db:"bank_account_number"`
-	BankIfsc              *string   `json:"bank_ifsc" db:"bank_ifsc"`
-	UpiID                 *string   `json:"upi_id" db:"upi_id"`
-	EmergencyContactName  *string   `json:"emergency_contact_name" db:"emergency_contact_name"`
-	EmergencyContactPhone *string   `json:"emergency_contact_phone" db:"emergency_contact_phone"`
-	HealthNotes           *string   `json:"health_notes" db:"health_notes"`
-	CurrentAddress        *string   `json:"current_address" db:"current_address"`
-	PermanentAddress      *string   `json:"permanent_address" db:"permanent_address"`
-	Role                  string    `json:"role" db:"role"`
-	IsActive              bool      `json:"is_active" db:"is_active"`
-	CreatedAt             time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt             time.Time `json:"updated_at" db:"updated_at"`
+	ID                    string          `json:"id" db:"id"`
+	TenantID              string          `json:"tenant_id" db:"tenant_id"`
+	Name                  string          `json:"name" db:"name"`
+	Phone                 string          `json:"phone" db:"phone"`
+	Designation           *string         `json:"designation" db:"designation"`
+	WageType              string          `json:"wage_type" db:"wage_type"`
+	WageAmount            decimal.Decimal `json:"wage_amount" db:"wage_amount"`
+	DefaultShiftID        *string         `json:"default_shift_id" db:"default_shift_id"`
+	ManagerID             *string         `json:"manager_id" db:"manager_id"`
+	PieceRateItemName     *string         `json:"piece_rate_item_name" db:"piece_rate_item_name"`
+	PieceRatePerUnit      *decimal.Decimal `json:"piece_rate_per_unit" db:"piece_rate_per_unit"`
+	DailyTargetUnits      *int32          `json:"daily_target_units" db:"daily_target_units"`
+	DateOfJoining         *string         `json:"date_of_joining" db:"date_of_joining"`
+	PanNumber             *string         `json:"pan_number" db:"pan_number"`
+	AadhaarNumber         *string         `json:"aadhaar_number" db:"aadhaar_number"`
+	PfNumber              *string         `json:"pf_number" db:"pf_number"`
+	PhotoUrl              *string         `json:"photo_url" db:"photo_url"`
+	BankAccountNumber     *string         `json:"bank_account_number" db:"bank_account_number"`
+	BankIfsc              *string         `json:"bank_ifsc" db:"bank_ifsc"`
+	UpiID                 *string         `json:"upi_id" db:"upi_id"`
+	EmergencyContactName  *string         `json:"emergency_contact_name" db:"emergency_contact_name"`
+	EmergencyContactPhone *string         `json:"emergency_contact_phone" db:"emergency_contact_phone"`
+	HealthNotes           *string         `json:"health_notes" db:"health_notes"`
+	CurrentAddress        *string         `json:"current_address" db:"current_address"`
+	PermanentAddress      *string         `json:"permanent_address" db:"permanent_address"`
+	Role                  string          `json:"role" db:"role"`
+	IsActive              bool            `json:"is_active" db:"is_active"`
+	CreatedAt             time.Time       `json:"created_at" db:"created_at"`
+	UpdatedAt             time.Time       `json:"updated_at" db:"updated_at"`
 }
 
 type EmployeeDocument struct {
@@ -114,19 +118,19 @@ type LeavePolicy struct {
 }
 
 type Ledger struct {
-	ID                 string    `json:"id" db:"id"`
-	TenantID           string    `json:"tenant_id" db:"tenant_id"`
-	EmployeeID         string    `json:"employee_id" db:"employee_id"`
-	Date               string    `json:"date" db:"date"`
-	Type               string    `json:"type" db:"type"`
-	Amount             float64   `json:"amount" db:"amount"`
-	Note               *string   `json:"note" db:"note"`
-	LinkedPayrollMonth *string   `json:"linked_payroll_month" db:"linked_payroll_month"`
-	CreatedBy          string    `json:"created_by" db:"created_by"`
-	EmployeeName       *string   `json:"employee_name" db:"employee_name"`
-	EmployeePhoto      *string   `json:"employee_photo" db:"employee_photo"`
-	CreatedAt          time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt          time.Time `json:"updated_at" db:"updated_at"`
+	ID                 string          `json:"id" db:"id"`
+	TenantID           string          `json:"tenant_id" db:"tenant_id"`
+	EmployeeID         string          `json:"employee_id" db:"employee_id"`
+	Date               string          `json:"date" db:"date"`
+	Type               string          `json:"type" db:"type"`
+	Amount             decimal.Decimal `json:"amount" db:"amount"`
+	Note               *string         `json:"note" db:"note"`
+	LinkedPayrollMonth *string         `json:"linked_payroll_month" db:"linked_payroll_month"`
+	CreatedBy          string          `json:"created_by" db:"created_by"`
+	EmployeeName       *string         `json:"employee_name" db:"employee_name"`
+	EmployeePhoto      *string         `json:"employee_photo" db:"employee_photo"`
+	CreatedAt          time.Time       `json:"created_at" db:"created_at"`
+	UpdatedAt          time.Time       `json:"updated_at" db:"updated_at"`
 }
 
 type Shift struct {
@@ -188,9 +192,9 @@ type RosterRow struct {
 }
 
 type LedgerSummaryRange struct {
-	JamaTotal   float64 `json:"jama_total" db:"jama_total"`
-	UdhaarTotal float64 `json:"udhaar_total" db:"udhaar_total"`
-	EntryCount  int32   `json:"entry_count" db:"entry_count"`
+	JamaTotal   decimal.Decimal `json:"jama_total" db:"jama_total"`
+	UdhaarTotal decimal.Decimal `json:"udhaar_total" db:"udhaar_total"`
+	EntryCount  int32           `json:"entry_count" db:"entry_count"`
 }
 
 type EmployeeAttendanceSummary struct {
@@ -204,16 +208,16 @@ type EmployeeAttendanceSummary struct {
 }
 
 type TenantConfig struct {
-	TenantID            string    `json:"tenant_id" db:"tenant_id"`
-	OTTrigger           string    `json:"ot_trigger" db:"ot_trigger"`
-	OTThresholdHours    float64   `json:"ot_threshold_hours" db:"ot_threshold_hours"`
-	OTMultiplierDefault float64   `json:"ot_multiplier_default" db:"ot_multiplier_default"`
-	OTRounding          int32     `json:"ot_rounding" db:"ot_rounding"`
-	WageBasis           string    `json:"wage_basis" db:"wage_basis"`
-	WeekOffPaid         bool      `json:"week_off_paid" db:"week_off_paid"`
-	WeeklyOffs          string    `json:"weekly_offs" db:"weekly_offs"`
-	CreatedAt           time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt           time.Time `json:"updated_at" db:"updated_at"`
+	TenantID            string          `json:"tenant_id" db:"tenant_id"`
+	OTTrigger           string          `json:"ot_trigger" db:"ot_trigger"`
+	OTThresholdHours    decimal.Decimal `json:"ot_threshold_hours" db:"ot_threshold_hours"`
+	OTMultiplierDefault decimal.Decimal `json:"ot_multiplier_default" db:"ot_multiplier_default"`
+	OTRounding          int32           `json:"ot_rounding" db:"ot_rounding"`
+	WageBasis           string          `json:"wage_basis" db:"wage_basis"`
+	WeekOffPaid         bool            `json:"week_off_paid" db:"week_off_paid"`
+	WeeklyOffs          string          `json:"weekly_offs" db:"weekly_offs"`
+	CreatedAt           time.Time       `json:"created_at" db:"created_at"`
+	UpdatedAt           time.Time       `json:"updated_at" db:"updated_at"`
 }
 
 type StaffProfile struct {
@@ -223,4 +227,35 @@ type StaffProfile struct {
 	ShiftName    *string `json:"shift_name" db:"shift_name"`
 	ShiftStart   *string `json:"shift_start_time" db:"shift_start_time"`
 	ShiftEnd     *string `json:"shift_end_time" db:"shift_end_time"`
+}
+
+type DashboardSnapshot struct {
+	TotalStaff       int
+	AttendanceCount  int
+	Present          int
+	Absent           int
+	OnLeave          int
+	DailyJamaTotal   decimal.Decimal
+	WageBillMTD      decimal.Decimal
+	TotalOutstanding decimal.Decimal
+}
+
+type EmployeeBalance struct {
+	EmployeeID string
+	Balance    decimal.Decimal
+}
+
+type DailySummary struct {
+	Date          string          `json:"date"`
+	TotalWorkers  int             `json:"total_workers"`
+	Present       int             `json:"present"`
+	Absent        int             `json:"absent"`
+	OnLeave       int             `json:"on_leave"`
+	TotalWageBill decimal.Decimal `json:"total_wage_bill"`
+}
+
+type WageBillTrend struct {
+	Month      string          `json:"month"`
+	TotalWages decimal.Decimal `json:"total_wages"`
+	Headcount  int             `json:"headcount"`
 }

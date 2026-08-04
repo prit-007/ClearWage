@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	"github.com/sqlc-dev/pqtype"
 )
 
@@ -26,68 +27,68 @@ type ActivityLog struct {
 }
 
 type AdvanceRequest struct {
-	ID         uuid.UUID      `json:"id"`
-	TenantID   uuid.UUID      `json:"tenant_id"`
-	EmployeeID uuid.UUID      `json:"employee_id"`
-	Amount     float64        `json:"amount"`
-	Status     string         `json:"status"`
-	Note       sql.NullString `json:"note"`
-	ApprovedBy uuid.NullUUID  `json:"approved_by"`
-	DeniedBy   uuid.NullUUID  `json:"denied_by"`
-	CreatedAt  time.Time      `json:"created_at"`
-	UpdatedAt  time.Time      `json:"updated_at"`
+	ID         uuid.UUID       `json:"id"`
+	TenantID   uuid.UUID       `json:"tenant_id"`
+	EmployeeID uuid.UUID       `json:"employee_id"`
+	Amount     decimal.Decimal `json:"amount"`
+	Status     string          `json:"status"`
+	Note       sql.NullString  `json:"note"`
+	ApprovedBy uuid.NullUUID   `json:"approved_by"`
+	DeniedBy   uuid.NullUUID   `json:"denied_by"`
+	CreatedAt  time.Time       `json:"created_at"`
+	UpdatedAt  time.Time       `json:"updated_at"`
 }
 
 type Attendance struct {
-	ID                     uuid.UUID      `json:"id"`
-	TenantID               uuid.UUID      `json:"tenant_id"`
-	EmployeeID             uuid.UUID      `json:"employee_id"`
-	Date                   time.Time      `json:"date"`
-	ShiftID                uuid.NullUUID  `json:"shift_id"`
-	Status                 string         `json:"status"`
-	CheckInTime            sql.NullTime   `json:"check_in_time"`
-	CheckOutTime           sql.NullTime   `json:"check_out_time"`
-	OvertimeHours          float64        `json:"overtime_hours"`
-	OvertimeRateMultiplier float64        `json:"overtime_rate_multiplier"`
-	UnitsProduced          sql.NullInt32  `json:"units_produced"`
-	IsLocked               bool           `json:"is_locked"`
-	EditedBy               uuid.NullUUID  `json:"edited_by"`
-	EditedAt               sql.NullTime   `json:"edited_at"`
-	CreatedAt              time.Time      `json:"created_at"`
-	UpdatedAt              time.Time      `json:"updated_at"`
-	ComputedWage           sql.NullString `json:"computed_wage"`
+	ID                     uuid.UUID       `json:"id"`
+	TenantID               uuid.UUID       `json:"tenant_id"`
+	EmployeeID             uuid.UUID       `json:"employee_id"`
+	Date                   time.Time       `json:"date"`
+	ShiftID                uuid.NullUUID   `json:"shift_id"`
+	Status                 string          `json:"status"`
+	CheckInTime            sql.NullTime    `json:"check_in_time"`
+	CheckOutTime           sql.NullTime    `json:"check_out_time"`
+	OvertimeHours          decimal.Decimal `json:"overtime_hours"`
+	OvertimeRateMultiplier decimal.Decimal `json:"overtime_rate_multiplier"`
+	UnitsProduced          sql.NullInt32   `json:"units_produced"`
+	IsLocked               bool            `json:"is_locked"`
+	EditedBy               uuid.NullUUID   `json:"edited_by"`
+	EditedAt               sql.NullTime    `json:"edited_at"`
+	CreatedAt              time.Time       `json:"created_at"`
+	UpdatedAt              time.Time       `json:"updated_at"`
+	ComputedWage           sql.NullString  `json:"computed_wage"`
 }
 
 type Employee struct {
-	ID                    uuid.UUID      `json:"id"`
-	TenantID              uuid.UUID      `json:"tenant_id"`
-	Name                  string         `json:"name"`
-	Phone                 string         `json:"phone"`
-	Designation           sql.NullString `json:"designation"`
-	WageType              string         `json:"wage_type"`
-	WageAmount            float64        `json:"wage_amount"`
-	DefaultShiftID        uuid.NullUUID  `json:"default_shift_id"`
-	PieceRateItemName     sql.NullString `json:"piece_rate_item_name"`
-	PieceRatePerUnit      sql.NullString `json:"piece_rate_per_unit"`
-	DateOfJoining         sql.NullTime   `json:"date_of_joining"`
-	PanNumber             sql.NullString `json:"pan_number"`
-	AadhaarNumber         sql.NullString `json:"aadhaar_number"`
-	PfNumber              sql.NullString `json:"pf_number"`
-	PhotoUrl              sql.NullString `json:"photo_url"`
-	BankAccountNumber     sql.NullString `json:"bank_account_number"`
-	BankIfsc              sql.NullString `json:"bank_ifsc"`
-	UpiID                 sql.NullString `json:"upi_id"`
-	EmergencyContactName  sql.NullString `json:"emergency_contact_name"`
-	EmergencyContactPhone sql.NullString `json:"emergency_contact_phone"`
-	HealthNotes           sql.NullString `json:"health_notes"`
-	CurrentAddress        sql.NullString `json:"current_address"`
-	PermanentAddress      sql.NullString `json:"permanent_address"`
-	Role                  string         `json:"role"`
-	IsActive              bool           `json:"is_active"`
-	CreatedAt             time.Time      `json:"created_at"`
-	UpdatedAt             time.Time      `json:"updated_at"`
-	ManagerID             uuid.NullUUID  `json:"manager_id"`
-	DailyTargetUnits      sql.NullInt32  `json:"daily_target_units"`
+	ID                    uuid.UUID       `json:"id"`
+	TenantID              uuid.UUID       `json:"tenant_id"`
+	Name                  string          `json:"name"`
+	Phone                 string          `json:"phone"`
+	Designation           sql.NullString  `json:"designation"`
+	WageType              string          `json:"wage_type"`
+	WageAmount            decimal.Decimal `json:"wage_amount"`
+	DefaultShiftID        uuid.NullUUID   `json:"default_shift_id"`
+	PieceRateItemName     sql.NullString  `json:"piece_rate_item_name"`
+	PieceRatePerUnit      sql.NullString  `json:"piece_rate_per_unit"`
+	DateOfJoining         sql.NullTime    `json:"date_of_joining"`
+	PanNumber             sql.NullString  `json:"pan_number"`
+	AadhaarNumber         sql.NullString  `json:"aadhaar_number"`
+	PfNumber              sql.NullString  `json:"pf_number"`
+	PhotoUrl              sql.NullString  `json:"photo_url"`
+	BankAccountNumber     sql.NullString  `json:"bank_account_number"`
+	BankIfsc              sql.NullString  `json:"bank_ifsc"`
+	UpiID                 sql.NullString  `json:"upi_id"`
+	EmergencyContactName  sql.NullString  `json:"emergency_contact_name"`
+	EmergencyContactPhone sql.NullString  `json:"emergency_contact_phone"`
+	HealthNotes           sql.NullString  `json:"health_notes"`
+	CurrentAddress        sql.NullString  `json:"current_address"`
+	PermanentAddress      sql.NullString  `json:"permanent_address"`
+	Role                  string          `json:"role"`
+	IsActive              bool            `json:"is_active"`
+	CreatedAt             time.Time       `json:"created_at"`
+	UpdatedAt             time.Time       `json:"updated_at"`
+	ManagerID             uuid.NullUUID   `json:"manager_id"`
+	DailyTargetUnits      sql.NullInt32   `json:"daily_target_units"`
 }
 
 type EmployeeDocument struct {
@@ -121,17 +122,17 @@ type LeavePolicy struct {
 }
 
 type Ledger struct {
-	ID                 uuid.UUID      `json:"id"`
-	TenantID           uuid.UUID      `json:"tenant_id"`
-	EmployeeID         uuid.UUID      `json:"employee_id"`
-	Date               time.Time      `json:"date"`
-	Type               string         `json:"type"`
-	Amount             float64        `json:"amount"`
-	Note               sql.NullString `json:"note"`
-	CreatedBy          uuid.UUID      `json:"created_by"`
-	CreatedAt          time.Time      `json:"created_at"`
-	UpdatedAt          time.Time      `json:"updated_at"`
-	LinkedPayrollMonth sql.NullString `json:"linked_payroll_month"`
+	ID                 uuid.UUID       `json:"id"`
+	TenantID           uuid.UUID       `json:"tenant_id"`
+	EmployeeID         uuid.UUID       `json:"employee_id"`
+	Date               time.Time       `json:"date"`
+	Type               string          `json:"type"`
+	Amount             decimal.Decimal `json:"amount"`
+	Note               sql.NullString  `json:"note"`
+	CreatedBy          uuid.UUID       `json:"created_by"`
+	CreatedAt          time.Time       `json:"created_at"`
+	UpdatedAt          time.Time       `json:"updated_at"`
+	LinkedPayrollMonth sql.NullString  `json:"linked_payroll_month"`
 }
 
 type Shift struct {
@@ -170,14 +171,14 @@ type Tenant struct {
 }
 
 type TenantConfig struct {
-	TenantID            uuid.UUID `json:"tenant_id"`
-	OtTrigger           string    `json:"ot_trigger"`
-	OtThresholdHours    float64   `json:"ot_threshold_hours"`
-	OtMultiplierDefault float64   `json:"ot_multiplier_default"`
-	OtRounding          int32     `json:"ot_rounding"`
-	WageBasis           string    `json:"wage_basis"`
-	WeekOffPaid         bool      `json:"week_off_paid"`
-	CreatedAt           time.Time `json:"created_at"`
-	UpdatedAt           time.Time `json:"updated_at"`
-	WeeklyOffs          string    `json:"weekly_offs"`
+	TenantID            uuid.UUID       `json:"tenant_id"`
+	OtTrigger           string          `json:"ot_trigger"`
+	OtThresholdHours    decimal.Decimal `json:"ot_threshold_hours"`
+	OtMultiplierDefault decimal.Decimal `json:"ot_multiplier_default"`
+	OtRounding          int32           `json:"ot_rounding"`
+	WageBasis           string          `json:"wage_basis"`
+	WeekOffPaid         bool            `json:"week_off_paid"`
+	CreatedAt           time.Time       `json:"created_at"`
+	UpdatedAt           time.Time       `json:"updated_at"`
+	WeeklyOffs          string          `json:"weekly_offs"`
 }

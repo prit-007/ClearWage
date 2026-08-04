@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/config"
 	"github.com/vivek-app/vivek_app/middlewares"
 	"github.com/vivek-app/vivek_app/mocks"
@@ -46,7 +47,7 @@ func reposEmployee(t *testing.T, name, wageType, wageAmount string) repositories
 		Phone:       "+91-9876543210",
 		Designation: &designation,
 		WageType:    wageType,
-		WageAmount:  wageAmt,
+		WageAmount:  decimal.NewFromFloat(wageAmt),
 	}
 }
 
@@ -200,7 +201,7 @@ func TestStaffUpdate_Success(t *testing.T) {
 
 	mockQuerier.EXPECT().
 		FindEmployeeByID(gomock.Any(), gomock.Any()).
-		Return(repositories.Employee{WageType: "daily", WageAmount: 500}, nil)
+		Return(repositories.Employee{WageType: "daily", WageAmount: decimal.NewFromInt(500)}, nil)
 	mockQuerier.EXPECT().
 		UpdateEmployee(gomock.Any(), gomock.Any()).
 		Return(reposEmployee(t, "John Updated", "monthly", "600"), nil)
@@ -390,7 +391,7 @@ func TestStaffUpdate_DBError(t *testing.T) {
 
 	mockQuerier.EXPECT().
 		FindEmployeeByID(gomock.Any(), gomock.Any()).
-		Return(repositories.Employee{WageType: "daily", WageAmount: 500}, nil)
+		Return(repositories.Employee{WageType: "daily", WageAmount: decimal.NewFromInt(500)}, nil)
 	mockQuerier.EXPECT().
 		UpdateEmployee(gomock.Any(), gomock.Any()).
 		Return(repositories.Employee{}, errors.New("db connection error"))
@@ -533,7 +534,7 @@ func TestStaffUpdate_Unauthorized(t *testing.T) {
 
 	mockQuerier.EXPECT().
 		FindEmployeeByID(gomock.Any(), gomock.Any()).
-		Return(repositories.Employee{WageType: "daily", WageAmount: 500}, nil)
+		Return(repositories.Employee{WageType: "daily", WageAmount: decimal.NewFromInt(500)}, nil)
 	mockQuerier.EXPECT().
 		UpdateEmployee(gomock.Any(), gomock.Any()).
 		Return(repositories.Employee{}, errors.New("db error"))
@@ -569,7 +570,7 @@ func TestStaffOverview_Success(t *testing.T) {
 		Return(500.0, nil)
 	mockQuerier.EXPECT().
 		GetEmployeeLedgerSummary(gomock.Any(), gomock.Any()).
-		Return(repositories.LedgerSummaryRange{JamaTotal: 9000}, nil)
+		Return(repositories.LedgerSummaryRange{JamaTotal: decimal.NewFromInt(9000)}, nil)
 	mockQuerier.EXPECT().
 		ListLedgerByEmployeeMonth(gomock.Any(), gomock.Any()).
 		Return([]repositories.Ledger{}, nil)

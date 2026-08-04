@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 const getDashboardSnapshot = `-- name: GetDashboardSnapshot :one
@@ -19,11 +20,11 @@ SELECT
   (SELECT COUNT(*) FROM attendance WHERE attendance.tenant_id = $1 AND attendance.date = $2 AND attendance.status = 'present')::int AS present,
   (SELECT COUNT(*) FROM attendance WHERE attendance.tenant_id = $1 AND attendance.date = $2 AND attendance.status = 'absent')::int AS absent,
   (SELECT COUNT(*) FROM attendance WHERE attendance.tenant_id = $1 AND attendance.date = $2 AND attendance.status IN ('paid_leave','week_off'))::int AS on_leave,
-  (SELECT COALESCE(SUM(ledger.amount),0)::float8 FROM ledger WHERE ledger.tenant_id = $1 AND ledger.date = $2 AND ledger.type = 'jama') AS daily_jama_total,
-  (SELECT COALESCE(SUM(CASE WHEN ledger.type='jama' THEN ledger.amount ELSE 0 END),0)::float8
+  (SELECT COALESCE(SUM(ledger.amount),0)::numeric FROM ledger WHERE ledger.tenant_id = $1 AND ledger.date = $2 AND ledger.type = 'jama') AS daily_jama_total,
+  (SELECT COALESCE(SUM(CASE WHEN ledger.type='jama' THEN ledger.amount ELSE 0 END),0)::numeric
      FROM ledger WHERE ledger.tenant_id = $1 AND ledger.date BETWEEN $3 AND $2) AS wage_bill_mtd,
   (SELECT (COALESCE(SUM(CASE WHEN ledger.type='udhaar' THEN ledger.amount ELSE 0 END),0)
-        - COALESCE(SUM(CASE WHEN ledger.type='jama' THEN ledger.amount ELSE 0 END),0))::float8
+        - COALESCE(SUM(CASE WHEN ledger.type='jama' THEN ledger.amount ELSE 0 END),0))::numeric
      FROM ledger WHERE ledger.tenant_id = $1) AS total_outstanding
 `
 
@@ -34,14 +35,14 @@ type GetDashboardSnapshotParams struct {
 }
 
 type GetDashboardSnapshotRow struct {
-	TotalStaff       int32   `json:"total_staff"`
-	AttendanceCount  int32   `json:"attendance_count"`
-	Present          int32   `json:"present"`
-	Absent           int32   `json:"absent"`
-	OnLeave          int32   `json:"on_leave"`
-	DailyJamaTotal   float64 `json:"daily_jama_total"`
-	WageBillMtd      float64 `json:"wage_bill_mtd"`
-	TotalOutstanding float64 `json:"total_outstanding"`
+	TotalStaff       int32           `json:"total_staff"`
+	AttendanceCount  int32           `json:"attendance_count"`
+	Present          int32           `json:"present"`
+	Absent           int32           `json:"absent"`
+	OnLeave          int32           `json:"on_leave"`
+	DailyJamaTotal   decimal.Decimal `json:"daily_jama_total"`
+	WageBillMtd      decimal.Decimal `json:"wage_bill_mtd"`
+	TotalOutstanding decimal.Decimal `json:"total_outstanding"`
 }
 
 func (q *Queries) GetDashboardSnapshot(ctx context.Context, arg GetDashboardSnapshotParams) (GetDashboardSnapshotRow, error) {
@@ -63,15 +64,15 @@ func (q *Queries) GetDashboardSnapshot(ctx context.Context, arg GetDashboardSnap
 const listEmployeeBalances = `-- name: ListEmployeeBalances :many
 SELECT ledger.employee_id,
   (COALESCE(SUM(CASE WHEN ledger.type = 'jama' THEN ledger.amount ELSE 0 END),0)
-    - COALESCE(SUM(CASE WHEN ledger.type = 'udhaar' THEN ledger.amount ELSE 0 END),0))::float8 AS balance
+    - COALESCE(SUM(CASE WHEN ledger.type = 'udhaar' THEN ledger.amount ELSE 0 END),0))::numeric AS balance
 FROM ledger
 WHERE ledger.tenant_id = $1
 GROUP BY ledger.employee_id
 `
 
 type ListEmployeeBalancesRow struct {
-	EmployeeID uuid.UUID `json:"employee_id"`
-	Balance    float64   `json:"balance"`
+	EmployeeID uuid.UUID       `json:"employee_id"`
+	Balance    decimal.Decimal `json:"balance"`
 }
 
 func (q *Queries) ListEmployeeBalances(ctx context.Context, tenantID uuid.UUID) ([]ListEmployeeBalancesRow, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/repositories"
 )
 
@@ -21,8 +22,8 @@ func (s *SettingsService) GetPayrollSettings(ctx context.Context, tenantID strin
 		return repositories.TenantConfig{
 			TenantID:            tenantID,
 			OTTrigger:           "after_shift_end",
-			OTThresholdHours:    0,
-			OTMultiplierDefault: 1.5,
+			OTThresholdHours:    decimal.Zero,
+			OTMultiplierDefault: decimal.NewFromFloat(1.5),
 			OTRounding:          30,
 			WageBasis:           "calendar",
 			WeekOffPaid:         false,

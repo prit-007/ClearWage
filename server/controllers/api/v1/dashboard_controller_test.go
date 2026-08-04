@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/rs/zerolog"
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/config"
 	"github.com/vivek-app/vivek_app/mocks"
 	"github.com/vivek-app/vivek_app/repositories"
@@ -34,8 +35,8 @@ func TestDashboardGet_WithoutTrends(t *testing.T) {
 		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
 		Return(repositories.DashboardSnapshot{
 			TotalStaff: 1, AttendanceCount: 1, Present: 1,
-			Absent: 0, OnLeave: 0, DailyJamaTotal: 450.0,
-			WageBillMTD: 9000, TotalOutstanding: 5000.0,
+			Absent: 0, OnLeave: 0, DailyJamaTotal: decimal.NewFromFloat(450.0),
+			WageBillMTD: decimal.NewFromInt(9000), TotalOutstanding: decimal.NewFromFloat(5000.0),
 		}, nil)
 	mockQuerier.EXPECT().
 		ListActivityLogsByTenant(gomock.Any(), gomock.Any()).
@@ -69,8 +70,8 @@ func TestDashboardGet_WithTrends(t *testing.T) {
 		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
 		Return(repositories.DashboardSnapshot{
 			TotalStaff: 1, AttendanceCount: 1, Present: 1,
-			Absent: 0, OnLeave: 0, DailyJamaTotal: 450.0,
-			WageBillMTD: 9000, TotalOutstanding: 5000.0,
+			Absent: 0, OnLeave: 0, DailyJamaTotal: decimal.NewFromFloat(450.0),
+			WageBillMTD: decimal.NewFromInt(9000), TotalOutstanding: decimal.NewFromFloat(5000.0),
 		}, nil)
 	mockQuerier.EXPECT().
 		ListActivityLogsByTenant(gomock.Any(), gomock.Any()).

@@ -204,7 +204,7 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 		for _, t := range trends {
 			writer.Write([]string{
 				t.Month,
-				fmt.Sprintf("%.2f", t.TotalWages),
+				fmt.Sprintf("%.2f", t.TotalWages.InexactFloat64()),
 				strconv.Itoa(t.Headcount),
 			})
 		}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/mocks"
 	"github.com/vivek-app/vivek_app/repositories"
 	"go.uber.org/mock/gomock"
@@ -25,7 +26,7 @@ func TestReportService_DailySummary(t *testing.T) {
 			Present:       1,
 			Absent:        1,
 			OnLeave:       0,
-			TotalWageBill: 1000,
+			TotalWageBill: decimal.NewFromInt(1000),
 		}, nil)
 
 	summary, err := svc.DailySummary(context.Background(), "00000000-0000-0000-0000-000000000001", "2025-01-15")
@@ -187,14 +188,14 @@ func TestReportService_DefaultersList(t *testing.T) {
 	mockQuerier.EXPECT().
 		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
 		Return([]repositories.Employee{
-			{ID: "e1", Name: "Alice", Phone: "111", WageType: "monthly", WageAmount: 30000},
-			{ID: "e2", Name: "Bob", Phone: "222", WageType: "daily", WageAmount: 1000},
+			{ID: "e1", Name: "Alice", Phone: "111", WageType: "monthly", WageAmount: decimal.NewFromInt(30000)},
+			{ID: "e2", Name: "Bob", Phone: "222", WageType: "daily", WageAmount: decimal.NewFromInt(1000)},
 		}, nil)
 	mockQuerier.EXPECT().
 		ListEmployeeBalances(gomock.Any(), "t1").
 		Return([]repositories.EmployeeBalance{
-			{EmployeeID: "e1", Balance: 35000},
-			{EmployeeID: "e2", Balance: 28000},
+			{EmployeeID: "e1", Balance: decimal.NewFromInt(35000)},
+			{EmployeeID: "e2", Balance: decimal.NewFromInt(28000)},
 		}, nil)
 
 	defaulters, err := svc.DefaultersList(context.Background(), "t1")
@@ -223,12 +224,12 @@ func TestReportService_DefaultersList_None(t *testing.T) {
 	mockQuerier.EXPECT().
 		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
 		Return([]repositories.Employee{
-			{ID: "e1", Name: "Alice", WageType: "monthly", WageAmount: 30000},
+			{ID: "e1", Name: "Alice", WageType: "monthly", WageAmount: decimal.NewFromInt(30000)},
 		}, nil)
 	mockQuerier.EXPECT().
 		ListEmployeeBalances(gomock.Any(), "t1").
 		Return([]repositories.EmployeeBalance{
-			{EmployeeID: "e1", Balance: 10000},
+			{EmployeeID: "e1", Balance: decimal.NewFromInt(10000)},
 		}, nil)
 
 	defaulters, err := svc.DefaultersList(context.Background(), "t1")

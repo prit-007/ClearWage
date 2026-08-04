@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/config"
 	"github.com/vivek-app/vivek_app/mocks"
 	"github.com/vivek-app/vivek_app/repositories"
@@ -307,7 +308,7 @@ func TestLedgerSummary_Success(t *testing.T) {
 
 	mockQuerier.EXPECT().
 		GetLedgerSummaryRange(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(repositories.LedgerSummaryRange{JamaTotal: 100, UdhaarTotal: 40, EntryCount: 3}, nil)
+		Return(repositories.LedgerSummaryRange{JamaTotal: decimal.NewFromInt(100), UdhaarTotal: decimal.NewFromInt(40), EntryCount: 3}, nil)
 	mockQuerier.EXPECT().
 		GetTotalOutstanding(gomock.Any(), gomock.Any()).
 		Return(25.0, nil)
@@ -326,8 +327,17 @@ func TestLedgerSummary_Success(t *testing.T) {
 	var resp map[string]interface{}
 	json.NewDecoder(rec.Body).Decode(&resp)
 	data := resp["data"].(map[string]interface{})
-	if data["net_balance"].(float64) != 60 {
-		t.Errorf("expected net_balance 60, got %v", data["net_balance"])
+	netBalance := data["net_balance"]
+	nb := 0.0
+	switch v := netBalance.(type) {
+	case float64:
+		nb = v
+	case string:
+		d, _ := decimal.NewFromString(v)
+		nb = d.InexactFloat64()
+	}
+	if nb != 60 {
+		t.Errorf("expected net_balance 60, got %v", netBalance)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/mocks"
 	"github.com/vivek-app/vivek_app/repositories"
 	"go.uber.org/mock/gomock"
@@ -20,8 +21,8 @@ func TestDashboardService_GetDashboard(t *testing.T) {
 		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
 		Return(repositories.DashboardSnapshot{
 			TotalStaff: 2, AttendanceCount: 1, Present: 1,
-			Absent: 0, OnLeave: 0, DailyJamaTotal: 450.0,
-			WageBillMTD: 9000, TotalOutstanding: 5000.0,
+			Absent: 0, OnLeave: 0, DailyJamaTotal: decimal.NewFromFloat(450.0),
+			WageBillMTD: decimal.NewFromInt(9000), TotalOutstanding: decimal.NewFromFloat(5000.0),
 		}, nil)
 	mockQuerier.EXPECT().
 		ListActivityLogsByTenant(gomock.Any(), gomock.Any()).
@@ -40,7 +41,7 @@ func TestDashboardService_GetDashboard(t *testing.T) {
 	if data.AttendancePercentage != 50 {
 		t.Errorf("expected attendance percentage 50, got %v", data.AttendancePercentage)
 	}
-	if data.WageBillMTD != 9000 {
+	if !data.WageBillMTD.Equal(decimal.NewFromInt(9000)) {
 		t.Errorf("expected wage bill MTD 9000, got %v", data.WageBillMTD)
 	}
 }
@@ -56,8 +57,8 @@ func TestDashboardService_GetDashboard_ZeroStaff(t *testing.T) {
 		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
 		Return(repositories.DashboardSnapshot{
 			TotalStaff: 0, AttendanceCount: 0, Present: 0,
-			Absent: 0, OnLeave: 0, DailyJamaTotal: 0,
-			WageBillMTD: 0, TotalOutstanding: 0,
+			Absent: 0, OnLeave: 0, DailyJamaTotal: decimal.Zero,
+			WageBillMTD: decimal.Zero, TotalOutstanding: decimal.Zero,
 		}, nil)
 	mockQuerier.EXPECT().
 		ListActivityLogsByTenant(gomock.Any(), gomock.Any()).

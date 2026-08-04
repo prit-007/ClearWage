@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/rs/zerolog"
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/config"
 	"github.com/vivek-app/vivek_app/mocks"
 	"github.com/vivek-app/vivek_app/repositories"
@@ -37,7 +38,7 @@ func TestReportDailySummary_Success(t *testing.T) {
 			Present:       1,
 			Absent:        0,
 			OnLeave:       1,
-			TotalWageBill: 1000,
+			TotalWageBill: decimal.NewFromInt(1000),
 		}, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/reports/daily?date=2025-01-15", nil)

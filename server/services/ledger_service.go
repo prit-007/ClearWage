@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/repositories"
 )
 
@@ -69,11 +70,11 @@ func (s *LedgerService) GetTotalOutstanding(ctx context.Context, tenantID string
 }
 
 type LedgerSummary struct {
-	JamaTotal        float64 `json:"jama_total"`
-	UdhaarTotal      float64 `json:"udhaar_total"`
-	NetBalance       float64 `json:"net_balance"`
-	TotalOutstanding float64 `json:"total_outstanding"`
-	EntryCount       int32   `json:"entry_count"`
+	JamaTotal        decimal.Decimal `json:"jama_total"`
+	UdhaarTotal      decimal.Decimal `json:"udhaar_total"`
+	NetBalance       decimal.Decimal `json:"net_balance"`
+	TotalOutstanding decimal.Decimal `json:"total_outstanding"`
+	EntryCount       int32           `json:"entry_count"`
 }
 
 func (s *LedgerService) GetSummary(ctx context.Context, tenantID, startDate, endDate string) (LedgerSummary, error) {
@@ -88,8 +89,8 @@ func (s *LedgerService) GetSummary(ctx context.Context, tenantID, startDate, end
 	return LedgerSummary{
 		JamaTotal:        rangeSummary.JamaTotal,
 		UdhaarTotal:      rangeSummary.UdhaarTotal,
-		NetBalance:       rangeSummary.JamaTotal - rangeSummary.UdhaarTotal,
-		TotalOutstanding: outstanding,
+		NetBalance:       rangeSummary.JamaTotal.Sub(rangeSummary.UdhaarTotal),
+		TotalOutstanding: decimal.NewFromFloat(outstanding),
 		EntryCount:       rangeSummary.EntryCount,
 	}, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/repositories"
 )
 
@@ -106,7 +107,7 @@ func (s *ReportService) DefaultersList(ctx context.Context, tenantID string) ([]
 	if err != nil {
 		return nil, err
 	}
-	balanceMap := make(map[string]float64, len(balances))
+	balanceMap := make(map[string]decimal.Decimal, len(balances))
 	for _, b := range balances {
 		balanceMap[b.EmployeeID] = b.Balance
 	}
@@ -120,17 +121,17 @@ func (s *ReportService) DefaultersList(ctx context.Context, tenantID string) ([]
 
 		monthlyWage := e.WageAmount
 		if e.WageType == "daily" {
-			monthlyWage = e.WageAmount * 26
+			monthlyWage = e.WageAmount.Mul(decimal.NewFromInt(26))
 		}
 
-		if balance > monthlyWage {
+		if balance.GreaterThan(monthlyWage) {
 			defaulters = append(defaulters, Defaulter{
 				EmployeeID:         e.ID,
 				Name:               e.Name,
 				Phone:              e.Phone,
 				PhotoURL:           e.PhotoUrl,
-				OutstandingBalance: balance,
-				MonthlyWage:        monthlyWage,
+				OutstandingBalance: balance.InexactFloat64(),
+				MonthlyWage:        monthlyWage.InexactFloat64(),
 			})
 		}
 	}

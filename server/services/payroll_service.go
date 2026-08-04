@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jung-kurt/gofpdf"
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/repositories"
 )
 
@@ -67,8 +68,8 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 	if tc.OTTrigger == "" {
 		tc.OTTrigger = "after_threshold"
 	}
-	if tc.OTMultiplierDefault == 0 {
-		tc.OTMultiplierDefault = 1.5
+	if tc.OTMultiplierDefault.Equal(decimal.Zero) {
+		tc.OTMultiplierDefault = decimal.NewFromFloat(1.5)
 	}
 
 	employees, err := s.querier.ListEmployeesByTenant(ctx, repositories.ListEmployeesByTenantParams{
@@ -119,7 +120,7 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 	udhaarMap := make(map[string]float64)
 	for _, l := range ledgerEntries {
 		if l.Type == "udhaar" {
-			udhaarMap[l.EmployeeID] += l.Amount
+			udhaarMap[l.EmployeeID] += l.Amount.InexactFloat64()
 		}
 	}
 
@@ -137,11 +138,11 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 		dailyWageRate := 0.0
 		switch emp.WageType {
 		case "daily":
-			dailyWageRate = emp.WageAmount
+			dailyWageRate = emp.WageAmount.InexactFloat64()
 		case "monthly":
-			dailyWageRate = emp.WageAmount / 30.0
+			dailyWageRate = emp.WageAmount.InexactFloat64() / 30.0
 		case "hourly":
-			dailyWageRate = emp.WageAmount * 8.0
+			dailyWageRate = emp.WageAmount.InexactFloat64() * 8.0
 		}
 
 		present := 0
@@ -182,14 +183,14 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 				case "after_shift_end":
 					fallthrough
 				default:
-					if otHours > tc.OTThresholdHours {
-						computedOTHours = otHours - tc.OTThresholdHours
+				if otHours > tc.OTThresholdHours.InexactFloat64() {
+					computedOTHours = otHours - tc.OTThresholdHours.InexactFloat64()
 					}
 				}
 
 				if computedOTHours > 0 {
 					hourlyRate := dailyWageRate / 8.0
-					otPay = computedOTHours * hourlyRate * tc.OTMultiplierDefault
+					otPay = computedOTHours * hourlyRate * tc.OTMultiplierDefault.InexactFloat64()
 				}
 
 				if tc.OTRounding > 0 && computedOTHours > 0 {
@@ -230,7 +231,7 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 			Name:          emp.Name,
 			PhotoURL:      emp.PhotoUrl,
 			WageType:      emp.WageType,
-			WageAmount:    emp.WageAmount,
+			WageAmount:    emp.WageAmount.InexactFloat64(),
 			DaysPresent:   present,
 			TotalOvertime: totalOT,
 			GrossWages:    grossWages,

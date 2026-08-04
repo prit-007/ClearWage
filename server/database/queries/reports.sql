@@ -7,7 +7,7 @@ SELECT
   (SELECT COALESCE(SUM(
     CASE WHEN emp.wage_type = 'monthly' THEN emp.wage_amount / 30.0
          ELSE emp.wage_amount
-    END), 0)::float8
+    END), 0)::numeric
    FROM attendance a
    JOIN employees emp ON a.employee_id = emp.id AND a.tenant_id = emp.tenant_id
    WHERE a.tenant_id = $1 AND a.date = $2 AND a.status = 'present') AS total_wage_bill;
@@ -30,7 +30,7 @@ SELECT
   COALESCE(SUM(CASE
     WHEN e.wage_type = 'monthly' THEN e.wage_amount
     ELSE e.wage_amount * ma.days_present
-  END), 0)::float8 AS total_wages,
+  END), 0)::numeric AS total_wages,
   COUNT(DISTINCT ma.employee_id)::int AS headcount
 FROM monthly_attendance ma
 JOIN employees e ON ma.employee_id = e.id AND e.tenant_id = $1

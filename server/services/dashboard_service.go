@@ -5,6 +5,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/repositories"
 )
 
@@ -15,9 +16,9 @@ type DashboardData struct {
 	Absent               int                        `json:"absent"`
 	OnLeave              int                        `json:"on_leave"`
 	AttendancePercentage float64                    `json:"attendance_percentage"`
-	DailyJamaTotal       float64                    `json:"daily_jama_total"`
-	WageBillMTD          float64                    `json:"wage_bill_mtd"`
-	TotalOutstanding     float64                    `json:"total_outstanding"`
+	DailyJamaTotal       decimal.Decimal            `json:"daily_jama_total"`
+	WageBillMTD          decimal.Decimal            `json:"wage_bill_mtd"`
+	TotalOutstanding     decimal.Decimal            `json:"total_outstanding"`
 	RecentActivity       []repositories.ActivityLog `json:"recent_activity"`
 	Trends               []AttendanceTrend          `json:"trends,omitempty"`
 }

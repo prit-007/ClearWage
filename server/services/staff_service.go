@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/repositories"
 )
 
@@ -102,7 +103,7 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 	}
 	wageAmt, parseErr := strconv.ParseFloat(wageAmount, 64)
 	if parseErr != nil || wageAmount == "" {
-		wageAmt = existing.WageAmount
+		wageAmt = existing.WageAmount.InexactFloat64()
 	}
 
 	var desig *string
@@ -179,7 +180,7 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 		WageAmount:            wageAmt,
 		DefaultShiftID:        existing.DefaultShiftID,
 		PieceRateItemName:     existing.PieceRateItemName,
-		PieceRatePerUnit:      existing.PieceRatePerUnit,
+		PieceRatePerUnit:      decimalPtrToFloat(existing.PieceRatePerUnit),
 		DailyTargetUnits:      dailyTargetUnits,
 		DateOfJoining:         dateOfJoining,
 		PanNumber:             panNumber,
@@ -276,8 +277,8 @@ func (s *StaffService) GetTenant(ctx context.Context, tenantID string) (reposito
 
 type EmployeeLedgerOverview struct {
 	Balance     float64               `json:"balance"`
-	JamaTotal   float64               `json:"jama_total"`
-	UdhaarTotal float64               `json:"udhaar_total"`
+	JamaTotal   decimal.Decimal       `json:"jama_total"`
+	UdhaarTotal decimal.Decimal       `json:"udhaar_total"`
 	Recent      []repositories.Ledger `json:"recent"`
 }
 
@@ -411,4 +412,12 @@ func (s *StaffService) DeleteEmployee(ctx context.Context, employeeID, tenantID 
 		logActivity(ctx, s.querier, tenantID, employeeID, "deleted_employee", "employee", &employeeID, nil)
 	}
 	return err
+}
+
+func decimalPtrToFloat(d *decimal.Decimal) *float64 {
+	if d == nil {
+		return nil
+	}
+	v := d.InexactFloat64()
+	return &v
 }

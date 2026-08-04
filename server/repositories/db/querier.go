@@ -11,7 +11,9 @@ import (
 )
 
 type Querier interface {
+	GetDailySummary(ctx context.Context, arg GetDailySummaryParams) (GetDailySummaryRow, error)
 	GetDashboardSnapshot(ctx context.Context, arg GetDashboardSnapshotParams) (GetDashboardSnapshotRow, error)
+	GetWageBillTrends(ctx context.Context, arg GetWageBillTrendsParams) ([]GetWageBillTrendsRow, error)
 	ListEmployeeBalances(ctx context.Context, tenantID uuid.UUID) ([]ListEmployeeBalancesRow, error)
 }
 

@@ -397,6 +397,21 @@ func (mr *MockQuerierMockRecorder) GetDailyJamaTotal(ctx, tenantID, date any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDailyJamaTotal", reflect.TypeOf((*MockQuerier)(nil).GetDailyJamaTotal), ctx, tenantID, date)
 }
 
+// GetDailySummary mocks base method.
+func (m *MockQuerier) GetDailySummary(ctx context.Context, tenantID, date string) (repositories.DailySummary, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDailySummary", ctx, tenantID, date)
+	ret0, _ := ret[0].(repositories.DailySummary)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDailySummary indicates an expected call of GetDailySummary.
+func (mr *MockQuerierMockRecorder) GetDailySummary(ctx, tenantID, date any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDailySummary", reflect.TypeOf((*MockQuerier)(nil).GetDailySummary), ctx, tenantID, date)
+}
+
 // GetDashboardSnapshot mocks base method.
 func (m *MockQuerier) GetDashboardSnapshot(ctx context.Context, tenantID, today, monthStart string) (repositories.DashboardSnapshot, error) {
 	m.ctrl.T.Helper()
@@ -530,6 +545,21 @@ func (m *MockQuerier) GetTotalOutstanding(ctx context.Context, tenantID string) 
 func (mr *MockQuerierMockRecorder) GetTotalOutstanding(ctx, tenantID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalOutstanding", reflect.TypeOf((*MockQuerier)(nil).GetTotalOutstanding), ctx, tenantID)
+}
+
+// GetWageBillTrends mocks base method.
+func (m *MockQuerier) GetWageBillTrends(ctx context.Context, tenantID, startDate, endDate string) ([]repositories.WageBillTrend, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWageBillTrends", ctx, tenantID, startDate, endDate)
+	ret0, _ := ret[0].([]repositories.WageBillTrend)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWageBillTrends indicates an expected call of GetWageBillTrends.
+func (mr *MockQuerierMockRecorder) GetWageBillTrends(ctx, tenantID, startDate, endDate any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWageBillTrends", reflect.TypeOf((*MockQuerier)(nil).GetWageBillTrends), ctx, tenantID, startDate, endDate)
 }
 
 // ListActivityLogsByTenant mocks base method.

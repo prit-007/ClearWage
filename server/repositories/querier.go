@@ -432,6 +432,8 @@ type Querier interface {
 	GetTotalOutstanding(ctx context.Context, tenantID string) (float64, error)
 	GetDashboardSnapshot(ctx context.Context, tenantID, today, monthStart string) (DashboardSnapshot, error)
 	ListEmployeeBalances(ctx context.Context, tenantID string) ([]EmployeeBalance, error)
+	GetDailySummary(ctx context.Context, tenantID, date string) (DailySummary, error)
+	GetWageBillTrends(ctx context.Context, tenantID, startDate, endDate string) ([]WageBillTrend, error)
 	ListActivityLogsByTenant(ctx context.Context, arg ListActivityLogsByTenantParams) ([]ActivityLog, error)
 	ListAdvanceRequestsByTenant(ctx context.Context, arg ListAdvanceRequestsByTenantParams) ([]AdvanceRequest, error)
 	ListAttendanceByDate(ctx context.Context, arg ListAttendanceByDateParams) ([]Attendance, error)

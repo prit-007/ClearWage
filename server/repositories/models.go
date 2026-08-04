@@ -240,3 +240,18 @@ type EmployeeBalance struct {
 	EmployeeID string
 	Balance    float64
 }
+
+type DailySummary struct {
+	Date          string  `json:"date"`
+	TotalWorkers  int     `json:"total_workers"`
+	Present       int     `json:"present"`
+	Absent        int     `json:"absent"`
+	OnLeave       int     `json:"on_leave"`
+	TotalWageBill float64 `json:"total_wage_bill"`
+}
+
+type WageBillTrend struct {
+	Month      string  `json:"month"`
+	TotalWages float64 `json:"total_wages"`
+	Headcount  int     `json:"headcount"`
+}

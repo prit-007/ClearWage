@@ -68,3 +68,69 @@ func (q *GoquQuerier) ListEmployeeBalances(ctx context.Context, tenantID string)
 	}
 	return balances, nil
 }
+
+// GetDailySummary computes staff count, attendance status counts and wage bill
+// in a single aggregated query, replacing two sequential queries + Go loop.
+func (q *GoquQuerier) GetDailySummary(ctx context.Context, tenantID, date string) (DailySummary, error) {
+	tid, err := uuid.Parse(tenantID)
+	if err != nil {
+		return DailySummary{}, err
+	}
+	td, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return DailySummary{}, err
+	}
+
+	row, err := q.sqlc.GetDailySummary(ctx, db.GetDailySummaryParams{
+		TenantID: tid,
+		Date:     td,
+	})
+	if err != nil {
+		return DailySummary{}, err
+	}
+
+	return DailySummary{
+		Date:          date,
+		TotalWorkers:  int(row.TotalWorkers),
+		Present:       int(row.Present),
+		Absent:        int(row.Absent),
+		OnLeave:       int(row.OnLeave),
+		TotalWageBill: row.TotalWageBill,
+	}, nil
+}
+
+// GetWageBillTrends returns monthly wage bill aggregations for a date range
+// in a single CTE query, replacing the per-month loop.
+func (q *GoquQuerier) GetWageBillTrends(ctx context.Context, tenantID, startDate, endDate string) ([]WageBillTrend, error) {
+	tid, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	start, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		return nil, err
+	}
+	end, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.sqlc.GetWageBillTrends(ctx, db.GetWageBillTrendsParams{
+		TenantID: tid,
+		Date:     start,
+		Date_2:   end,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	trends := make([]WageBillTrend, 0, len(rows))
+	for _, r := range rows {
+		trends = append(trends, WageBillTrend{
+			Month:      r.Month,
+			TotalWages: r.TotalWages,
+			Headcount:  int(r.Headcount),
+		})
+	}
+	return trends, nil
+}

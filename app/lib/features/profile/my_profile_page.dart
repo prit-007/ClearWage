@@ -678,7 +678,7 @@ class _LedgerEntryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isJama = entry['type'] == 'jama';
-    final amount = (entry['amount'] as num?)?.toInt() ?? 0;
+    final amount = (entry['amount'] as num?)?.toDouble() ?? 0;
     final date = entry['date'] as String? ?? '';
     final color = isJama ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 
@@ -701,7 +701,7 @@ class _LedgerEntryRow extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          Text('${isJama ? '+' : '-'}₹$amount', style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: -0.5)),
+          Text('${isJama ? '+' : '-'}\u20B9${amount.toStringAsFixed(0)}', style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: -0.5)),
         ],
       ),
     );

@@ -1,14 +1,15 @@
 import '../core/api_client.dart';
 import '../models/attendance_model.dart';
+import '../models/roster_model.dart';
 
 class AttendanceService {
   final ApiClient _client;
   AttendanceService(this._client);
 
-  Future<List<Map<String, dynamic>>> roster(String date) async {
+  Future<List<RosterRow>> roster(String date) async {
     final res = await _client.get('/api/v1/attendance/roster', query: {'date': date});
     final list = (res['data'] as List<dynamic>?) ?? [];
-    return list.map((e) => (e as Map).cast<String, dynamic>()).toList();
+    return list.map((e) => RosterRow.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   Future<List<Attendance>> listByDate(String date, {int? limit, int? offset}) async {

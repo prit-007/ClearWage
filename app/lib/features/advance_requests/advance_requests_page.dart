@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/advance_request_model.dart';
 import '../../providers/providers.dart';
+import '../dashboard/dashboard_page.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/helpers.dart';
@@ -235,6 +236,8 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
       final now = DateTime.now();
       final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
       await widget.ref.read(advanceRequestServiceProvider).approve(widget.req.id, date: date);
+      widget.ref.invalidate(dashboardDataProvider);
+      widget.ref.read(ledgerRefreshProvider.notifier).state++;
       if (mounted) Navigator.pop(context, 'approved');
     } catch (e) {
       if (mounted) showError(context, e);
@@ -259,6 +262,8 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
     try {
       HapticFeedback.selectionClick();
       await widget.ref.read(advanceRequestServiceProvider).deny(widget.req.id);
+      widget.ref.invalidate(dashboardDataProvider);
+      widget.ref.read(ledgerRefreshProvider.notifier).state++;
       if (mounted) Navigator.pop(context, 'denied');
     } catch (e) {
       if (mounted) showError(context, e);

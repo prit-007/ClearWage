@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../models/attendance_model.dart';
 import '../../models/employee_model.dart';
+import '../../models/roster_model.dart';
 import '../../providers/providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/tactile_toggle.dart';
@@ -26,7 +27,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   DateTime _selectedDate = DateTime.now();
   bool _saving = false;
   List<Shift> _shifts = [];
-  List<Map<String, dynamic>>? _cachedRows;
+  List<RosterRow>? _cachedRows;
 
   String get _dateStr => DateFormat('yyyy-MM-dd').format(_selectedDate);
 
@@ -47,23 +48,22 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     if (_saving) return;
     setState(() => _saving = true);
     HapticFeedback.heavyImpact();
-    final employees = ref.read(employeeListProvider).valueOrNull ?? [];
-    final attendanceList = ref.read(attendanceByDateProvider(_dateStr)).valueOrNull ?? [];
+    final rows = _cachedRows ?? [];
     final date = _dateStr;
-    final unmarked = employees.where((emp) => !attendanceList.any((a) => a.employeeId == emp.id)).toList();
-    final noShift = unmarked.where((e) => e.defaultShiftId == null || e.defaultShiftId!.isEmpty).toList();
-    final withShift = unmarked.where((e) => e.defaultShiftId != null && e.defaultShiftId!.isNotEmpty).toList();
+    final unmarkedRows = rows.where((r) => !r.hasAttendance).toList();
+    final noShift = unmarkedRows.where((r) => r.defaultShiftId == null || r.defaultShiftId!.isEmpty).toList();
+    final withShift = unmarkedRows.where((r) => r.defaultShiftId != null && r.defaultShiftId!.isNotEmpty).toList();
 
-    if (unmarked.isEmpty) {
+    if (unmarkedRows.isEmpty) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('All employees already marked')));
       setState(() => _saving = false);
       return;
     }
 
-    final records = withShift.map((emp) => ({
-      'employee_id': emp.id,
+    final records = withShift.map((r) => ({
+      'employee_id': r.employeeId,
       'date': date,
-      'shift_id': emp.defaultShiftId!,
+      'shift_id': r.defaultShiftId!,
       'status': 'present',
       'overtime_hours': '0',
     })).toList();
@@ -122,7 +122,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   }
 
   Widget _buildRosterBody({required ColorScheme cs, required TextTheme tt}) {
-    final rows = _cachedRows ?? <Map<String, dynamic>>[];
+    final rows = _cachedRows ?? <RosterRow>[];
     final merged = rows.map((r) => _rosterRowToMerged(r, _dateStr)).toList();
 
     if (merged.isEmpty) {
@@ -334,50 +334,44 @@ String _buildShiftLabel(String? name, String? start, String? end) {
   return '$name ($start\u2013$end)';
 }
 
-_MergedRow _rosterRowToMerged(Map<String, dynamic> row, String date) {
-  final defaultShiftId = row['default_shift_id'] as String?;
-  final attendanceShiftId = row['attendance_shift_id'] as String?;
-  final resolvedShiftId = attendanceShiftId?.isNotEmpty == true
-      ? attendanceShiftId
-      : defaultShiftId;
-  final shiftName = row['shift_name'] as String?;
-  final shiftStart = row['shift_start_time'] as String?;
-  final shiftEnd = row['shift_end_time'] as String?;
+_MergedRow _rosterRowToMerged(RosterRow row, String date) {
+  final resolvedShiftId = row.attendanceShiftId?.isNotEmpty == true
+      ? row.attendanceShiftId
+      : row.defaultShiftId;
   final employee = Employee(
-    id: row['employee_id'] as String? ?? '',
-    name: row['name'] as String? ?? '',
-    phone: row['phone'] as String? ?? '',
-    designation: row['designation'] as String?,
+    id: row.employeeId,
+    name: row.name,
+    phone: row.phone ?? '',
+    designation: row.designation,
     wageType: '',
     wageAmount: 0,
-    photoUrl: row['photo_url'] as String?,
-    role: row['role'] as String? ?? 'employee',
-    isActive: row['is_active'] as bool? ?? true,
-    defaultShiftId: defaultShiftId,
-    shiftName: _buildShiftLabel(shiftName, shiftStart, shiftEnd),
+    photoUrl: row.photoUrl,
+    role: row.role,
+    isActive: row.isActive,
+    defaultShiftId: row.defaultShiftId,
+    shiftName: _buildShiftLabel(row.shiftName, row.shiftStartTime, row.shiftEndTime),
   );
-  final attId = row['attendance_id'] as String?;
-  if (attId == null || attId.isEmpty) {
+  if (!row.hasAttendance) {
     return _MergedRow(employee: employee);
   }
   return _MergedRow(
     employee: employee,
     attendance: Attendance(
-      id: attId,
+      id: row.attendanceId!,
       employeeId: employee.id,
       employeeName: employee.name,
-      employeePhoto: row['photo_url'] as String?,
+      employeePhoto: row.photoUrl,
       date: date,
       shiftId: resolvedShiftId ?? '',
-      shiftName: shiftName,
-      shiftStartTime: shiftStart,
-      shiftEndTime: shiftEnd,
-      status: row['status'] as String? ?? 'present',
-      checkInTime: row['check_in_time'] as String?,
-      checkOutTime: row['check_out_time'] as String?,
-      overtimeHours: (row['overtime_hours'] as num?)?.toDouble() ?? 0,
-      computedWage: (row['computed_wage'] as num?)?.toDouble() ?? 0,
-      isLocked: row['is_locked'] as bool? ?? false,
+      shiftName: row.shiftName,
+      shiftStartTime: row.shiftStartTime,
+      shiftEndTime: row.shiftEndTime,
+      status: row.status ?? 'present',
+      checkInTime: row.checkInTime,
+      checkOutTime: row.checkOutTime,
+      overtimeHours: row.overtimeHours,
+      computedWage: row.computedWage,
+      isLocked: row.isLocked,
     ),
   );
 }
@@ -532,12 +526,8 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
   }
 }
 
-final rosterByDateProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, date) {
+final rosterByDateProvider = FutureProvider.autoDispose.family<List<RosterRow>, String>((ref, date) {
   return ref.watch(attendanceServiceProvider).roster(date);
-});
-
-final attendanceByDateProvider = FutureProvider.autoDispose.family<List<Attendance>, String>((ref, date) {
-  return ref.watch(attendanceServiceProvider).listByDate(date, limit: 100000);
 });
 
 class _PremiumAttendanceCard extends StatefulWidget {

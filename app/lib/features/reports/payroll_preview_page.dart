@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
+import '../dashboard/dashboard_page.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
@@ -37,8 +38,9 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
   Future<void> _loadData() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final data = await ref.read(payrollServiceProvider).calculate(startDate: _startStr, endDate: _endStr);
+      final result = await ref.read(payrollServiceProvider).calculate(startDate: _startStr, endDate: _endStr);
       if (mounted) {
+        final data = result.toJson();
         setState(() { _data = data; _loading = false; });
         _initializeControllers(data);
       }
@@ -69,6 +71,8 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
         'net_pay': double.tryParse(e.value.text.trim()) ?? (entries[e.key]['net_payable'] as num?)?.toDouble() ?? 0,
       }).toList();
       await ref.read(payrollServiceProvider).lockMonth(startDate: _startStr, endDate: _endStr, adjustments: adjustments);
+      ref.invalidate(dashboardDataProvider);
+      ref.read(ledgerRefreshProvider.notifier).state++;
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payroll locked successfully')));
     } catch (e) {
       if (mounted) showError(context, e);

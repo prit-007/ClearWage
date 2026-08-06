@@ -254,7 +254,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(DateFormat('EEEE').format(_selectedDate).toUpperCase(), style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-                                  Text(DateFormat('MMM d, yyyy').format(_selectedDate), style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                                  Text(formatDate(_selectedDate), style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5)),
                                 ],
                               ),
                             ],
@@ -331,7 +331,7 @@ class _MergedRow {
 String _buildShiftLabel(String? name, String? start, String? end) {
   if (name == null || name.isEmpty) return 'No shift assigned';
   if (start == null || start.isEmpty) return name;
-  return '$name ($start\u2013$end)';
+  return '$name (${formatTime(start)}\u2013${formatTime(end)})';
 }
 
 _MergedRow _rosterRowToMerged(RosterRow row, String date) {
@@ -775,7 +775,7 @@ class _ShiftDropdown extends StatelessWidget {
                   Expanded(child: Text(s.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13))),
                   if (s.startTime.isNotEmpty && s.endTime.isNotEmpty) ...[
                     const SizedBox(width: 8),
-                    Text('${s.startTime}–${s.endTime}', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                    Text('${formatTime(s.startTime)}–${formatTime(s.endTime)}', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
                   ],
                 ],
               ),

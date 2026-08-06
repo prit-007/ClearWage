@@ -218,16 +218,12 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
   bool _loading = false;
 
   Future<void> _approve() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirm'),
-        content: const Text('Approve this advance request?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Approve')),
-        ],
-      ),
+    final confirm = await showConfirmDialog(
+      context,
+      title: 'Approve Advance',
+      message: 'Approve this advance request?',
+      confirmLabel: 'Approve',
+      icon: PhosphorIconsRegular.checkCircle,
     );
     if (confirm != true) return;
     setState(() => _loading = true);
@@ -246,16 +242,13 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
   }
 
   Future<void> _deny() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirm'),
-        content: const Text('Deny this advance request?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Deny')),
-        ],
-      ),
+    final confirm = await showConfirmDialog(
+      context,
+      title: 'Deny Advance',
+      message: 'Deny this advance request?',
+      confirmLabel: 'Deny',
+      icon: PhosphorIconsRegular.xCircle,
+      isDestructive: true,
     );
     if (confirm != true) return;
     setState(() => _loading = true);

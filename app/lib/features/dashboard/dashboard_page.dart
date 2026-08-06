@@ -7,6 +7,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../models/dashboard_model.dart';
 import '../../models/report_models.dart';
 import '../../providers/providers.dart';
+import '../../core/helpers.dart';
 import '../staff/add_employee_page.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
@@ -127,6 +128,35 @@ class DashboardScreen extends ConsumerWidget {
                                 ),
                               ),
                             ],
+                          ),
+                        if (isAdmin)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _GlassStatCard(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsDuotone.coins,
+                                    label: 'Outstanding (Udhaar)',
+                                    value: '\u20B9${data.totalOutstanding.toStringAsFixed(0)}',
+                                    color: const Color(0xFFF59E0B),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _GlassStatCard(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsDuotone.warningCircle,
+                                    label: 'Defaulters',
+                                    value: '${data.defaultersCount}',
+                                    color: const Color(0xFFEF4444),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         if (!isAdmin)
                           Padding(
@@ -455,9 +485,9 @@ class _ActivityTile extends StatelessWidget {
       if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
       if (diff.inHours < 24) return '${diff.inHours}h ago';
       if (diff.inDays < 7) return '${diff.inDays}d ago';
-      return iso.substring(0, 10);
+      return formatDate(iso);
     } catch (_) {
-      return iso;
+      return formatDate(iso);
     }
   }
 

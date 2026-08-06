@@ -85,16 +85,13 @@ class _ShiftsManagementScreenState extends ConsumerState<ShiftsManagementScreen>
   }
 
   Future<void> _deleteShift(String id) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Shift'),
-        content: const Text('Are you sure? This cannot be undone.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Delete Shift',
+      message: 'Are you sure? This cannot be undone.',
+      confirmLabel: 'Delete',
+      icon: PhosphorIconsRegular.trash,
+      isDestructive: true,
     );
     if (confirmed != true) return;
     HapticFeedback.heavyImpact();
@@ -283,7 +280,7 @@ class _PremiumShiftCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Text('${shift.startTime} \u2014 ${shift.endTime}', style: tt.bodyMedium?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w600)),
+                      Text('${formatTime(shift.startTime)} \u2014 ${formatTime(shift.endTime)}', style: tt.bodyMedium?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 2),
                       Text('Grace: ${shift.gracePeriodMinutes} mins', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
                     ],
@@ -361,18 +358,18 @@ class _ShiftFormModalState extends ConsumerState<_ShiftFormModal> {
             const SizedBox(height: 24),
             Text(widget.shift != null ? 'Edit Shift' : 'Create New Shift', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
             const SizedBox(height: 24),
-            ValidatedField(controller: _nameCtrl, label: 'Shift Name', prefixIcon: PhosphorIconsRegular.clock, validator: (v) => v == null || v.trim().isEmpty ? 'Enter shift name' : null),
-            ValidatedField(controller: _startCtrl, label: 'Start Time (HH:MM)', prefixIcon: PhosphorIconsRegular.sun, validator: (v) {
+            ValidatedField(controller: _nameCtrl, label: 'Shift Name *', prefixIcon: PhosphorIconsRegular.clock, validator: (v) => v == null || v.trim().isEmpty ? 'Enter shift name' : null),
+            ValidatedField(controller: _startCtrl, label: 'Start Time (HH:MM) *', prefixIcon: PhosphorIconsRegular.sun, validator: (v) {
               if (v == null || v.trim().isEmpty) return 'Enter start time';
               if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) return 'Use HH:MM format';
               return null;
             }),
-            ValidatedField(controller: _endCtrl, label: 'End Time (HH:MM)', prefixIcon: PhosphorIconsRegular.moon, validator: (v) {
+            ValidatedField(controller: _endCtrl, label: 'End Time (HH:MM) *', prefixIcon: PhosphorIconsRegular.moon, validator: (v) {
               if (v == null || v.trim().isEmpty) return 'Enter end time';
               if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) return 'Use HH:MM format';
               return null;
             }),
-            ValidatedField(controller: _graceCtrl, label: 'Grace Period (min)', prefixIcon: PhosphorIconsRegular.hourglass, keyboardType: TextInputType.number, validator: (v) {
+            ValidatedField(controller: _graceCtrl, label: 'Grace Period min (Optional)', prefixIcon: PhosphorIconsRegular.hourglass, keyboardType: TextInputType.number, validator: (v) {
               if (v == null || v.trim().isEmpty) return null;
               final n = int.tryParse(v.trim());
               if (n == null || n < 0) return 'Enter a valid number';

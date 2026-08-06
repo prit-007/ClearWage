@@ -320,14 +320,14 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                 child: Text('CORE IDENTITY', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w900, color: cs.primary, letterSpacing: 1.0)),
               ),
               const SizedBox(height: 16),
-              FluidSlideIn(delay: 150, child: ValidatedField(controller: _nameCtrl, label: 'Full Name', prefixIcon: PhosphorIconsDuotone.user, validator: (v) => v == null || v.trim().isEmpty ? 'Enter employee name' : null)),
-              FluidSlideIn(delay: 200, child: ValidatedField(controller: _phoneCtrl, label: 'Phone Number', prefixIcon: PhosphorIconsDuotone.phone, keyboardType: TextInputType.phone, validator: (v) {
+              FluidSlideIn(delay: 150, child: ValidatedField(controller: _nameCtrl, label: 'Full Name *', prefixIcon: PhosphorIconsDuotone.user, validator: (v) => v == null || v.trim().isEmpty ? 'Enter employee name' : null)),
+              FluidSlideIn(delay: 200, child: ValidatedField(controller: _phoneCtrl, label: 'Phone Number *', prefixIcon: PhosphorIconsDuotone.phone, keyboardType: TextInputType.phone, validator: (v) {
                 final p = v?.trim() ?? '';
                 if (p.isEmpty) return null;
                 if (p.length < 10) return 'Enter a valid phone number';
                 return null;
               })),
-              FluidSlideIn(delay: 250, child: ValidatedField(controller: _desigCtrl, label: 'Designation / Title', prefixIcon: PhosphorIconsDuotone.briefcase)),
+              FluidSlideIn(delay: 250, child: ValidatedField(controller: _desigCtrl, label: 'Designation / Title (Optional)', prefixIcon: PhosphorIconsDuotone.briefcase)),
 
               const SizedBox(height: 32),
 
@@ -347,7 +347,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              FluidSlideIn(delay: 400, child: ValidatedField(controller: _wageCtrl, label: 'Wage Amount (₹)', prefixIcon: PhosphorIconsDuotone.coins, keyboardType: TextInputType.number, validator: (v) {
+              FluidSlideIn(delay: 400, child: ValidatedField(controller: _wageCtrl, label: 'Wage Amount (₹) *', prefixIcon: PhosphorIconsDuotone.coins, keyboardType: TextInputType.number, validator: (v) {
                 if (v == null || v.trim().isEmpty) return null;
                 final amt = double.tryParse(v.trim());
                 if (amt == null || amt <= 0) return 'Enter a valid amount';
@@ -379,24 +379,21 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
               const SizedBox(height: 16),
               FluidSlideIn(
                 delay: 600,
-                child: InkWell(
+                child: ValidatedField(
+                  controller: _dojCtrl,
+                  label: 'Date of Joining (Optional)',
+                  prefixIcon: PhosphorIconsDuotone.calendarPlus,
+                  readOnly: true,
+                  hint: 'Tap to select date',
                   onTap: _pickDoj,
-                  borderRadius: BorderRadius.circular(16),
-                  child: ValidatedField(
-                    controller: _dojCtrl,
-                    label: 'Date of Joining',
-                    prefixIcon: PhosphorIconsDuotone.calendarPlus,
-                    readOnly: true,
-                    hint: 'Tap to select date',
-                  ),
                 ),
               ),
-              FluidSlideIn(delay: 650, child: ValidatedField(controller: _panCtrl, label: 'PAN Number', prefixIcon: PhosphorIconsDuotone.identificationCard)),
-              FluidSlideIn(delay: 700, child: ValidatedField(controller: _aadhaarCtrl, label: 'Aadhaar Number', prefixIcon: PhosphorIconsDuotone.fingerprint, keyboardType: TextInputType.number)),
-              FluidSlideIn(delay: 750, child: ValidatedField(controller: _pfCtrl, label: 'PF / UAN Number', prefixIcon: PhosphorIconsDuotone.shieldCheck)),
-              FluidSlideIn(delay: 800, child: ValidatedField(controller: _bankCtrl, label: 'Bank Account Number', prefixIcon: PhosphorIconsDuotone.bank, keyboardType: TextInputType.number)),
-              FluidSlideIn(delay: 850, child: ValidatedField(controller: _ifscCtrl, label: 'Bank IFSC', prefixIcon: PhosphorIconsDuotone.buildings)),
-              FluidSlideIn(delay: 900, child: ValidatedField(controller: _upiCtrl, label: 'UPI ID', prefixIcon: PhosphorIconsDuotone.qrCode)),
+              FluidSlideIn(delay: 650, child: ValidatedField(controller: _panCtrl, label: 'PAN Number (Optional)', prefixIcon: PhosphorIconsDuotone.identificationCard)),
+              FluidSlideIn(delay: 700, child: ValidatedField(controller: _aadhaarCtrl, label: 'Aadhaar Number (Optional)', prefixIcon: PhosphorIconsDuotone.fingerprint, keyboardType: TextInputType.number)),
+              FluidSlideIn(delay: 750, child: ValidatedField(controller: _pfCtrl, label: 'PF / UAN Number (Optional)', prefixIcon: PhosphorIconsDuotone.shieldCheck)),
+              FluidSlideIn(delay: 800, child: ValidatedField(controller: _bankCtrl, label: 'Bank Account Number (Optional)', prefixIcon: PhosphorIconsDuotone.bank, keyboardType: TextInputType.number)),
+              FluidSlideIn(delay: 850, child: ValidatedField(controller: _ifscCtrl, label: 'Bank IFSC (Optional)', prefixIcon: PhosphorIconsDuotone.buildings)),
+              FluidSlideIn(delay: 900, child: ValidatedField(controller: _upiCtrl, label: 'UPI ID (Optional)', prefixIcon: PhosphorIconsDuotone.qrCode)),
 
               const SizedBox(height: 48),
 
@@ -405,11 +402,11 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                 child: Text('EMERGENCY & ADDRESS', style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w900, color: cs.primary, letterSpacing: 1.0)),
               ),
               const SizedBox(height: 16),
-              FluidSlideIn(delay: 1000, child: ValidatedField(controller: _emergencyNameCtrl, label: 'Emergency Contact Name', prefixIcon: PhosphorIconsDuotone.userFocus)),
-              FluidSlideIn(delay: 1050, child: ValidatedField(controller: _emergencyPhoneCtrl, label: 'Emergency Contact Phone', prefixIcon: PhosphorIconsDuotone.phoneCall, keyboardType: TextInputType.phone)),
-              FluidSlideIn(delay: 1100, child: ValidatedField(controller: _currentAddrCtrl, label: 'Current Address', prefixIcon: PhosphorIconsDuotone.house, maxLines: 2)),
-              FluidSlideIn(delay: 1150, child: ValidatedField(controller: _permAddrCtrl, label: 'Permanent Address', prefixIcon: PhosphorIconsDuotone.mapPin, maxLines: 2)),
-              FluidSlideIn(delay: 1200, child: ValidatedField(controller: _healthCtrl, label: 'Health Notes', prefixIcon: PhosphorIconsDuotone.firstAid, maxLines: 2)),
+              FluidSlideIn(delay: 1000, child: ValidatedField(controller: _emergencyNameCtrl, label: 'Emergency Contact Name (Optional)', prefixIcon: PhosphorIconsDuotone.userFocus)),
+              FluidSlideIn(delay: 1050, child: ValidatedField(controller: _emergencyPhoneCtrl, label: 'Emergency Contact Phone (Optional)', prefixIcon: PhosphorIconsDuotone.phoneCall, keyboardType: TextInputType.phone)),
+              FluidSlideIn(delay: 1100, child: ValidatedField(controller: _currentAddrCtrl, label: 'Current Address (Optional)', prefixIcon: PhosphorIconsDuotone.house, maxLines: 2)),
+              FluidSlideIn(delay: 1150, child: ValidatedField(controller: _permAddrCtrl, label: 'Permanent Address (Optional)', prefixIcon: PhosphorIconsDuotone.mapPin, maxLines: 2)),
+              FluidSlideIn(delay: 1200, child: ValidatedField(controller: _healthCtrl, label: 'Health Notes (Optional)', prefixIcon: PhosphorIconsDuotone.firstAid, maxLines: 2)),
             ],
           ),
 
@@ -498,7 +495,7 @@ class _ShiftSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Default Shift', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: cs.onSurfaceVariant)),
+        Text('Default Shift (Optional)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: cs.onSurfaceVariant)),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
@@ -538,7 +535,7 @@ class _ShiftSelector extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(child: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w700))),
                       const SizedBox(width: 8),
-                      Text('${s.startTime}-${s.endTime}', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                      Text('${formatTime(s.startTime)}-${formatTime(s.endTime)}', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 )),

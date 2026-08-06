@@ -210,21 +210,13 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                       onPressed: () async {
                         final emp = _profile;
                         if (emp == null || emp['id'] == null) return;
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            title: const Text('Delete Employee', style: TextStyle(fontWeight: FontWeight.w800)),
-                            content: Text('Permanently deactivate ${emp['name'] ?? 'this employee'}? They will no longer be able to log in.'),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700))),
-                              FilledButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                style: FilledButton.styleFrom(backgroundColor: cs.error),
-                                child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w700)),
-                              ),
-                            ],
-                          ),
+                        final confirmed = await showConfirmDialog(
+                          context,
+                          title: 'Delete Employee',
+                          message: 'Permanently deactivate ${emp['name'] ?? 'this employee'}? They will no longer be able to log in.',
+                          confirmLabel: 'Delete',
+                          icon: PhosphorIconsRegular.trash,
+                          isDestructive: true,
                         );
                         if (confirmed == true && mounted) {
                           try {
@@ -307,17 +299,12 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () async {
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            title: const Text('Settle Account', style: TextStyle(fontWeight: FontWeight.w800)),
-                            content: const Text('This will zero out the outstanding balance. This action cannot be undone.'),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700))),
-                              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Settle', style: TextStyle(fontWeight: FontWeight.w700))),
-                            ],
-                          ),
+                        final confirmed = await showConfirmDialog(
+                          context,
+                          title: 'Settle Account',
+                          message: 'This will zero out the outstanding balance. This action cannot be undone.',
+                          confirmLabel: 'Settle',
+                          icon: PhosphorIconsRegular.currencyCircleDollar,
                         );
                         if (confirmed != true) return;
                         HapticFeedback.lightImpact();
@@ -352,7 +339,18 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                           final dir = await getTemporaryDirectory();
                           final file = File('${dir.path}/payslip_${widget.employeeId}_${start}_$end.pdf');
                           await file.writeAsBytes(pdf);
-                          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Payslip saved to ${file.path}')));
+                          if (context.mounted) {
+                            await showInfoDialog(
+                              context,
+                              title: 'Payslip Ready',
+                              message: 'The payslip has been generated. Would you like to open it?',
+                              buttonLabel: 'Open',
+                              icon: PhosphorIconsRegular.filePdf,
+                              onButtonPressed: () async {
+                                await launchUrl(Uri.file(file.path), mode: LaunchMode.externalApplication);
+                              },
+                            );
+                          }
                         } catch (e) {
                           if (context.mounted) showError(context, e);
                         }
@@ -485,7 +483,7 @@ class _InfoTab extends StatelessWidget {
     final shiftEnd = profile?['shift_end_time'] as String?;
     final shiftLabel = shiftName != null && shiftName.isNotEmpty
         ? (shiftStart != null && shiftStart.isNotEmpty
-            ? '$shiftName ($shiftStart–$shiftEnd)'
+            ? '$shiftName (${formatTime(shiftStart)}–${formatTime(shiftEnd)})'
             : shiftName)
         : 'Not assigned';
 
@@ -691,21 +689,13 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
   }
 
   Future<void> _delete(String type) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Document', style: TextStyle(fontWeight: FontWeight.w800)),
-        content: const Text('Remove this document? This cannot be undone.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700))),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),
-            child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Delete Document',
+      message: 'Remove this document? This cannot be undone.',
+      confirmLabel: 'Delete',
+      icon: PhosphorIconsRegular.trash,
+      isDestructive: true,
     );
     if (confirmed != true || !mounted) return;
     try {
@@ -1081,7 +1071,7 @@ class _TimelineRow extends StatelessWidget {
             child: Icon(icon, size: 16, color: color),
           ),
           const SizedBox(width: 16),
-          Text(date, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+          Text(formatDate(date), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
           const Spacer(),
           Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w800)),
         ],
@@ -1161,7 +1151,7 @@ class _LedgerEntryRow extends StatelessWidget {
             children: [
               Text(isJama ? 'Wage Added' : 'Advance Taken', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
               const SizedBox(height: 4),
-              Text(date, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
+              Text(formatDate(date), style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
             ],
           ),
           const Spacer(),

@@ -14,6 +14,7 @@ class ValidatedField extends StatefulWidget {
   final int? maxLines;
   final String? Function(String?)? validator;
   final ValueChanged<String>? onChanged;
+  final VoidCallback? onTap;
 
   const ValidatedField({
     super.key,
@@ -28,6 +29,7 @@ class ValidatedField extends StatefulWidget {
     this.maxLines,
     this.validator,
     this.onChanged,
+    this.onTap,
   });
 
   @override
@@ -121,6 +123,7 @@ class _ValidatedFieldState extends State<ValidatedField> {
                     fontWeight: FontWeight.w600,
                     color: widget.enabled ? cs.onSurface : cs.onSurfaceVariant,
                   ),
+                  onTap: widget.readOnly ? widget.onTap : null,
                   onChanged: (val) {
                     state.didChange(val);
                     if (widget.onChanged != null) widget.onChanged!(val);

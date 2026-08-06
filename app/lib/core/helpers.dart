@@ -16,6 +16,51 @@ double safeToDouble(dynamic value, [double fallback = 0.0]) {
   return fallback;
 }
 
+String _ordinal(int day) {
+  if (day >= 11 && day <= 13) return '${day}th';
+  switch (day % 10) {
+    case 1: return '${day}st';
+    case 2: return '${day}nd';
+    case 3: return '${day}rd';
+    default: return '${day}th';
+  }
+}
+
+const _months = [
+  '', 'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+String formatDate(dynamic date) {
+  DateTime? dt;
+  if (date is DateTime) {
+    dt = date;
+  } else if (date is String) {
+    dt = DateTime.tryParse(date);
+  }
+  if (dt == null) return '$date';
+  final now = DateTime.now();
+  final day = _ordinal(dt.day);
+  final month = _months[dt.month];
+  if (dt.year == now.year) {
+    return '$day $month';
+  }
+  return '$day $month, ${dt.year}';
+}
+
+String formatTime(dynamic time) {
+  if (time == null || time == '') return '';
+  final s = time.toString();
+  final parts = s.split(':');
+  if (parts.length < 2) return s;
+  final h = int.tryParse(parts[0]) ?? 0;
+  final m = parts[1];
+  if (h == 0) return '12:$m AM';
+  if (h < 12) return '$h:$m AM';
+  if (h == 12) return '12:$m PM';
+  return '${h - 12}:$m PM';
+}
+
 String getInitials(String name) {
   return name.split(' ').where((e) => e.isNotEmpty).map((e) => e[0]).take(2).join().toUpperCase();
 }
@@ -47,5 +92,103 @@ Widget sheetHandle(ColorScheme cs) {
   return Container(
     width: 40, height: 4,
     decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2)),
+  );
+}
+
+Future<bool?> showConfirmDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String confirmLabel,
+  IconData? icon,
+  Color? iconColor,
+  Color? confirmColor,
+  bool isDestructive = false,
+}) {
+  final cs = Theme.of(context).colorScheme;
+  final tt = Theme.of(context).textTheme;
+  final effectiveIconColor = iconColor ?? (isDestructive ? cs.error : cs.primary);
+  final effectiveConfirmColor = confirmColor ?? (isDestructive ? cs.error : cs.primary);
+
+  return showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      icon: icon != null
+          ? Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: effectiveIconColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 32, color: effectiveIconColor),
+            )
+          : null,
+      title: Text(title, style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5), textAlign: TextAlign.center),
+      content: Text(message, style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.5), textAlign: TextAlign.center),
+      actionsAlignment: MainAxisAlignment.center,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text('Cancel', style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          style: FilledButton.styleFrom(
+            backgroundColor: effectiveConfirmColor,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: Text(confirmLabel, style: const TextStyle(fontWeight: FontWeight.w700)),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> showInfoDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String buttonLabel,
+  IconData? icon,
+  Color? iconColor,
+  VoidCallback? onButtonPressed,
+}) {
+  final cs = Theme.of(context).colorScheme;
+  final tt = Theme.of(context).textTheme;
+  final effectiveIconColor = iconColor ?? cs.primary;
+
+  return showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      icon: icon != null
+          ? Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: effectiveIconColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 32, color: effectiveIconColor),
+            )
+          : null,
+      title: Text(title, style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5), textAlign: TextAlign.center),
+      content: Text(message, style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.5), textAlign: TextAlign.center),
+      actionsAlignment: MainAxisAlignment.center,
+      actions: [
+        FilledButton(
+          onPressed: () {
+            Navigator.pop(ctx);
+            onButtonPressed?.call();
+          },
+          style: FilledButton.styleFrom(
+            backgroundColor: effectiveIconColor,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            minimumSize: const Size(120, 44),
+          ),
+          child: Text(buttonLabel, style: const TextStyle(fontWeight: FontWeight.w700)),
+        ),
+      ],
+    ),
   );
 }

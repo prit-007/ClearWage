@@ -5,6 +5,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../providers/providers.dart';
 import '../dashboard/dashboard_page.dart';
 import '../../core/helpers.dart';
+import '../../core/logger.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
 import '../../core/widgets/employee_avatar.dart';
@@ -27,8 +28,9 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
   void initState() {
     super.initState();
     final now = DateTime.now();
+    final monthEnd = DateTime(now.year, now.month + 1, 0);
     _start = DateTime(now.year, now.month, 1);
-    _end = DateTime(now.year, now.month + 1, 0);
+    _end = monthEnd.isAfter(now) ? now : monthEnd;
     _loadData();
   }
 
@@ -36,45 +38,47 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
   String get _endStr => '${_end.year}-${_end.month.toString().padLeft(2, '0')}-${_end.day.toString().padLeft(2, '0')}';
 
   Future<void> _loadData() async {
+    AppLogger.info('Payroll: Loading data for $_startStr to $_endStr');
     setState(() { _loading = true; _error = null; });
     try {
       final result = await ref.read(payrollServiceProvider).calculate(startDate: _startStr, endDate: _endStr);
+      AppLogger.info('Payroll: Loaded ${result.entries.length} entries, total wage ₹${result.totalWage}');
       if (mounted) {
         final data = result.toJson();
         setState(() { _data = data; _loading = false; });
         _initializeControllers(data);
       }
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.error('Payroll: Failed to load data', e, st);
       if (mounted) setState(() { _error = '$e'; _loading = false; });
     }
   }
 
   Future<void> _lockPayroll() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Lock Payroll'),
-        content: const Text('Once locked, payroll cannot be modified for this period. Proceed?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Lock')),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Lock Payroll',
+      message: 'Once locked, payroll cannot be modified for this period. Proceed?',
+      confirmLabel: 'Lock',
+      icon: PhosphorIconsRegular.lock,
     );
-    if (confirmed != true) return;
-    HapticFeedback.heavyImpact();
+    if (confirmed != true) { AppLogger.info('Payroll: Lock cancelled by user'); return; }
+    if (!mounted) return;
     setState(() => _locking = true);
     try {
       final entries = (_data?['entries'] as List<dynamic>?) ?? [];
+      AppLogger.info('Payroll: Locking ${entries.length} entries for $_startStr to $_endStr');
       final adjustments = _rowControllers.asMap().entries.map((e) => {
         'employee_id': entries[e.key]['employee_id'],
         'net_pay': double.tryParse(e.value.text.trim()) ?? safeToDouble(entries[e.key]['net_payable']),
       }).toList();
       await ref.read(payrollServiceProvider).lockMonth(startDate: _startStr, endDate: _endStr, adjustments: adjustments);
+      AppLogger.info('Payroll: Lock API succeeded');
       ref.invalidate(dashboardDataProvider);
       ref.read(ledgerRefreshProvider.notifier).state++;
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payroll locked successfully')));
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.error('Payroll: Lock API failed', e, st);
       if (mounted) showError(context, e);
     } finally {
       if (mounted) setState(() => _locking = false);
@@ -112,10 +116,13 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
 
   Future<void> _pickDates() async {
     if (!mounted) return;
-    final start = await showDatePicker(context: context, initialDate: _start, firstDate: DateTime(2024), lastDate: DateTime.now());
-    if (start == null || !mounted) return;
-    final end = await showDatePicker(context: context, initialDate: _end, firstDate: start, lastDate: DateTime.now());
-    if (end == null || !mounted) return;
+    final now = DateTime.now();
+    AppLogger.info('Payroll: Opening date picker, now=$now');
+    final start = await showDatePicker(context: context, initialDate: _start.isAfter(now) ? now : _start, firstDate: DateTime(2024), lastDate: now);
+    if (start == null || !mounted) { AppLogger.info('Payroll: Start date cancelled'); return; }
+    final end = await showDatePicker(context: context, initialDate: _end.isAfter(now) ? now : _end, firstDate: start, lastDate: now);
+    if (end == null || !mounted) { AppLogger.info('Payroll: End date cancelled'); return; }
+    AppLogger.info('Payroll: Date range selected: $_startStr to $_endStr');
     setState(() { _start = start; _end = end; });
     _loadData();
   }
@@ -161,7 +168,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                           Icon(PhosphorIconsFill.calendarBlank, color: cs.primary),
                           const SizedBox(width: 12),
                           Flexible(
-                            child: Text('$_start to $_end', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
+                            child: Text('${formatDate(_start)} to ${formatDate(_end)}', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
                           ),
                           const SizedBox(width: 8),
                           Icon(PhosphorIconsRegular.caretDown, color: cs.onSurfaceVariant, size: 18),

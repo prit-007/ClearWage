@@ -10,6 +10,7 @@ class DashboardData {
   final double dailyJamaTotal;
   final double wageBillMtd;
   final double totalOutstanding;
+  final int defaultersCount;
   final List<ActivityItem> recentActivity;
   final List<AttendanceTrendItem> trends;
 
@@ -22,6 +23,7 @@ class DashboardData {
     required this.dailyJamaTotal,
     required this.wageBillMtd,
     required this.totalOutstanding,
+    this.defaultersCount = 0,
     required this.recentActivity,
     required this.trends,
   });
@@ -44,6 +46,7 @@ class DashboardData {
       dailyJamaTotal: safeToDouble(json['daily_jama_total']),
       wageBillMtd: safeToDouble(json['wage_bill_mtd']),
       totalOutstanding: safeToDouble(json['total_outstanding']),
+      defaultersCount: safeToInt(json['defaulters_count']),
       recentActivity: (json['recent_activity'] as List<dynamic>?)
               ?.map((e) => ActivityItem.fromJson(e as Map<String, dynamic>))
               .toList() ??

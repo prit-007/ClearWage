@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'core/logger.dart';
+import 'core/helpers.dart';
 import 'features/attendance/attendance_roster_page.dart' as roster;
 import 'features/dashboard/dashboard_page.dart';
 import 'features/staff/staff_directory_page.dart';
@@ -115,22 +116,16 @@ class AuthGate extends ConsumerWidget {
     ref.listen<bool>(sessionExpiredProvider, (prev, next) {
       if (next && prev != true) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Session Expired'),
-              content: const Text('Your session has expired. Please sign in again to continue.'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    ref.read(sessionExpiredProvider.notifier).state = false;
-                    Navigator.of(ctx).pop();
-                  },
-                  child: const Text('Sign In'),
-                ),
-              ],
-            ),
+          showInfoDialog(
+            context,
+            title: 'Session Expired',
+            message: 'Your session has expired. Please sign in again to continue.',
+            buttonLabel: 'Sign In',
+            icon: PhosphorIconsRegular.warningCircle,
+            iconColor: Theme.of(context).colorScheme.error,
+            onButtonPressed: () {
+              ref.read(sessionExpiredProvider.notifier).state = false;
+            },
           );
         });
       }

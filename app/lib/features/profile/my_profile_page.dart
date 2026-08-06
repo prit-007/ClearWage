@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/token_storage.dart';
 import '../../core/app_config.dart';
 import '../../models/attendance_model.dart';
@@ -145,7 +146,18 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
       final dir = await getApplicationDocumentsDirectory();
       final file = File('${dir.path}/payslip_$start.pdf');
       await file.writeAsBytes(bytes);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payslip downloaded successfully')));
+      if (mounted) {
+        await showInfoDialog(
+          context,
+          title: 'Payslip Ready',
+          message: 'Your payslip has been generated. Would you like to open it?',
+          buttonLabel: 'Open',
+          icon: PhosphorIconsRegular.filePdf,
+          onButtonPressed: () async {
+            await launchUrl(Uri.file(file.path), mode: LaunchMode.externalApplication);
+          },
+        );
+      }
     } catch (e) {
       if (mounted) showError(context, e);
     } finally {
@@ -378,17 +390,13 @@ class _ProfileTab extends ConsumerWidget {
           delay: 100,
           child: OutlinedButton.icon(
             onPressed: () async {
-              final confirmed = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w800)),
-                  content: const Text('Are you sure you want to end your current session?'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700))),
-                    FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: cs.error), child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w700))),
-                  ],
-                ),
+              final confirmed = await showConfirmDialog(
+                context,
+                title: 'Sign Out',
+                message: 'Are you sure you want to end your current session?',
+                confirmLabel: 'Sign Out',
+                icon: PhosphorIconsRegular.signOut,
+                isDestructive: true,
               );
               if (confirmed != true) return;
               await ref.read(authServiceProvider).logout();
@@ -412,17 +420,13 @@ class _ProfileTab extends ConsumerWidget {
             delay: 150,
             child: FilledButton.icon(
               onPressed: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    title: const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.w800)),
-                    content: const Text('This will permanently delete your account and all associated data. This action cannot be undone.'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700))),
-                      FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: cs.error), child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w700))),
-                    ],
-                  ),
+                final confirmed = await showConfirmDialog(
+                  context,
+                  title: 'Delete Account',
+                  message: 'This will permanently delete your account and all associated data. This action cannot be undone.',
+                  confirmLabel: 'Delete',
+                  icon: PhosphorIconsRegular.warningCircle,
+                  isDestructive: true,
                 );
                 if (confirmed != true) return;
                 try {
@@ -562,7 +566,7 @@ class _MyAttendanceTab extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        Text(list[i].date, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                        Text(formatDate(list[i].date), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                         const Spacer(),
                         Text(list[i].status.toUpperCase(), style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5, color: cs.onSurfaceVariant)),
                       ],
@@ -697,7 +701,7 @@ class _LedgerEntryRow extends StatelessWidget {
             children: [
               Text(isJama ? 'Wage Added' : 'Advance Taken', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
               const SizedBox(height: 4),
-              Text(date, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
+              Text(formatDate(date), style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
             ],
           ),
           const Spacer(),

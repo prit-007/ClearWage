@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/ledger_model.dart';
 import '../../providers/providers.dart';
+import '../../core/helpers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
 
@@ -349,7 +350,7 @@ class _LedgerRow extends StatelessWidget {
           children: [
             Icon(PhosphorIconsRegular.calendarBlank, size: 12, color: cs.onSurfaceVariant),
             const SizedBox(width: 4),
-            Text(entry.date, style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+            Text(formatDate(entry.date), style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
           ],
         ),
         trailing: Column(

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import 'package:intl/intl.dart';
 import '../../providers/providers.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/employee_avatar.dart';
@@ -526,8 +525,8 @@ class _PremiumDatePicker extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                     isToday
-                        ? 'Today, ${DateFormat('MMM d').format(date)}'
-                        : DateFormat('dd MMM yyyy').format(date),
+                        ? 'Today, ${formatDate(date)}'
+                        : formatDate(date),
                     style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: cs.onSurface,

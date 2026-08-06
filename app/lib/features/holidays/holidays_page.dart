@@ -93,16 +93,13 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
   }
 
   Future<void> _deleteHoliday(String id) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Holiday'),
-        content: const Text('Are you sure you want to delete this holiday?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error))),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Delete Holiday',
+      message: 'Are you sure you want to delete this holiday?',
+      confirmLabel: 'Delete',
+      icon: PhosphorIconsRegular.trash,
+      isDestructive: true,
     );
     if (confirmed != true) return;
     HapticFeedback.heavyImpact();
@@ -341,13 +338,13 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
 
               ValidatedField(
                 controller: _nameCtrl,
-                label: 'Holiday Name',
+                label: 'Holiday Name *',
                 prefixIcon: PhosphorIconsRegular.sparkle,
                 validator: (v) => v == null || v.trim().isEmpty ? 'Enter holiday name' : null,
               ),
               const SizedBox(height: 24),
 
-              Text('Date', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: cs.onSurfaceVariant)),
+              Text('Date *', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: cs.onSurfaceVariant)),
               const SizedBox(height: 8),
               InkWell(
                 onTap: () async {
@@ -373,7 +370,7 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
                       Icon(PhosphorIconsRegular.calendarBlank, color: _dateError != null ? cs.error : cs.onSurfaceVariant),
                       const SizedBox(width: 16),
                       Text(
-                        _selectedDate == null ? 'Select Date' : DateFormat('dd MMM yyyy').format(_selectedDate!),
+                        _selectedDate == null ? 'Select Date' : formatDate(_selectedDate!),
                         style: TextStyle(fontWeight: FontWeight.w700, color: _selectedDate == null ? cs.onSurfaceVariant : cs.onSurface, fontSize: 16),
                       ),
                     ],

@@ -9,9 +9,14 @@ class HolidayService {
     final query = <String, String>{};
     if (limit != null) query['limit'] = limit.toString();
     if (offset != null) query['offset'] = offset.toString();
-    final res = await _client.get('/api/v1/holidays', query: query.isNotEmpty ? query : null);
+    final res = await _client.get(
+      '/api/v1/holidays',
+      query: query.isNotEmpty ? query : null,
+    );
     final list = (res['data'] as List<dynamic>?) ?? [];
-    return list.map((e) => Holiday.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => Holiday.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<Holiday> create(Map<String, dynamic> body) async {

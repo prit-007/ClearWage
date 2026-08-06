@@ -20,7 +20,9 @@ class GlassStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final trendColor = isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final trendColor = isPositive
+        ? const Color(0xFF10B981)
+        : const Color(0xFFEF4444);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
@@ -36,19 +38,47 @@ class GlassStatCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value, style: tt.headlineMedium?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -1.0)),
+              Text(
+                value,
+                style: tt.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -1.0,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(label, style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+              Text(
+                label,
+                style: tt.labelSmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: trendColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(
+                  color: trendColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(isPositive ? PhosphorIconsBold.trendUp : PhosphorIconsBold.trendDown, size: 12, color: trendColor),
+                    Icon(
+                      isPositive
+                          ? PhosphorIconsBold.trendUp
+                          : PhosphorIconsBold.trendDown,
+                      size: 12,
+                      color: trendColor,
+                    ),
                     const SizedBox(width: 4),
-                    Text(trend, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: trendColor)),
+                    Text(
+                      trend,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: trendColor,
+                      ),
+                    ),
                   ],
                 ),
               ),

@@ -26,25 +26,36 @@ class ApiClient {
     return h;
   }
 
-  Future<Map<String, dynamic>> get(String path,
-      {Map<String, String>? query}) async {
-    final uri =
-        Uri.parse('$baseUrl$path').replace(queryParameters: query);
+  Future<Map<String, dynamic>> get(
+    String path, {
+    Map<String, String>? query,
+  }) async {
+    final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
     return _request('GET', path, () => http.get(uri, headers: _headers));
   }
 
-  Future<Map<String, dynamic>> post(String path,
-      {Map<String, dynamic>? body}) async {
+  Future<Map<String, dynamic>> post(
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
     final uri = Uri.parse('$baseUrl$path');
-    return _request('POST', path, () =>
-        http.post(uri, headers: _headers, body: jsonEncode(body)));
+    return _request(
+      'POST',
+      path,
+      () => http.post(uri, headers: _headers, body: jsonEncode(body)),
+    );
   }
 
-  Future<Map<String, dynamic>> put(String path,
-      {Map<String, dynamic>? body}) async {
+  Future<Map<String, dynamic>> put(
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
     final uri = Uri.parse('$baseUrl$path');
-    return _request('PUT', path, () =>
-        http.put(uri, headers: _headers, body: jsonEncode(body)));
+    return _request(
+      'PUT',
+      path,
+      () => http.put(uri, headers: _headers, body: jsonEncode(body)),
+    );
   }
 
   Future<List<int>> getRaw(String path, {Map<String, String>? query}) async {
@@ -53,7 +64,12 @@ class ApiClient {
     try {
       final res = await http.get(uri, headers: _headers).timeout(_timeout);
       sw.stop();
-      AppLogger.request('GET', path, status: res.statusCode, duration: sw.elapsed);
+      AppLogger.request(
+        'GET',
+        path,
+        status: res.statusCode,
+        duration: sw.elapsed,
+      );
       if (res.statusCode >= 200 && res.statusCode < 300) return res.bodyBytes;
       final json = jsonDecode(res.body) as Map<String, dynamic>;
       final msg = json['message'] as String? ?? 'Unknown error';
@@ -69,9 +85,16 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$path');
     final sw = Stopwatch()..start();
     try {
-      final res = await http.post(uri, headers: _headers, body: jsonEncode(body)).timeout(_timeout);
+      final res = await http
+          .post(uri, headers: _headers, body: jsonEncode(body))
+          .timeout(_timeout);
       sw.stop();
-      AppLogger.request('POST', path, status: res.statusCode, duration: sw.elapsed);
+      AppLogger.request(
+        'POST',
+        path,
+        status: res.statusCode,
+        duration: sw.elapsed,
+      );
       if (res.statusCode >= 200 && res.statusCode < 300) return res.bodyBytes;
       final json = jsonDecode(res.body) as Map<String, dynamic>;
       final msg = json['message'] as String? ?? 'Unknown error';
@@ -105,7 +128,12 @@ class ApiClient {
       final streamed = await req.send().timeout(_timeout);
       final res = await http.Response.fromStream(streamed);
       sw.stop();
-      AppLogger.request('POST', path, status: res.statusCode, duration: sw.elapsed);
+      AppLogger.request(
+        'POST',
+        path,
+        status: res.statusCode,
+        duration: sw.elapsed,
+      );
       return _handle(res);
     } catch (e, st) {
       sw.stop();
@@ -137,7 +165,12 @@ class ApiClient {
     try {
       final res = await fn().timeout(_timeout);
       sw.stop();
-      AppLogger.request(method, path, status: res.statusCode, duration: sw.elapsed);
+      AppLogger.request(
+        method,
+        path,
+        status: res.statusCode,
+        duration: sw.elapsed,
+      );
       return _handle(res);
     } catch (e, st) {
       sw.stop();

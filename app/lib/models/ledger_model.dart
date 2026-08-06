@@ -25,23 +25,23 @@ class LedgerEntry {
   bool get isUdhaar => type == 'udhaar';
 
   factory LedgerEntry.fromJson(Map<String, dynamic> json) => LedgerEntry(
-        id: json['id'] as String? ?? '',
-        employeeId: json['employee_id'] as String? ?? '',
-        employeeName: json['employee_name'] as String? ?? '',
-        employeePhoto: json['employee_photo'] as String?,
-        date: json['date'] as String? ?? '',
-        type: json['type'] as String? ?? '',
-        amount: safeToDouble(json['amount']),
-        note: json['note'] as String?,
-      );
+    id: json['id'] as String? ?? '',
+    employeeId: json['employee_id'] as String? ?? '',
+    employeeName: json['employee_name'] as String? ?? '',
+    employeePhoto: json['employee_photo'] as String?,
+    date: json['date'] as String? ?? '',
+    type: json['type'] as String? ?? '',
+    amount: safeToDouble(json['amount']),
+    note: json['note'] as String?,
+  );
 
   Map<String, dynamic> toJson() => {
-        'employee_id': employeeId,
-        'date': date,
-        'type': type,
-        'amount': amount,
-        'note': note,
-      };
+    'employee_id': employeeId,
+    'date': date,
+    'type': type,
+    'amount': amount,
+    'note': note,
+  };
 }
 
 class LedgerSummary {
@@ -60,10 +60,10 @@ class LedgerSummary {
   });
 
   factory LedgerSummary.fromJson(Map<String, dynamic> json) => LedgerSummary(
-        jamaTotal: safeToDouble(json['jama_total']),
-        udhaarTotal: safeToDouble(json['udhaar_total']),
-        netBalance: safeToDouble(json['net_balance']),
-        totalOutstanding: safeToDouble(json['total_outstanding']),
-        entryCount: safeToInt(json['entry_count']),
-      );
+    jamaTotal: safeToDouble(json['jama_total']),
+    udhaarTotal: safeToDouble(json['udhaar_total']),
+    netBalance: safeToDouble(json['net_balance']),
+    totalOutstanding: safeToDouble(json['total_outstanding']),
+    entryCount: safeToInt(json['entry_count']),
+  );
 }

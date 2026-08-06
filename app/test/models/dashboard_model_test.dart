@@ -14,7 +14,11 @@ void main() {
         'wage_bill_mtd': 2500000.50,
         'total_outstanding': 150000.00,
         'recent_activity': [
-          {'action': 'mark_present', 'description': 'Marked 10 present', 'created_at': '2026-01-15T09:00:00Z'},
+          {
+            'action': 'mark_present',
+            'description': 'Marked 10 present',
+            'created_at': '2026-01-15T09:00:00Z',
+          },
         ],
         'trends': [
           {'date': '2026-01-01', 'present': 45, 'absent': 5},
@@ -114,15 +118,18 @@ void main() {
       expect(item.createdAt, '2026-01-15T09:00:00Z');
     });
 
-    test('fromJson falls back to action+entity_type when description is null', () {
-      final json = {
-        'action': 'create',
-        'entity_type': 'employee',
-        'created_at': '2026-01-15T09:00:00Z',
-      };
+    test(
+      'fromJson falls back to action+entity_type when description is null',
+      () {
+        final json = {
+          'action': 'create',
+          'entity_type': 'employee',
+          'created_at': '2026-01-15T09:00:00Z',
+        };
 
-      final item = ActivityItem.fromJson(json);
-      expect(item.description, 'create employee');
-    });
+        final item = ActivityItem.fromJson(json);
+        expect(item.description, 'create employee');
+      },
+    );
   });
 }

@@ -15,7 +15,8 @@ class EmployeeDocument {
     this.uploadedAt,
   });
 
-  factory EmployeeDocument.fromJson(Map<String, dynamic> json) => EmployeeDocument(
+  factory EmployeeDocument.fromJson(Map<String, dynamic> json) =>
+      EmployeeDocument(
         id: json['id'] as String? ?? '',
         docType: json['doc_type'] as String? ?? '',
         filePath: json['file_path'] as String? ?? '',
@@ -26,15 +27,16 @@ class EmployeeDocument {
             : null,
       );
 
-  bool get isPdf => filePath.toLowerCase().endsWith('.pdf') ||
+  bool get isPdf =>
+      filePath.toLowerCase().endsWith('.pdf') ||
       (originalName?.toLowerCase().endsWith('.pdf') ?? false);
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'doc_type': docType,
-        'file_path': filePath,
-        'public_id': publicId,
-        'original_name': originalName,
-        'uploaded_at': uploadedAt?.toIso8601String(),
-      };
+    'id': id,
+    'doc_type': docType,
+    'file_path': filePath,
+    'public_id': publicId,
+    'original_name': originalName,
+    'uploaded_at': uploadedAt?.toIso8601String(),
+  };
 }

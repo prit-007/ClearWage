@@ -43,8 +43,21 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
         'factory_phone': _contactCtrl.text.trim(),
         'factory_address': address.isEmpty ? null : address,
         'shifts': [
-          {'name': 'General Shift', 'start_time': '08:00', 'end_time': '17:00', 'grace_period_minutes': 15, 'is_default': true},
-          {'name': 'Night Shift', 'start_time': '22:00', 'end_time': '06:00', 'crosses_midnight': true, 'grace_period_minutes': 15, 'is_default': false},
+          {
+            'name': 'General Shift',
+            'start_time': '08:00',
+            'end_time': '17:00',
+            'grace_period_minutes': 15,
+            'is_default': true,
+          },
+          {
+            'name': 'Night Shift',
+            'start_time': '22:00',
+            'end_time': '06:00',
+            'crosses_midnight': true,
+            'grace_period_minutes': 15,
+            'is_default': false,
+          },
         ],
         'ot_settings': {
           'ot_trigger': _otTrigger == 0 ? "after_shift_end" : "after_threshold",
@@ -55,11 +68,17 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
           'week_off_paid': _weekOffPaid,
           'weekly_offs': '0,6',
         },
-        'leave_policy': {'paid_leave_days_per_year': 12, 'unpaid_leave_days_per_year': 0},
+        'leave_policy': {
+          'paid_leave_days_per_year': 12,
+          'unpaid_leave_days_per_year': 0,
+        },
         'holidays': <Map<String, dynamic>>[],
       });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save setup: $e')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save setup: $e')));
     } finally {
       if (mounted) setState(() => _creatingShifts = false);
     }
@@ -75,13 +94,15 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
     if (_currentStep < _totalSteps - 1) {
       FocusScope.of(context).unfocus();
       _pageCtrl.nextPage(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.fastOutSlowIn);
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.fastOutSlowIn,
+      );
       setState(() => _currentStep++);
     } else {
       HapticFeedback.heavyImpact();
       _setupFactory().then((_) {
-        if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+        if (mounted)
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
       });
     }
   }
@@ -91,8 +112,9 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
     if (_currentStep > 0) {
       FocusScope.of(context).unfocus();
       _pageCtrl.previousPage(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.fastOutSlowIn);
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.fastOutSlowIn,
+      );
       setState(() => _currentStep--);
     }
   }
@@ -107,9 +129,10 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('Setup Factory',
-            style:
-                tt.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+        title: Text(
+          'Setup Factory',
+          style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
         centerTitle: true,
         actions: [
           TextButton(
@@ -117,10 +140,11 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
               HapticFeedback.lightImpact();
               Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
             },
-            style: TextButton.styleFrom(
-                foregroundColor: cs.onSurfaceVariant),
-            child: const Text('Skip',
-                style: TextStyle(fontWeight: FontWeight.w600)),
+            style: TextButton.styleFrom(foregroundColor: cs.onSurfaceVariant),
+            child: const Text(
+              'Skip',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
           const SizedBox(width: 8),
         ],
@@ -141,55 +165,68 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
               physics: const NeverScrollableScrollPhysics(),
               children: [
                 _AnimatedStepWrapper(
-                    step: 0,
-                    currentStep: _currentStep,
-                    child: _StepProfile(
-                        cs: cs, tt: tt,
-                        companyCtrl: _companyNameCtrl,
-                        addressCtrl: _addressCtrl,
-                        contactCtrl: _contactCtrl)),
+                  step: 0,
+                  currentStep: _currentStep,
+                  child: _StepProfile(
+                    cs: cs,
+                    tt: tt,
+                    companyCtrl: _companyNameCtrl,
+                    addressCtrl: _addressCtrl,
+                    contactCtrl: _contactCtrl,
+                  ),
+                ),
                 _AnimatedStepWrapper(
-                    step: 1,
-                    currentStep: _currentStep,
-                    child: _StepShifts(cs: cs, tt: tt)),
+                  step: 1,
+                  currentStep: _currentStep,
+                  child: _StepShifts(cs: cs, tt: tt),
+                ),
                 _AnimatedStepWrapper(
-                    step: 2,
-                    currentStep: _currentStep,
-                    child: _StepPolicies(
-                        cs: cs,
-                        tt: tt,
-                        otTrigger: _otTrigger,
-                        weekOffPaid: _weekOffPaid,
-                        onChanged: (sel) {
-                          setState(() {
-                            _otTrigger = sel.$1;
-                            _weekOffPaid = sel.$2;
-                          });
-                        })),
+                  step: 2,
+                  currentStep: _currentStep,
+                  child: _StepPolicies(
+                    cs: cs,
+                    tt: tt,
+                    otTrigger: _otTrigger,
+                    weekOffPaid: _weekOffPaid,
+                    onChanged: (sel) {
+                      setState(() {
+                        _otTrigger = sel.$1;
+                        _weekOffPaid = sel.$2;
+                      });
+                    },
+                  ),
+                ),
                 _AnimatedStepWrapper(
-                    step: 3,
-                    currentStep: _currentStep,
-                    child: _StepReview(
-                        cs: cs,
-                        tt: tt,
-                        companyName: _companyNameCtrl,
-                        addressCtrl: _addressCtrl,
-                        contactCtrl: _contactCtrl,
-                        otTrigger: _otTrigger,
-                        weekOffPaid: _weekOffPaid)),
+                  step: 3,
+                  currentStep: _currentStep,
+                  child: _StepReview(
+                    cs: cs,
+                    tt: tt,
+                    companyName: _companyNameCtrl,
+                    addressCtrl: _addressCtrl,
+                    contactCtrl: _contactCtrl,
+                    otTrigger: _otTrigger,
+                    weekOffPaid: _weekOffPaid,
+                  ),
+                ),
               ],
             ),
           ),
           Container(
-            padding: EdgeInsets.fromLTRB(24, 16, 24,
-                MediaQuery.of(context).padding.bottom + 16),
+            padding: EdgeInsets.fromLTRB(
+              24,
+              16,
+              24,
+              MediaQuery.of(context).padding.bottom + 16,
+            ),
             decoration: BoxDecoration(
               color: cs.surface,
               boxShadow: [
                 BoxShadow(
-                    color: cs.shadow.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5)),
+                  color: cs.shadow.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -5),
+                ),
               ],
             ),
             child: Row(
@@ -200,34 +237,45 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.all(16),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       side: BorderSide(color: cs.outlineVariant),
                     ),
-                    child: Icon(PhosphorIconsRegular.caretLeft,
-                        color: cs.onSurface),
+                    child: Icon(
+                      PhosphorIconsRegular.caretLeft,
+                      color: cs.onSurface,
+                    ),
                   ),
                   const SizedBox(width: 16),
                 ],
                 Expanded(
                   child: FilledButton.icon(
                     icon: _creatingShifts
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : const Icon(PhosphorIconsFill.checkCircle),
                     onPressed: _creatingShifts ? null : _nextStep,
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(56),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       elevation: 0,
                     ),
                     label: Text(
                       _currentStep < _totalSteps - 1
                           ? 'Continue'
-                          : _creatingShifts ? 'Setting up...' : 'Complete Setup',
+                          : _creatingShifts
+                          ? 'Setting up...'
+                          : 'Complete Setup',
                       style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),
@@ -245,10 +293,11 @@ class _AnimatedStepProgress extends StatelessWidget {
   final int totalSteps;
   final ColorScheme cs;
 
-  const _AnimatedStepProgress(
-      {required this.currentStep,
-      required this.totalSteps,
-      required this.cs});
+  const _AnimatedStepProgress({
+    required this.currentStep,
+    required this.totalSteps,
+    required this.cs,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -267,30 +316,34 @@ class _AnimatedStepProgress extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? cs.primary
-                      : cs.surfaceContainerHigh,
+                  color: isActive ? cs.primary : cs.surfaceContainerHigh,
                   shape: BoxShape.circle,
                   boxShadow: isActive
                       ? [
                           BoxShadow(
-                              color: cs.primary.withValues(alpha: 0.3),
-                              blurRadius: 8)
+                            color: cs.primary.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                          ),
                         ]
                       : [],
                 ),
                 child: Center(
                   child: isPassed
-                      ? Icon(PhosphorIconsBold.check,
-                          size: 14, color: cs.onPrimary)
-                      : Text('${i + 1}',
+                      ? Icon(
+                          PhosphorIconsBold.check,
+                          size: 14,
+                          color: cs.onPrimary,
+                        )
+                      : Text(
+                          '${i + 1}',
                           style: TextStyle(
                             color: isActive
                                 ? cs.onPrimary
                                 : cs.onSurfaceVariant,
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
-                          )),
+                          ),
+                        ),
                 ),
               ),
               if (!isLast)
@@ -298,12 +351,9 @@ class _AnimatedStepProgress extends StatelessWidget {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     height: 3,
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 8),
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
                     decoration: BoxDecoration(
-                      color: isPassed
-                          ? cs.primary
-                          : cs.surfaceContainerHigh,
+                      color: isPassed ? cs.primary : cs.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -321,10 +371,11 @@ class _AnimatedStepWrapper extends StatelessWidget {
   final int currentStep;
   final Widget child;
 
-  const _AnimatedStepWrapper(
-      {required this.step,
-      required this.currentStep,
-      required this.child});
+  const _AnimatedStepWrapper({
+    required this.step,
+    required this.currentStep,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -355,27 +406,38 @@ class _StepProfile extends StatelessWidget {
   final TextEditingController companyCtrl;
   final TextEditingController addressCtrl;
   final TextEditingController contactCtrl;
-  const _StepProfile(
-      {required this.cs, required this.tt, required this.companyCtrl, required this.addressCtrl, required this.contactCtrl});
+  const _StepProfile({
+    required this.cs,
+    required this.tt,
+    required this.companyCtrl,
+    required this.addressCtrl,
+    required this.contactCtrl,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       children: [
-        Text('Factory Profile',
-            style: tt.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+        Text(
+          'Factory Profile',
+          style: tt.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
+        ),
         const SizedBox(height: 8),
-        Text('Give your workspace an identity.',
-            style: tt.bodyLarge
-                ?.copyWith(color: cs.onSurfaceVariant)),
+        Text(
+          'Give your workspace an identity.',
+          style: tt.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+        ),
         const SizedBox(height: 40),
         ValidatedField(
           controller: companyCtrl,
           label: 'Company Name',
           prefixIcon: PhosphorIconsRegular.buildings,
-          validator: (v) => v == null || v.trim().isEmpty ? 'Enter your company name' : null,
+          validator: (v) =>
+              v == null || v.trim().isEmpty ? 'Enter your company name' : null,
         ),
         const SizedBox(height: 16),
         ValidatedField(
@@ -406,27 +468,34 @@ class _StepShifts extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       children: [
-        Text('Shift Timings',
-            style: tt.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+        Text(
+          'Shift Timings',
+          style: tt.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
+        ),
         const SizedBox(height: 8),
-        Text('Define when your factory floor operates.',
-            style: tt.bodyLarge
-                ?.copyWith(color: cs.onSurfaceVariant)),
+        Text(
+          'Define when your factory floor operates.',
+          style: tt.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+        ),
         const SizedBox(height: 32),
         _ShiftInputCard(
-            cs: cs,
-            label: 'General Shift',
-            start: '08:00 AM',
-            end: '05:00 PM',
-            icon: PhosphorIconsDuotone.sun),
+          cs: cs,
+          label: 'General Shift',
+          start: '08:00 AM',
+          end: '05:00 PM',
+          icon: PhosphorIconsDuotone.sun,
+        ),
         const SizedBox(height: 16),
         _ShiftInputCard(
-            cs: cs,
-            label: 'Night Shift',
-            start: '10:00 PM',
-            end: '06:00 AM',
-            icon: PhosphorIconsDuotone.moonStars),
+          cs: cs,
+          label: 'Night Shift',
+          start: '10:00 PM',
+          end: '06:00 AM',
+          icon: PhosphorIconsDuotone.moonStars,
+        ),
       ],
     );
   }
@@ -437,12 +506,13 @@ class _ShiftInputCard extends StatelessWidget {
   final String label, start, end;
   final dynamic icon;
 
-  const _ShiftInputCard(
-      {required this.cs,
-      required this.label,
-      required this.start,
-      required this.end,
-      required this.icon});
+  const _ShiftInputCard({
+    required this.cs,
+    required this.label,
+    required this.start,
+    required this.end,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -459,23 +529,28 @@ class _ShiftInputCard extends StatelessWidget {
             children: [
               PhosphorIcon(icon, color: cs.primary, size: 24),
               const SizedBox(width: 12),
-              Text(label,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                label,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           const SizedBox(height: 20),
           Row(
             children: [
               Expanded(
-                  child: _PremiumTimePicker(
-                      cs: cs, label: 'Start Time', time: start)),
+                child: _PremiumTimePicker(
+                  cs: cs,
+                  label: 'Start Time',
+                  time: start,
+                ),
+              ),
               const SizedBox(width: 16),
               Expanded(
-                  child: _PremiumTimePicker(
-                      cs: cs, label: 'End Time', time: end)),
+                child: _PremiumTimePicker(cs: cs, label: 'End Time', time: end),
+              ),
             ],
           ),
         ],
@@ -487,8 +562,11 @@ class _ShiftInputCard extends StatelessWidget {
 class _PremiumTimePicker extends StatelessWidget {
   final ColorScheme cs;
   final String label, time;
-  const _PremiumTimePicker(
-      {required this.cs, required this.label, required this.time});
+  const _PremiumTimePicker({
+    required this.cs,
+    required this.label,
+    required this.time,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -496,32 +574,39 @@ class _PremiumTimePicker extends StatelessWidget {
       onTap: () => HapticFeedback.selectionClick(),
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: cs.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: cs.outlineVariant.withValues(alpha: 0.5)),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label,
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: cs.onSurfaceVariant)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 4),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(time,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface)),
-                PhosphorIcon(PhosphorIconsRegular.clock,
-                    size: 16, color: cs.primary),
+                Text(
+                  time,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  ),
+                ),
+                PhosphorIcon(
+                  PhosphorIconsRegular.clock,
+                  size: 16,
+                  color: cs.primary,
+                ),
               ],
             ),
           ],
@@ -538,60 +623,76 @@ class _StepPolicies extends StatelessWidget {
   final bool weekOffPaid;
   final ValueChanged<(int, bool)> onChanged;
 
-  const _StepPolicies({required this.cs, required this.tt, required this.otTrigger, required this.weekOffPaid, required this.onChanged});
+  const _StepPolicies({
+    required this.cs,
+    required this.tt,
+    required this.otTrigger,
+    required this.weekOffPaid,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       children: [
-        Text('Payroll Rules',
-            style: tt.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+        Text(
+          'Payroll Rules',
+          style: tt.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
+        ),
         const SizedBox(height: 8),
-        Text('Set up overtime and calculation rules.',
-            style: tt.bodyLarge
-                ?.copyWith(color: cs.onSurfaceVariant)),
+        Text(
+          'Set up overtime and calculation rules.',
+          style: tt.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+        ),
         const SizedBox(height: 32),
-        Text('When does Overtime start?',
-            style: tt.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          'When does Overtime start?',
+          style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 16),
         _PremiumRadioCard(
-            cs: cs,
-            title: 'After 8 Hours',
-            subtitle: 'Standard global industrial rule',
-            value: 8,
-            groupValue: otTrigger,
-            onChanged: (v) => onChanged((v ?? 8, weekOffPaid))),
+          cs: cs,
+          title: 'After 8 Hours',
+          subtitle: 'Standard global industrial rule',
+          value: 8,
+          groupValue: otTrigger,
+          onChanged: (v) => onChanged((v ?? 8, weekOffPaid)),
+        ),
         const SizedBox(height: 12),
         _PremiumRadioCard(
-            cs: cs,
-            title: 'After 9 Hours',
-            subtitle: 'Includes 1 hour unpaid break',
-            value: 9,
-            groupValue: otTrigger,
-            onChanged: (v) => onChanged((v ?? 9, weekOffPaid))),
+          cs: cs,
+          title: 'After 9 Hours',
+          subtitle: 'Includes 1 hour unpaid break',
+          value: 9,
+          groupValue: otTrigger,
+          onChanged: (v) => onChanged((v ?? 9, weekOffPaid)),
+        ),
         const SizedBox(height: 12),
         _PremiumRadioCard(
-            cs: cs,
-            title: 'No Overtime',
-            subtitle: 'Fixed wages only, regardless of hours',
-            value: 0,
-            groupValue: otTrigger,
-            onChanged: (v) => onChanged((v ?? 0, weekOffPaid))),
+          cs: cs,
+          title: 'No Overtime',
+          subtitle: 'Fixed wages only, regardless of hours',
+          value: 0,
+          groupValue: otTrigger,
+          onChanged: (v) => onChanged((v ?? 0, weekOffPaid)),
+        ),
         const SizedBox(height: 32),
-        Text('Additional Configurations',
-            style: tt.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          'Additional Configurations',
+          style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 16),
         _PremiumSwitch(
-            cs: cs,
-            title: 'Enable Week-Off Pay',
-            subtitle:
-                'Pay workers for Sunday if they work Mon-Sat',
-            value: weekOffPaid,
-            onChanged: (v) => onChanged((otTrigger, v))),
+          cs: cs,
+          title: 'Enable Week-Off Pay',
+          subtitle: 'Pay workers for Sunday if they work Mon-Sat',
+          value: weekOffPaid,
+          onChanged: (v) => onChanged((otTrigger, v)),
+        ),
       ],
     );
   }
@@ -603,7 +704,13 @@ class _PremiumSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
 
-  const _PremiumSwitch({required this.cs, required this.title, required this.subtitle, required this.value, required this.onChanged});
+  const _PremiumSwitch({
+    required this.cs,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -616,13 +723,15 @@ class _PremiumSwitch extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 2),
-                Text(subtitle,
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: cs.onSurfaceVariant)),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                ),
               ],
             ),
           ),
@@ -643,13 +752,14 @@ class _PremiumRadioCard extends StatelessWidget {
   final int value, groupValue;
   final ValueChanged<int?> onChanged;
 
-  const _PremiumRadioCard(
-      {required this.cs,
-      required this.title,
-      required this.subtitle,
-      required this.value,
-      required this.groupValue,
-      required this.onChanged});
+  const _PremiumRadioCard({
+    required this.cs,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.groupValue,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -666,37 +776,38 @@ class _PremiumRadioCard extends StatelessWidget {
               : cs.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-              color: isSelected
-                  ? cs.primary
-                  : cs.outlineVariant.withValues(alpha: 0.5),
-              width: isSelected ? 2 : 1),
+            color: isSelected
+                ? cs.primary
+                : cs.outlineVariant.withValues(alpha: 0.5),
+            width: isSelected ? 2 : 1,
+          ),
         ),
         child: Row(
           children: [
             PhosphorIcon(
-                isSelected
-                    ? PhosphorIconsFill.radioButton
-                    : PhosphorIconsRegular.circle,
-                color: isSelected
-                    ? cs.primary
-                    : cs.onSurfaceVariant,
-                size: 24),
+              isSelected
+                  ? PhosphorIconsFill.radioButton
+                  : PhosphorIconsRegular.circle,
+              color: isSelected ? cs.primary : cs.onSurfaceVariant,
+              size: 24,
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: isSelected
-                              ? cs.primary
-                              : cs.onSurface)),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: isSelected ? cs.primary : cs.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle,
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: cs.onSurfaceVariant)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                  ),
                 ],
               ),
             ),
@@ -715,14 +826,15 @@ class _StepReview extends StatelessWidget {
   final TextEditingController contactCtrl;
   final int otTrigger;
   final bool weekOffPaid;
-  const _StepReview(
-      {required this.cs,
-      required this.tt,
-      required this.companyName,
-      required this.addressCtrl,
-      required this.contactCtrl,
-      required this.otTrigger,
-      required this.weekOffPaid});
+  const _StepReview({
+    required this.cs,
+    required this.tt,
+    required this.companyName,
+    required this.addressCtrl,
+    required this.contactCtrl,
+    required this.otTrigger,
+    required this.weekOffPaid,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -735,51 +847,59 @@ class _StepReview extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       children: [
-        Text('Ready to Launch',
-            style: tt.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+        Text(
+          'Ready to Launch',
+          style: tt.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
+        ),
         const SizedBox(height: 8),
-        Text('Review your setup before entering the dashboard.',
-            style: tt.bodyLarge
-                ?.copyWith(color: cs.onSurfaceVariant)),
+        Text(
+          'Review your setup before entering the dashboard.',
+          style: tt.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+        ),
         const SizedBox(height: 32),
         _ReviewSummaryCard(
-            cs: cs,
-            icon: PhosphorIconsDuotone.buildings,
-            title: 'Profile',
-            items: [
-              'Name: $cName',
-              if (address.isNotEmpty) 'Address: $address',
-              if (contact.isNotEmpty) 'Contact: $contact',
-              'Shifts: 2 Active (General, Night)'
-            ]),
+          cs: cs,
+          icon: PhosphorIconsDuotone.buildings,
+          title: 'Profile',
+          items: [
+            'Name: $cName',
+            if (address.isNotEmpty) 'Address: $address',
+            if (contact.isNotEmpty) 'Contact: $contact',
+            'Shifts: 2 Active (General, Night)',
+          ],
+        ),
         const SizedBox(height: 16),
         _ReviewSummaryCard(
-            cs: cs,
-            icon: PhosphorIconsDuotone.calculator,
-            title: 'Payroll Policies',
-            items: [
-              otTrigger == 0
-                  ? 'Overtime: Disabled'
-                  : 'Overtime starts after $otTrigger Hours',
-              weekOffPaid ? 'Week-Off Pay Enabled' : 'Week-Off Pay Disabled',
-            ]),
+          cs: cs,
+          icon: PhosphorIconsDuotone.calculator,
+          title: 'Payroll Policies',
+          items: [
+            otTrigger == 0
+                ? 'Overtime: Disabled'
+                : 'Overtime starts after $otTrigger Hours',
+            weekOffPaid ? 'Week-Off Pay Enabled' : 'Week-Off Pay Disabled',
+          ],
+        ),
         const SizedBox(height: 32),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-              color: cs.tertiaryContainer.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(16)),
+            color: cs.tertiaryContainer.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Row(
             children: [
-              PhosphorIcon(PhosphorIconsDuotone.info,
-                  color: cs.tertiary),
+              PhosphorIcon(PhosphorIconsDuotone.info, color: cs.tertiary),
               const SizedBox(width: 16),
               Expanded(
-                  child: Text(
-                      'All configurations can be changed later in the Settings menu.',
-                      style: tt.bodySmall
-                          ?.copyWith(color: cs.onSurfaceVariant))),
+                child: Text(
+                  'All configurations can be changed later in the Settings menu.',
+                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ),
             ],
           ),
         ),
@@ -794,11 +914,12 @@ class _ReviewSummaryCard extends StatelessWidget {
   final String title;
   final List<String> items;
 
-  const _ReviewSummaryCard(
-      {required this.cs,
-      required this.icon,
-      required this.title,
-      required this.items});
+  const _ReviewSummaryCard({
+    required this.cs,
+    required this.icon,
+    required this.title,
+    required this.items,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -807,8 +928,7 @@ class _ReviewSummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-            color: cs.outlineVariant.withValues(alpha: 0.3)),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -817,29 +937,41 @@ class _ReviewSummaryCard extends StatelessWidget {
             children: [
               PhosphorIcon(icon, color: cs.primary, size: 20),
               const SizedBox(width: 12),
-              Text(title,
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: cs.onSurface)),
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: cs.onSurface,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
-          ...items.map((e) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    PhosphorIcon(PhosphorIconsRegular.checkCircle,
-                        size: 16, color: cs.primary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                        child: Text(e,
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: cs.onSurfaceVariant))),
-                  ],
-                ),
-              )),
+          ...items.map(
+            (e) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PhosphorIcon(
+                    PhosphorIconsRegular.checkCircle,
+                    size: 16,
+                    color: cs.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      e,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

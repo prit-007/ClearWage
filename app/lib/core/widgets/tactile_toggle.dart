@@ -24,7 +24,9 @@ class TactileToggle extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? color : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? color : Colors.grey.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.withValues(alpha: 0.3),
+          ),
         ),
         child: Center(
           child: Text(

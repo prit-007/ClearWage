@@ -26,19 +26,19 @@ class AdvanceRequest {
   bool get isDenied => status == 'denied';
 
   factory AdvanceRequest.fromJson(Map<String, dynamic> json) => AdvanceRequest(
-        id: json['id'] as String? ?? '',
-        employeeId: json['employee_id'] as String? ?? '',
-        employeeName: json['employee_name'] as String? ?? '',
-        employeePhoto: json['employee_photo'] as String?,
-        amount: safeToDouble(json['amount']),
-        note: json['note'] as String? ?? '',
-        status: json['status'] as String? ?? 'pending',
-        createdAt: json['created_at'] as String? ?? '',
-      );
+    id: json['id'] as String? ?? '',
+    employeeId: json['employee_id'] as String? ?? '',
+    employeeName: json['employee_name'] as String? ?? '',
+    employeePhoto: json['employee_photo'] as String?,
+    amount: safeToDouble(json['amount']),
+    note: json['note'] as String? ?? '',
+    status: json['status'] as String? ?? 'pending',
+    createdAt: json['created_at'] as String? ?? '',
+  );
 
   Map<String, dynamic> toJson() => {
-        'employee_id': employeeId,
-        'amount': amount,
-        'note': note,
-      };
+    'employee_id': employeeId,
+    'amount': amount,
+    'note': note,
+  };
 }

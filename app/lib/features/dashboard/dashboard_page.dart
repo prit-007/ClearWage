@@ -11,10 +11,6 @@ import '../../core/helpers.dart';
 import '../staff/add_employee_page.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
-final dashboardDataProvider = FutureProvider.autoDispose<DashboardData>((ref) {
-  return ref.watch(dashboardServiceProvider).get();
-});
-
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
@@ -31,15 +27,19 @@ class DashboardScreen extends ConsumerWidget {
       body: SafeArea(
         child: asyncData.when(
           loading: () => Center(
-              child: CircularProgressIndicator(
-                  color: cs.primary, strokeWidth: 2)),
+            child: CircularProgressIndicator(color: cs.primary, strokeWidth: 2),
+          ),
           error: (e, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(PhosphorIconsFill.warningCircle, size: 48, color: cs.error),
+                  Icon(
+                    PhosphorIconsFill.warningCircle,
+                    size: 48,
+                    color: cs.error,
+                  ),
                   const SizedBox(height: 16),
                   Text('Something went wrong', style: tt.titleMedium),
                   const SizedBox(height: 8),
@@ -73,24 +73,32 @@ class DashboardScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(_getGreeting(),
-                                    style: tt.titleMedium
-                                        ?.copyWith(color: cs.onSurfaceVariant)),
-                                Text('Workspace',
-                                    style: tt.headlineLarge?.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: -1.0)),
+                                Text(
+                                  _getGreeting(),
+                                  style: tt.titleMedium?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                  ),
+                                ),
+                                Text(
+                                  'Workspace',
+                                  style: tt.headlineLarge?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -1.0,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                           CircleAvatar(
                             radius: 24,
-                            backgroundColor:
-                                cs.primaryContainer.withValues(alpha: 0.5),
+                            backgroundColor: cs.primaryContainer.withValues(
+                              alpha: 0.5,
+                            ),
                             child: PhosphorIcon(
-                                PhosphorIconsDuotone.buildings,
-                                color: cs.primary,
-                                size: 28),
+                              PhosphorIconsDuotone.buildings,
+                              color: cs.primary,
+                              size: 28,
+                            ),
                           ),
                         ],
                       ),
@@ -122,8 +130,8 @@ class DashboardScreen extends ConsumerWidget {
                                   tt: tt,
                                   icon: PhosphorIconsDuotone.wallet,
                                   label: 'Payroll (MTD)',
-                                      value:
-                                          '\u20B9${data.wageBillMtd.toStringAsFixed(0)}',
+                                  value:
+                                      '\u20B9${data.wageBillMtd.toStringAsFixed(0)}',
                                   color: cs.primary,
                                 ),
                               ),
@@ -140,7 +148,8 @@ class DashboardScreen extends ConsumerWidget {
                                     tt: tt,
                                     icon: PhosphorIconsDuotone.coins,
                                     label: 'Outstanding (Udhaar)',
-                                    value: '\u20B9${data.totalOutstanding.toStringAsFixed(0)}',
+                                    value:
+                                        '\u20B9${data.totalOutstanding.toStringAsFixed(0)}',
                                     color: const Color(0xFFF59E0B),
                                   ),
                                 ),
@@ -180,8 +189,8 @@ class DashboardScreen extends ConsumerWidget {
                                     tt: tt,
                                     icon: PhosphorIconsDuotone.wallet,
                                     label: 'Outstanding',
-                                        value:
-                                            '\u20B9${data.totalOutstanding.toStringAsFixed(0)}',
+                                    value:
+                                        '\u20B9${data.totalOutstanding.toStringAsFixed(0)}',
                                     color: cs.primary,
                                   ),
                                 ),
@@ -189,50 +198,70 @@ class DashboardScreen extends ConsumerWidget {
                             ),
                           ),
                         const SizedBox(height: 32),
-                        _AttendanceTrendChart(cs: cs, tt: tt, trends: data.trends),
+                        _AttendanceTrendChart(
+                          cs: cs,
+                          tt: tt,
+                          trends: data.trends,
+                        ),
                         const SizedBox(height: 40),
-                        Text('Quick Actions',
-                            style: tt.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.5)),
+                        Text(
+                          'Quick Actions',
+                          style: tt.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         if (isAdmin)
                           _QuickActionTile(
-                              cs: cs,
-                              tt: tt,
-                              icon: PhosphorIconsRegular.userPlus,
-                              label: 'Add\nStaff',
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEmployeeScreen()));
-                              }),
+                            cs: cs,
+                            tt: tt,
+                            icon: PhosphorIconsRegular.userPlus,
+                            label: 'Add\nStaff',
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AddEmployeeScreen(),
+                                ),
+                              );
+                            },
+                          ),
                         if (!isAdmin)
                           _QuickActionTile(
-                              cs: cs,
-                              tt: tt,
-                              icon: PhosphorIconsRegular.userCircle,
-                              label: 'My\nProfile',
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                Navigator.pushNamed(context, '/my-profile');
-                              }),
+                            cs: cs,
+                            tt: tt,
+                            icon: PhosphorIconsRegular.userCircle,
+                            label: 'My\nProfile',
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              Navigator.pushNamed(context, '/my-profile');
+                            },
+                          ),
                         const SizedBox(height: 40),
-                        Text('Recent Activity',
-                            style: tt.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.5)),
+                        Text(
+                          'Recent Activity',
+                          style: tt.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
                         const SizedBox(height: 12),
                         if (data.recentActivity.isEmpty)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 32),
                             child: Center(
-                                child: Text('No activity recorded yet.',
-                                    style: TextStyle(
-                                        color: cs.onSurfaceVariant))),
+                              child: Text(
+                                'No activity recorded yet.',
+                                style: TextStyle(color: cs.onSurfaceVariant),
+                              ),
+                            ),
                           )
                         else
-                          ...data.recentActivity.map((a) => _ActivityTile(
-                                cs: cs, tt: tt, activity: a)),
+                          ...data.recentActivity.map(
+                            (a) => _ActivityTile(cs: cs, tt: tt, activity: a),
+                          ),
                         const SizedBox(height: 40),
                       ]),
                     ),
@@ -246,8 +275,6 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-
-
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good Morning,';
@@ -256,14 +283,15 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-
-
 class _AttendanceOverviewCard extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final DashboardData data;
-  const _AttendanceOverviewCard(
-      {required this.cs, required this.tt, required this.data});
+  const _AttendanceOverviewCard({
+    required this.cs,
+    required this.tt,
+    required this.data,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -275,9 +303,10 @@ class _AttendanceOverviewCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-              color: cs.primary.withValues(alpha: 0.15),
-              blurRadius: 20,
-              offset: const Offset(0, 8)),
+            color: cs.primary.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
       child: Column(
@@ -285,23 +314,31 @@ class _AttendanceOverviewCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              PhosphorIcon(PhosphorIconsDuotone.calendarBlank,
-                  color: cs.onPrimaryContainer, size: 20),
+              PhosphorIcon(
+                PhosphorIconsDuotone.calendarBlank,
+                color: cs.onPrimaryContainer,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              Text('Today\'s Floor',
-                  style: tt.labelLarge?.copyWith(
-                      color: cs.onPrimaryContainer,
-                      fontWeight: FontWeight.w600)),
+              Text(
+                'Today\'s Floor',
+                style: tt.labelLarge?.copyWith(
+                  color: cs.onPrimaryContainer,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 24),
-          Text('${pct.toStringAsFixed(0)}%',
-              style: tt.displayLarge?.copyWith(
-                color: cs.onPrimaryContainer,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -2.0,
-                height: 1.0,
-              )),
+          Text(
+            '${pct.toStringAsFixed(0)}%',
+            style: tt.displayLarge?.copyWith(
+              color: cs.onPrimaryContainer,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -2.0,
+              height: 1.0,
+            ),
+          ),
           const SizedBox(height: 16),
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: pct / 100),
@@ -319,7 +356,10 @@ class _AttendanceOverviewCard extends StatelessWidget {
           Row(
             children: [
               _DotLegend(
-                  cs.onPrimaryContainer, '${data.presentToday} Present', cs),
+                cs.onPrimaryContainer,
+                '${data.presentToday} Present',
+                cs,
+              ),
               const SizedBox(width: 16),
               _DotLegend(cs.error, '${data.absentToday} Absent', cs),
             ],
@@ -364,18 +404,21 @@ class _GlassStatCard extends StatelessWidget {
             children: [
               PhosphorIcon(icon, color: color, size: 28),
               const SizedBox(height: 16),
-              Text(label,
-                  style: tt.labelMedium
-                      ?.copyWith(color: cs.onSurfaceVariant)),
+              Text(
+                label,
+                style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant),
+              ),
               const SizedBox(height: 4),
-              Text(value,
-                  style: tt.headlineSmall?.copyWith(
-                    color: cs.onSurface,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -1.0,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
+              Text(
+                value,
+                style: tt.headlineSmall?.copyWith(
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -1.0,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
         ),
@@ -418,10 +461,14 @@ class _QuickActionTile extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Text(label,
-            style: tt.labelSmall?.copyWith(
-                color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
-            textAlign: TextAlign.center),
+        Text(
+          label,
+          style: tt.labelSmall?.copyWith(
+            color: cs.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
@@ -432,8 +479,11 @@ class _ActivityTile extends StatelessWidget {
   final TextTheme tt;
   final ActivityItem activity;
 
-  const _ActivityTile(
-      {required this.cs, required this.tt, required this.activity});
+  const _ActivityTile({
+    required this.cs,
+    required this.tt,
+    required this.activity,
+  });
 
   Color _color() {
     switch (activity.action) {
@@ -505,17 +555,22 @@ class _ActivityTile extends StatelessWidget {
             border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
           ),
           child: ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
             leading: CircleAvatar(
               backgroundColor: color.withValues(alpha: 0.12),
               child: _iconWidget(color),
             ),
-            title: Text(activity.description,
-                style:
-                    tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-            subtitle: Text(_relativeTime(activity.createdAt),
-                style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+            title: Text(
+              activity.description,
+              style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              _relativeTime(activity.createdAt),
+              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            ),
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -523,8 +578,15 @@ class _ActivityTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                activity.action.replaceFirst('_', '\n').replaceAll('_', ' ').toUpperCase(),
-                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: color),
+                activity.action
+                    .replaceFirst('_', '\n')
+                    .replaceAll('_', ' ')
+                    .toUpperCase(),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
               ),
             ),
           ),
@@ -538,101 +600,139 @@ class _AttendanceTrendChart extends ConsumerWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final List<AttendanceTrendItem> trends;
-  const _AttendanceTrendChart({required this.cs, required this.tt, required this.trends});
+  const _AttendanceTrendChart({
+    required this.cs,
+    required this.tt,
+    required this.trends,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (trends.isEmpty) return const SizedBox.shrink();
-    final maxY = trends.fold<int>(0, (m, t) => [
-      m,
-      t.present,
-      t.absent,
-    ].reduce((a, b) => a > b ? a : b));
-        final chartMax = (maxY * 1.3).ceilToDouble().clamp(5, double.infinity).toDouble();
+    final maxY = trends.fold<int>(
+      0,
+      (m, t) => [m, t.present, t.absent].reduce((a, b) => a > b ? a : b),
+    );
+    final chartMax = (maxY * 1.3)
+        .ceilToDouble()
+        .clamp(5, double.infinity)
+        .toDouble();
 
-        return FluidSlideIn(
-          delay: 400,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Attendance Trends (14 days)', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.5)),
-              const SizedBox(height: 4),
-              Text('Daily present / absent breakdown', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
-              const SizedBox(height: 20),
-              SizedBox(
-                height: 200,
-                child: BarChart(
-                  BarChartData(
-                    alignment: BarChartAlignment.spaceAround,
-                    maxY: chartMax,
-                    barTouchData: BarTouchData(enabled: false),
-                    titlesData: FlTitlesData(
-                      show: true,
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, _) {
-                            final i = value.toInt();
-                            if (i < 0 || i >= trends.length) return const SizedBox.shrink();
-                            final date = trends[i].date;
-                            final day = date.length >= 10 ? date.substring(8, 10) : date;
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(day, style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
-                            );
-                          },
-                          reservedSize: 20,
-                        ),
-                      ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    ),
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      horizontalInterval: chartMax / 4,
-                      getDrawingHorizontalLine: (v) => FlLine(color: cs.outlineVariant.withValues(alpha: 0.2), strokeWidth: 1),
-                    ),
-                    borderData: FlBorderData(show: false),
-                    barGroups: List.generate(trends.length, (i) {
-                      final present = trends[i].present.toDouble();
-                      final absent = trends[i].absent.toDouble();
-                      return BarChartGroupData(
-                        x: i,
-                        barRods: [
-                          BarChartRodData(
-                            toY: present,
-                            color: const Color(0xFF10B981),
-                            width: 8,
-                            borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+    return FluidSlideIn(
+      delay: 400,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Attendance Trends (14 days)',
+            style: tt.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Daily present / absent breakdown',
+            style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 200,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: chartMax,
+                barTouchData: BarTouchData(enabled: false),
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, _) {
+                        final i = value.toInt();
+                        if (i < 0 || i >= trends.length)
+                          return const SizedBox.shrink();
+                        final date = trends[i].date;
+                        final day = date.length >= 10
+                            ? date.substring(8, 10)
+                            : date;
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            day,
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: cs.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          BarChartRodData(
-                            toY: absent,
-                            color: const Color(0xFFEF4444),
-                            width: 8,
-                            borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
-                          ),
-                        ],
-                      );
-                    }),
+                        );
+                      },
+                      reservedSize: 20,
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
                   ),
                 ),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: chartMax / 4,
+                  getDrawingHorizontalLine: (v) => FlLine(
+                    color: cs.outlineVariant.withValues(alpha: 0.2),
+                    strokeWidth: 1,
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                barGroups: List.generate(trends.length, (i) {
+                  final present = trends[i].present.toDouble();
+                  final absent = trends[i].absent.toDouble();
+                  return BarChartGroupData(
+                    x: i,
+                    barRods: [
+                      BarChartRodData(
+                        toY: present,
+                        color: const Color(0xFF10B981),
+                        width: 8,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(4),
+                          topRight: Radius.circular(4),
+                        ),
+                      ),
+                      BarChartRodData(
+                        toY: absent,
+                        color: const Color(0xFFEF4444),
+                        width: 8,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(4),
+                          topRight: Radius.circular(4),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
               ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _DotLegend(const Color(0xFF10B981), 'Present', cs),
-                  const SizedBox(width: 24),
-                  _DotLegend(const Color(0xFFEF4444), 'Absent', cs),
-                ],
-              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _DotLegend(const Color(0xFF10B981), 'Present', cs),
+              const SizedBox(width: 24),
+              _DotLegend(const Color(0xFFEF4444), 'Absent', cs),
             ],
           ),
-        );
+        ],
+      ),
+    );
   }
 }
 
@@ -648,15 +748,19 @@ class _DotLegend extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
         const SizedBox(width: 8),
-        Text(label,
-            style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: cs.onPrimaryContainer.withValues(alpha: 0.9))),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: cs.onPrimaryContainer.withValues(alpha: 0.9),
+          ),
+        ),
       ],
     );
   }

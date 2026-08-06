@@ -20,21 +20,21 @@ class Shift {
   });
 
   factory Shift.fromJson(Map<String, dynamic> json) => Shift(
-        id: json['id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        startTime: json['start_time'] as String? ?? '',
-        endTime: json['end_time'] as String? ?? '',
-        crossesMidnight: json['crosses_midnight'] as bool? ?? false,
-        gracePeriodMinutes: safeToInt(json['grace_period_minutes']),
-        isDefault: json['is_default'] as bool? ?? false,
-      );
+    id: json['id'] as String? ?? '',
+    name: json['name'] as String? ?? '',
+    startTime: json['start_time'] as String? ?? '',
+    endTime: json['end_time'] as String? ?? '',
+    crossesMidnight: json['crosses_midnight'] as bool? ?? false,
+    gracePeriodMinutes: safeToInt(json['grace_period_minutes']),
+    isDefault: json['is_default'] as bool? ?? false,
+  );
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'start_time': startTime,
-        'end_time': endTime,
-        'crosses_midnight': crossesMidnight,
-        'grace_period_minutes': gracePeriodMinutes,
-        'is_default': isDefault,
-      };
+    'name': name,
+    'start_time': startTime,
+    'end_time': endTime,
+    'crosses_midnight': crossesMidnight,
+    'grace_period_minutes': gracePeriodMinutes,
+    'is_default': isDefault,
+  };
 }

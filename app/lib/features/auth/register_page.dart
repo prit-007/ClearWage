@@ -45,9 +45,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
-    _iconScale = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _iconAnim, curve: Curves.easeInOut),
-    );
+    _iconScale = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _iconAnim, curve: Curves.easeInOut));
   }
 
   @override
@@ -84,29 +85,40 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
   Future<void> _handleFirebaseCredential(PhoneAuthCredential credential) async {
     if (!mounted) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       await FirebaseAuth.instance.signInWithCredential(credential);
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception('Failed to get Firebase user');
       final idToken = await user.getIdToken();
       if (idToken == null) throw Exception('Failed to get Firebase ID token');
-      final token = await ref.read(authServiceProvider).register(
-        name: _nameCtrl.text.trim(),
-        factoryName: _factoryCtrl.text.trim(),
-        idToken: idToken,
-      );
+      final token = await ref
+          .read(authServiceProvider)
+          .register(
+            name: _nameCtrl.text.trim(),
+            factoryName: _factoryCtrl.text.trim(),
+            idToken: idToken,
+          );
       ref.read(tokenProvider.notifier).state = token.token;
       TokenStorage.save(token.token);
       final userInfo = AppUser.fromAuthToken(token);
       TokenStorage.saveUserInfo(userInfo);
       ref.read(userInfoProvider.notifier).state = userInfo;
       HapticFeedback.heavyImpact();
-      if (mounted) Navigator.of(context).pushNamedAndRemoveUntil('/onboarding', (_) => false);
+      if (mounted)
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/onboarding', (_) => false);
     } catch (e) {
       if (!mounted) return;
       HapticFeedback.vibrate();
-      setState(() { _error = e.toString(); _loading = false; });
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
     }
   }
 
@@ -127,7 +139,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     }
     final phone = '+91$raw';
 
-    setState(() { _loading = true; _error = null; _verificationId = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+      _verificationId = null;
+    });
     try {
       await FirebaseAuth.instance.verifyPhoneNumber(
         phoneNumber: phone,
@@ -136,7 +152,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         verificationFailed: (e) {
           if (!mounted) return;
           HapticFeedback.vibrate();
-          setState(() { _error = e.message ?? 'Verification failed'; _loading = false; });
+          setState(() {
+            _error = e.message ?? 'Verification failed';
+            _loading = false;
+          });
         },
         codeSent: (verificationId, _) {
           if (!mounted) return;
@@ -157,14 +176,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     } catch (e) {
       if (!mounted) return;
       HapticFeedback.vibrate();
-      setState(() { _error = 'Cannot reach server. Check your connection.'; _loading = false; });
+      setState(() {
+        _error = 'Cannot reach server. Check your connection.';
+        _loading = false;
+      });
     }
   }
 
   Future<void> _register() async {
     if (_verificationId == null) return;
     HapticFeedback.lightImpact();
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final credential = PhoneAuthProvider.credential(
         verificationId: _verificationId!,
@@ -174,7 +199,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     } catch (e) {
       HapticFeedback.vibrate();
       if (!mounted) return;
-      setState(() { _error = 'Invalid verification code. Please try again.'; _loading = false; });
+      setState(() {
+        _error = 'Invalid verification code. Please try again.';
+        _loading = false;
+      });
     }
   }
 
@@ -186,7 +214,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     final defaultPinTheme = PinTheme(
       width: 52,
       height: 58,
-      textStyle: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: cs.primary),
+      textStyle: tt.headlineSmall?.copyWith(
+        fontWeight: FontWeight.w800,
+        color: cs.primary,
+      ),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
@@ -223,17 +254,31 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     decoration: BoxDecoration(
                       color: cs.secondaryContainer.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
-                      border: Border.all(color: cs.secondary.withValues(alpha: 0.2), width: 2),
+                      border: Border.all(
+                        color: cs.secondary.withValues(alpha: 0.2),
+                        width: 2,
+                      ),
                     ),
-                    child: Icon(PhosphorIconsFill.buildings, size: 44, color: cs.secondary),
+                    child: Icon(
+                      PhosphorIconsFill.buildings,
+                      size: 44,
+                      color: cs.secondary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),
-                Text('Get Started',
-                    style: tt.displaySmall?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -1.0)),
+                Text(
+                  'Get Started',
+                  style: tt.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1.0,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                Text('Create an owner account to set up your factory floor.',
-                    style: tt.bodyLarge?.copyWith(color: cs.onSurfaceVariant)),
+                Text(
+                  'Create an owner account to set up your factory floor.',
+                  style: tt.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+                ),
                 const SizedBox(height: 40),
 
                 AnimatedSize(
@@ -255,8 +300,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                 label: 'Your Full Name',
                                 prefixIcon: PhosphorIconsRegular.user,
                                 validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return 'Enter your name';
-                                  if (v.trim().length < 2) return 'Name is too short';
+                                  if (v == null || v.trim().isEmpty)
+                                    return 'Enter your name';
+                                  if (v.trim().length < 2)
+                                    return 'Name is too short';
                                   return null;
                                 },
                               ),
@@ -271,7 +318,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                 label: 'Factory / Business Name',
                                 prefixIcon: PhosphorIconsRegular.buildings,
                                 validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return 'Enter your factory name';
+                                  if (v == null || v.trim().isEmpty)
+                                    return 'Enter your factory name';
                                   return null;
                                 },
                               ),
@@ -283,17 +331,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       // OTP Verification Phase
                       if (_sentOtp) ...[
                         const SizedBox(height: 32),
-                        Divider(color: cs.outlineVariant.withValues(alpha: 0.5)),
+                        Divider(
+                          color: cs.outlineVariant.withValues(alpha: 0.5),
+                        ),
                         const SizedBox(height: 24),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('SECURITY CODE',
-                                style: tt.labelSmall?.copyWith(
-                                  color: cs.primary,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.0,
-                                )),
+                            Text(
+                              'SECURITY CODE',
+                              style: tt.labelSmall?.copyWith(
+                                color: cs.primary,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
                             TextButton(
                               onPressed: () {
                                 HapticFeedback.selectionClick();
@@ -303,13 +355,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                   _error = null;
                                 });
                               },
-                              child: const Text('Edit Details', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                              child: const Text(
+                                'Edit Details',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text('We sent a 6-digit verification code to +91${_phoneCtrl.text}',
-                            style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                        Text(
+                          'We sent a 6-digit verification code to +91${_phoneCtrl.text}',
+                          style: tt.bodyMedium?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
                         const SizedBox(height: 24),
                         Center(
                           child: Pinput(
@@ -323,9 +385,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                 color: cs.surface,
                                 boxShadow: [
                                   BoxShadow(
-                                      color: cs.primary.withValues(alpha: 0.15),
-                                      blurRadius: 12,
-                                      spreadRadius: 2)
+                                    color: cs.primary.withValues(alpha: 0.15),
+                                    blurRadius: 12,
+                                    spreadRadius: 2,
+                                  ),
                                 ],
                               ),
                             ),
@@ -339,12 +402,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           child: _canResend
                               ? TextButton.icon(
                                   onPressed: _loading ? null : _requestOtp,
-                                  icon: Icon(PhosphorIconsRegular.arrowsClockwise, size: 16, color: cs.primary),
-                                  label: Text('Resend Code', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold)),
+                                  icon: Icon(
+                                    PhosphorIconsRegular.arrowsClockwise,
+                                    size: 16,
+                                    color: cs.primary,
+                                  ),
+                                  label: Text(
+                                    'Resend Code',
+                                    style: TextStyle(
+                                      color: cs.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 )
                               : Text(
                                   'Resend code in $_secondsRemaining',
-                                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
+                                  style: tt.bodySmall?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                         ),
                       ],
@@ -357,11 +433,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           decoration: BoxDecoration(
                             color: cs.errorContainer.withValues(alpha: 0.6),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: cs.error.withValues(alpha: 0.3)),
+                            border: Border.all(
+                              color: cs.error.withValues(alpha: 0.3),
+                            ),
                           ),
                           child: Row(
                             children: [
-                              Icon(PhosphorIconsFill.warningCircle, color: cs.onErrorContainer, size: 22),
+                              Icon(
+                                PhosphorIconsFill.warningCircle,
+                                color: cs.onErrorContainer,
+                                size: 22,
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
@@ -382,20 +464,34 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
                 const SizedBox(height: 40),
                 FilledButton(
-                  onPressed: _loading ? null : (_sentOtp ? _register : _requestOtp),
+                  onPressed: _loading
+                      ? null
+                      : (_sentOtp ? _register : _requestOtp),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(60),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     elevation: 0,
                   ),
                   child: _loading
                       ? const SizedBox(
                           height: 24,
                           width: 24,
-                          child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: Colors.white,
+                          ),
+                        )
                       : Text(
-                          _sentOtp ? 'Complete Account Setup' : 'Send Verification Code',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                          _sentOtp
+                              ? 'Complete Account Setup'
+                              : 'Send Verification Code',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                 ),
                 const SizedBox(height: 24),

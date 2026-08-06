@@ -107,10 +107,7 @@ void main() {
 
   group('WageBillTrendItem', () {
     test('fromJson parses all fields correctly', () {
-      final json = {
-        'month': '2026-01',
-        'total_wages': 2500000.50,
-      };
+      final json = {'month': '2026-01', 'total_wages': 2500000.50};
 
       final item = WageBillTrendItem.fromJson(json);
 
@@ -130,11 +127,7 @@ void main() {
 
   group('AttendanceTrendItem', () {
     test('fromJson parses all fields correctly', () {
-      final json = {
-        'date': '2026-01-15',
-        'present': 45,
-        'absent': 5,
-      };
+      final json = {'date': '2026-01-15', 'present': 45, 'absent': 5};
 
       final item = AttendanceTrendItem.fromJson(json);
 
@@ -154,11 +147,7 @@ void main() {
     });
 
     test('fromJson handles double values as int', () {
-      final json = {
-        'date': '2026-01-15',
-        'present': 45.0,
-        'absent': 5.0,
-      };
+      final json = {'date': '2026-01-15', 'present': 45.0, 'absent': 5.0};
 
       final item = AttendanceTrendItem.fromJson(json);
 

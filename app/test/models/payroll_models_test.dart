@@ -38,10 +38,7 @@ void main() {
     });
 
     test('fromJson handles empty entries', () {
-      final json = {
-        'total_wage': 0,
-        'entries': [],
-      };
+      final json = {'total_wage': 0, 'entries': []};
 
       final result = PayrollResult.fromJson(json);
       expect(result.totalWage, 0);
@@ -136,22 +133,22 @@ void main() {
       final json = {
         'ot_threshold_hours': 8.0,
         'ot_multiplier_default': 2.0,
-        'ot_rounding': 'nearest',
+        'ot_rounding': 30,
         'ot_trigger': 'above_threshold',
         'wage_basis': 'monthly',
         'week_off_paid': true,
-        'weekly_offs': 1,
+        'weekly_offs': '1,6',
       };
 
       final settings = PayrollSettings.fromJson(json);
 
       expect(settings.otThresholdHours, 8.0);
       expect(settings.otMultiplierDefault, 2.0);
-      expect(settings.otRounding, 'nearest');
+      expect(settings.otRounding, 30);
       expect(settings.otTrigger, 'above_threshold');
       expect(settings.wageBasis, 'monthly');
       expect(settings.weekOffPaid, true);
-      expect(settings.weeklyOffs, 1);
+      expect(settings.weeklyOffs, [1, 6]);
     });
 
     test('fromJson uses defaults for missing fields', () {
@@ -161,22 +158,47 @@ void main() {
 
       expect(settings.otThresholdHours, 8);
       expect(settings.otMultiplierDefault, 2);
-      expect(settings.otRounding, 'nearest');
+      expect(settings.otRounding, 30);
       expect(settings.otTrigger, 'above_threshold');
       expect(settings.wageBasis, 'monthly');
       expect(settings.weekOffPaid, true);
-      expect(settings.weeklyOffs, 1);
+      expect(settings.weeklyOffs, [1]);
+    });
+
+    test('fromJson handles ot_rounding as int', () {
+      final json = {'ot_rounding': 50, 'weekly_offs': '0,6'};
+
+      final settings = PayrollSettings.fromJson(json);
+      expect(settings.otRounding, 50);
+      expect(settings.weeklyOffs, [0, 6]);
+    });
+
+    test('fromJson handles ot_rounding as string gracefully', () {
+      final json = {'ot_rounding': 'nearest', 'weekly_offs': ''};
+
+      final settings = PayrollSettings.fromJson(json);
+      expect(settings.otRounding, 30);
+      expect(settings.weeklyOffs, [1]);
+    });
+
+    test('fromJson handles weekly_offs as list', () {
+      final json = {
+        'weekly_offs': [0, 6],
+      };
+
+      final settings = PayrollSettings.fromJson(json);
+      expect(settings.weeklyOffs, [0, 6]);
     });
 
     test('toJson round-trips correctly', () {
       final original = PayrollSettings(
         otThresholdHours: 9.5,
         otMultiplierDefault: 1.5,
-        otRounding: 'up',
+        otRounding: 50,
         otTrigger: 'manual',
         wageBasis: 'daily',
         weekOffPaid: false,
-        weeklyOffs: 2,
+        weeklyOffs: [0, 6],
       );
 
       final json = original.toJson();
@@ -189,6 +211,22 @@ void main() {
       expect(restored.wageBasis, original.wageBasis);
       expect(restored.weekOffPaid, original.weekOffPaid);
       expect(restored.weeklyOffs, original.weeklyOffs);
+    });
+
+    test('toJson encodes weekly_offs as comma-separated string', () {
+      final settings = PayrollSettings(
+        otThresholdHours: 8,
+        otMultiplierDefault: 2,
+        otRounding: 30,
+        otTrigger: 'after_shift_end',
+        wageBasis: 'monthly',
+        weekOffPaid: true,
+        weeklyOffs: [0, 6],
+      );
+
+      final json = settings.toJson();
+      expect(json['weekly_offs'], '0,6');
+      expect(json['ot_rounding'], 30);
     });
   });
 }

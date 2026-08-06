@@ -44,9 +44,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
-    _logoScale = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _logoAnim, curve: Curves.easeInOut),
-    );
+    _logoScale = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _logoAnim, curve: Curves.easeInOut));
   }
 
   @override
@@ -86,16 +87,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     _handleFirebaseCredential(credential, isLogin: true);
   }
 
-  Future<void> _handleFirebaseCredential(PhoneAuthCredential credential, {required bool isLogin}) async {
+  Future<void> _handleFirebaseCredential(
+    PhoneAuthCredential credential, {
+    required bool isLogin,
+  }) async {
     if (!mounted) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       await FirebaseAuth.instance.signInWithCredential(credential);
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception('Failed to get Firebase user');
       final idToken = await user.getIdToken();
       if (idToken == null) throw Exception('Failed to get Firebase ID token');
-      final token = await ref.read(authServiceProvider).signInWithFirebase(idToken);
+      final token = await ref
+          .read(authServiceProvider)
+          .signInWithFirebase(idToken);
       ref.read(tokenProvider.notifier).state = token.token;
       TokenStorage.save(token.token);
       final userInfo = AppUser.fromAuthToken(token);
@@ -106,7 +115,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     } catch (e) {
       if (!mounted) return;
       HapticFeedback.vibrate();
-      setState(() { _error = e.toString(); _loading = false; });
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
     }
   }
 
@@ -118,7 +130,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       return;
     }
     final phone = '+91$raw';
-    setState(() { _loading = true; _error = null; _verificationId = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+      _verificationId = null;
+    });
     try {
       await FirebaseAuth.instance.verifyPhoneNumber(
         phoneNumber: phone,
@@ -127,7 +143,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         verificationFailed: (e) {
           if (!mounted) return;
           HapticFeedback.vibrate();
-          setState(() { _error = e.message ?? 'Verification failed'; _loading = false; });
+          setState(() {
+            _error = e.message ?? 'Verification failed';
+            _loading = false;
+          });
         },
         codeSent: (verificationId, _) {
           if (!mounted) return;
@@ -148,14 +167,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     } catch (e) {
       if (!mounted) return;
       HapticFeedback.vibrate();
-      setState(() { _error = 'Cannot reach server. Check your connection.'; _loading = false; });
+      setState(() {
+        _error = 'Cannot reach server. Check your connection.';
+        _loading = false;
+      });
     }
   }
 
   Future<void> _verifyOtp() async {
     if (_verificationId == null) return;
     HapticFeedback.lightImpact();
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final credential = PhoneAuthProvider.credential(
         verificationId: _verificationId!,
@@ -165,7 +190,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     } catch (e) {
       HapticFeedback.vibrate();
       if (!mounted) return;
-      setState(() { _error = 'Invalid verification code. Please try again.'; _loading = false; });
+      setState(() {
+        _error = 'Invalid verification code. Please try again.';
+        _loading = false;
+      });
     }
   }
 
@@ -186,7 +214,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3)),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outlineVariant.withValues(alpha: 0.3),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -194,10 +226,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             children: [
               Row(
                 children: [
-                  Icon(PhosphorIconsFill.gear, color: Theme.of(context).colorScheme.primary),
+                  Icon(
+                    PhosphorIconsFill.gear,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   const SizedBox(width: 12),
-                  Text('Server Configuration',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                  Text(
+                    'Server Configuration',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 20),
@@ -208,7 +247,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   labelText: 'Server Address',
                   hintText: 'http://192.168.1.100:8081',
                   filled: true,
-                  prefixIcon: Icon(PhosphorIconsRegular.globe, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  prefixIcon: Icon(
+                    PhosphorIconsRegular.globe,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
@@ -220,14 +262,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               FilledButton(
                 onPressed: () {
                   HapticFeedback.selectionClick();
-                  ref.read(serverUrlProvider.notifier).state = urlCtrl.text.trim();
+                  ref.read(serverUrlProvider.notifier).state = urlCtrl.text
+                      .trim();
                   Navigator.pop(context);
                 },
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(56),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
-                child: const Text('Save Configuration', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Save Configuration',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -245,7 +293,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final defaultPinTheme = PinTheme(
       width: 52,
       height: 58,
-      textStyle: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: cs.primary),
+      textStyle: tt.headlineSmall?.copyWith(
+        fontWeight: FontWeight.w800,
+        color: cs.primary,
+      ),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
@@ -285,17 +336,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     decoration: BoxDecoration(
                       color: cs.primaryContainer.withValues(alpha: 0.4),
                       shape: BoxShape.circle,
-                      border: Border.all(color: cs.primary.withValues(alpha: 0.2), width: 2),
+                      border: Border.all(
+                        color: cs.primary.withValues(alpha: 0.2),
+                        width: 2,
+                      ),
                     ),
-                    child: Icon(PhosphorIconsFill.factory, size: 44, color: cs.primary),
+                    child: Icon(
+                      PhosphorIconsFill.factory,
+                      size: 44,
+                      color: cs.primary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),
-                Text(_getGreeting(),
-                    style: tt.titleMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.w700)),
+                Text(
+                  _getGreeting(),
+                  style: tt.titleMedium?.copyWith(
+                    color: cs.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text('Workforce Portal',
-                    style: tt.displaySmall?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -1.0)),
+                Text(
+                  'Workforce Portal',
+                  style: tt.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1.0,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   _sentOtp
@@ -323,12 +391,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('SECURITY CODE',
-                                style: tt.labelSmall?.copyWith(
-                                  color: cs.primary,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.0,
-                                )),
+                            Text(
+                              'SECURITY CODE',
+                              style: tt.labelSmall?.copyWith(
+                                color: cs.primary,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
                             TextButton(
                               onPressed: () {
                                 HapticFeedback.selectionClick();
@@ -338,7 +408,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                   _error = null;
                                 });
                               },
-                              child: const Text('Change Phone', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                              child: const Text(
+                                'Change Phone',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -355,9 +431,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 color: cs.surface,
                                 boxShadow: [
                                   BoxShadow(
-                                      color: cs.primary.withValues(alpha: 0.15),
-                                      blurRadius: 12,
-                                      spreadRadius: 2)
+                                    color: cs.primary.withValues(alpha: 0.15),
+                                    blurRadius: 12,
+                                    spreadRadius: 2,
+                                  ),
                                 ],
                               ),
                             ),
@@ -371,12 +448,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           child: _canResend
                               ? TextButton.icon(
                                   onPressed: _loading ? null : _requestOtp,
-                                  icon: Icon(PhosphorIconsRegular.arrowsClockwise, size: 16, color: cs.primary),
-                                  label: Text('Resend Code', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold)),
+                                  icon: Icon(
+                                    PhosphorIconsRegular.arrowsClockwise,
+                                    size: 16,
+                                    color: cs.primary,
+                                  ),
+                                  label: Text(
+                                    'Resend Code',
+                                    style: TextStyle(
+                                      color: cs.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 )
                               : Text(
                                   'Resend code in $_secondsRemaining',
-                                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
+                                  style: tt.bodySmall?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                         ),
                       ],
@@ -389,11 +479,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           decoration: BoxDecoration(
                             color: cs.errorContainer.withValues(alpha: 0.6),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: cs.error.withValues(alpha: 0.3)),
+                            border: Border.all(
+                              color: cs.error.withValues(alpha: 0.3),
+                            ),
                           ),
                           child: Row(
                             children: [
-                              Icon(PhosphorIconsFill.warningCircle, color: cs.onErrorContainer, size: 22),
+                              Icon(
+                                PhosphorIconsFill.warningCircle,
+                                color: cs.onErrorContainer,
+                                size: 22,
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
@@ -414,20 +510,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
                 const SizedBox(height: 40),
                 FilledButton(
-                  onPressed: _loading ? null : (_sentOtp ? _verifyOtp : _requestOtp),
+                  onPressed: _loading
+                      ? null
+                      : (_sentOtp ? _verifyOtp : _requestOtp),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(60),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     elevation: 0,
                   ),
                   child: _loading
                       ? const SizedBox(
                           height: 24,
                           width: 24,
-                          child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: Colors.white,
+                          ),
+                        )
                       : Text(
-                          _sentOtp ? 'Verify & Authenticate' : 'Continue with Phone',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                          _sentOtp
+                              ? 'Verify & Authenticate'
+                              : 'Continue with Phone',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                 ),
                 const SizedBox(height: 24),
@@ -435,18 +545,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text("Don't have an account? ",
-                          style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                      Text(
+                        "Don't have an account? ",
+                        style: tt.bodyMedium?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
                       TextButton(
                         onPressed: () {
                           HapticFeedback.selectionClick();
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterScreen(),
+                            ),
                           );
                         },
-                        style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
-                        child: const Text('Create Account', style: TextStyle(fontWeight: FontWeight.w800)),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        child: const Text(
+                          'Create Account',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
                       ),
                     ],
                   ),

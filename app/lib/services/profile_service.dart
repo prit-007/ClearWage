@@ -15,14 +15,28 @@ class ProfileService {
     return res['data'] as Map<String, dynamic>? ?? {};
   }
 
-  Future<List<Attendance>> getAttendance({required String start, required String end}) async {
-    final res = await _client.get('/api/v1/me/attendance', query: {'start_date': start, 'end_date': end});
+  Future<List<Attendance>> getAttendance({
+    required String start,
+    required String end,
+  }) async {
+    final res = await _client.get(
+      '/api/v1/me/attendance',
+      query: {'start_date': start, 'end_date': end},
+    );
     final list = (res['data'] as List<dynamic>?) ?? [];
-    return list.map((e) => Attendance.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => Attendance.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
-  Future<Map<String, dynamic>> getLedger({required String start, required String end}) async {
-    final res = await _client.get('/api/v1/me/ledger', query: {'start_date': start, 'end_date': end});
+  Future<Map<String, dynamic>> getLedger({
+    required String start,
+    required String end,
+  }) async {
+    final res = await _client.get(
+      '/api/v1/me/ledger',
+      query: {'start_date': start, 'end_date': end},
+    );
     return res['data'] as Map<String, dynamic>? ?? {};
   }
 }

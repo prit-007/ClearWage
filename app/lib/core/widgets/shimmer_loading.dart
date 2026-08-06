@@ -74,7 +74,9 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
                       ],
                     ).createShader(bounds),
                     blendMode: BlendMode.srcATop,
-                    child: Container(color: Colors.white.withValues(alpha: 0.3)),
+                    child: Container(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
                   ),
                 ),
               );

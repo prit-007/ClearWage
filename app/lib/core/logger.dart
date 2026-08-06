@@ -21,7 +21,12 @@ class AppLogger {
     }
   }
 
-  static void request(String method, String path, {int? status, Duration? duration}) {
+  static void request(
+    String method,
+    String path, {
+    int? status,
+    Duration? duration,
+  }) {
     if (kDebugMode) {
       final parts = ['$method $path'];
       if (status != null) parts.add('status=$status');

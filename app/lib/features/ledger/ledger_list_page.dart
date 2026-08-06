@@ -51,19 +51,35 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
   }
 
   void _onScroll() {
-    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200 && !_loadingMore && _hasMore) {
+    if (_scrollCtrl.position.pixels >=
+            _scrollCtrl.position.maxScrollExtent - 200 &&
+        !_loadingMore &&
+        _hasMore) {
       _loadMore();
     }
   }
 
   Future<void> _fetch() async {
-    setState(() { _loading = true; _error = null; _entries = []; _hasMore = true; });
+    setState(() {
+      _loading = true;
+      _error = null;
+      _entries = [];
+      _hasMore = true;
+    });
     try {
       final svc = ref.read(ledgerServiceProvider);
-      final entries = await svc.listByTenant(startDate: _startDate, endDate: _endDate, limit: _pageSize, offset: 0);
+      final entries = await svc.listByTenant(
+        startDate: _startDate,
+        endDate: _endDate,
+        limit: _pageSize,
+        offset: 0,
+      );
       LedgerSummary? summary;
       try {
-        summary = await svc.getSummary(startDate: _startDate, endDate: _endDate);
+        summary = await svc.getSummary(
+          startDate: _startDate,
+          endDate: _endDate,
+        );
       } catch (_) {
         summary = null;
       }
@@ -76,7 +92,11 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+      if (mounted)
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
     }
   }
 
@@ -85,7 +105,12 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
     setState(() => _loadingMore = true);
     try {
       final svc = ref.read(ledgerServiceProvider);
-      final entries = await svc.listByTenant(startDate: _startDate, endDate: _endDate, limit: _pageSize, offset: _entries.length);
+      final entries = await svc.listByTenant(
+        startDate: _startDate,
+        endDate: _endDate,
+        limit: _pageSize,
+        offset: _entries.length,
+      );
       if (mounted) {
         setState(() {
           _entries.addAll(entries);
@@ -121,26 +146,44 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                 pinned: true,
                 elevation: 0,
                 leading: IconButton(
-                  icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+                  icon: Icon(
+                    PhosphorIconsRegular.arrowLeft,
+                    color: cs.onSurface,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
-                title: Text('Ledger Hub', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                title: Text(
+                  'Ledger Hub',
+                  style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
                 centerTitle: true,
                 actions: const [],
               ),
               if (_loading)
-                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                )
               else if (_error != null)
                 SliverFillRemaining(
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(PhosphorIconsFill.warningCircle, size: 48, color: Theme.of(context).colorScheme.error),
+                        Icon(
+                          PhosphorIconsFill.warningCircle,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                         const SizedBox(height: 16),
-                        Text('Failed to load entries', style: Theme.of(context).textTheme.titleMedium),
+                        Text(
+                          'Failed to load entries',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         const SizedBox(height: 8),
-                        Text(_error!, style: Theme.of(context).textTheme.bodySmall),
+                        Text(
+                          _error!,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                         const SizedBox(height: 16),
                         FilledButton.icon(
                           icon: const Icon(PhosphorIconsFill.arrowClockwise),
@@ -152,13 +195,19 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                   ),
                 )
               else ...[
-                SliverToBoxAdapter(
-                  child: _buildSummary(cs, tt),
-                ),
+                SliverToBoxAdapter(child: _buildSummary(cs, tt)),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    child: Text('Recent Transactions', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      'Recent Transactions',
+                      style: tt.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
                 if (_entries.isEmpty)
@@ -171,40 +220,60 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                           Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer
+                                  .withValues(alpha: 0.3),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(PhosphorIconsFill.notebook, size: 48, color: Theme.of(context).colorScheme.primary),
+                            child: Icon(
+                              PhosphorIconsFill.notebook,
+                              size: 48,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
                           const SizedBox(height: 24),
-                          Text('No ledger entries yet', style: Theme.of(context).textTheme.titleLarge),
+                          Text(
+                            'No ledger entries yet',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
                           const SizedBox(height: 8),
-                          Text('Entries will appear here once transactions are recorded.',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                          Text(
+                            'Entries will appear here once transactions are recorded.',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
                         ],
                       ),
                     ),
                   )
                 else
                   SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: FluidSlideIn(
-                            delay: (index * 50).clamp(0, 500),
-                            child: _LedgerRow(cs: cs, tt: tt, entry: _entries[index]),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: FluidSlideIn(
+                          delay: (index * 50).clamp(0, 500),
+                          child: _LedgerRow(
+                            cs: cs,
+                            tt: tt,
+                            entry: _entries[index],
                           ),
-                        );
-                      },
-                      childCount: _entries.length,
-                    ),
+                        ),
+                      );
+                    }, childCount: _entries.length),
                   ),
                 if (_loadingMore)
                   const SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.only(bottom: 24),
-                      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                     ),
                   ),
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -218,7 +287,10 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
         onPressed: () => Navigator.pushNamed(context, '/new_ledger'),
         backgroundColor: cs.primary,
         icon: Icon(PhosphorIconsBold.plus, color: cs.onPrimary),
-        label: Text('New Entry', style: TextStyle(color: cs.onPrimary, fontWeight: FontWeight.bold)),
+        label: Text(
+          'New Entry',
+          style: TextStyle(color: cs.onPrimary, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -230,7 +302,11 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
       udhaar = _summary!.udhaarTotal;
     } else {
       for (final e in _entries) {
-        if (e.isJama) { jama += e.amount; } else { udhaar += e.amount; }
+        if (e.isJama) {
+          jama += e.amount;
+        } else {
+          udhaar += e.amount;
+        }
       }
     }
     final net = _summary != null ? _summary!.netBalance : jama - udhaar;
@@ -253,12 +329,20 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
               ),
               child: Column(
                 children: [
-                  Text('Net Balance (MTD)', style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                  Text(
+                    'Net Balance (MTD)',
+                    style: tt.labelMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     '${isPositive ? '+' : '-'}\u20B9${net.abs().toStringAsFixed(0)}',
                     style: tt.displayMedium?.copyWith(
-                      color: isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      color: isPositive
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
                       fontWeight: FontWeight.w800,
                       letterSpacing: -1.5,
                     ),
@@ -299,7 +383,12 @@ class _SummaryStat extends StatelessWidget {
   final String label, value;
   final IconData icon;
   final Color color;
-  const _SummaryStat({required this.label, required this.value, required this.icon, required this.color});
+  const _SummaryStat({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -310,11 +399,25 @@ class _SummaryStat extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 14),
             const SizedBox(width: 4),
-            Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                color: Colors.grey,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 4),
-        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
       ],
     );
   }
@@ -345,25 +448,50 @@ class _LedgerRow extends StatelessWidget {
           photoUrl: entry.employeePhoto,
           radius: 22,
         ),
-        title: Text(entry.employeeName, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+        title: Text(
+          entry.employeeName,
+          style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
         subtitle: Row(
           children: [
-            Icon(PhosphorIconsRegular.calendarBlank, size: 12, color: cs.onSurfaceVariant),
+            Icon(
+              PhosphorIconsRegular.calendarBlank,
+              size: 12,
+              color: cs.onSurfaceVariant,
+            ),
             const SizedBox(width: 4),
-            Text(formatDate(entry.date), style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+            Text(
+              formatDate(entry.date),
+              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            ),
           ],
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text('${isJama ? '+' : '-'}\u20B9${entry.amount.toStringAsFixed(0)}',
-                style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, color: amtColor)),
+            Text(
+              '${isJama ? '+' : '-'}\u20B9${entry.amount.toStringAsFixed(0)}',
+              style: tt.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: amtColor,
+              ),
+            ),
             const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(color: amtColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-              child: Text(isJama ? 'Jama' : 'Udhaar', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: amtColor)),
+              decoration: BoxDecoration(
+                color: amtColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                isJama ? 'Jama' : 'Udhaar',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: amtColor,
+                ),
+              ),
             ),
           ],
         ),

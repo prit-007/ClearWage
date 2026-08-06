@@ -81,22 +81,25 @@ void main() {
       expect(att.computedWage, 900.0);
     });
 
-    test('fromJson handles overtime_hours as numeric string (decimal money compat)', () {
-      final json = {
-        'id': 'att-4',
-        'employee_id': 'emp-4',
-        'employee_name': 'Test',
-        'date': '2026-01-15',
-        'shift_id': 's1',
-        'status': 'present',
-        'overtime_hours': 1.5,
-        'computed_wage': 1500.75,
-      };
+    test(
+      'fromJson handles overtime_hours as numeric string (decimal money compat)',
+      () {
+        final json = {
+          'id': 'att-4',
+          'employee_id': 'emp-4',
+          'employee_name': 'Test',
+          'date': '2026-01-15',
+          'shift_id': 's1',
+          'status': 'present',
+          'overtime_hours': 1.5,
+          'computed_wage': 1500.75,
+        };
 
-      final att = Attendance.fromJson(json);
-      expect(att.overtimeHours, 1.5);
-      expect(att.computedWage, 1500.75);
-    });
+        final att = Attendance.fromJson(json);
+        expect(att.overtimeHours, 1.5);
+        expect(att.computedWage, 1500.75);
+      },
+    );
 
     test('toJson sends overtime_hours as number (not string)', () {
       final att = Attendance(

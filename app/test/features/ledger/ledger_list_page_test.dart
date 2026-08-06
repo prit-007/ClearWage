@@ -61,13 +61,14 @@ class FakeLedgerService extends LedgerService {
   }) async {
     summaryCallCount++;
     if (_summaryShouldThrow) throw Exception('Summary API fail');
-    return _summaryToReturn ?? LedgerSummary(
-      jamaTotal: 0,
-      udhaarTotal: 0,
-      netBalance: 0,
-      totalOutstanding: 0,
-      entryCount: 0,
-    );
+    return _summaryToReturn ??
+        LedgerSummary(
+          jamaTotal: 0,
+          udhaarTotal: 0,
+          netBalance: 0,
+          totalOutstanding: 0,
+          entryCount: 0,
+        );
   }
 
   @override
@@ -85,12 +86,8 @@ class FakeLedgerService extends LedgerService {
 
 Widget _buildApp(FakeLedgerService fakeService) {
   return ProviderScope(
-    overrides: [
-      ledgerServiceProvider.overrideWithValue(fakeService),
-    ],
-    child: const MaterialApp(
-      home: LedgerListScreen(),
-    ),
+    overrides: [ledgerServiceProvider.overrideWithValue(fakeService)],
+    child: const MaterialApp(home: LedgerListScreen()),
   );
 }
 
@@ -114,7 +111,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No ledger entries yet'), findsOneWidget);
-      expect(find.text('Entries will appear here once transactions are recorded.'), findsOneWidget);
+      expect(
+        find.text('Entries will appear here once transactions are recorded.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows error state on fetch failure', (tester) async {
@@ -172,13 +172,15 @@ void main() {
     });
 
     testWidgets('shows summary card with correct net balance', (tester) async {
-      fakeService.setSummary(LedgerSummary(
-        jamaTotal: 50000,
-        udhaarTotal: 20000,
-        netBalance: 30000,
-        totalOutstanding: 15000,
-        entryCount: 10,
-      ));
+      fakeService.setSummary(
+        LedgerSummary(
+          jamaTotal: 50000,
+          udhaarTotal: 20000,
+          netBalance: 30000,
+          totalOutstanding: 15000,
+          entryCount: 10,
+        ),
+      );
       fakeService.setEntries([
         LedgerEntry(
           id: 'led-1',
@@ -198,13 +200,15 @@ void main() {
     });
 
     testWidgets('shows negative balance in red', (tester) async {
-      fakeService.setSummary(LedgerSummary(
-        jamaTotal: 10000,
-        udhaarTotal: 25000,
-        netBalance: -15000,
-        totalOutstanding: 15000,
-        entryCount: 5,
-      ));
+      fakeService.setSummary(
+        LedgerSummary(
+          jamaTotal: 10000,
+          udhaarTotal: 25000,
+          netBalance: -15000,
+          totalOutstanding: 15000,
+          entryCount: 5,
+        ),
+      );
       fakeService.setEntries([
         LedgerEntry(
           id: 'led-1',
@@ -221,7 +225,9 @@ void main() {
       expect(find.textContaining('-₹15000'), findsOneWidget);
     });
 
-    testWidgets('computes summary from entries when summary API fails', (tester) async {
+    testWidgets('computes summary from entries when summary API fails', (
+      tester,
+    ) async {
       fakeService.setSummaryThrows();
       fakeService.setEntries([
         LedgerEntry(
@@ -305,8 +311,10 @@ void main() {
       await tester.pumpAndSettle();
 
       final now = DateTime.now();
-      final expectedStart = '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
-      final expectedEnd = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final expectedStart =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
+      final expectedEnd =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
       expect(fakeService.lastListParams, isNotEmpty);
       expect(fakeService.lastListParams.first['startDate'], expectedStart);
@@ -365,7 +373,9 @@ void main() {
       expect(find.textContaining('₹125000'), findsWidgets);
     });
 
-    testWidgets('formats decimal amounts via toStringAsFixed(0)', (tester) async {
+    testWidgets('formats decimal amounts via toStringAsFixed(0)', (
+      tester,
+    ) async {
       fakeService.setEntries([
         LedgerEntry(
           id: 'led-1',
@@ -383,13 +393,15 @@ void main() {
     });
 
     testWidgets('summary card shows jama and udhaar totals', (tester) async {
-      fakeService.setSummary(LedgerSummary(
-        jamaTotal: 80000,
-        udhaarTotal: 35000,
-        netBalance: 45000,
-        totalOutstanding: 20000,
-        entryCount: 20,
-      ));
+      fakeService.setSummary(
+        LedgerSummary(
+          jamaTotal: 80000,
+          udhaarTotal: 35000,
+          netBalance: 45000,
+          totalOutstanding: 20000,
+          entryCount: 20,
+        ),
+      );
       fakeService.setEntries([
         LedgerEntry(
           id: 'led-1',
@@ -410,14 +422,17 @@ void main() {
     });
 
     testWidgets('shows multiple entries in list', (tester) async {
-      final entries = List.generate(5, (i) => LedgerEntry(
-        id: 'led-$i',
-        employeeId: 'emp-$i',
-        employeeName: 'Employee $i',
-        date: '2026-08-0${i + 1}',
-        type: i % 2 == 0 ? 'jama' : 'udhaar',
-        amount: (i + 1) * 1000,
-      ));
+      final entries = List.generate(
+        5,
+        (i) => LedgerEntry(
+          id: 'led-$i',
+          employeeId: 'emp-$i',
+          employeeName: 'Employee $i',
+          date: '2026-08-0${i + 1}',
+          type: i % 2 == 0 ? 'jama' : 'udhaar',
+          amount: (i + 1) * 1000,
+        ),
+      );
       fakeService.setEntries(entries);
       await tester.pumpWidget(_buildApp(fakeService));
       await tester.pumpAndSettle();

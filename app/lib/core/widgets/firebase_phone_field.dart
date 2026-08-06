@@ -73,15 +73,15 @@ class _FirebasePhoneFieldState extends State<FirebasePhoneField> {
                   color: !widget.enabled
                       ? cs.surfaceContainerHighest.withValues(alpha: 0.1)
                       : _isFocused
-                          ? cs.primary.withValues(alpha: 0.02)
-                          : cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                      ? cs.primary.withValues(alpha: 0.02)
+                      : cs.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: hasError
                         ? cs.error.withValues(alpha: _isFocused ? 1.0 : 0.5)
                         : _isFocused
-                            ? cs.primary
-                            : cs.outlineVariant.withValues(alpha: 0.3),
+                        ? cs.primary
+                        : cs.outlineVariant.withValues(alpha: 0.3),
                     width: _isFocused || hasError ? 2 : 1,
                   ),
                   boxShadow: _isFocused && !hasError
@@ -90,22 +90,32 @@ class _FirebasePhoneFieldState extends State<FirebasePhoneField> {
                             color: cs.primary.withValues(alpha: 0.1),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
-                          )
+                          ),
                         ]
                       : [],
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 18,
+                      ),
                       decoration: BoxDecoration(
-                        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                        borderRadius: const BorderRadius.horizontal(left: Radius.circular(15)),
+                        color: cs.surfaceContainerHighest.withValues(
+                          alpha: 0.5,
+                        ),
+                        borderRadius: const BorderRadius.horizontal(
+                          left: Radius.circular(15),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('\u{1F1EE}\u{1F1F3}', style: TextStyle(fontSize: 18)),
+                          Text(
+                            '\u{1F1EE}\u{1F1F3}',
+                            style: TextStyle(fontSize: 18),
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             '+91',
@@ -130,7 +140,9 @@ class _FirebasePhoneFieldState extends State<FirebasePhoneField> {
                         style: tt.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.5,
-                          color: widget.enabled ? cs.onSurface : cs.onSurfaceVariant,
+                          color: widget.enabled
+                              ? cs.onSurface
+                              : cs.onSurfaceVariant,
                         ),
                         onChanged: (val) {
                           state.didChange(val);
@@ -152,7 +164,10 @@ class _FirebasePhoneFieldState extends State<FirebasePhoneField> {
                           errorBorder: InputBorder.none,
                           focusedErrorBorder: InputBorder.none,
                           isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
                         ),
                       ),
                     ),
@@ -164,7 +179,11 @@ class _FirebasePhoneFieldState extends State<FirebasePhoneField> {
                   padding: const EdgeInsets.only(top: 8, left: 4),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline_rounded, size: 14, color: cs.error),
+                      Icon(
+                        Icons.error_outline_rounded,
+                        size: 14,
+                        color: cs.error,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         state.errorText!,

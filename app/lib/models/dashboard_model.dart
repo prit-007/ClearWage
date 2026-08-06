@@ -47,7 +47,8 @@ class DashboardData {
       wageBillMtd: safeToDouble(json['wage_bill_mtd']),
       totalOutstanding: safeToDouble(json['total_outstanding']),
       defaultersCount: safeToInt(json['defaulters_count']),
-      recentActivity: (json['recent_activity'] as List<dynamic>?)
+      recentActivity:
+          (json['recent_activity'] as List<dynamic>?)
               ?.map((e) => ActivityItem.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
@@ -70,9 +71,10 @@ class ActivityItem {
   });
 
   factory ActivityItem.fromJson(Map<String, dynamic> json) => ActivityItem(
-        action: json['action'] as String? ?? '',
-        description: json['description'] as String? ??
-            '${json['action'] ?? ''} ${json['entity_type'] ?? ''}',
-        createdAt: json['created_at'] as String? ?? '',
-      );
+    action: json['action'] as String? ?? '',
+    description:
+        json['description'] as String? ??
+        '${json['action'] ?? ''} ${json['entity_type'] ?? ''}',
+    createdAt: json['created_at'] as String? ?? '',
+  );
 }

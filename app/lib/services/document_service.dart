@@ -24,10 +24,15 @@ class DocumentService {
       '/api/v1/staff/$employeeId/documents/$docType',
       files: [file],
     );
-    return EmployeeDocument.fromJson(res['data'] as Map<String, dynamic>? ?? {});
+    return EmployeeDocument.fromJson(
+      res['data'] as Map<String, dynamic>? ?? {},
+    );
   }
 
-  Future<void> deleteDocument({required String employeeId, required String docType}) async {
+  Future<void> deleteDocument({
+    required String employeeId,
+    required String docType,
+  }) async {
     await _client.delete('/api/v1/staff/$employeeId/documents/$docType');
   }
 }

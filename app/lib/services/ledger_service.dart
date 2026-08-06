@@ -6,7 +6,12 @@ class LedgerService {
   final ApiClient _client;
   LedgerService(this._client);
 
-  Future<List<LedgerEntry>> listByTenant({required String startDate, required String endDate, int? limit, int? offset}) async {
+  Future<List<LedgerEntry>> listByTenant({
+    required String startDate,
+    required String endDate,
+    int? limit,
+    int? offset,
+  }) async {
     final query = <String, String>{
       'start_date': startDate,
       'end_date': endDate,
@@ -15,10 +20,18 @@ class LedgerService {
     if (offset != null) query['offset'] = offset.toString();
     final res = await _client.get('/api/v1/ledger', query: query);
     final list = (res['data'] as List<dynamic>?) ?? [];
-    return list.map((e) => LedgerEntry.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => LedgerEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
-  Future<List<LedgerEntry>> listByEmployee(String employeeId, {required String startDate, required String endDate, int? limit, int? offset}) async {
+  Future<List<LedgerEntry>> listByEmployee(
+    String employeeId, {
+    required String startDate,
+    required String endDate,
+    int? limit,
+    int? offset,
+  }) async {
     final query = <String, String>{
       'start_date': startDate,
       'end_date': endDate,
@@ -27,7 +40,9 @@ class LedgerService {
     if (offset != null) query['offset'] = offset.toString();
     final res = await _client.get('/api/v1/ledger/$employeeId', query: query);
     final list = (res['data'] as List<dynamic>?) ?? [];
-    return list.map((e) => LedgerEntry.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => LedgerEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<LedgerEntry> create(Map<String, dynamic> body) async {
@@ -35,11 +50,14 @@ class LedgerService {
     return LedgerEntry.fromJson(res['data'] as Map<String, dynamic>? ?? {});
   }
 
-  Future<LedgerSummary> getSummary({required String startDate, required String endDate}) async {
-    final res = await _client.get('/api/v1/ledger/summary', query: {
-      'start_date': startDate,
-      'end_date': endDate,
-    });
+  Future<LedgerSummary> getSummary({
+    required String startDate,
+    required String endDate,
+  }) async {
+    final res = await _client.get(
+      '/api/v1/ledger/summary',
+      query: {'start_date': startDate, 'end_date': endDate},
+    );
     return LedgerSummary.fromJson(res['data'] as Map<String, dynamic>? ?? {});
   }
 
@@ -51,7 +69,11 @@ class LedgerService {
 
   Future<void> settleAccount(String employeeId) async {
     final now = DateTime.now();
-    final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    await _client.post('/api/v1/ledger/$employeeId/settle', body: {'date': date});
+    final date =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    await _client.post(
+      '/api/v1/ledger/$employeeId/settle',
+      body: {'date': date},
+    );
   }
 }

@@ -8,7 +8,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/providers.dart';
-import '../dashboard/dashboard_page.dart';
 import '../../models/employee_model.dart';
 import '../../core/app_config.dart';
 import '../../core/helpers.dart';
@@ -20,10 +19,12 @@ class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
   const EmployeeProfileScreen({super.key, required this.employeeId});
   @override
-  ConsumerState<EmployeeProfileScreen> createState() => _EmployeeProfileScreenState();
+  ConsumerState<EmployeeProfileScreen> createState() =>
+      _EmployeeProfileScreenState();
 }
 
-class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> with SingleTickerProviderStateMixin {
+class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
   Map<String, dynamic>? _profile;
   List<Map<String, dynamic>>? _attendance;
@@ -51,12 +52,26 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
       return;
     }
 
-    final profile = (overview['profile'] as Map<String, dynamic>?)?.cast<String, dynamic>();
-    final ledger = (overview['ledger'] as Map<String, dynamic>?)?.cast<String, dynamic>() ?? {};
-    final attendanceData = (overview['attendance'] as Map<String, dynamic>?)?.cast<String, dynamic>() ?? {};
-    final attSummary = (attendanceData['summary'] as Map<String, dynamic>?)?.cast<String, dynamic>() ?? {};
-    final attList = ((attendanceData['recent'] as List<dynamic>?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
-    final ledgerList = ((ledger['recent'] as List<dynamic>?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
+    final profile = (overview['profile'] as Map<String, dynamic>?)
+        ?.cast<String, dynamic>();
+    final ledger =
+        (overview['ledger'] as Map<String, dynamic>?)
+            ?.cast<String, dynamic>() ??
+        {};
+    final attendanceData =
+        (overview['attendance'] as Map<String, dynamic>?)
+            ?.cast<String, dynamic>() ??
+        {};
+    final attSummary =
+        (attendanceData['summary'] as Map<String, dynamic>?)
+            ?.cast<String, dynamic>() ??
+        {};
+    final attList = ((attendanceData['recent'] as List<dynamic>?) ?? [])
+        .map((e) => (e as Map).cast<String, dynamic>())
+        .toList();
+    final ledgerList = ((ledger['recent'] as List<dynamic>?) ?? [])
+        .map((e) => (e as Map).cast<String, dynamic>())
+        .toList();
     final bal = safeToDouble(ledger['balance']);
 
     if (mounted) {
@@ -72,7 +87,12 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
   }
 
   Future<T?> _fetch<T>(Future<T> Function() fn) async {
-    try { return await fn(); } catch (e, st) { AppLogger.error('Profile fetch failed', e, st); return null; }
+    try {
+      return await fn();
+    } catch (e, st) {
+      AppLogger.error('Profile fetch failed', e, st);
+      return null;
+    }
   }
 
   Future<void> _pickAndUploadPhoto() async {
@@ -90,19 +110,42 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Theme.of(context).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(2))),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               const SizedBox(height: 24),
               ListTile(
-                leading: PhosphorIcon(PhosphorIconsDuotone.camera, color: Theme.of(context).colorScheme.primary),
-                title: const Text('Capture with Camera', style: TextStyle(fontWeight: FontWeight.w700)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                leading: PhosphorIcon(
+                  PhosphorIconsDuotone.camera,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: const Text(
+                  'Capture with Camera',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 onTap: () => Navigator.pop(ctx, 'camera'),
               ),
               const SizedBox(height: 8),
               ListTile(
-                leading: PhosphorIcon(PhosphorIconsDuotone.image, color: Theme.of(context).colorScheme.primary),
-                title: const Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.w700)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                leading: PhosphorIcon(
+                  PhosphorIconsDuotone.image,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: const Text(
+                  'Choose from Gallery',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 onTap: () => Navigator.pop(ctx, 'gallery'),
               ),
             ],
@@ -129,10 +172,14 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
     if (path == null || !mounted) return;
 
     try {
-      final url = await ref.read(staffServiceProvider).uploadPhoto(widget.employeeId, path);
+      final url = await ref
+          .read(staffServiceProvider)
+          .uploadPhoto(widget.employeeId, path);
       if (mounted) {
         setState(() => _profile?['photo_url'] = url);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Photo updated')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Photo updated')));
       }
     } catch (e) {
       if (mounted) showError(context, e);
@@ -184,13 +231,19 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                 elevation: 0,
                 pinned: true,
                 leading: IconButton(
-                  icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+                  icon: Icon(
+                    PhosphorIconsRegular.arrowLeft,
+                    color: cs.onSurface,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
                 actions: [
                   if (isAdmin) ...[
                     IconButton(
-                      icon: Icon(PhosphorIconsRegular.pencilSimple, color: cs.onSurfaceVariant),
+                      icon: Icon(
+                        PhosphorIconsRegular.pencilSimple,
+                        color: cs.onSurfaceVariant,
+                      ),
                       onPressed: () async {
                         final emp = _profile;
                         if (emp == null || emp['id'] == null) return;
@@ -213,14 +266,17 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                         final confirmed = await showConfirmDialog(
                           context,
                           title: 'Delete Employee',
-                          message: 'Permanently deactivate ${emp['name'] ?? 'this employee'}? They will no longer be able to log in.',
+                          message:
+                              'Permanently deactivate ${emp['name'] ?? 'this employee'}? They will no longer be able to log in.',
                           confirmLabel: 'Delete',
                           icon: PhosphorIconsRegular.trash,
                           isDestructive: true,
                         );
                         if (confirmed == true && mounted) {
                           try {
-                            await ref.read(staffServiceProvider).delete(widget.employeeId);
+                            await ref
+                                .read(staffServiceProvider)
+                                .delete(widget.employeeId);
                             ref.invalidate(employeeListProvider);
                             if (context.mounted) Navigator.pop(context);
                           } catch (e) {
@@ -234,7 +290,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 8,
+                  ),
                   child: _EditorialProfileHeader(
                     cs: cs,
                     tt: tt,
@@ -242,7 +301,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                     initials: initials,
                     designation: designation,
                     phone: phone,
-                    photoUrl: resolveMediaUrl(_profile?['photo_url'] as String? ?? '', ref.read(serverUrlProvider)),
+                    photoUrl: resolveMediaUrl(
+                      _profile?['photo_url'] as String? ?? '',
+                      ref.read(serverUrlProvider),
+                    ),
                     canEditPhoto: isAdmin,
                     onEditPhoto: _pickAndUploadPhoto,
                   ),
@@ -252,7 +314,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                 pinned: true,
                 delegate: _PremiumTabBarDelegate(
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(16),
@@ -263,12 +328,24 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                       indicator: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
                         color: cs.surface,
-                        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                        boxShadow: [
+                          BoxShadow(
+                            color: cs.shadow.withValues(alpha: 0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       labelColor: cs.primary,
                       unselectedLabelColor: cs.onSurfaceVariant,
-                      labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      labelStyle: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                       dividerColor: Colors.transparent,
                       tabs: const [
                         Tab(text: 'Profile'),
@@ -285,9 +362,25 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
               controller: _tabCtrl,
               physics: const BouncingScrollPhysics(),
               children: [
-                _InfoTab(cs: cs, tt: tt, profile: _profile, employeeId: widget.employeeId, canEdit: isAdmin),
-                _AttendanceTab(cs: cs, tt: tt, attendanceList: _attendance, summary: _attSummary),
-                _LedgerTab(cs: cs, tt: tt, ledgerList: _ledger, balance: _balance),
+                _InfoTab(
+                  cs: cs,
+                  tt: tt,
+                  profile: _profile,
+                  employeeId: widget.employeeId,
+                  canEdit: isAdmin,
+                ),
+                _AttendanceTab(
+                  cs: cs,
+                  tt: tt,
+                  attendanceList: _attendance,
+                  summary: _attSummary,
+                ),
+                _LedgerTab(
+                  cs: cs,
+                  tt: tt,
+                  ledgerList: _ledger,
+                  balance: _balance,
+                ),
               ],
             ),
           ),
@@ -302,17 +395,23 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                         final confirmed = await showConfirmDialog(
                           context,
                           title: 'Settle Account',
-                          message: 'This will zero out the outstanding balance. This action cannot be undone.',
+                          message:
+                              'This will zero out the outstanding balance. This action cannot be undone.',
                           confirmLabel: 'Settle',
                           icon: PhosphorIconsRegular.currencyCircleDollar,
                         );
                         if (confirmed != true) return;
                         HapticFeedback.lightImpact();
                         try {
-                          await ref.read(ledgerServiceProvider).settleAccount(widget.employeeId);
+                          await ref
+                              .read(ledgerServiceProvider)
+                              .settleAccount(widget.employeeId);
                           ref.invalidate(dashboardDataProvider);
                           ref.read(ledgerRefreshProvider.notifier).state++;
-                          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account settled')));
+                          if (context.mounted)
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Account settled')),
+                            );
                           if (mounted) _loadProfile();
                         } catch (e) {
                           if (context.mounted) showError(context, e);
@@ -320,10 +419,15 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                       },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         side: BorderSide(color: cs.outlineVariant),
                       ),
-                      child: const Text('F&F Settle', style: TextStyle(fontWeight: FontWeight.w700)),
+                      child: const Text(
+                        'F&F Settle',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -333,17 +437,36 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                         HapticFeedback.heavyImpact();
                         try {
                           final now = DateTime.now();
-                          final start = '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
-                          final end = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-                          final pdf = await ref.read(payrollServiceProvider).generatePayslip(employeeId: widget.employeeId, startDate: start, endDate: end);
+                          final start =
+                              '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
+                          final end =
+                              '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+                          final pdf = await ref
+                              .read(payrollServiceProvider)
+                              .generatePayslip(
+                                employeeId: widget.employeeId,
+                                startDate: start,
+                                endDate: end,
+                              );
                           final dir = await getTemporaryDirectory();
-                          final file = File('${dir.path}/payslip_${widget.employeeId}_${start}_$end.pdf');
+                          final file = File(
+                            '${dir.path}/payslip_${widget.employeeId}_${start}_$end.pdf',
+                          );
                           await file.writeAsBytes(pdf);
                           if (context.mounted) {
-                            final opened = await launchUrl(Uri.file(file.path), mode: LaunchMode.externalApplication);
+                            final opened = await launchUrl(
+                              Uri.file(file.path),
+                              mode: LaunchMode.externalApplication,
+                            );
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(opened ? 'Payslip opened' : 'Payslip saved. Could not open automatically.')),
+                                SnackBar(
+                                  content: Text(
+                                    opened
+                                        ? 'Payslip opened'
+                                        : 'Payslip saved. Could not open automatically.',
+                                  ),
+                                ),
                               );
                             }
                           }
@@ -353,9 +476,14 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                       },
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
-                      child: const Text('Generate Slip', style: TextStyle(fontWeight: FontWeight.w700)),
+                      child: const Text(
+                        'Generate Slip',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     ),
                   ),
                 ],
@@ -395,7 +523,10 @@ class _EditorialProfileHeader extends StatelessWidget {
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: cs.primary.withValues(alpha: 0.2), width: 3),
+            border: Border.all(
+              color: cs.primary.withValues(alpha: 0.2),
+              width: 3,
+            ),
           ),
           child: Stack(
             clipBehavior: Clip.none,
@@ -403,10 +534,19 @@ class _EditorialProfileHeader extends StatelessWidget {
               CircleAvatar(
                 radius: 52,
                 backgroundColor: cs.primaryContainer.withValues(alpha: 0.4),
-                backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                backgroundImage: photoUrl.isNotEmpty
+                    ? NetworkImage(photoUrl)
+                    : null,
                 child: photoUrl.isNotEmpty
                     ? null
-                    : Text(initials, style: tt.headlineMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.w900, letterSpacing: -1.0)),
+                    : Text(
+                        initials,
+                        style: tt.headlineMedium?.copyWith(
+                          color: cs.primary,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1.0,
+                        ),
+                      ),
               ),
               if (canEditPhoto)
                 Positioned(
@@ -419,9 +559,16 @@ class _EditorialProfileHeader extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: cs.primary,
                         shape: BoxShape.circle,
-                        border: Border.all(color: cs.surfaceContainerLowest, width: 3),
+                        border: Border.all(
+                          color: cs.surfaceContainerLowest,
+                          width: 3,
+                        ),
                       ),
-                      child: Icon(PhosphorIconsFill.camera, size: 16, color: cs.onPrimary),
+                      child: Icon(
+                        PhosphorIconsFill.camera,
+                        size: 16,
+                        color: cs.onPrimary,
+                      ),
                     ),
                   ),
                 ),
@@ -429,7 +576,13 @@ class _EditorialProfileHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Text(name, style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -1.0)),
+        Text(
+          name,
+          style: tt.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1.0,
+          ),
+        ),
         const SizedBox(height: 4),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -437,7 +590,14 @@ class _EditorialProfileHeader extends StatelessWidget {
             color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Text(designation.toUpperCase(), style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+          child: Text(
+            designation.toUpperCase(),
+            style: tt.labelSmall?.copyWith(
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.0,
+            ),
+          ),
         ),
         const SizedBox(height: 24),
       ],
@@ -451,7 +611,8 @@ class _PremiumTabBarDelegate extends SliverPersistentHeaderDelegate {
   _PremiumTabBarDelegate(this.tabBar, this.bgColor);
 
   @override
-  Widget build(BuildContext context, _, _) => Container(color: bgColor, child: tabBar);
+  Widget build(BuildContext context, _, _) =>
+      Container(color: bgColor, child: tabBar);
   @override
   double get maxExtent => 64;
   @override
@@ -466,21 +627,28 @@ class _InfoTab extends StatelessWidget {
   final Map<String, dynamic>? profile;
   final String employeeId;
   final bool canEdit;
-  const _InfoTab({required this.cs, required this.tt, this.profile, required this.employeeId, required this.canEdit});
+  const _InfoTab({
+    required this.cs,
+    required this.tt,
+    this.profile,
+    required this.employeeId,
+    required this.canEdit,
+  });
 
   @override
   Widget build(BuildContext context) {
     final wageType = profile?['wage_type'] as String? ?? '';
     final wageAmount = profile?['wage_amount']?.toString() ?? '0';
-    final designation = profile?['designation'] as String? ?? profile?['role'] as String? ?? '';
+    final designation =
+        profile?['designation'] as String? ?? profile?['role'] as String? ?? '';
     final manager = profile?['manager_name'] as String? ?? 'Not assigned';
     final shiftName = profile?['shift_name'] as String?;
     final shiftStart = profile?['shift_start_time'] as String?;
     final shiftEnd = profile?['shift_end_time'] as String?;
     final shiftLabel = shiftName != null && shiftName.isNotEmpty
         ? (shiftStart != null && shiftStart.isNotEmpty
-            ? '$shiftName (${formatTime(shiftStart)}–${formatTime(shiftEnd)})'
-            : shiftName)
+              ? '$shiftName (${formatTime(shiftStart)}–${formatTime(shiftEnd)})'
+              : shiftName)
         : 'Not assigned';
 
     final kyc = <String, String>{
@@ -502,30 +670,39 @@ class _InfoTab extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         _EditorialInfoBlock(
-            cs: cs,
-            tt: tt,
-            title: 'Employment Details',
-            data: {
-              'Designation': designation,
-              'Shift': shiftLabel,
-              'Manager': manager,
-            }),
+          cs: cs,
+          tt: tt,
+          title: 'Employment Details',
+          data: {
+            'Designation': designation,
+            'Shift': shiftLabel,
+            'Manager': manager,
+          },
+        ),
         _EditorialInfoBlock(
-            cs: cs,
-            tt: tt,
-            title: 'Financial Config',
-            data: {
-              'Wage Type': wageType == 'daily' ? 'Daily Wage' : wageType == 'monthly' ? 'Monthly' : wageType,
-              'Base Rate': '₹$wageAmount${wageType == 'daily' ? ' / day' : ''}',
-            }),
-        _EditorialInfoBlock(
-            cs: cs,
-            tt: tt,
-            title: 'KYC & Identity',
-            data: kyc),
+          cs: cs,
+          tt: tt,
+          title: 'Financial Config',
+          data: {
+            'Wage Type': wageType == 'daily'
+                ? 'Daily Wage'
+                : wageType == 'monthly'
+                ? 'Monthly'
+                : wageType,
+            'Base Rate': '₹$wageAmount${wageType == 'daily' ? ' / day' : ''}',
+          },
+        ),
+        _EditorialInfoBlock(cs: cs, tt: tt, title: 'KYC & Identity', data: kyc),
         const Padding(
           padding: EdgeInsets.only(top: 8),
-          child: Text('KYC DOCUMENTS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+          child: Text(
+            'KYC DOCUMENTS',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.0,
+            ),
+          ),
         ),
         const SizedBox(height: 16),
         _DocumentVault(employeeId: employeeId, canEdit: canEdit),
@@ -568,7 +745,9 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
       _error = null;
     });
     try {
-      final docs = await ref.read(documentServiceProvider).listDocuments(widget.employeeId);
+      final docs = await ref
+          .read(documentServiceProvider)
+          .listDocuments(widget.employeeId);
       if (mounted) {
         setState(() {
           _docs = docs.map((d) => d.toJson()).toList();
@@ -607,26 +786,57 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Theme.of(context).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(2))),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               const SizedBox(height: 24),
               ListTile(
-                leading: PhosphorIcon(PhosphorIconsDuotone.camera, color: Theme.of(context).colorScheme.primary),
-                title: const Text('Capture with Camera', style: TextStyle(fontWeight: FontWeight.w700)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                leading: PhosphorIcon(
+                  PhosphorIconsDuotone.camera,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: const Text(
+                  'Capture with Camera',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 onTap: () => Navigator.pop(ctx, 'camera'),
               ),
               const SizedBox(height: 8),
               ListTile(
-                leading: PhosphorIcon(PhosphorIconsDuotone.image, color: Theme.of(context).colorScheme.primary),
-                title: const Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.w700)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                leading: PhosphorIcon(
+                  PhosphorIconsDuotone.image,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: const Text(
+                  'Choose from Gallery',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 onTap: () => Navigator.pop(ctx, 'gallery'),
               ),
               const SizedBox(height: 8),
               ListTile(
-                leading: PhosphorIcon(PhosphorIconsDuotone.filePdf, color: Theme.of(context).colorScheme.primary),
-                title: const Text('Upload PDF / File', style: TextStyle(fontWeight: FontWeight.w700)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                leading: PhosphorIcon(
+                  PhosphorIconsDuotone.filePdf,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: const Text(
+                  'Upload PDF / File',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 onTap: () => Navigator.pop(ctx, 'file'),
               ),
             ],
@@ -647,7 +857,10 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
         );
         path = picked?.path;
       } else {
-        final result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+        final result = await FilePicker.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['pdf'],
+        );
         path = result?.files.single.path;
       }
     } catch (_) {
@@ -658,13 +871,17 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
 
     setState(() => _uploadingType = type);
     try {
-      await ref.read(documentServiceProvider).uploadDocument(
+      await ref
+          .read(documentServiceProvider)
+          .uploadDocument(
             employeeId: widget.employeeId,
             docType: type,
             filePath: path,
           );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Document uploaded')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Document uploaded')));
         _load();
       }
     } catch (e) {
@@ -675,11 +892,19 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
   }
 
   Future<void> _view(Map<String, dynamic> doc) async {
-    final url = resolveMediaUrl(doc['file_path'] as String? ?? '', ref.read(serverUrlProvider));
+    final url = resolveMediaUrl(
+      doc['file_path'] as String? ?? '',
+      ref.read(serverUrlProvider),
+    );
     if (url.isEmpty) return;
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _DocumentViewerPage(url: url, isPdf: (doc['original_name'] as String? ?? '').toLowerCase().endsWith('.pdf')),
+        builder: (_) => _DocumentViewerPage(
+          url: url,
+          isPdf: (doc['original_name'] as String? ?? '').toLowerCase().endsWith(
+            '.pdf',
+          ),
+        ),
       ),
     );
   }
@@ -695,7 +920,9 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
     );
     if (confirmed != true || !mounted) return;
     try {
-      await ref.read(documentServiceProvider).deleteDocument(employeeId: widget.employeeId, docType: type);
+      await ref
+          .read(documentServiceProvider)
+          .deleteDocument(employeeId: widget.employeeId, docType: type);
       if (mounted) _load();
     } catch (e) {
       if (mounted) showError(context, e);
@@ -726,9 +953,16 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
           children: [
             Icon(PhosphorIconsFill.warningCircle, size: 40, color: cs.error),
             const SizedBox(height: 12),
-            Text('Could not load documents', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+            Text(
+              'Could not load documents',
+              style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
             const SizedBox(height: 4),
-            Text('$_error', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
+            Text(
+              '$_error',
+              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 16),
             FilledButton.tonalIcon(
               onPressed: _load,
@@ -793,7 +1027,9 @@ class _DocumentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPdf = (doc?['original_name'] as String? ?? '').toLowerCase().endsWith('.pdf');
+    final isPdf = (doc?['original_name'] as String? ?? '')
+        .toLowerCase()
+        .endsWith('.pdf');
     final filePath = doc?['file_path'] as String? ?? '';
 
     return Container(
@@ -803,7 +1039,13 @@ class _DocumentCard extends StatelessWidget {
         color: cs.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -815,7 +1057,8 @@ class _DocumentCard extends StatelessWidget {
                 width: 56,
                 height: 56,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => PhosphorIcon(icon, size: 28, color: cs.onSurfaceVariant),
+                errorBuilder: (_, _, _) =>
+                    PhosphorIcon(icon, size: 28, color: cs.onSurfaceVariant),
               ),
             )
           else
@@ -837,24 +1080,48 @@ class _DocumentCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.3)),
+                Text(
+                  label,
+                  style: tt.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   doc != null ? 'Uploaded & Verified' : 'Action Required',
-                  style: tt.bodySmall?.copyWith(color: doc != null ? const Color(0xFF10B981) : cs.error, fontWeight: FontWeight.w600),
+                  style: tt.bodySmall?.copyWith(
+                    color: doc != null ? const Color(0xFF10B981) : cs.error,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
           ),
           if (uploading)
-            const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
           else if (doc != null) ...[
-            IconButton(onPressed: onView, icon: Icon(PhosphorIconsRegular.eye, color: cs.onSurfaceVariant)),
-            if (canEdit) IconButton(onPressed: onDelete, icon: Icon(PhosphorIconsRegular.trash, color: cs.error)),
+            IconButton(
+              onPressed: onView,
+              icon: Icon(PhosphorIconsRegular.eye, color: cs.onSurfaceVariant),
+            ),
+            if (canEdit)
+              IconButton(
+                onPressed: onDelete,
+                icon: Icon(PhosphorIconsRegular.trash, color: cs.error),
+              ),
           ] else if (canEdit)
             FilledButton.tonal(
               onPressed: onUpload,
-              style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               child: const Text('Upload'),
             ),
         ],
@@ -875,7 +1142,10 @@ class _DocumentViewerPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: Text(isPdf ? 'Document' : 'Document Preview', style: const TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(
+          isPdf ? 'Document' : 'Document Preview',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
         centerTitle: true,
       ),
       body: Center(
@@ -883,21 +1153,30 @@ class _DocumentViewerPage extends StatelessWidget {
             ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const PhosphorIcon(PhosphorIconsDuotone.filePdf, size: 96, color: Colors.white70),
+                  const PhosphorIcon(
+                    PhosphorIconsDuotone.filePdf,
+                    size: 96,
+                    color: Colors.white70,
+                  ),
                   const SizedBox(height: 24),
                   FilledButton.icon(
                     onPressed: () async {
-                      final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-                      if (!ok && context.mounted) showError(context, 'Could not open document');
+                      final ok = await launchUrl(
+                        Uri.parse(url),
+                        mode: LaunchMode.externalApplication,
+                      );
+                      if (!ok && context.mounted)
+                        showError(context, 'Could not open document');
                     },
                     icon: const Icon(PhosphorIconsRegular.arrowSquareOut),
-                    label: const Text('Open Document externally', style: TextStyle(fontWeight: FontWeight.w700)),
+                    label: const Text(
+                      'Open Document externally',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                   ),
                 ],
               )
-            : InteractiveViewer(
-                child: Image.network(url, fit: BoxFit.contain),
-              ),
+            : InteractiveViewer(child: Image.network(url, fit: BoxFit.contain)),
       ),
     );
   }
@@ -909,7 +1188,12 @@ class _EditorialInfoBlock extends StatelessWidget {
   final String title;
   final Map<String, String> data;
 
-  const _EditorialInfoBlock({required this.cs, required this.tt, required this.title, required this.data});
+  const _EditorialInfoBlock({
+    required this.cs,
+    required this.tt,
+    required this.title,
+    required this.data,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -919,29 +1203,61 @@ class _EditorialInfoBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title.toUpperCase(), style: tt.labelSmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+          Text(
+            title.toUpperCase(),
+            style: tt.labelSmall?.copyWith(
+              color: cs.primary,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.0,
+            ),
+          ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: cs.surface,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
-              boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2))],
+              border: Border.all(
+                color: cs.outlineVariant.withValues(alpha: 0.3),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: cs.shadow.withValues(alpha: 0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Column(
               children: [
                 for (int i = 0; i < entries.length; i++)
                   Padding(
-                    padding: EdgeInsets.only(bottom: i < entries.length - 1 ? 16 : 0),
+                    padding: EdgeInsets.only(
+                      bottom: i < entries.length - 1 ? 16 : 0,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
-                            flex: 2,
-                            child: Text(entries[i].key, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600))),
+                          flex: 2,
+                          child: Text(
+                            entries[i].key,
+                            style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                         Expanded(
-                            flex: 3,
-                            child: Text(entries[i].value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14))),
+                          flex: 3,
+                          child: Text(
+                            entries[i].value,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -959,7 +1275,12 @@ class _AttendanceTab extends StatelessWidget {
   final TextTheme tt;
   final List<Map<String, dynamic>>? attendanceList;
   final Map<String, dynamic>? summary;
-  const _AttendanceTab({required this.cs, required this.tt, this.attendanceList, this.summary});
+  const _AttendanceTab({
+    required this.cs,
+    required this.tt,
+    this.attendanceList,
+    this.summary,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -975,7 +1296,9 @@ class _AttendanceTab extends StatelessWidget {
         ? safeToInt(s['half_day'])
         : list.where((a) => a['status'] == 'half_day').length;
     final total = summary != null
-        ? safeToInt(s['total']) != 0 ? safeToInt(s['total']) : (present + absent + halfDay)
+        ? safeToInt(s['total']) != 0
+              ? safeToInt(s['total'])
+              : (present + absent + halfDay)
         : (list.isNotEmpty ? list.length : 1);
     final pct = total > 0 ? present / total : 0.0;
     final recent = list.take(5).toList();
@@ -987,9 +1310,24 @@ class _AttendanceTab extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _AttMacroStat(tt: tt, label: 'Present', value: '$present', color: const Color(0xFF10B981)),
-            _AttMacroStat(tt: tt, label: 'Absent', value: '$absent', color: const Color(0xFFEF4444)),
-            _AttMacroStat(tt: tt, label: 'Half', value: '$halfDay', color: const Color(0xFFF59E0B)),
+            _AttMacroStat(
+              tt: tt,
+              label: 'Present',
+              value: '$present',
+              color: const Color(0xFF10B981),
+            ),
+            _AttMacroStat(
+              tt: tt,
+              label: 'Absent',
+              value: '$absent',
+              color: const Color(0xFFEF4444),
+            ),
+            _AttMacroStat(
+              tt: tt,
+              label: 'Half',
+              value: '$halfDay',
+              color: const Color(0xFFF59E0B),
+            ),
           ],
         ),
         const SizedBox(height: 32),
@@ -1006,16 +1344,40 @@ class _AttendanceTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 48),
-        Text('RECENT LOGS', style: tt.labelSmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+        Text(
+          'RECENT LOGS',
+          style: tt.labelSmall?.copyWith(
+            color: cs.primary,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
+          ),
+        ),
         const SizedBox(height: 24),
         if (recent.isEmpty)
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(16)),
-            child: Center(child: Text('No attendance records for this month', style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600))),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                'No attendance records for this month',
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           )
         else
-          ...recent.map((a) => _TimelineRow(cs: cs, status: a['status'] as String? ?? 'present', date: a['date'] as String? ?? '')),
+          ...recent.map(
+            (a) => _TimelineRow(
+              cs: cs,
+              status: a['status'] as String? ?? 'present',
+              date: a['date'] as String? ?? '',
+            ),
+          ),
       ],
     );
   }
@@ -1025,16 +1387,36 @@ class _AttMacroStat extends StatelessWidget {
   final TextTheme tt;
   final String label, value;
   final Color color;
-  const _AttMacroStat({required this.tt, required this.label, required this.value, required this.color});
+  const _AttMacroStat({
+    required this.tt,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: tt.displayLarge?.copyWith(fontWeight: FontWeight.w900, color: color, letterSpacing: -2.0, height: 1.0)),
+        Text(
+          value,
+          style: tt.displayLarge?.copyWith(
+            fontWeight: FontWeight.w900,
+            color: color,
+            letterSpacing: -2.0,
+            height: 1.0,
+          ),
+        ),
         const SizedBox(height: 8),
-        Text(label.toUpperCase(), style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w800, color: color.withValues(alpha: 0.8), letterSpacing: 0.5)),
+        Text(
+          label.toUpperCase(),
+          style: tt.labelSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: color.withValues(alpha: 0.8),
+            letterSpacing: 0.5,
+          ),
+        ),
       ],
     );
   }
@@ -1045,14 +1427,30 @@ class _TimelineRow extends StatelessWidget {
   final String status;
   final String date;
 
-  const _TimelineRow({required this.cs, required this.status, required this.date});
+  const _TimelineRow({
+    required this.cs,
+    required this.status,
+    required this.date,
+  });
 
   @override
   Widget build(BuildContext context) {
     final (label, color, icon) = switch (status) {
-      'present' => ('Present', const Color(0xFF10B981), PhosphorIconsBold.check),
-      'half_day' => ('Half Day', const Color(0xFFF59E0B), PhosphorIconsBold.minus),
-      'paid_leave' => ('Paid Leave', const Color(0xFF3B82F6), PhosphorIconsBold.calendar),
+      'present' => (
+        'Present',
+        const Color(0xFF10B981),
+        PhosphorIconsBold.check,
+      ),
+      'half_day' => (
+        'Half Day',
+        const Color(0xFFF59E0B),
+        PhosphorIconsBold.minus,
+      ),
+      'paid_leave' => (
+        'Paid Leave',
+        const Color(0xFF3B82F6),
+        PhosphorIconsBold.calendar,
+      ),
       'week_off' => ('Week Off', cs.onSurfaceVariant, PhosphorIconsBold.moon),
       _ => ('Absent', const Color(0xFFEF4444), PhosphorIconsBold.x),
     };
@@ -1063,13 +1461,22 @@ class _TimelineRow extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, size: 16, color: color),
           ),
           const SizedBox(width: 16),
-          Text(formatDate(date), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+          Text(
+            formatDate(date),
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
           const Spacer(),
-          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w800)),
+          Text(
+            label,
+            style: TextStyle(color: color, fontWeight: FontWeight.w800),
+          ),
         ],
       ),
     );
@@ -1081,7 +1488,12 @@ class _LedgerTab extends StatelessWidget {
   final TextTheme tt;
   final List<Map<String, dynamic>>? ledgerList;
   final double? balance;
-  const _LedgerTab({required this.cs, required this.tt, this.ledgerList, this.balance});
+  const _LedgerTab({
+    required this.cs,
+    required this.tt,
+    this.ledgerList,
+    this.balance,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1095,27 +1507,67 @@ class _LedgerTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 160),
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
-        Text('NET OUTSTANDING', style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+        Text(
+          'NET OUTSTANDING',
+          style: tt.labelSmall?.copyWith(
+            color: cs.onSurfaceVariant,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
+          ),
+        ),
         const SizedBox(height: 8),
-        Text('₹${bal.abs().toStringAsFixed(0)}', style: tt.displayLarge?.copyWith(fontWeight: FontWeight.w900, color: balColor, letterSpacing: -2.0)),
+        Text(
+          '₹${bal.abs().toStringAsFixed(0)}',
+          style: tt.displayLarge?.copyWith(
+            fontWeight: FontWeight.w900,
+            color: balColor,
+            letterSpacing: -2.0,
+          ),
+        ),
         if (isNegative)
-          Text('Payable by Employee', style: tt.labelSmall?.copyWith(color: balColor, fontWeight: FontWeight.w700)),
+          Text(
+            'Payable by Employee',
+            style: tt.labelSmall?.copyWith(
+              color: balColor,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         const SizedBox(height: 48),
-        Text('RECENT ENTRIES', style: tt.labelSmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+        Text(
+          'RECENT ENTRIES',
+          style: tt.labelSmall?.copyWith(
+            color: cs.primary,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
+          ),
+        ),
         const SizedBox(height: 24),
         if (recent.isEmpty)
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(16)),
-            child: Center(child: Text('No ledger entries this month', style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600))),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                'No ledger entries this month',
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           )
         else
-          ...recent.map((e) => _LedgerEntryRow(
-                cs: cs,
-                isJama: e['type'] == 'jama',
-                amount: safeToDouble(e['amount']),
-                date: e['date'] as String? ?? '',
-              )),
+          ...recent.map(
+            (e) => _LedgerEntryRow(
+              cs: cs,
+              isJama: e['type'] == 'jama',
+              amount: safeToDouble(e['amount']),
+              date: e['date'] as String? ?? '',
+            ),
+          ),
       ],
     );
   }
@@ -1127,7 +1579,12 @@ class _LedgerEntryRow extends StatelessWidget {
   final double amount;
   final String date;
 
-  const _LedgerEntryRow({required this.cs, required this.isJama, required this.amount, required this.date});
+  const _LedgerEntryRow({
+    required this.cs,
+    required this.isJama,
+    required this.amount,
+    required this.date,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1138,20 +1595,50 @@ class _LedgerEntryRow extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(12)),
-            child: Icon(isJama ? PhosphorIconsBold.arrowUpRight : PhosphorIconsBold.arrowDownLeft, size: 20, color: color),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isJama
+                  ? PhosphorIconsBold.arrowUpRight
+                  : PhosphorIconsBold.arrowDownLeft,
+              size: 20,
+              color: color,
+            ),
           ),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(isJama ? 'Wage Added' : 'Advance Taken', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+              Text(
+                isJama ? 'Wage Added' : 'Advance Taken',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(formatDate(date), style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
+              Text(
+                formatDate(date),
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
           const Spacer(),
-          Text('${isJama ? '+' : '-'}\u20B9${amount.toStringAsFixed(0)}', style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: -0.5)),
+          Text(
+            '${isJama ? '+' : '-'}\u20B9${amount.toStringAsFixed(0)}',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+              letterSpacing: -0.5,
+            ),
+          ),
         ],
       ),
     );

@@ -9,9 +9,10 @@ class AuthService {
   AuthService(this._client);
 
   Future<AuthToken> signInWithFirebase(String idToken) async {
-    final res = await _client.post('/api/v1/auth/firebase-login', body: {
-      'id_token': idToken,
-    });
+    final res = await _client.post(
+      '/api/v1/auth/firebase-login',
+      body: {'id_token': idToken},
+    );
     if (res['status'] != 'success') {
       throw ApiException(res['message'] as String? ?? 'Login failed');
     }
@@ -31,11 +32,10 @@ class AuthService {
     required String factoryName,
     required String idToken,
   }) async {
-    final res = await _client.post('/api/v1/auth/register', body: {
-      'name': name,
-      'factory_name': factoryName,
-      'id_token': idToken,
-    });
+    final res = await _client.post(
+      '/api/v1/auth/register',
+      body: {'name': name, 'factory_name': factoryName, 'id_token': idToken},
+    );
     if (res['status'] != 'success') {
       throw ApiException(res['message'] as String? ?? 'Registration failed');
     }

@@ -20,7 +20,8 @@ enum _AttStatus { present, absent, halfDay }
 class AttendanceRosterPage extends ConsumerStatefulWidget {
   const AttendanceRosterPage({super.key});
   @override
-  ConsumerState<AttendanceRosterPage> createState() => _AttendanceRosterPageState();
+  ConsumerState<AttendanceRosterPage> createState() =>
+      _AttendanceRosterPageState();
 }
 
 class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
@@ -51,22 +52,33 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     final rows = _cachedRows ?? [];
     final date = _dateStr;
     final unmarkedRows = rows.where((r) => !r.hasAttendance).toList();
-    final noShift = unmarkedRows.where((r) => r.defaultShiftId == null || r.defaultShiftId!.isEmpty).toList();
-    final withShift = unmarkedRows.where((r) => r.defaultShiftId != null && r.defaultShiftId!.isNotEmpty).toList();
+    final noShift = unmarkedRows
+        .where((r) => r.defaultShiftId == null || r.defaultShiftId!.isEmpty)
+        .toList();
+    final withShift = unmarkedRows
+        .where((r) => r.defaultShiftId != null && r.defaultShiftId!.isNotEmpty)
+        .toList();
 
     if (unmarkedRows.isEmpty) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('All employees already marked')));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('All employees already marked')),
+        );
       setState(() => _saving = false);
       return;
     }
 
-    final records = withShift.map((r) => ({
-      'employee_id': r.employeeId,
-      'date': date,
-      'shift_id': r.defaultShiftId!,
-      'status': 'present',
-      'overtime_hours': '0',
-    })).toList();
+    final records = withShift
+        .map(
+          (r) => ({
+            'employee_id': r.employeeId,
+            'date': date,
+            'shift_id': r.defaultShiftId!,
+            'status': 'present',
+            'overtime_hours': '0',
+          }),
+        )
+        .toList();
 
     if (records.isNotEmpty) {
       try {
@@ -82,13 +94,23 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     if (noShift.isNotEmpty) {
       msg += '. ${noShift.length} skipped (no shift assigned)';
     }
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    if (mounted)
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     setState(() => _saving = false);
   }
 
-  Future<void> _updateAttendance(Attendance att, _AttStatus newStatus, double ot, {String? shiftId}) async {
+  Future<void> _updateAttendance(
+    Attendance att,
+    _AttStatus newStatus,
+    double ot, {
+    String? shiftId,
+  }) async {
     try {
-      final statusMap = {_AttStatus.present: 'present', _AttStatus.absent: 'absent', _AttStatus.halfDay: 'half_day'};
+      final statusMap = {
+        _AttStatus.present: 'present',
+        _AttStatus.absent: 'absent',
+        _AttStatus.halfDay: 'half_day',
+      };
       await ref.read(attendanceServiceProvider).update(att.id, {
         'status': statusMap[newStatus],
         'overtime_hours': ot.toStringAsFixed(1),
@@ -100,14 +122,30 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     }
   }
 
-  Future<void> _createAttendance(Employee emp, _AttStatus status, double ot, {String? shiftId}) async {
+  Future<void> _createAttendance(
+    Employee emp,
+    _AttStatus status,
+    double ot, {
+    String? shiftId,
+  }) async {
     final chosenShift = shiftId ?? emp.defaultShiftId;
     if (chosenShift == null || chosenShift.isEmpty) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No shift assigned. Choose a shift or edit staff profile to assign one.')));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No shift assigned. Choose a shift or edit staff profile to assign one.',
+            ),
+          ),
+        );
       return;
     }
     try {
-      final statusMap = {_AttStatus.present: 'present', _AttStatus.absent: 'absent', _AttStatus.halfDay: 'half_day'};
+      final statusMap = {
+        _AttStatus.present: 'present',
+        _AttStatus.absent: 'absent',
+        _AttStatus.halfDay: 'half_day',
+      };
       await ref.read(attendanceServiceProvider).create({
         'employee_id': emp.id,
         'date': _dateStr,
@@ -133,13 +171,26 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
             children: [
               Container(
                 padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.3), shape: BoxShape.circle),
-                child: PhosphorIcon(PhosphorIconsDuotone.usersThree, size: 56, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: PhosphorIcon(
+                  PhosphorIconsDuotone.usersThree,
+                  size: 56,
+                  color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                ),
               ),
               const SizedBox(height: 24),
-              Text('No Active Staff', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+              Text(
+                'No Active Staff',
+                style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
               const SizedBox(height: 8),
-              Text('Add employees from the directory to start tracking.', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+              Text(
+                'Add employees from the directory to start tracking.',
+                style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+              ),
             ],
           ),
         ),
@@ -149,18 +200,34 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 140),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final row = merged[index];
-            return FluidSlideIn(
-              delay: (index * 50).clamp(0, 400).toInt(),
-              child: row.attendance != null
-                  ? _PremiumAttendanceCard(cs: cs, tt: tt, employee: row.employee, attendance: row.attendance!, shifts: _shifts, onUpdate: (att, status, ot, shiftId) => _updateAttendance(att, status, ot, shiftId: shiftId))
-                  : _UnmarkedEmployeeCard(cs: cs, tt: tt, employee: row.employee, shifts: _shifts, onMark: (status, ot, shiftId) => _createAttendance(row.employee, status, ot, shiftId: shiftId)),
-            );
-          },
-          childCount: merged.length,
-        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final row = merged[index];
+          return FluidSlideIn(
+            delay: (index * 50).clamp(0, 400).toInt(),
+            child: row.attendance != null
+                ? _PremiumAttendanceCard(
+                    cs: cs,
+                    tt: tt,
+                    employee: row.employee,
+                    attendance: row.attendance!,
+                    shifts: _shifts,
+                    onUpdate: (att, status, ot, shiftId) =>
+                        _updateAttendance(att, status, ot, shiftId: shiftId),
+                  )
+                : _UnmarkedEmployeeCard(
+                    cs: cs,
+                    tt: tt,
+                    employee: row.employee,
+                    shifts: _shifts,
+                    onMark: (status, ot, shiftId) => _createAttendance(
+                      row.employee,
+                      status,
+                      ot,
+                      shiftId: shiftId,
+                    ),
+                  ),
+          );
+        }, childCount: merged.length),
       ),
     );
   }
@@ -184,10 +251,14 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
             await ref.read(rosterByDateProvider(_dateStr).future);
           },
           child: CustomScrollView(
-            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
             slivers: [
               SliverAppBar(
-                backgroundColor: cs.surfaceContainerLowest.withValues(alpha: 0.85),
+                backgroundColor: cs.surfaceContainerLowest.withValues(
+                  alpha: 0.85,
+                ),
                 pinned: true,
                 elevation: 0,
                 expandedHeight: 80,
@@ -196,15 +267,27 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                     child: FlexibleSpaceBar(
-                      titlePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      titlePadding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
                       centerTitle: true,
-                      title: Text('Daily Roster', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                      title: Text(
+                        'Daily Roster',
+                        style: tt.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
                     ),
                   ),
                 ),
                 actions: [
                   IconButton(
-                    icon: Icon(PhosphorIconsBold.arrowsClockwise, color: cs.primary),
+                    icon: Icon(
+                      PhosphorIconsBold.arrowsClockwise,
+                      color: cs.primary,
+                    ),
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       ref.invalidate(rosterByDateProvider(_dateStr));
@@ -227,39 +310,78 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                         lastDate: DateTime.now().add(const Duration(days: 1)),
                         builder: (context, child) => Theme(
                           data: Theme.of(context).copyWith(
-                            colorScheme: cs.copyWith(primary: cs.primary, onPrimary: cs.onPrimary),
+                            colorScheme: cs.copyWith(
+                              primary: cs.primary,
+                              onPrimary: cs.onPrimary,
+                            ),
                           ),
                           child: child!,
                         ),
                       );
-                      if (picked != null) setState(() => _selectedDate = picked);
+                      if (picked != null)
+                        setState(() => _selectedDate = picked);
                     },
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
                       decoration: BoxDecoration(
                         color: cs.surface,
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: cs.primary.withValues(alpha: 0.2), width: 2),
-                        boxShadow: [BoxShadow(color: cs.primary.withValues(alpha: 0.05), blurRadius: 16, offset: const Offset(0, 8))],
+                        border: Border.all(
+                          color: cs.primary.withValues(alpha: 0.2),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: cs.primary.withValues(alpha: 0.05),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
                             children: [
-                              PhosphorIcon(PhosphorIconsDuotone.calendarBlank, color: cs.primary, size: 28),
+                              PhosphorIcon(
+                                PhosphorIconsDuotone.calendarBlank,
+                                color: cs.primary,
+                                size: 28,
+                              ),
                               const SizedBox(width: 16),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(DateFormat('EEEE').format(_selectedDate).toUpperCase(), style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-                                  Text(formatDate(_selectedDate), style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                                  Text(
+                                    DateFormat(
+                                      'EEEE',
+                                    ).format(_selectedDate).toUpperCase(),
+                                    style: tt.labelSmall?.copyWith(
+                                      color: cs.onSurfaceVariant,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                  Text(
+                                    formatDate(_selectedDate),
+                                    style: tt.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
                           ),
-                          Icon(PhosphorIconsRegular.caretDown, size: 20, color: cs.primary),
+                          Icon(
+                            PhosphorIconsRegular.caretDown,
+                            size: 20,
+                            color: cs.primary,
+                          ),
                         ],
                       ),
                     ),
@@ -271,7 +393,10 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                 loading: () => _cachedRows != null
                     ? _buildRosterBody(cs: cs, tt: tt)
                     : const SliverPadding(
-                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 8,
+                        ),
                         sliver: ShimmerLoading(itemCount: 6, height: 160),
                       ),
                 error: (e, _) => SliverFillRemaining(
@@ -279,11 +404,24 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        PhosphorIcon(PhosphorIconsDuotone.warningCircle, size: 48, color: cs.error),
+                        PhosphorIcon(
+                          PhosphorIconsDuotone.warningCircle,
+                          size: 48,
+                          color: cs.error,
+                        ),
                         const SizedBox(height: 16),
-                        Text('Failed to load roster', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                        Text(
+                          'Failed to load roster',
+                          style: tt.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                         const SizedBox(height: 8),
-                        Text('$e', style: tt.bodySmall, textAlign: TextAlign.center),
+                        Text(
+                          '$e',
+                          style: tt.bodySmall,
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
                   ),
@@ -305,13 +443,28 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
               child: FilledButton.icon(
                 onPressed: _saving ? null : () => _markRemainingPresent(),
                 icon: _saving
-                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Icon(PhosphorIconsBold.checks),
-                label: Text(_saving ? 'Processing...' : 'Mark All Present', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                label: Text(
+                  _saving ? 'Processing...' : 'Mark All Present',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(64),
                   backgroundColor: cs.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   elevation: 8,
                   shadowColor: cs.primary.withValues(alpha: 0.4),
                 ),
@@ -349,7 +502,11 @@ _MergedRow _rosterRowToMerged(RosterRow row, String date) {
     role: row.role,
     isActive: row.isActive,
     defaultShiftId: row.defaultShiftId,
-    shiftName: _buildShiftLabel(row.shiftName, row.shiftStartTime, row.shiftEndTime),
+    shiftName: _buildShiftLabel(
+      row.shiftName,
+      row.shiftStartTime,
+      row.shiftEndTime,
+    ),
   );
   if (!row.hasAttendance) {
     return _MergedRow(employee: employee);
@@ -381,9 +538,16 @@ class _UnmarkedEmployeeCard extends StatefulWidget {
   final TextTheme tt;
   final Employee employee;
   final List<Shift> shifts;
-  final Future<void> Function(_AttStatus status, double ot, String? shiftId) onMark;
+  final Future<void> Function(_AttStatus status, double ot, String? shiftId)
+  onMark;
 
-  const _UnmarkedEmployeeCard({required this.cs, required this.tt, required this.employee, required this.shifts, required this.onMark});
+  const _UnmarkedEmployeeCard({
+    required this.cs,
+    required this.tt,
+    required this.employee,
+    required this.shifts,
+    required this.onMark,
+  });
 
   @override
   State<_UnmarkedEmployeeCard> createState() => _UnmarkedEmployeeCardState();
@@ -414,16 +578,19 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
       _saving = true;
       _optimisticStatus = status;
     });
-    widget.onMark(status, double.tryParse(_otCtrl.text) ?? 0, _shiftId).then((_) {
-      if (mounted) setState(() => _saving = false);
-    }).catchError((_) {
-      if (mounted) {
-        setState(() {
-          _saving = false;
-          _optimisticStatus = null;
+    widget
+        .onMark(status, double.tryParse(_otCtrl.text) ?? 0, _shiftId)
+        .then((_) {
+          if (mounted) setState(() => _saving = false);
+        })
+        .catchError((_) {
+          if (mounted) {
+            setState(() {
+              _saving = false;
+              _optimisticStatus = null;
+            });
+          }
         });
-      }
-    });
   }
 
   @override
@@ -434,8 +601,16 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
       decoration: BoxDecoration(
         color: widget.cs.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: widget.cs.outlineVariant.withValues(alpha: 0.3)),
-        boxShadow: [BoxShadow(color: widget.cs.shadow.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(
+          color: widget.cs.outlineVariant.withValues(alpha: 0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: widget.cs.shadow.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -451,19 +626,41 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.employee.name, style: widget.tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                    Text(
+                      widget.employee.name,
+                      style: widget.tt.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(widget.employee.designation ?? widget.employee.role, style: widget.tt.labelSmall?.copyWith(color: widget.cs.onSurfaceVariant)),
+                    Text(
+                      widget.employee.designation ?? widget.employee.role,
+                      style: widget.tt.labelSmall?.copyWith(
+                        color: widget.cs.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: widget.cs.primaryContainer.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text('PENDING', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: widget.cs.primary, letterSpacing: 0.5)),
+                child: Text(
+                  'PENDING',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: widget.cs.primary,
+                    letterSpacing: 0.5,
+                  ),
+                ),
               ),
             ],
           ),
@@ -480,12 +677,17 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
               ),
               const SizedBox(width: 12),
               Container(
-                width: 76, height: 46,
+                width: 76,
+                height: 46,
                 decoration: BoxDecoration(
-                  color: widget.cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                  color: widget.cs.surfaceContainerHighest.withValues(
+                    alpha: 0.3,
+                  ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: _otCtrl.text.isNotEmpty && double.tryParse(_otCtrl.text) == null
+                    color:
+                        _otCtrl.text.isNotEmpty &&
+                            double.tryParse(_otCtrl.text) == null
                         ? widget.cs.error.withValues(alpha: 0.5)
                         : widget.cs.outlineVariant.withValues(alpha: 0.3),
                     width: 1.5,
@@ -495,10 +697,22 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
                   controller: _otCtrl,
                   textAlign: TextAlign.center,
                   keyboardType: TextInputType.number,
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: _otCtrl.text.isNotEmpty && double.tryParse(_otCtrl.text) == null ? widget.cs.error : widget.cs.onSurface),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    color:
+                        _otCtrl.text.isNotEmpty &&
+                            double.tryParse(_otCtrl.text) == null
+                        ? widget.cs.error
+                        : widget.cs.onSurface,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'OT (hrs)',
-                    hintStyle: TextStyle(fontSize: 12, color: widget.cs.onSurfaceVariant, fontWeight: FontWeight.w600),
+                    hintStyle: TextStyle(
+                      fontSize: 12,
+                      color: widget.cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 11),
                   ),
@@ -513,11 +727,32 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: TactileToggle(label: 'P', color: const Color(0xFF10B981), isSelected: _optimisticStatus == _AttStatus.present, onTap: () => _mark(_AttStatus.present))),
+              Expanded(
+                child: TactileToggle(
+                  label: 'P',
+                  color: const Color(0xFF10B981),
+                  isSelected: _optimisticStatus == _AttStatus.present,
+                  onTap: () => _mark(_AttStatus.present),
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: TactileToggle(label: 'A', color: const Color(0xFFEF4444), isSelected: _optimisticStatus == _AttStatus.absent, onTap: () => _mark(_AttStatus.absent))),
+              Expanded(
+                child: TactileToggle(
+                  label: 'A',
+                  color: const Color(0xFFEF4444),
+                  isSelected: _optimisticStatus == _AttStatus.absent,
+                  onTap: () => _mark(_AttStatus.absent),
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: TactileToggle(label: 'HD', color: const Color(0xFFF59E0B), isSelected: _optimisticStatus == _AttStatus.halfDay, onTap: () => _mark(_AttStatus.halfDay))),
+              Expanded(
+                child: TactileToggle(
+                  label: 'HD',
+                  color: const Color(0xFFF59E0B),
+                  isSelected: _optimisticStatus == _AttStatus.halfDay,
+                  onTap: () => _mark(_AttStatus.halfDay),
+                ),
+              ),
             ],
           ),
         ],
@@ -526,9 +761,10 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
   }
 }
 
-final rosterByDateProvider = FutureProvider.autoDispose.family<List<RosterRow>, String>((ref, date) {
-  return ref.watch(attendanceServiceProvider).roster(date);
-});
+final rosterByDateProvider = FutureProvider.autoDispose
+    .family<List<RosterRow>, String>((ref, date) {
+      return ref.watch(attendanceServiceProvider).roster(date);
+    });
 
 class _PremiumAttendanceCard extends StatefulWidget {
   final ColorScheme cs;
@@ -536,9 +772,22 @@ class _PremiumAttendanceCard extends StatefulWidget {
   final Employee employee;
   final Attendance attendance;
   final List<Shift> shifts;
-  final Future<void> Function(Attendance att, _AttStatus newStatus, double ot, String? shiftId)? onUpdate;
+  final Future<void> Function(
+    Attendance att,
+    _AttStatus newStatus,
+    double ot,
+    String? shiftId,
+  )?
+  onUpdate;
 
-  const _PremiumAttendanceCard({required this.cs, required this.tt, required this.employee, required this.attendance, required this.shifts, this.onUpdate});
+  const _PremiumAttendanceCard({
+    required this.cs,
+    required this.tt,
+    required this.employee,
+    required this.attendance,
+    required this.shifts,
+    this.onUpdate,
+  });
 
   @override
   State<_PremiumAttendanceCard> createState() => _PremiumAttendanceCardState();
@@ -554,8 +803,14 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
   void initState() {
     super.initState();
     _status = _mapStatus(widget.attendance.status);
-    _shiftId = widget.attendance.shiftId.isNotEmpty ? widget.attendance.shiftId : widget.employee.defaultShiftId;
-    _otCtrl.text = widget.attendance.overtimeHours > 0 ? widget.attendance.overtimeHours.toStringAsFixed(1).replaceAll('.0', '') : '';
+    _shiftId = widget.attendance.shiftId.isNotEmpty
+        ? widget.attendance.shiftId
+        : widget.employee.defaultShiftId;
+    _otCtrl.text = widget.attendance.overtimeHours > 0
+        ? widget.attendance.overtimeHours
+              .toStringAsFixed(1)
+              .replaceAll('.0', '')
+        : '';
   }
 
   @override
@@ -566,10 +821,14 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
 
   _AttStatus _mapStatus(String s) {
     switch (s) {
-      case 'present': return _AttStatus.present;
-      case 'absent': return _AttStatus.absent;
-      case 'half_day': return _AttStatus.halfDay;
-      default: return _AttStatus.present;
+      case 'present':
+        return _AttStatus.present;
+      case 'absent':
+        return _AttStatus.absent;
+      case 'half_day':
+        return _AttStatus.halfDay;
+      default:
+        return _AttStatus.present;
     }
   }
 
@@ -581,16 +840,24 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
       _status = s;
       _saving = true;
     });
-    widget.onUpdate?.call(widget.attendance, s, double.tryParse(_otCtrl.text) ?? 0, _shiftId).then((_) {
-      if (mounted) setState(() => _saving = false);
-    }).catchError((_) {
-      if (mounted) {
-        setState(() {
-          _status = previous;
-          _saving = false;
+    widget.onUpdate
+        ?.call(
+          widget.attendance,
+          s,
+          double.tryParse(_otCtrl.text) ?? 0,
+          _shiftId,
+        )
+        .then((_) {
+          if (mounted) setState(() => _saving = false);
+        })
+        .catchError((_) {
+          if (mounted) {
+            setState(() {
+              _status = previous;
+              _saving = false;
+            });
+          }
         });
-      }
-    });
   }
 
   void _changeShift(String? id) {
@@ -601,16 +868,24 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
       _shiftId = id;
       _saving = true;
     });
-    widget.onUpdate?.call(widget.attendance, _status, double.tryParse(_otCtrl.text) ?? 0, id).then((_) {
-      if (mounted) setState(() => _saving = false);
-    }).catchError((_) {
-      if (mounted) {
-        setState(() {
-          _shiftId = previous;
-          _saving = false;
+    widget.onUpdate
+        ?.call(
+          widget.attendance,
+          _status,
+          double.tryParse(_otCtrl.text) ?? 0,
+          id,
+        )
+        .then((_) {
+          if (mounted) setState(() => _saving = false);
+        })
+        .catchError((_) {
+          if (mounted) {
+            setState(() {
+              _shiftId = previous;
+              _saving = false;
+            });
+          }
         });
-      }
-    });
   }
 
   @override
@@ -621,7 +896,9 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
       decoration: BoxDecoration(
         color: widget.cs.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: widget.cs.outlineVariant.withValues(alpha: 0.4)),
+        border: Border.all(
+          color: widget.cs.outlineVariant.withValues(alpha: 0.4),
+        ),
       ),
       child: Column(
         children: [
@@ -637,19 +914,35 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.employee.name, style: widget.tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                    Text(
+                      widget.employee.name,
+                      style: widget.tt.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(widget.employee.shiftName ?? 'No shift assigned', style: widget.tt.labelSmall?.copyWith(color: widget.cs.onSurfaceVariant)),
+                    Text(
+                      widget.employee.shiftName ?? 'No shift assigned',
+                      style: widget.tt.labelSmall?.copyWith(
+                        color: widget.cs.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
               Container(
-                width: 76, height: 42,
+                width: 76,
+                height: 42,
                 decoration: BoxDecoration(
-                  color: widget.cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                  color: widget.cs.surfaceContainerHighest.withValues(
+                    alpha: 0.3,
+                  ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: _otCtrl.text.isNotEmpty && double.tryParse(_otCtrl.text) == null
+                    color:
+                        _otCtrl.text.isNotEmpty &&
+                            double.tryParse(_otCtrl.text) == null
                         ? widget.cs.error.withValues(alpha: 0.5)
                         : widget.cs.outlineVariant.withValues(alpha: 0.3),
                     width: 1.5,
@@ -659,10 +952,22 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                   controller: _otCtrl,
                   textAlign: TextAlign.center,
                   keyboardType: TextInputType.number,
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: _otCtrl.text.isNotEmpty && double.tryParse(_otCtrl.text) == null ? widget.cs.error : widget.cs.onSurface),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    color:
+                        _otCtrl.text.isNotEmpty &&
+                            double.tryParse(_otCtrl.text) == null
+                        ? widget.cs.error
+                        : widget.cs.onSurface,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'OT (hrs)',
-                    hintStyle: TextStyle(fontSize: 12, color: widget.cs.onSurfaceVariant, fontWeight: FontWeight.w600),
+                    hintStyle: TextStyle(
+                      fontSize: 12,
+                      color: widget.cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 11),
                   ),
@@ -670,7 +975,12 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                     if (mounted) setState(() {});
                     HapticFeedback.selectionClick();
                   },
-                  onSubmitted: (_) => widget.onUpdate?.call(widget.attendance, _status, double.tryParse(_otCtrl.text) ?? 0, _shiftId),
+                  onSubmitted: (_) => widget.onUpdate?.call(
+                    widget.attendance,
+                    _status,
+                    double.tryParse(_otCtrl.text) ?? 0,
+                    _shiftId,
+                  ),
                 ),
               ),
             ],
@@ -685,11 +995,32 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: TactileToggle(label: 'P', color: const Color(0xFF10B981), isSelected: _status == _AttStatus.present, onTap: () => _updateStatus(_AttStatus.present))),
+              Expanded(
+                child: TactileToggle(
+                  label: 'P',
+                  color: const Color(0xFF10B981),
+                  isSelected: _status == _AttStatus.present,
+                  onTap: () => _updateStatus(_AttStatus.present),
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: TactileToggle(label: 'A', color: const Color(0xFFEF4444), isSelected: _status == _AttStatus.absent, onTap: () => _updateStatus(_AttStatus.absent))),
+              Expanded(
+                child: TactileToggle(
+                  label: 'A',
+                  color: const Color(0xFFEF4444),
+                  isSelected: _status == _AttStatus.absent,
+                  onTap: () => _updateStatus(_AttStatus.absent),
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: TactileToggle(label: 'HD', color: const Color(0xFFF59E0B), isSelected: _status == _AttStatus.halfDay, onTap: () => _updateStatus(_AttStatus.halfDay))),
+              Expanded(
+                child: TactileToggle(
+                  label: 'HD',
+                  color: const Color(0xFFF59E0B),
+                  isSelected: _status == _AttStatus.halfDay,
+                  onTap: () => _updateStatus(_AttStatus.halfDay),
+                ),
+              ),
             ],
           ),
         ],
@@ -712,7 +1043,12 @@ class _ShiftDropdown extends StatelessWidget {
   final String? selectedId;
   final ValueChanged<String?> onChanged;
 
-  const _ShiftDropdown({required this.cs, required this.shifts, required this.selectedId, required this.onChanged});
+  const _ShiftDropdown({
+    required this.cs,
+    required this.shifts,
+    required this.selectedId,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -726,10 +1062,22 @@ class _ShiftDropdown extends StatelessWidget {
         ),
         child: Row(
           children: [
-            PhosphorIcon(PhosphorIconsDuotone.clock, size: 18, color: cs.onSurfaceVariant),
+            PhosphorIcon(
+              PhosphorIconsDuotone.clock,
+              size: 18,
+              color: cs.onSurfaceVariant,
+            ),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(_shiftName(shifts, selectedId), overflow: TextOverflow.ellipsis, style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13)),
+              child: Text(
+                _shiftName(shifts, selectedId),
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
             ),
           ],
         ),
@@ -747,12 +1095,27 @@ class _ShiftDropdown extends StatelessWidget {
           value: selectedId,
           isExpanded: true,
           isDense: true,
-          icon: Icon(PhosphorIconsRegular.caretDown, size: 16, color: cs.onSurfaceVariant),
+          icon: Icon(
+            PhosphorIconsRegular.caretDown,
+            size: 16,
+            color: cs.onSurfaceVariant,
+          ),
           hint: Row(
             children: [
-              PhosphorIcon(PhosphorIconsDuotone.clock, size: 18, color: cs.onSurfaceVariant),
+              PhosphorIcon(
+                PhosphorIconsDuotone.clock,
+                size: 18,
+                color: cs.onSurfaceVariant,
+              ),
               const SizedBox(width: 10),
-              Text('Select shift', style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13)),
+              Text(
+                'Select shift',
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
             ],
           ),
           items: [
@@ -760,26 +1123,59 @@ class _ShiftDropdown extends StatelessWidget {
               value: null,
               child: Row(
                 children: [
-                  PhosphorIcon(PhosphorIconsDuotone.xCircle, size: 18, color: cs.onSurfaceVariant),
+                  PhosphorIcon(
+                    PhosphorIconsDuotone.xCircle,
+                    size: 18,
+                    color: cs.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 10),
-                  Text('No shift', style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13)),
+                  Text(
+                    'No shift',
+                    style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
                 ],
               ),
             ),
-            ...shifts.map((s) => DropdownMenuItem<String?>(
-              value: s.id,
-              child: Row(
-                children: [
-                  PhosphorIcon(PhosphorIconsDuotone.clock, size: 18, color: cs.primary),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(s.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13))),
-                  if (s.startTime.isNotEmpty && s.endTime.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    Text('${formatTime(s.startTime)}–${formatTime(s.endTime)}', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+            ...shifts.map(
+              (s) => DropdownMenuItem<String?>(
+                value: s.id,
+                child: Row(
+                  children: [
+                    PhosphorIcon(
+                      PhosphorIconsDuotone.clock,
+                      size: 18,
+                      color: cs.primary,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        s.name,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    if (s.startTime.isNotEmpty && s.endTime.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '${formatTime(s.startTime)}–${formatTime(s.endTime)}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            )),
+            ),
           ],
           onChanged: onChanged,
         ),

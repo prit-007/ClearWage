@@ -10,6 +10,7 @@ import '../services/staff_service.dart';
 import '../services/attendance_service.dart';
 import '../services/ledger_service.dart';
 import '../services/dashboard_service.dart';
+import '../models/dashboard_model.dart';
 import '../services/shift_service.dart';
 import '../services/report_service.dart';
 import '../services/holiday_service.dart';
@@ -35,7 +36,10 @@ final apiClientProvider = Provider<ApiClient>((ref) {
       try {
         final idToken = await user.getIdToken();
         final refreshClient = ApiClient(baseUrl: url);
-        final res = await refreshClient.post('/api/v1/auth/firebase-login', body: {'id_token': idToken});
+        final res = await refreshClient.post(
+          '/api/v1/auth/firebase-login',
+          body: {'id_token': idToken},
+        );
         final data = res['data'] as Map<String, dynamic>? ?? {};
         final newToken = data['access_token'] as String? ?? '';
         if (newToken.isNotEmpty) {
@@ -63,7 +67,10 @@ final initialTokenProvider = FutureProvider<String?>((ref) async {
     try {
       final idToken = await user.getIdToken();
       final client = ApiClient(baseUrl: ref.read(serverUrlProvider));
-      final res = await client.post('/api/v1/auth/firebase-login', body: {'id_token': idToken});
+      final res = await client.post(
+        '/api/v1/auth/firebase-login',
+        body: {'id_token': idToken},
+      );
       final data = res['data'] as Map<String, dynamic>? ?? {};
       final token = data['access_token'] as String? ?? '';
       if (token.isNotEmpty) {
@@ -118,6 +125,10 @@ final ledgerServiceProvider = Provider<LedgerService>((ref) {
 
 final dashboardServiceProvider = Provider<DashboardService>((ref) {
   return DashboardService(ref.watch(apiClientProvider));
+});
+
+final dashboardDataProvider = FutureProvider.autoDispose<DashboardData>((ref) {
+  return ref.watch(dashboardServiceProvider).get();
 });
 
 final shiftServiceProvider = Provider<ShiftService>((ref) {

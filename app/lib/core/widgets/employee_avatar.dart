@@ -3,7 +3,7 @@ import '../helpers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app_config.dart';
 
-class EmployeeAvatar extends ConsumerWidget {
+class EmployeeAvatar extends ConsumerStatefulWidget {
   final String name;
   final String? photoUrl;
   final double radius;
@@ -22,25 +22,47 @@ class EmployeeAvatar extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EmployeeAvatar> createState() => _EmployeeAvatarState();
+}
+
+class _EmployeeAvatarState extends ConsumerState<EmployeeAvatar> {
+  bool _failed = false;
+
+  @override
+  void didUpdateWidget(EmployeeAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.photoUrl != widget.photoUrl) {
+      _failed = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final initials = getInitials(name);
-    final resolved = (photoUrl != null && photoUrl!.isNotEmpty)
-        ? resolveMediaUrl(photoUrl!, ref.watch(serverUrlProvider))
+    final initials = getInitials(widget.name);
+    final resolved = (widget.photoUrl != null && widget.photoUrl!.isNotEmpty)
+        ? resolveMediaUrl(widget.photoUrl!, ref.watch(serverUrlProvider))
         : '';
+    final showImage = resolved.isNotEmpty && !_failed;
 
     return CircleAvatar(
-      radius: radius,
-      backgroundColor: backgroundColor ?? cs.surfaceContainerHighest.withValues(alpha: 0.5),
-      backgroundImage: resolved.isNotEmpty ? NetworkImage(resolved) : null,
-      child: resolved.isNotEmpty
+      radius: widget.radius,
+      backgroundColor:
+          widget.backgroundColor ??
+          cs.surfaceContainerHighest.withValues(alpha: 0.5),
+      foregroundColor: widget.textColor ?? cs.onSurface,
+      backgroundImage: showImage ? NetworkImage(resolved) : null,
+      onBackgroundImageError: resolved.isNotEmpty
+          ? (_, _) => setState(() => _failed = true)
+          : null,
+      child: showImage
           ? null
           : Text(
               initials,
               style: TextStyle(
                 fontWeight: FontWeight.w800,
-                color: textColor ?? cs.onSurface,
-                fontSize: fontSize ?? radius * 0.7,
+                color: widget.textColor ?? cs.onSurface,
+                fontSize: widget.fontSize ?? widget.radius * 0.7,
               ),
             ),
     );

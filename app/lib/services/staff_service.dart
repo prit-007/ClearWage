@@ -11,9 +11,14 @@ class StaffService {
     if (limit != null) q['limit'] = limit.toString();
     if (offset != null) q['offset'] = offset.toString();
     if (query != null && query.isNotEmpty) q['q'] = query;
-    final res = await _client.get('/api/v1/staff', query: q.isNotEmpty ? q : null);
+    final res = await _client.get(
+      '/api/v1/staff',
+      query: q.isNotEmpty ? q : null,
+    );
     final list = (res['data'] as List<dynamic>?) ?? [];
-    return list.map((e) => Employee.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => Employee.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<Employee> get(String id) async {
@@ -47,13 +52,18 @@ class StaffService {
 
   Future<String> uploadPhoto(String id, String filePath) async {
     final file = await http.MultipartFile.fromPath('file', filePath);
-    final res = await _client.postMultipart('/api/v1/staff/$id/upload-photo', files: [file]);
-    return (res['data'] as Map<String, dynamic>?)?['photo_url'] as String? ?? '';
+    final res = await _client.postMultipart(
+      '/api/v1/staff/$id/upload-photo',
+      files: [file],
+    );
+    return (res['data'] as Map<String, dynamic>?)?['photo_url'] as String? ??
+        '';
   }
 
   Future<void> assignManager(String id, String managerId) async {
-    await _client.put('/api/v1/staff/$id/manager', body: {
-      'manager_id': managerId,
-    });
+    await _client.put(
+      '/api/v1/staff/$id/manager',
+      body: {'manager_id': managerId},
+    );
   }
 }

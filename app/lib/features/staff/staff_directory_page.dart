@@ -6,12 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../models/employee_model.dart';
 import '../../providers/providers.dart';
-import '../../core/app_config.dart';
 import 'employee_profile_page.dart';
 import 'add_employee_page.dart';
+import '../../core/widgets/employee_avatar.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/shimmer_loading.dart';
-import '../../core/helpers.dart';
 import '../../core/logger.dart';
 
 const int _pageSize = 20;
@@ -19,13 +18,16 @@ const int _pageSize = 20;
 class StaffDirectoryScreen extends ConsumerStatefulWidget {
   const StaffDirectoryScreen({super.key});
   @override
-  ConsumerState<StaffDirectoryScreen> createState() => _StaffDirectoryScreenState();
+  ConsumerState<StaffDirectoryScreen> createState() =>
+      _StaffDirectoryScreenState();
 }
 
-class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
+class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
+    with WidgetsBindingObserver {
   String _searchQuery = '';
   final FocusNode _searchFocus = FocusNode();
   final ScrollController _scrollCtrl = ScrollController();
+  final TextEditingController _searchCtrl = TextEditingController();
   List<Employee> _allEmployees = [];
   bool _loading = true;
   bool _loadingMore = false;
@@ -33,25 +35,42 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
   int _offset = 0;
   String? _error;
   Timer? _debounce;
+  Set<String> _roleFilters = {};
+  Set<String> _wageFilters = {};
+  bool _showInactive = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scrollCtrl.addListener(_onScroll);
     _fetch();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _debounce?.cancel();
     _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();
+    _searchCtrl.dispose();
     _searchFocus.dispose();
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      _fetch();
+    }
+  }
+
   void _onScroll() {
-    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200 && !_loadingMore && _hasMore) {
+    if (_scrollCtrl.position.pixels >=
+            _scrollCtrl.position.maxScrollExtent - 200 &&
+        !_loadingMore &&
+        !_loading &&
+        _hasMore) {
       _loadMore();
     }
   }
@@ -66,7 +85,11 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
     });
     try {
       final staffService = ref.read(staffServiceProvider);
-      final employees = await staffService.list(limit: _pageSize, offset: 0, query: _searchQuery);
+      final employees = await staffService.list(
+        limit: _pageSize,
+        offset: 0,
+        query: _searchQuery,
+      );
       if (mounted) {
         setState(() {
           _allEmployees = employees;
@@ -86,12 +109,16 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
   }
 
   Future<void> _loadMore() async {
-    if (_loadingMore || !_hasMore) return;
+    if (_loading || _loadingMore || !_hasMore) return;
     HapticFeedback.lightImpact();
     setState(() => _loadingMore = true);
     try {
       final staffService = ref.read(staffServiceProvider);
-      final employees = await staffService.list(limit: _pageSize, offset: _offset, query: _searchQuery);
+      final employees = await staffService.list(
+        limit: _pageSize,
+        offset: _offset,
+        query: _searchQuery,
+      );
       if (mounted) {
         setState(() {
           _allEmployees.addAll(employees);
@@ -112,21 +139,52 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
   }
 
   void _onSearchChanged(String v) {
-    setState(() => _searchQuery = v.toLowerCase());
+    setState(() => _searchQuery = v.trim());
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
       if (mounted) _fetch();
     });
   }
 
+  Future<void> _openFilters() async {
+    HapticFeedback.selectionClick();
+    final cs = Theme.of(context).colorScheme;
+    final result = await showModalBottomSheet<_FilterResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => _FilterSheet(
+        roleFilters: _roleFilters,
+        wageFilters: _wageFilters,
+        showInactive: _showInactive,
+        onApply: (roles, wages, showInactive) =>
+            Navigator.pop(ctx, _FilterResult(roles, wages, showInactive)),
+      ),
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      _roleFilters = result.roles;
+      _wageFilters = result.wages;
+      _showInactive = result.showInactive;
+    });
+  }
+
   List<Employee> get _filtered {
-    if (_searchQuery.isEmpty) return _allEmployees;
-    return _allEmployees
-        .where((e) =>
-            e.name.toLowerCase().contains(_searchQuery) ||
-            (e.designation?.toLowerCase().contains(_searchQuery) ?? false) ||
-            e.role.toLowerCase().contains(_searchQuery))
-        .toList();
+    final filtered = _allEmployees.where((e) {
+      if (_roleFilters.isNotEmpty && !_roleFilters.contains(e.role))
+        return false;
+      if (_wageFilters.isNotEmpty && !_wageFilters.contains(e.wageType))
+        return false;
+      if (!_showInactive && !e.isActive) return false;
+      return true;
+    }).toList();
+    filtered.sort(
+      (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+    );
+    return filtered;
   }
 
   @override
@@ -134,6 +192,9 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
+    final grouped = _groupByLetter(_filtered);
+    final hasActiveFilters =
+        _roleFilters.isNotEmpty || _wageFilters.isNotEmpty || _showInactive;
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
@@ -143,10 +204,14 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
         onRefresh: _onRefresh,
         child: CustomScrollView(
           controller: _scrollCtrl,
-          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
           slivers: [
             SliverAppBar(
-              backgroundColor: cs.surfaceContainerLowest.withValues(alpha: 0.85),
+              backgroundColor: cs.surfaceContainerLowest.withValues(
+                alpha: 0.85,
+              ),
               pinned: true,
               elevation: 0,
               expandedHeight: 140,
@@ -155,8 +220,17 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                   child: FlexibleSpaceBar(
-                    titlePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    title: Text('Directory', style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -1.0)),
+                    titlePadding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
+                    title: Text(
+                      'Directory',
+                      style: tt.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1.0,
+                      ),
+                    ),
                     background: Align(
                       alignment: Alignment.bottomCenter,
                       child: Padding(
@@ -164,6 +238,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
                         child: _PremiumSearchBar(
                           cs: cs,
                           focusNode: _searchFocus,
+                          controller: _searchCtrl,
                           onChanged: _onSearchChanged,
                         ),
                       ),
@@ -172,9 +247,31 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
                 ),
               ),
               actions: [
-                IconButton(
-                  icon: Icon(PhosphorIconsRegular.slidersHorizontal, color: cs.onSurfaceVariant),
-                  onPressed: () => HapticFeedback.selectionClick(),
+                Stack(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        PhosphorIconsRegular.slidersHorizontal,
+                        color: hasActiveFilters
+                            ? cs.primary
+                            : cs.onSurfaceVariant,
+                      ),
+                      onPressed: _openFilters,
+                    ),
+                    if (hasActiveFilters)
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: cs.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(width: 8),
               ],
@@ -188,14 +285,31 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      PhosphorIcon(PhosphorIconsDuotone.warningCircle, size: 48, color: cs.error),
+                      PhosphorIcon(
+                        PhosphorIconsDuotone.warningCircle,
+                        size: 48,
+                        color: cs.error,
+                      ),
                       const SizedBox(height: 16),
-                      Text('Failed to load staff', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-                      Text('$_error', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                      Text(
+                        'Failed to load staff',
+                        style: tt.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        '$_error',
+                        style: tt.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       FilledButton.tonalIcon(
                         onPressed: _fetch,
-                        icon: const Icon(PhosphorIconsFill.arrowClockwise, size: 18),
+                        icon: const Icon(
+                          PhosphorIconsFill.arrowClockwise,
+                          size: 18,
+                        ),
                         label: const Text('Retry'),
                       ),
                     ],
@@ -204,37 +318,50 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
               )
             else ...[
               if (_filtered.isEmpty)
-                SliverFillRemaining(child: _EmptySearchState(cs: cs, tt: tt, isSearching: _searchQuery.isNotEmpty))
+                SliverFillRemaining(
+                  child: _EmptySearchState(
+                    cs: cs,
+                    tt: tt,
+                    isSearching: _searchQuery.isNotEmpty,
+                  ),
+                )
               else
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final grouped = _groupByLetter(_filtered);
-                        final letter = grouped.keys.elementAt(index);
-                        final staffList = grouped[letter]!;
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 24, 0, 12),
-                              child: Text(
-                                letter,
-                                style: tt.titleSmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.0),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final letter = grouped.keys.elementAt(index);
+                      final staffList = grouped[letter]!;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(0, 24, 0, 12),
+                            child: Text(
+                              letter,
+                              style: tt.titleSmall?.copyWith(
+                                color: cs.primary,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                                letterSpacing: 1.0,
                               ),
                             ),
-                            ...List.generate(staffList.length, (i) {
-                              return FluidSlideIn(
-                                delay: (index * 20 + i * 50).clamp(0, 400).toInt(),
-                                child: _StaffDirectoryTile(cs: cs, tt: tt, employee: staffList[i]),
-                              );
-                            }),
-                          ],
-                        );
-                      },
-                      childCount: _groupByLetter(_filtered).keys.length,
-                    ),
+                          ),
+                          ...List.generate(staffList.length, (i) {
+                            return FluidSlideIn(
+                              delay: (index * 20 + i * 50)
+                                  .clamp(0, 400)
+                                  .toInt(),
+                              child: _StaffDirectoryTile(
+                                cs: cs,
+                                tt: tt,
+                                employee: staffList[i],
+                              ),
+                            );
+                          }),
+                        ],
+                      );
+                    }, childCount: grouped.keys.length),
                   ),
                 ),
               if (_loadingMore)
@@ -261,12 +388,17 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
               heroTag: 'staff_directory_fab',
               onPressed: () async {
                 HapticFeedback.heavyImpact();
-                final result = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AddEmployeeScreen()));
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddEmployeeScreen()),
+                );
                 if (result == true && mounted) _fetch();
               },
               backgroundColor: cs.primary,
               elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Icon(PhosphorIconsBold.userPlus, color: cs.onPrimary),
             )
           : null,
@@ -288,15 +420,20 @@ class _PremiumSearchBar extends StatefulWidget {
   final ColorScheme cs;
   final ValueChanged<String> onChanged;
   final FocusNode focusNode;
+  final TextEditingController controller;
 
-  const _PremiumSearchBar({required this.cs, required this.onChanged, required this.focusNode});
+  const _PremiumSearchBar({
+    required this.cs,
+    required this.onChanged,
+    required this.focusNode,
+    required this.controller,
+  });
 
   @override
   State<_PremiumSearchBar> createState() => _PremiumSearchBarState();
 }
 
 class _PremiumSearchBarState extends State<_PremiumSearchBar> {
-  final _searchCtrl = TextEditingController();
   bool _isFocused = false;
   bool _hasText = false;
 
@@ -306,8 +443,8 @@ class _PremiumSearchBarState extends State<_PremiumSearchBar> {
     widget.focusNode.addListener(() {
       setState(() => _isFocused = widget.focusNode.hasFocus);
     });
-    _searchCtrl.addListener(() {
-      final hasTextNow = _searchCtrl.text.isNotEmpty;
+    widget.controller.addListener(() {
+      final hasTextNow = widget.controller.text.isNotEmpty;
       if (_hasText != hasTextNow) {
         setState(() => _hasText = hasTextNow);
       }
@@ -316,7 +453,8 @@ class _PremiumSearchBarState extends State<_PremiumSearchBar> {
 
   @override
   void dispose() {
-    _searchCtrl.dispose();
+    widget.focusNode.removeListener(() {});
+    widget.controller.removeListener(() {});
     super.dispose();
   }
 
@@ -327,25 +465,43 @@ class _PremiumSearchBarState extends State<_PremiumSearchBar> {
       curve: Curves.easeOutCirc,
       height: 52,
       decoration: BoxDecoration(
-        color: _isFocused ? widget.cs.surface : widget.cs.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: _isFocused
+            ? widget.cs.surface
+            : widget.cs.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: _isFocused ? widget.cs.primary.withValues(alpha: 0.5) : widget.cs.outlineVariant.withValues(alpha: 0.3),
+          color: _isFocused
+              ? widget.cs.primary.withValues(alpha: 0.5)
+              : widget.cs.outlineVariant.withValues(alpha: 0.3),
           width: _isFocused ? 1.5 : 1.0,
         ),
         boxShadow: _isFocused
-            ? [BoxShadow(color: widget.cs.primary.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, 4))]
+            ? [
+                BoxShadow(
+                  color: widget.cs.primary.withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ]
             : [],
       ),
       child: TextField(
-        controller: _searchCtrl,
+        controller: widget.controller,
         focusNode: widget.focusNode,
         textInputAction: TextInputAction.search,
         cursorColor: widget.cs.primary,
-        style: TextStyle(fontWeight: FontWeight.w600, color: widget.cs.onSurface, letterSpacing: -0.3),
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: widget.cs.onSurface,
+          letterSpacing: -0.3,
+        ),
         decoration: InputDecoration(
           hintText: 'Search by name or role...',
-          hintStyle: TextStyle(color: widget.cs.onSurfaceVariant.withValues(alpha: 0.6), fontSize: 14, fontWeight: FontWeight.w500),
+          hintStyle: TextStyle(
+            color: widget.cs.onSurfaceVariant.withValues(alpha: 0.6),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
           prefixIcon: Icon(
             PhosphorIconsRegular.magnifyingGlass,
             color: _isFocused ? widget.cs.primary : widget.cs.onSurfaceVariant,
@@ -359,13 +515,17 @@ class _PremiumSearchBarState extends State<_PremiumSearchBar> {
               opacity: _hasText ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 150),
               child: IconButton(
-                icon: Icon(PhosphorIconsFill.xCircle, size: 18, color: widget.cs.onSurfaceVariant),
+                icon: Icon(
+                  PhosphorIconsFill.xCircle,
+                  size: 18,
+                  color: widget.cs.onSurfaceVariant,
+                ),
                 splashColor: Colors.transparent,
                 highlightColor: Colors.transparent,
                 onPressed: () {
                   if (!_hasText) return;
                   HapticFeedback.lightImpact();
-                  _searchCtrl.clear();
+                  widget.controller.clear();
                   widget.onChanged('');
                   widget.focusNode.unfocus();
                 },
@@ -374,7 +534,10 @@ class _PremiumSearchBarState extends State<_PremiumSearchBar> {
           ),
           border: InputBorder.none,
           isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 15,
+          ),
         ),
         onChanged: widget.onChanged,
       ),
@@ -387,14 +550,21 @@ class _StaffDirectoryTile extends ConsumerWidget {
   final TextTheme tt;
   final Employee employee;
 
-  const _StaffDirectoryTile({required this.cs, required this.tt, required this.employee});
+  const _StaffDirectoryTile({
+    required this.cs,
+    required this.tt,
+    required this.employee,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDaily = employee.wageType == 'daily';
-    final typeColor = isDaily ? const Color(0xFF10B981) : const Color(0xFF3B82F6);
-    final initials = getInitials(employee.name);
-    final photoUrl = resolveMediaUrl(employee.photoUrl ?? '', ref.watch(serverUrlProvider));
+    final typeColor = isDaily
+        ? const Color(0xFF10B981)
+        : const Color(0xFF3B82F6);
+    final wageText = employee.wageAmount > 0
+        ? '\u20B9${employee.wageAmount.toStringAsFixed(0)}'
+        : '—';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -402,7 +572,13 @@ class _StaffDirectoryTile extends ConsumerWidget {
         color: cs.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -410,45 +586,77 @@ class _StaffDirectoryTile extends ConsumerWidget {
           borderRadius: BorderRadius.circular(20),
           onTap: () {
             HapticFeedback.selectionClick();
-            Navigator.push(context, MaterialPageRoute(builder: (_) => EmployeeProfileScreen(employeeId: employee.id)));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => EmployeeProfileScreen(employeeId: employee.id),
+              ),
+            );
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                CircleAvatar(
+                EmployeeAvatar(
+                  name: employee.name,
+                  photoUrl: employee.photoUrl,
                   radius: 26,
                   backgroundColor: cs.primaryContainer.withValues(alpha: 0.4),
-                  backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-                  child: photoUrl.isNotEmpty
-                      ? null
-                      : Text(initials, style: TextStyle(fontWeight: FontWeight.w800, color: cs.primary, fontSize: 14)),
+                  textColor: cs.primary,
+                  fontSize: 14,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(employee.name, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.3)),
+                      Text(
+                        employee.name,
+                        style: tt.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text(employee.designation ?? employee.role, style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
+                      Text(
+                        employee.designation ?? employee.role,
+                        style: tt.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('\u20B9${employee.wageAmount.toStringAsFixed(0)}', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w900, color: cs.onSurface, letterSpacing: -0.5)),
+                    Text(
+                      wageText,
+                      style: tt.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: cs.onSurface,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: typeColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         isDaily ? 'DAILY' : 'MONTHLY',
-                        style: TextStyle(color: typeColor, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                        style: TextStyle(
+                          color: typeColor,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
                   ],
@@ -467,7 +675,11 @@ class _EmptySearchState extends StatelessWidget {
   final TextTheme tt;
   final bool isSearching;
 
-  const _EmptySearchState({required this.cs, required this.tt, required this.isSearching});
+  const _EmptySearchState({
+    required this.cs,
+    required this.tt,
+    required this.isSearching,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -482,19 +694,234 @@ class _EmptySearchState extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: PhosphorIcon(
-              isSearching ? PhosphorIconsDuotone.magnifyingGlass : PhosphorIconsDuotone.usersThree,
+              isSearching
+                  ? PhosphorIconsDuotone.magnifyingGlass
+                  : PhosphorIconsDuotone.usersThree,
               size: 56,
               color: cs.onSurfaceVariant.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 24),
-          Text(isSearching ? 'No matches found' : 'No staff members yet',
-              style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: cs.onSurface)),
+          Text(
+            isSearching ? 'No matches found' : 'No staff members yet',
+            style: tt.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: cs.onSurface,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text(isSearching ? 'Try checking for typos or use a different term.' : 'Tap the + button to onboard your first employee.',
-              style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-              textAlign: TextAlign.center),
+          Text(
+            isSearching
+                ? 'Try checking for typos or use a different term.'
+                : 'Tap the + button to onboard your first employee.',
+            style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+            textAlign: TextAlign.center,
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _FilterResult {
+  final Set<String> roles;
+  final Set<String> wages;
+  final bool showInactive;
+  _FilterResult(this.roles, this.wages, this.showInactive);
+}
+
+class _FilterSheet extends StatefulWidget {
+  final Set<String> roleFilters;
+  final Set<String> wageFilters;
+  final bool showInactive;
+  final void Function(Set<String> roles, Set<String> wages, bool showInactive)
+  onApply;
+
+  const _FilterSheet({
+    required this.roleFilters,
+    required this.wageFilters,
+    required this.showInactive,
+    required this.onApply,
+  });
+
+  @override
+  State<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends State<_FilterSheet> {
+  late Set<String> _roles;
+  late Set<String> _wages;
+  late bool _inactive;
+
+  @override
+  void initState() {
+    super.initState();
+    _roles = Set.of(widget.roleFilters);
+    _wages = Set.of(widget.wageFilters);
+    _inactive = widget.showInactive;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: cs.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'FILTER BY ROLE',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: cs.primary,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: ['employee', 'manager'].map((role) {
+                final selected = _roles.contains(role);
+                return FilterChip(
+                  label: Text(
+                    role[0].toUpperCase() + role.substring(1),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: selected ? cs.primary : cs.onSurfaceVariant,
+                    ),
+                  ),
+                  selected: selected,
+                  selectedColor: cs.primaryContainer.withValues(alpha: 0.4),
+                  checkmarkColor: cs.primary,
+                  side: BorderSide(
+                    color: selected
+                        ? cs.primary
+                        : cs.outlineVariant.withValues(alpha: 0.3),
+                  ),
+                  onSelected: (v) {
+                    HapticFeedback.selectionClick();
+                    setState(() {
+                      if (v)
+                        _roles.add(role);
+                      else
+                        _roles.remove(role);
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'FILTER BY WAGE TYPE',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: cs.primary,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: ['daily', 'monthly'].map((type) {
+                final selected = _wages.contains(type);
+                return FilterChip(
+                  label: Text(
+                    type[0].toUpperCase() + type.substring(1),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: selected ? cs.primary : cs.onSurfaceVariant,
+                    ),
+                  ),
+                  selected: selected,
+                  selectedColor: cs.primaryContainer.withValues(alpha: 0.4),
+                  checkmarkColor: cs.primary,
+                  side: BorderSide(
+                    color: selected
+                        ? cs.primary
+                        : cs.outlineVariant.withValues(alpha: 0.3),
+                  ),
+                  onSelected: (v) {
+                    HapticFeedback.selectionClick();
+                    setState(() {
+                      if (v)
+                        _wages.add(type);
+                      else
+                        _wages.remove(type);
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Show Inactive',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+                Switch(
+                  value: _inactive,
+                  onChanged: (v) => setState(() => _inactive = v),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      widget.onApply({}, {}, false);
+                    },
+                    child: const Text(
+                      'Reset',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () {
+                      HapticFeedback.mediumImpact();
+                      widget.onApply(_roles, _wages, _inactive);
+                    },
+                    child: const Text(
+                      'Apply',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+          ],
+        ),
       ),
     );
   }

@@ -29,14 +29,13 @@ import 'providers/providers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   FlutterError.onError = (details) {
-    AppLogger.error(
-      'Flutter error',
-      details.exception,
-      details.stack,
-    );
+    AppLogger.error('Flutter error', details.exception, details.stack);
   };
 
   try {
@@ -45,11 +44,14 @@ void main() async {
     AppLogger.error('Firebase initialization failed', e);
   }
 
-  runZonedGuarded(() {
-    runApp(const ProviderScope(child: FactoryWorkforceApp()));
-  }, (error, stackTrace) {
-    AppLogger.error('Uncaught zone error', error, stackTrace);
-  });
+  runZonedGuarded(
+    () {
+      runApp(const ProviderScope(child: FactoryWorkforceApp()));
+    },
+    (error, stackTrace) {
+      AppLogger.error('Uncaught zone error', error, stackTrace);
+    },
+  );
 }
 
 class FactoryWorkforceApp extends ConsumerWidget {
@@ -104,6 +106,10 @@ class FactoryWorkforceApp extends ConsumerWidget {
         '/payroll-settings': (_) => const PayrollSettingsScreen(),
         '/my-profile': (_) => const MyProfileScreen(),
       },
+      onUnknownRoute: (_) => MaterialPageRoute(
+        builder: (_) =>
+            const Scaffold(body: Center(child: Text('Page not found'))),
+      ),
     );
   }
 }
@@ -119,7 +125,8 @@ class AuthGate extends ConsumerWidget {
           showInfoDialog(
             context,
             title: 'Session Expired',
-            message: 'Your session has expired. Please sign in again to continue.',
+            message:
+                'Your session has expired. Please sign in again to continue.',
             buttonLabel: 'Sign In',
             icon: PhosphorIconsRegular.warningCircle,
             iconColor: Theme.of(context).colorScheme.error,
@@ -133,10 +140,44 @@ class AuthGate extends ConsumerWidget {
 
     final init = ref.watch(initialTokenProvider);
     return init.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, _) => Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  PhosphorIconsRegular.warningCircle,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Connection Failed',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Could not connect to the server.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  icon: const Icon(PhosphorIconsFill.arrowClockwise),
+                  label: const Text('Retry'),
+                  onPressed: () => ref.invalidate(initialTokenProvider),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
-      error: (_, _) => const LoginScreen(),
       data: (_) {
         final token = ref.watch(tokenProvider);
         return token != null ? const MainShell() : const LoginScreen();
@@ -152,20 +193,24 @@ class MainShell extends ConsumerStatefulWidget {
 }
 
 class _MainShellState extends ConsumerState<MainShell> {
-  int _selectedIndex = 0;
+  String _selectedPageId = 'home';
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
 
-    final pages = <Widget>[
-      const DashboardScreen(),
-      if (isAdmin) const StaffDirectoryScreen(),
-      const roster.AttendanceRosterPage(),
-      if (isAdmin) const LedgerListScreen(),
-      const ReportsHubScreen(),
-    ];
+    final pages = <Widget, String>{
+      const DashboardScreen(): 'home',
+      if (isAdmin) const StaffDirectoryScreen(): 'staff',
+      const roster.AttendanceRosterPage(): 'attendance',
+      if (isAdmin) const LedgerListScreen(): 'ledger',
+      const ReportsHubScreen(): 'reports',
+    };
+
+    final pageWidgets = pages.keys.toList();
+    final selectedIdx = pages.values.toList().indexOf(_selectedPageId);
+    final effectiveIdx = selectedIdx >= 0 ? selectedIdx : 0;
 
     final navItems = <NavigationDestination>[
       const NavigationDestination(
@@ -201,33 +246,58 @@ class _MainShellState extends ConsumerState<MainShell> {
       appBar: AppBar(
         backgroundColor: cs.surface,
         elevation: 0,
-        scrolledUnderElevation: 0.5,
-        title: Text('Factory Workforce', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+        title: Text(
+          'Factory Workforce',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
         actions: [
           IconButton(
-            icon: PhosphorIcon(PhosphorIconsRegular.userCircle, color: cs.onSurfaceVariant),
+            icon: PhosphorIcon(
+              PhosphorIconsRegular.userCircle,
+              color: cs.onSurfaceVariant,
+            ),
             onPressed: () => Navigator.pushNamed(context, '/my-profile'),
           ),
           PopupMenuButton<String>(
-            icon: PhosphorIcon(PhosphorIconsRegular.gear, color: cs.onSurfaceVariant),
+            icon: PhosphorIcon(
+              PhosphorIconsRegular.gear,
+              color: cs.onSurfaceVariant,
+            ),
             onSelected: (route) => Navigator.pushNamed(context, route),
             itemBuilder: (_) => [
-              const PopupMenuItem(value: '/shifts', child: Text('Shift Timings')),
+              const PopupMenuItem(
+                value: '/shifts',
+                child: Text('Shift Timings'),
+              ),
               const PopupMenuItem(value: '/holidays', child: Text('Holidays')),
-              if (isAdmin) const PopupMenuItem(value: '/advance-requests', child: Text('Advance Requests')),
-              if (isAdmin) const PopupMenuItem(value: '/leave-policy', child: Text('Leave Policy')),
-              if (isAdmin) const PopupMenuItem(value: '/payroll-settings', child: Text('Payroll Settings')),
+              if (isAdmin)
+                const PopupMenuItem(
+                  value: '/advance-requests',
+                  child: Text('Advance Requests'),
+                ),
+              if (isAdmin)
+                const PopupMenuItem(
+                  value: '/leave-policy',
+                  child: Text('Leave Policy'),
+                ),
+              if (isAdmin)
+                const PopupMenuItem(
+                  value: '/payroll-settings',
+                  child: Text('Payroll Settings'),
+                ),
             ],
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _selectedIndex < pages.length ? _selectedIndex : 0,
-        children: pages,
-      ),
+      body: IndexedStack(index: effectiveIdx, children: pageWidgets),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex.clamp(0, navItems.length - 1),
-        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+        selectedIndex: effectiveIdx,
+        onDestinationSelected: (i) {
+          final pageIds = pages.values.toList();
+          if (i < pageIds.length) setState(() => _selectedPageId = pageIds[i]);
+        },
         destinations: navItems,
       ),
     );

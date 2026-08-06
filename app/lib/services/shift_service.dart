@@ -9,7 +9,10 @@ class ShiftService {
     final query = <String, String>{};
     if (limit != null) query['limit'] = limit.toString();
     if (offset != null) query['offset'] = offset.toString();
-    final res = await _client.get('/api/v1/shifts', query: query.isNotEmpty ? query : null);
+    final res = await _client.get(
+      '/api/v1/shifts',
+      query: query.isNotEmpty ? query : null,
+    );
     final list = (res['data'] as List<dynamic>?) ?? [];
     return list.map((e) => Shift.fromJson(e as Map<String, dynamic>)).toList();
   }
@@ -34,8 +37,9 @@ class ShiftService {
   }
 
   Future<void> assignDefaultShift(String employeeId, String shiftId) async {
-    await _client.put('/api/v1/staff/$employeeId/default-shift', body: {
-      'shift_id': shiftId,
-    });
+    await _client.put(
+      '/api/v1/staff/$employeeId/default-shift',
+      body: {'shift_id': shiftId},
+    );
   }
 }

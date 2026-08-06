@@ -10,7 +10,9 @@ class SettingsService {
     return PayrollSettings.fromJson(res['data'] as Map<String, dynamic>? ?? {});
   }
 
-  Future<PayrollSettings> upsertPayrollSettings(Map<String, dynamic> body) async {
+  Future<PayrollSettings> upsertPayrollSettings(
+    Map<String, dynamic> body,
+  ) async {
     final res = await _client.put('/api/v1/settings/payroll', body: body);
     return PayrollSettings.fromJson(res['data'] as Map<String, dynamic>? ?? {});
   }

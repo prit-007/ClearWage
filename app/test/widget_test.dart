@@ -5,14 +5,21 @@ import 'package:vivek_app/models/auth_model.dart';
 import 'package:vivek_app/providers/providers.dart';
 
 void main() {
-  testWidgets('App renders factory workforce shell when authenticated', (WidgetTester tester) async {
+  testWidgets('App renders factory workforce shell when authenticated', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           initialTokenProvider.overrideWith((ref) async => 'test-token'),
           tokenProvider.overrideWith((ref) => 'test-token'),
           userInfoProvider.overrideWith(
-            (ref) => AppUser(token: 'test-token', tenantId: 't1', employeeId: 'e1', role: 'owner'),
+            (ref) => AppUser(
+              token: 'test-token',
+              tenantId: 't1',
+              employeeId: 'e1',
+              role: 'owner',
+            ),
           ),
         ],
         child: const FactoryWorkforceApp(),
@@ -24,7 +31,9 @@ void main() {
     expect(find.text('Factory Workforce'), findsWidgets);
   });
 
-  testWidgets('App renders login screen when unauthenticated', (WidgetTester tester) async {
+  testWidgets('App renders login screen when unauthenticated', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [

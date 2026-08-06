@@ -1,20 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../providers/providers.dart';
 
-class ReportsHubScreen extends StatelessWidget {
+class ReportsHubScreen extends ConsumerWidget {
   const ReportsHubScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
 
     final reports = [
-      _ReportConfig(icon: PhosphorIconsFill.calendarCheck, title: 'Daily Summary', subtitle: 'Attendance & wage overview', color: cs.primary, route: '/reports/daily-summary'),
-      _ReportConfig(icon: PhosphorIconsFill.warningCircle, title: 'Defaulters', subtitle: 'Employees with outstanding > wage', color: const Color(0xFFEF4444), route: '/reports/defaulters'),
-      _ReportConfig(icon: PhosphorIconsFill.wallet, title: 'Payroll Summary', subtitle: 'Monthly payroll breakdown', color: const Color(0xFF10B981), badge: 'Owner Access Only', route: '/reports/payroll'),
+      _ReportConfig(
+        icon: PhosphorIconsFill.calendarCheck,
+        title: 'Daily Summary',
+        subtitle: 'Attendance & wage overview',
+        color: cs.primary,
+        route: '/reports/daily-summary',
+      ),
+      _ReportConfig(
+        icon: PhosphorIconsFill.warningCircle,
+        title: 'Defaulters',
+        subtitle: 'Employees with outstanding > wage',
+        color: const Color(0xFFEF4444),
+        route: '/reports/defaulters',
+      ),
+      if (isAdmin)
+        _ReportConfig(
+          icon: PhosphorIconsFill.wallet,
+          title: 'Payroll Summary',
+          subtitle: 'Monthly payroll breakdown',
+          color: const Color(0xFF10B981),
+          badge: 'Owner Access Only',
+          route: '/reports/payroll',
+        ),
     ];
 
     return Scaffold(
@@ -31,22 +54,22 @@ class ReportsHubScreen extends StatelessWidget {
                 icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
                 onPressed: () => Navigator.pop(context),
               ),
-              title: Text('Reports & Analytics', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+              title: Text(
+                'Reports & Analytics',
+                style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
               centerTitle: true,
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final report = reports[index];
-                    return FluidSlideIn(
-                      delay: index * 100,
-                      child: _PremiumReportCard(cs: cs, tt: tt, config: report),
-                    );
-                  },
-                  childCount: reports.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final report = reports[index];
+                  return FluidSlideIn(
+                    delay: index * 100,
+                    child: _PremiumReportCard(cs: cs, tt: tt, config: report),
+                  );
+                }, childCount: reports.length),
               ),
             ),
           ],
@@ -62,7 +85,14 @@ class _ReportConfig {
   final String? badge, route;
   final Color color;
 
-  _ReportConfig({required this.icon, required this.title, required this.subtitle, this.badge, this.route, required this.color});
+  _ReportConfig({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.badge,
+    this.route,
+    required this.color,
+  });
 }
 
 class _PremiumReportCard extends StatelessWidget {
@@ -70,7 +100,11 @@ class _PremiumReportCard extends StatelessWidget {
   final TextTheme tt;
   final _ReportConfig config;
 
-  const _PremiumReportCard({required this.cs, required this.tt, required this.config});
+  const _PremiumReportCard({
+    required this.cs,
+    required this.tt,
+    required this.config,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +115,11 @@ class _PremiumReportCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
         boxShadow: [
-          BoxShadow(color: cs.shadow.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Material(
@@ -90,14 +128,16 @@ class _PremiumReportCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           onTap: () {
             HapticFeedback.lightImpact();
-            if (config.route != null) Navigator.pushNamed(context, config.route!);
+            if (config.route != null)
+              Navigator.pushNamed(context, config.route!);
           },
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
                 Container(
-                  width: 56, height: 56,
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
                     color: config.color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
@@ -111,26 +151,52 @@ class _PremiumReportCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Flexible(child: Text(config.title, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.3))),
+                          Flexible(
+                            child: Text(
+                              config.title,
+                              style: tt.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ),
                           if (config.badge != null) ...[
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: cs.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Text(config.badge!, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: cs.primary)),
+                              child: Text(
+                                config.badge!,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  color: cs.primary,
+                                ),
+                              ),
                             ),
                           ],
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(config.subtitle, style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                      Text(
+                        config.subtitle,
+                        style: tt.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                Icon(PhosphorIconsRegular.caretRight, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                Icon(
+                  PhosphorIconsRegular.caretRight,
+                  color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                ),
               ],
             ),
           ),
@@ -139,5 +205,3 @@ class _PremiumReportCard extends StatelessWidget {
     );
   }
 }
-
-

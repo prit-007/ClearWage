@@ -10,12 +10,19 @@ class _FakeApiClient extends ApiClient {
   Map<String, dynamic>? lastQuery;
   Map<String, dynamic>? lastBody;
 
-  _FakeApiClient(this._response) : _error = null, super(baseUrl: 'http://localhost');
+  _FakeApiClient(this._response)
+    : _error = null,
+      super(baseUrl: 'http://localhost');
 
-  _FakeApiClient.error(this._error) : _response = {}, super(baseUrl: 'http://localhost');
+  _FakeApiClient.error(this._error)
+    : _response = {},
+      super(baseUrl: 'http://localhost');
 
   @override
-  Future<Map<String, dynamic>> get(String path, {Map<String, String>? query}) async {
+  Future<Map<String, dynamic>> get(
+    String path, {
+    Map<String, String>? query,
+  }) async {
     lastMethod = 'GET';
     lastPath = path;
     lastQuery = query;
@@ -24,7 +31,10 @@ class _FakeApiClient extends ApiClient {
   }
 
   @override
-  Future<Map<String, dynamic>> post(String path, {Map<String, dynamic>? body}) async {
+  Future<Map<String, dynamic>> post(
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
     lastMethod = 'POST';
     lastPath = path;
     lastBody = body;
@@ -59,7 +69,10 @@ void main() {
       });
       final svc = LedgerService(client);
 
-      final entries = await svc.listByTenant(startDate: '2026-08-01', endDate: '2026-08-31');
+      final entries = await svc.listByTenant(
+        startDate: '2026-08-01',
+        endDate: '2026-08-31',
+      );
 
       expect(entries, hasLength(2));
       expect(entries[0].employeeName, 'Alice');
@@ -73,7 +86,10 @@ void main() {
       final client = _FakeApiClient({'data': []});
       final svc = LedgerService(client);
 
-      final entries = await svc.listByTenant(startDate: '2026-08-01', endDate: '2026-08-31');
+      final entries = await svc.listByTenant(
+        startDate: '2026-08-01',
+        endDate: '2026-08-31',
+      );
 
       expect(entries, isEmpty);
     });
@@ -82,7 +98,10 @@ void main() {
       final client = _FakeApiClient({});
       final svc = LedgerService(client);
 
-      final entries = await svc.listByTenant(startDate: '2026-08-01', endDate: '2026-08-31');
+      final entries = await svc.listByTenant(
+        startDate: '2026-08-01',
+        endDate: '2026-08-31',
+      );
 
       expect(entries, isEmpty);
     });
@@ -91,7 +110,12 @@ void main() {
       final client = _FakeApiClient({'data': []});
       final svc = LedgerService(client);
 
-      await svc.listByTenant(startDate: '2026-08-01', endDate: '2026-08-15', limit: 10, offset: 20);
+      await svc.listByTenant(
+        startDate: '2026-08-01',
+        endDate: '2026-08-15',
+        limit: 10,
+        offset: 20,
+      );
 
       expect(client.lastMethod, 'GET');
       expect(client.lastPath, '/api/v1/ledger');
@@ -127,7 +151,11 @@ void main() {
       final client = _FakeApiClient({'data': []});
       final svc = LedgerService(client);
 
-      await svc.listByEmployee('emp-123', startDate: '2026-08-01', endDate: '2026-08-31');
+      await svc.listByEmployee(
+        'emp-123',
+        startDate: '2026-08-01',
+        endDate: '2026-08-31',
+      );
 
       expect(client.lastPath, '/api/v1/ledger/emp-123');
     });
@@ -147,7 +175,11 @@ void main() {
       });
       final svc = LedgerService(client);
 
-      final entries = await svc.listByEmployee('emp-123', startDate: '2026-08-01', endDate: '2026-08-31');
+      final entries = await svc.listByEmployee(
+        'emp-123',
+        startDate: '2026-08-01',
+        endDate: '2026-08-31',
+      );
 
       expect(entries, hasLength(1));
       expect(entries[0].employeeId, 'emp-123');
@@ -167,7 +199,10 @@ void main() {
       });
       final svc = LedgerService(client);
 
-      final summary = await svc.getSummary(startDate: '2026-08-01', endDate: '2026-08-31');
+      final summary = await svc.getSummary(
+        startDate: '2026-08-01',
+        endDate: '2026-08-31',
+      );
 
       expect(summary.jamaTotal, 100000);
       expect(summary.udhaarTotal, 30000);
@@ -211,7 +246,9 @@ void main() {
     });
 
     test('hits correct endpoint', () async {
-      final client = _FakeApiClient({'data': {'balance': 0}});
+      final client = _FakeApiClient({
+        'data': {'balance': 0},
+      });
       final svc = LedgerService(client);
 
       await svc.getBalance('emp-99');

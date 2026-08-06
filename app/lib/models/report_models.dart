@@ -42,12 +42,12 @@ class DefaulterItem {
   factory DefaulterItem.fromJson(Map<String, dynamic> json) => DefaulterItem(
         name: json['name'] as String? ?? json['employee_name'] as String? ?? 'Unknown',
         photoUrl: json['photo_url'] as String?,
-        outstandingBalance: safeToDouble(json['outstanding_balance']) != 0
+        outstandingBalance: json.containsKey('outstanding_balance')
             ? safeToDouble(json['outstanding_balance'])
             : safeToDouble(json['outstanding']),
-        monthlyWage: safeToDouble(json['monthly_wage']) != 0
+        monthlyWage: json.containsKey('monthly_wage')
             ? safeToDouble(json['monthly_wage'])
-            : safeToDouble(json['wage']) != 0
+            : json.containsKey('wage')
                 ? safeToDouble(json['wage'])
                 : safeToDouble(json['wage_amount']),
       );

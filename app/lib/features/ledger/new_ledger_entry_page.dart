@@ -59,7 +59,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
         'employee_id': _selectedEmployeeId!,
         'date': dateStr,
         'type': _isJama ? 'jama' : 'udhaar',
-        'amount': double.tryParse(_amountController.text.trim()) ?? 0,
+        'amount': amount.toStringAsFixed(2),
         'note': _noteController.text.trim(),
       });
       ref.read(ledgerRefreshProvider.notifier).state++;
@@ -284,7 +284,10 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                         IntrinsicWidth(
                           child: TextField(
                             controller: _amountController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}$')),
+                            ],
                             autofocus: true,
                             textAlign: TextAlign.center,
                             style: tt.displayLarge?.copyWith(

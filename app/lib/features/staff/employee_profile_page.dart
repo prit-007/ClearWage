@@ -340,16 +340,12 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen> w
                           final file = File('${dir.path}/payslip_${widget.employeeId}_${start}_$end.pdf');
                           await file.writeAsBytes(pdf);
                           if (context.mounted) {
-                            await showInfoDialog(
-                              context,
-                              title: 'Payslip Ready',
-                              message: 'The payslip has been generated. Would you like to open it?',
-                              buttonLabel: 'Open',
-                              icon: PhosphorIconsRegular.filePdf,
-                              onButtonPressed: () async {
-                                await launchUrl(Uri.file(file.path), mode: LaunchMode.externalApplication);
-                              },
-                            );
+                            final opened = await launchUrl(Uri.file(file.path), mode: LaunchMode.externalApplication);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(opened ? 'Payslip opened' : 'Payslip saved. Could not open automatically.')),
+                              );
+                            }
                           }
                         } catch (e) {
                           if (context.mounted) showError(context, e);

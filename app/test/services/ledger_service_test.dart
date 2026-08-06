@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vivek_app/core/api_client.dart';
 import 'package:vivek_app/services/ledger_service.dart';
-import 'package:vivek_app/models/ledger_model.dart';
 
 class _FakeApiClient extends ApiClient {
   final Map<String, dynamic> _response;
@@ -11,7 +10,7 @@ class _FakeApiClient extends ApiClient {
   Map<String, dynamic>? lastQuery;
   Map<String, dynamic>? lastBody;
 
-  _FakeApiClient(this._response, [this._error]) : super(baseUrl: 'http://localhost');
+  _FakeApiClient(this._response) : _error = null, super(baseUrl: 'http://localhost');
 
   _FakeApiClient.error(this._error) : _response = {}, super(baseUrl: 'http://localhost');
 
@@ -20,7 +19,7 @@ class _FakeApiClient extends ApiClient {
     lastMethod = 'GET';
     lastPath = path;
     lastQuery = query;
-    if (_error != null) throw _error!;
+    if (_error != null) throw _error;
     return _response;
   }
 
@@ -29,7 +28,7 @@ class _FakeApiClient extends ApiClient {
     lastMethod = 'POST';
     lastPath = path;
     lastBody = body;
-    if (_error != null) throw _error!;
+    if (_error != null) throw _error;
     return _response;
   }
 }

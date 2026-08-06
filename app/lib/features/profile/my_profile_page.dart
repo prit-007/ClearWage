@@ -147,16 +147,12 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> with SingleTi
       final file = File('${dir.path}/payslip_$start.pdf');
       await file.writeAsBytes(bytes);
       if (mounted) {
-        await showInfoDialog(
-          context,
-          title: 'Payslip Ready',
-          message: 'Your payslip has been generated. Would you like to open it?',
-          buttonLabel: 'Open',
-          icon: PhosphorIconsRegular.filePdf,
-          onButtonPressed: () async {
-            await launchUrl(Uri.file(file.path), mode: LaunchMode.externalApplication);
-          },
-        );
+        final opened = await launchUrl(Uri.file(file.path), mode: LaunchMode.externalApplication);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(opened ? 'Payslip opened' : 'Payslip saved. Could not open automatically.')),
+          );
+        }
       }
     } catch (e) {
       if (mounted) showError(context, e);

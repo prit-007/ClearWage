@@ -17,7 +17,7 @@ class DefaultersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final async = ref.watch(defaultersProvider);
+    final asyncValue = ref.watch(defaultersProvider);
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
@@ -36,7 +36,7 @@ class DefaultersScreen extends ConsumerWidget {
               title: Text('Financial Risks', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
               centerTitle: true,
             ),
-            async.when(
+            asyncValue.when(
               loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
               error: (e, _) => SliverFillRemaining(
                 child: Center(
@@ -93,7 +93,7 @@ class DefaultersScreen extends ConsumerWidget {
                             }
                             final d = defaulters[index - 1];
                             return FluidSlideIn(
-                              delay: index * 80,
+                              delay: (index * 80).clamp(0, 500),
                               child: _DefaulterCard(cs: cs, tt: tt, data: d),
                             );
                           },

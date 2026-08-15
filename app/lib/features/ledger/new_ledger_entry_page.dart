@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../providers/providers.dart';
+import '../../core/providers/services.dart';
+import 'providers/ledger_providers.dart';
+import '../staff/providers/staff_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/employee_avatar.dart';
+import 'dart:async';
 
 class NewLedgerEntryScreen extends ConsumerStatefulWidget {
   const NewLedgerEntryScreen({super.key});
@@ -38,21 +41,21 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
   Future<void> _save() async {
     if (_selectedEmployeeId == null) {
       showError(context, 'Please select an employee');
-      HapticFeedback.vibrate();
+      unawaited(HapticFeedback.vibrate());
       return;
     }
     if (_amountController.text.trim().isEmpty) {
       showError(context, 'Please enter an amount');
-      HapticFeedback.vibrate();
+      unawaited(HapticFeedback.vibrate());
       return;
     }
     final amount = double.tryParse(_amountController.text.trim());
     if (amount == null || amount <= 0) {
       showError(context, 'Please enter a valid amount');
-      HapticFeedback.vibrate();
+      unawaited(HapticFeedback.vibrate());
       return;
     }
-    HapticFeedback.heavyImpact();
+    unawaited(HapticFeedback.heavyImpact());
     setState(() => _saving = true);
     try {
       final dateStr =
@@ -345,7 +348,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                       cs: cs,
                       date: _selectedDate,
                       onTap: () async {
-                        HapticFeedback.selectionClick();
+                        unawaited(HapticFeedback.selectionClick());
                         final picked = await showDatePicker(
                           context: context,
                           initialDate: _selectedDate,

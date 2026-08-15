@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../providers/providers.dart';
+import '../../core/providers/services.dart';
+import '../dashboard/providers/dashboard_providers.dart';
+import '../ledger/providers/ledger_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/logger.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
 import '../../core/widgets/employee_avatar.dart';
+import 'dart:async';
 
 class PayrollPreviewScreen extends ConsumerStatefulWidget {
   const PayrollPreviewScreen({super.key});
@@ -62,11 +65,12 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
       }
     } catch (e, st) {
       AppLogger.error('Payroll: Failed to load data', e, st);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = '$e';
           _loading = false;
         });
+      }
     }
   }
 
@@ -113,10 +117,11 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
       AppLogger.info('Payroll: Lock API succeeded');
       ref.invalidate(dashboardDataProvider);
       ref.read(ledgerRefreshProvider.notifier).state++;
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Payroll locked successfully')),
         );
+      }
     } catch (e, st) {
       AppLogger.error('Payroll: Lock API failed', e, st);
       if (mounted) showError(context, e);
@@ -191,7 +196,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
       _start = start;
       _end = end;
     });
-    _loadData();
+    unawaited(_loadData());
   }
 
   @override

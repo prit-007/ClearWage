@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../providers/providers.dart';
-import '../../models/report_models.dart';
+import '../../core/providers/services.dart';
+import '../../data/models/report_models.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
 final dailySummaryProvider = FutureProvider.autoDispose<DailySummaryData>((

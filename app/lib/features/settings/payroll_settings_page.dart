@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../providers/providers.dart';
-import '../../models/payroll_models.dart';
+import '../../core/providers/services.dart';
+import '../../data/models/payroll_models.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/premium_macro_field.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
+import 'dart:async';
 
 final payrollSettingsProvider = FutureProvider.autoDispose<PayrollSettings>((
   ref,
@@ -86,10 +87,10 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
 
   Future<void> _save() async {
     if (!_validate()) {
-      HapticFeedback.vibrate();
+      unawaited(HapticFeedback.vibrate());
       return;
     }
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     setState(() => _saving = true);
     try {
       await ref.read(settingsServiceProvider).upsertPayrollSettings({
@@ -103,7 +104,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
       });
       ref.invalidate(payrollSettingsProvider);
       if (mounted) {
-        HapticFeedback.heavyImpact();
+        unawaited(HapticFeedback.heavyImpact());
         Navigator.pop(context);
       }
     } catch (e) {
@@ -119,11 +120,12 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
       next.whenOrNull(
         data: _initFromData,
         error: (e, _) {
-          if (mounted)
+          if (mounted) {
             setState(() {
               _loadError = '$e';
               _loaded = true;
             });
+          }
         },
       );
     });

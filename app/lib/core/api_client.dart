@@ -5,11 +5,13 @@ import 'logger.dart';
 
 class ApiClient {
   final String baseUrl;
+  final http.Client _client;
   static const _timeout = Duration(seconds: 30);
   String? _token;
   Future<void> Function()? onUnauthorized;
 
-  ApiClient({required this.baseUrl});
+  ApiClient({required this.baseUrl, http.Client? client})
+    : _client = client ?? http.Client();
 
   void setToken(String? token) => _token = token;
   String? get token => _token;
@@ -31,7 +33,7 @@ class ApiClient {
     Map<String, String>? query,
   }) async {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
-    return _request('GET', path, () => http.get(uri, headers: _headers));
+    return _request('GET', path, () => _client.get(uri, headers: _headers));
   }
 
   Future<Map<String, dynamic>> post(
@@ -42,7 +44,7 @@ class ApiClient {
     return _request(
       'POST',
       path,
-      () => http.post(uri, headers: _headers, body: jsonEncode(body)),
+      () => _client.post(uri, headers: _headers, body: jsonEncode(body)),
     );
   }
 
@@ -54,7 +56,7 @@ class ApiClient {
     return _request(
       'PUT',
       path,
-      () => http.put(uri, headers: _headers, body: jsonEncode(body)),
+      () => _client.put(uri, headers: _headers, body: jsonEncode(body)),
     );
   }
 
@@ -62,7 +64,7 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
     final sw = Stopwatch()..start();
     try {
-      final res = await http.get(uri, headers: _headers).timeout(_timeout);
+      final res = await _client.get(uri, headers: _headers).timeout(_timeout);
       sw.stop();
       AppLogger.request(
         'GET',
@@ -85,7 +87,7 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$path');
     final sw = Stopwatch()..start();
     try {
-      final res = await http
+      final res = await _client
           .post(uri, headers: _headers, body: jsonEncode(body))
           .timeout(_timeout);
       sw.stop();
@@ -108,7 +110,11 @@ class ApiClient {
 
   Future<Map<String, dynamic>> delete(String path) async {
     final uri = Uri.parse('$baseUrl$path');
-    return _request('DELETE', path, () => http.delete(uri, headers: _headers));
+    return _request(
+      'DELETE',
+      path,
+      () => _client.delete(uri, headers: _headers),
+    );
   }
 
   Future<Map<String, dynamic>> postMultipart(

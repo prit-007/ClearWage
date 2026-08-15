@@ -5,15 +5,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../core/widgets/shimmer_loading.dart';
-import '../../models/attendance_model.dart';
-import '../../models/employee_model.dart';
-import '../../models/roster_model.dart';
-import '../../providers/providers.dart';
+import '../../data/models/attendance_model.dart';
+import '../../data/models/employee_model.dart';
+import '../../data/models/roster_model.dart';
+import '../../core/providers/app_providers.dart';
+import '../../core/providers/services.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/tactile_toggle.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/employee_avatar.dart';
-import '../../models/shift_model.dart';
+import '../../data/models/shift_model.dart';
+import 'dart:async';
 
 enum _AttStatus { present, absent, halfDay }
 
@@ -48,7 +50,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   Future<void> _markRemainingPresent() async {
     if (_saving) return;
     setState(() => _saving = true);
-    HapticFeedback.heavyImpact();
+    unawaited(HapticFeedback.heavyImpact());
     final rows = _cachedRows ?? [];
     final date = _dateStr;
     final unmarkedRows = rows.where((r) => !r.hasAttendance).toList();
@@ -60,10 +62,11 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
         .toList();
 
     if (unmarkedRows.isEmpty) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('All employees already marked')),
         );
+      }
       setState(() => _saving = false);
       return;
     }
@@ -94,8 +97,9 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     if (noShift.isNotEmpty) {
       msg += '. ${noShift.length} skipped (no shift assigned)';
     }
-    if (mounted)
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
     setState(() => _saving = false);
   }
 
@@ -130,7 +134,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   }) async {
     final chosenShift = shiftId ?? emp.defaultShiftId;
     if (chosenShift == null || chosenShift.isEmpty) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -138,6 +142,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
             ),
           ),
         );
+      }
       return;
     }
     try {
@@ -246,7 +251,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
           color: cs.primary,
           backgroundColor: cs.surface,
           onRefresh: () async {
-            HapticFeedback.mediumImpact();
+            unawaited(HapticFeedback.mediumImpact());
             ref.invalidate(rosterByDateProvider(_dateStr));
             await ref.read(rosterByDateProvider(_dateStr).future);
           },
@@ -302,7 +307,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
                   child: InkWell(
                     onTap: () async {
-                      HapticFeedback.selectionClick();
+                      unawaited(HapticFeedback.selectionClick());
                       final picked = await showDatePicker(
                         context: context,
                         initialDate: _selectedDate,
@@ -318,8 +323,9 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                           child: child!,
                         ),
                       );
-                      if (picked != null)
+                      if (picked != null) {
                         setState(() => _selectedDate = picked);
+                      }
                     },
                     borderRadius: BorderRadius.circular(24),
                     child: Container(

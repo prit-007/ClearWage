@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vivek_app/core/api_client.dart';
 import 'package:vivek_app/features/ledger/ledger_list_page.dart';
-import 'package:vivek_app/models/ledger_model.dart';
-import 'package:vivek_app/providers/providers.dart';
-import 'package:vivek_app/services/ledger_service.dart';
+import 'package:vivek_app/data/models/ledger_model.dart';
+import 'package:vivek_app/core/providers/services.dart';
+import 'package:vivek_app/data/services/ledger_service.dart';
 
 class _NoOpApiClient extends ApiClient {
   _NoOpApiClient() : super(baseUrl: 'http://localhost');

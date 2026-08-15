@@ -7,13 +7,18 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../providers/providers.dart';
-import '../../models/employee_model.dart';
+import '../../core/providers/app_providers.dart';
+import '../../core/providers/services.dart';
+import '../dashboard/providers/dashboard_providers.dart';
+import '../ledger/providers/ledger_providers.dart';
+import 'providers/staff_providers.dart';
+import '../../data/models/employee_model.dart';
 import '../../core/app_config.dart';
 import '../../core/helpers.dart';
 import '../../core/logger.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import 'add_employee_page.dart';
+import 'dart:async';
 
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -96,7 +101,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
   }
 
   Future<void> _pickAndUploadPhoto() async {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     final source = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -255,7 +260,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                             ),
                           ),
                         );
-                        if (result == true && mounted) _loadProfile();
+                        if (result == true && mounted) {
+                          unawaited(_loadProfile());
+                        }
                       },
                     ),
                     IconButton(
@@ -401,18 +408,19 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                           icon: PhosphorIconsRegular.currencyCircleDollar,
                         );
                         if (confirmed != true) return;
-                        HapticFeedback.lightImpact();
+                        unawaited(HapticFeedback.lightImpact());
                         try {
                           await ref
                               .read(ledgerServiceProvider)
                               .settleAccount(widget.employeeId);
                           ref.invalidate(dashboardDataProvider);
                           ref.read(ledgerRefreshProvider.notifier).state++;
-                          if (context.mounted)
+                          if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Account settled')),
                             );
-                          if (mounted) _loadProfile();
+                          }
+                          if (mounted) unawaited(_loadProfile());
                         } catch (e) {
                           if (context.mounted) showError(context, e);
                         }
@@ -434,7 +442,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                   Expanded(
                     child: FilledButton(
                       onPressed: () async {
-                        HapticFeedback.heavyImpact();
+                        unawaited(HapticFeedback.heavyImpact());
                         try {
                           final now = DateTime.now();
                           final start =
@@ -772,7 +780,7 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
   }
 
   Future<void> _upload(String type) async {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     final source = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -882,7 +890,7 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Document uploaded')));
-        _load();
+        unawaited(_load());
       }
     } catch (e) {
       if (mounted) showError(context, e);
@@ -923,7 +931,7 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
       await ref
           .read(documentServiceProvider)
           .deleteDocument(employeeId: widget.employeeId, docType: type);
-      if (mounted) _load();
+      if (mounted) unawaited(_load());
     } catch (e) {
       if (mounted) showError(context, e);
     }
@@ -1165,8 +1173,9 @@ class _DocumentViewerPage extends StatelessWidget {
                         Uri.parse(url),
                         mode: LaunchMode.externalApplication,
                       );
-                      if (!ok && context.mounted)
+                      if (!ok && context.mounted) {
                         showError(context, 'Could not open document');
+                      }
                     },
                     icon: const Icon(PhosphorIconsRegular.arrowSquareOut),
                     label: const Text(

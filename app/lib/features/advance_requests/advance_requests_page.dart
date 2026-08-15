@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../models/advance_request_model.dart';
-import '../../providers/providers.dart';
+import '../../data/models/advance_request_model.dart';
+import '../../core/providers/services.dart';
+import '../dashboard/providers/dashboard_providers.dart';
+import '../ledger/providers/ledger_providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/helpers.dart';
+import 'dart:async';
 
 const int _pageSize = 20;
 
@@ -66,11 +69,12 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
         });
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.toString();
           _loading = false;
         });
+      }
     }
   }
 
@@ -97,7 +101,7 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
 
   Future<void> _handleActionSheet(AdvanceRequest req) async {
     if (!req.isPending) return;
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
 
     final action = await showModalBottomSheet<String>(
       context: context,
@@ -292,7 +296,7 @@ class _AdvanceActionSheetContentState
     if (confirm != true) return;
     setState(() => _loading = true);
     try {
-      HapticFeedback.heavyImpact();
+      unawaited(HapticFeedback.heavyImpact());
       final now = DateTime.now();
       final date =
           '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
@@ -320,7 +324,7 @@ class _AdvanceActionSheetContentState
     if (confirm != true) return;
     setState(() => _loading = true);
     try {
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       await widget.ref.read(advanceRequestServiceProvider).deny(widget.req.id);
       widget.ref.invalidate(dashboardDataProvider);
       widget.ref.read(ledgerRefreshProvider.notifier).state++;

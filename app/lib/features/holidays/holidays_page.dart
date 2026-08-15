@@ -4,10 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../core/widgets/validated_field.dart';
-import '../../models/holiday_model.dart';
-import '../../providers/providers.dart';
+import '../../data/models/holiday_model.dart';
+import '../../core/providers/services.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/helpers.dart';
+import 'dart:async';
 
 const int _pageSize = 20;
 
@@ -64,16 +65,17 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
         });
       }
     } catch (err) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
           _error = err.toString();
         });
+      }
     }
   }
 
   Future<void> _onRefresh() async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     setState(() {
       _items = [];
       _page = 0;
@@ -84,7 +86,7 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
   }
 
   Future<void> _showHolidaySheet() async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
@@ -94,7 +96,7 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
     if (result != null) {
       try {
         await ref.read(holidayServiceProvider).create(result);
-        if (mounted) _onRefresh();
+        if (mounted) unawaited(_onRefresh());
       } catch (e) {
         if (mounted) showError(context, e);
       }
@@ -111,10 +113,10 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
       isDestructive: true,
     );
     if (confirmed != true) return;
-    HapticFeedback.heavyImpact();
+    unawaited(HapticFeedback.heavyImpact());
     try {
       await ref.read(holidayServiceProvider).delete(id);
-      if (mounted) _onRefresh();
+      if (mounted) unawaited(_onRefresh());
     } catch (e) {
       if (mounted) showError(context, e);
     }
@@ -457,18 +459,19 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
               const SizedBox(height: 8),
               InkWell(
                 onTap: () async {
-                  HapticFeedback.selectionClick();
+                  unawaited(HapticFeedback.selectionClick());
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: _selectedDate ?? DateTime.now(),
                     firstDate: DateTime(2023),
                     lastDate: DateTime(2028),
                   );
-                  if (picked != null)
+                  if (picked != null) {
                     setState(() {
                       _selectedDate = picked;
                       _dateError = null;
                     });
+                  }
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Container(

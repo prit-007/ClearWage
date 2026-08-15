@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/widgets/fluid_slide_in.dart';
-import '../../providers/providers.dart';
+import '../../core/providers/app_providers.dart';
 
 class ReportsHubScreen extends ConsumerWidget {
   const ReportsHubScreen({super.key});
@@ -128,8 +129,9 @@ class _PremiumReportCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           onTap: () {
             HapticFeedback.lightImpact();
-            if (config.route != null)
-              Navigator.pushNamed(context, config.route!);
+            if (config.route != null) {
+              context.push(config.route!);
+            }
           },
           child: Padding(
             padding: const EdgeInsets.all(20),

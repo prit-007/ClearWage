@@ -1,0 +1,1 @@
+Initial release of Factory Workforce: attendance, staff, payroll, ledger, advances and reports.

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../providers/providers.dart';
-import '../../models/report_models.dart';
+import '../../core/providers/services.dart';
+import '../../data/models/report_models.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
 
@@ -94,10 +94,10 @@ class DefaultersScreen extends ConsumerWidget {
                               ).withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
-                            child: PhosphorIcon(
+                            child: const PhosphorIcon(
                               PhosphorIconsDuotone.shieldCheck,
                               size: 64,
-                              color: const Color(0xFF10B981),
+                              color: Color(0xFF10B981),
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -224,7 +224,7 @@ class _DefaulterCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                PhosphorIcon(
+                const PhosphorIcon(
                   PhosphorIconsDuotone.warningCircle,
                   color: dangerColor,
                   size: 28,
@@ -241,7 +241,7 @@ class _DefaulterCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     'PENDING RECOVERY',
                     style: TextStyle(
                       fontSize: 10,

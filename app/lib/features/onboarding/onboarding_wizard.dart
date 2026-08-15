@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/widgets/validated_field.dart';
-import '../../providers/providers.dart';
+import '../../core/providers/services.dart';
 
 class OnboardingWizard extends ConsumerStatefulWidget {
   const OnboardingWizard({super.key});
@@ -60,7 +61,7 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
           },
         ],
         'ot_settings': {
-          'ot_trigger': _otTrigger == 0 ? "after_shift_end" : "after_threshold",
+          'ot_trigger': _otTrigger == 0 ? 'after_shift_end' : 'after_threshold',
           'ot_threshold_hours': _otTrigger.toDouble(),
           'ot_multiplier_default': 1.5,
           'ot_rounding': 30,
@@ -75,10 +76,11 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
         'holidays': <Map<String, dynamic>>[],
       });
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Failed to save setup: $e')));
+      }
     } finally {
       if (mounted) setState(() => _creatingShifts = false);
     }
@@ -101,8 +103,7 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
     } else {
       HapticFeedback.heavyImpact();
       _setupFactory().then((_) {
-        if (mounted)
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+        if (mounted) context.go('/home');
       });
     }
   }
@@ -138,7 +139,7 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
           TextButton(
             onPressed: () {
               HapticFeedback.lightImpact();
-              Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+              context.go('/home');
             },
             style: TextButton.styleFrom(foregroundColor: cs.onSurfaceVariant),
             child: const Text(
@@ -839,7 +840,7 @@ class _StepReview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cName = companyName.text.trim().isEmpty
-        ? "Your Factory"
+        ? 'Your Factory'
         : companyName.text.trim();
     final address = addressCtrl.text.trim();
     final contact = contactCtrl.text.trim();

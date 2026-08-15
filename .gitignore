@@ -40,3 +40,8 @@ GoogleService-Info.plist
 # Build artifacts
 *.o
 *.a
+
+# Release signing material — never commit
+*.jks
+*.keystore
+key.properties

@@ -5,13 +5,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../providers/providers.dart';
-import '../../models/employee_model.dart';
-import '../../models/shift_model.dart';
+import '../../core/providers/app_providers.dart';
+import '../../core/providers/services.dart';
+import 'providers/staff_providers.dart';
+import '../../data/models/employee_model.dart';
+import '../../data/models/shift_model.dart';
 import '../../core/app_config.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../core/helpers.dart';
+import 'dart:async';
 
 class AddEmployeeScreen extends ConsumerStatefulWidget {
   final Employee? employee;
@@ -80,11 +83,12 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   Future<void> _loadShifts() async {
     try {
       final shifts = await ref.read(shiftServiceProvider).list();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _shifts = shifts;
           _shiftsError = null;
         });
+      }
     } catch (e) {
       if (mounted) setState(() => _shiftsError = '$e');
     }
@@ -117,8 +121,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     final wage = _wageCtrl.text.trim();
     if (name.isEmpty) return 'Employee name is required';
     if (phone.isEmpty) return 'Phone number is required';
-    if (!RegExp(r'^\d{10,15}$').hasMatch(phone))
+    if (!RegExp(r'^\d{10,15}$').hasMatch(phone)) {
       return 'Enter a valid 10-digit phone number';
+    }
     if (wage.isEmpty) return 'Wage amount is required';
     final wageVal = double.tryParse(wage);
     if (wageVal == null || wageVal <= 0) return 'Wage must be a valid number';
@@ -126,7 +131,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   }
 
   Future<void> _pickPhoto() async {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     final source = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -203,11 +208,11 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     final formValid = _formKey.currentState?.validate() ?? false;
     final error = _validateAll();
     if (!formValid || error != null) {
-      HapticFeedback.vibrate();
+      unawaited(HapticFeedback.vibrate());
       if (mounted && error != null) showError(context, error);
       return;
     }
-    HapticFeedback.heavyImpact();
+    unawaited(HapticFeedback.heavyImpact());
     setState(() => _saving = true);
     try {
       final body = {
@@ -526,8 +531,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                       validator: (v) {
                         final p = v?.trim() ?? '';
                         if (p.isEmpty) return 'Phone number is required';
-                        if (!RegExp(r'^\d{10,15}$').hasMatch(p))
+                        if (!RegExp(r'^\d{10,15}$').hasMatch(p)) {
                           return 'Enter a valid 10-digit phone number';
+                        }
                         return null;
                       },
                     ),
@@ -586,11 +592,13 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                       prefixIcon: PhosphorIconsDuotone.coins,
                       keyboardType: TextInputType.number,
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty)
+                        if (v == null || v.trim().isEmpty) {
                           return 'Wage amount is required';
+                        }
                         final amt = double.tryParse(v.trim());
-                        if (amt == null || amt <= 0)
+                        if (amt == null || amt <= 0) {
                           return 'Enter a valid amount';
+                        }
                         return null;
                       },
                     ),
@@ -654,8 +662,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                         if (p.isEmpty) return null;
                         if (!RegExp(
                           r'^[A-Z]{5}[0-9]{4}[A-Z]$',
-                        ).hasMatch(p.toUpperCase()))
+                        ).hasMatch(p.toUpperCase())) {
                           return 'Enter a valid PAN (e.g. ABCDE1234F)';
+                        }
                         return null;
                       },
                       onChanged: (v) {
@@ -678,8 +687,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                       validator: (v) {
                         final a = v?.trim() ?? '';
                         if (a.isEmpty) return null;
-                        if (!RegExp(r'^\d{12}$').hasMatch(a))
+                        if (!RegExp(r'^\d{12}$').hasMatch(a)) {
                           return 'Aadhaar must be exactly 12 digits';
+                        }
                         return null;
                       },
                     ),

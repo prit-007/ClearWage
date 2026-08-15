@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../providers/providers.dart';
+import '../../core/providers/services.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/premium_macro_field.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
+import 'dart:async';
 
 final leavePolicyProvider = FutureProvider.autoDispose<Map<String, dynamic>?>((
   ref,
@@ -73,10 +74,10 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
 
   Future<void> _save() async {
     if (!_validate()) {
-      HapticFeedback.vibrate();
+      unawaited(HapticFeedback.vibrate());
       return;
     }
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     setState(() => _saving = true);
     try {
       await ref.read(leavePolicyServiceProvider).upsert({
@@ -85,7 +86,7 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
       });
       ref.invalidate(leavePolicyProvider);
       if (mounted) {
-        HapticFeedback.heavyImpact();
+        unawaited(HapticFeedback.heavyImpact());
         Navigator.pop(context);
       }
     } catch (e) {

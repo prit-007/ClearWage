@@ -5,11 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:pinput/pinput.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/token_storage.dart';
 import '../../core/widgets/firebase_phone_field.dart';
 import '../../core/widgets/validated_field.dart';
-import '../../models/auth_model.dart';
-import '../../providers/providers.dart';
+import '../../data/models/auth_model.dart';
+import '../../core/providers/app_providers.dart';
+import '../../core/providers/services.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -103,18 +105,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
             idToken: idToken,
           );
       ref.read(tokenProvider.notifier).state = token.token;
-      TokenStorage.save(token.token);
+      unawaited(TokenStorage.save(token.token));
       final userInfo = AppUser.fromAuthToken(token);
-      TokenStorage.saveUserInfo(userInfo);
+      unawaited(TokenStorage.saveUserInfo(userInfo));
       ref.read(userInfoProvider.notifier).state = userInfo;
-      HapticFeedback.heavyImpact();
-      if (mounted)
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil('/onboarding', (_) => false);
+      unawaited(HapticFeedback.heavyImpact());
+      if (mounted) context.go('/onboarding');
     } catch (e) {
       if (!mounted) return;
-      HapticFeedback.vibrate();
+      unawaited(HapticFeedback.vibrate());
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -123,7 +122,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   }
 
   Future<void> _requestOtp() async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     if (_nameCtrl.text.trim().isEmpty) {
       setState(() => _error = 'Please enter your full name');
       return;
@@ -175,7 +174,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       );
     } catch (e) {
       if (!mounted) return;
-      HapticFeedback.vibrate();
+      unawaited(HapticFeedback.vibrate());
       setState(() {
         _error = 'Cannot reach server. Check your connection.';
         _loading = false;
@@ -185,7 +184,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
   Future<void> _register() async {
     if (_verificationId == null) return;
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     setState(() {
       _loading = true;
       _error = null;
@@ -197,7 +196,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       );
       await _handleFirebaseCredential(credential);
     } catch (e) {
-      HapticFeedback.vibrate();
+      unawaited(HapticFeedback.vibrate());
       if (!mounted) return;
       setState(() {
         _error = 'Invalid verification code. Please try again.';
@@ -300,10 +299,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                 label: 'Your Full Name',
                                 prefixIcon: PhosphorIconsRegular.user,
                                 validator: (v) {
-                                  if (v == null || v.trim().isEmpty)
+                                  if (v == null || v.trim().isEmpty) {
                                     return 'Enter your name';
-                                  if (v.trim().length < 2)
+                                  }
+                                  if (v.trim().length < 2) {
                                     return 'Name is too short';
+                                  }
                                   return null;
                                 },
                               ),
@@ -318,8 +319,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                 label: 'Factory / Business Name',
                                 prefixIcon: PhosphorIconsRegular.buildings,
                                 validator: (v) {
-                                  if (v == null || v.trim().isEmpty)
+                                  if (v == null || v.trim().isEmpty) {
                                     return 'Enter your factory name';
+                                  }
                                   return null;
                                 },
                               ),

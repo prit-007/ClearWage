@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../models/employee_model.dart';
-import '../../providers/providers.dart';
-import 'employee_profile_page.dart';
-import 'add_employee_page.dart';
+import 'package:go_router/go_router.dart';
+import '../../data/models/employee_model.dart';
+import '../../core/providers/app_providers.dart';
+import '../../core/providers/services.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/shimmer_loading.dart';
@@ -110,7 +110,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
 
   Future<void> _loadMore() async {
     if (_loading || _loadingMore || !_hasMore) return;
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     setState(() => _loadingMore = true);
     try {
       final staffService = ref.read(staffServiceProvider);
@@ -134,7 +134,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
   }
 
   Future<void> _onRefresh() async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     await _fetch();
   }
 
@@ -147,7 +147,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
   }
 
   Future<void> _openFilters() async {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     final cs = Theme.of(context).colorScheme;
     final result = await showModalBottomSheet<_FilterResult>(
       context: context,
@@ -174,10 +174,12 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
 
   List<Employee> get _filtered {
     final filtered = _allEmployees.where((e) {
-      if (_roleFilters.isNotEmpty && !_roleFilters.contains(e.role))
+      if (_roleFilters.isNotEmpty && !_roleFilters.contains(e.role)) {
         return false;
-      if (_wageFilters.isNotEmpty && !_wageFilters.contains(e.wageType))
+      }
+      if (_wageFilters.isNotEmpty && !_wageFilters.contains(e.wageType)) {
         return false;
+      }
       if (!_showInactive && !e.isActive) return false;
       return true;
     }).toList();
@@ -387,12 +389,9 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
           ? FloatingActionButton(
               heroTag: 'staff_directory_fab',
               onPressed: () async {
-                HapticFeedback.heavyImpact();
-                final result = await Navigator.push<bool>(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddEmployeeScreen()),
-                );
-                if (result == true && mounted) _fetch();
+                unawaited(HapticFeedback.heavyImpact());
+                final result = await context.push<bool>('/add_employee');
+                if (result == true && mounted) unawaited(_fetch());
               },
               backgroundColor: cs.primary,
               elevation: 4,
@@ -586,12 +585,7 @@ class _StaffDirectoryTile extends ConsumerWidget {
           borderRadius: BorderRadius.circular(20),
           onTap: () {
             HapticFeedback.selectionClick();
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => EmployeeProfileScreen(employeeId: employee.id),
-              ),
-            );
+            context.push('/employee/${employee.id}');
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -819,10 +813,11 @@ class _FilterSheetState extends State<_FilterSheet> {
                   onSelected: (v) {
                     HapticFeedback.selectionClick();
                     setState(() {
-                      if (v)
+                      if (v) {
                         _roles.add(role);
-                      else
+                      } else {
                         _roles.remove(role);
+                      }
                     });
                   },
                 );
@@ -863,10 +858,11 @@ class _FilterSheetState extends State<_FilterSheet> {
                   onSelected: (v) {
                     HapticFeedback.selectionClick();
                     setState(() {
-                      if (v)
+                      if (v) {
                         _wages.add(type);
-                      else
+                      } else {
                         _wages.remove(type);
+                      }
                     });
                   },
                 );

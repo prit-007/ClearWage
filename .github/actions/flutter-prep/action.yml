@@ -1,0 +1,28 @@
+name: 'Flutter prep'
+description: >
+  Shared pre-build steps for every Flutter job. Add any new pre-build step here
+  (pub get, codegen, patch scripts) so all jobs get it automatically.
+inputs:
+  flutter-version:
+    description: 'Flutter SDK version (tag) to install. Keep in sync with app/pubspec.lock SDK constraints.'
+    required: false
+    default: '3.44.8'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ inputs.flutter-version }}
+        channel: stable
+        cache: true
+
+    - name: Flutter pub get
+      run: flutter pub get
+      working-directory: app
+      shell: bash
+
+    # Codegen: when the app gains build_runner dependencies (drift/freezed/..),
+    # add `dart run build_runner build --delete-conflicting-outputs` here so
+    # every Flutter job runs it.

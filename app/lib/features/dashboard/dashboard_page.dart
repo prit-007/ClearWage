@@ -4,11 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../models/dashboard_model.dart';
-import '../../models/report_models.dart';
-import '../../providers/providers.dart';
+import 'package:go_router/go_router.dart';
+import '../../data/models/dashboard_model.dart';
+import '../../data/models/report_models.dart';
+import '../../core/providers/app_providers.dart';
+import 'providers/dashboard_providers.dart';
 import '../../core/helpers.dart';
-import '../staff/add_employee_page.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -220,12 +221,7 @@ class DashboardScreen extends ConsumerWidget {
                             label: 'Add\nStaff',
                             onTap: () {
                               HapticFeedback.lightImpact();
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const AddEmployeeScreen(),
-                                ),
-                              );
+                              context.push('/add_employee');
                             },
                           ),
                         if (!isAdmin)
@@ -236,7 +232,7 @@ class DashboardScreen extends ConsumerWidget {
                             label: 'My\nProfile',
                             onTap: () {
                               HapticFeedback.lightImpact();
-                              Navigator.pushNamed(context, '/my-profile');
+                              context.push('/my-profile');
                             },
                           ),
                         const SizedBox(height: 40),
@@ -650,8 +646,9 @@ class _AttendanceTrendChart extends ConsumerWidget {
                       showTitles: true,
                       getTitlesWidget: (value, _) {
                         final i = value.toInt();
-                        if (i < 0 || i >= trends.length)
+                        if (i < 0 || i >= trends.length) {
                           return const SizedBox.shrink();
+                        }
                         final date = trends[i].date;
                         final day = date.length >= 10
                             ? date.substring(8, 10)
@@ -671,13 +668,13 @@ class _AttendanceTrendChart extends ConsumerWidget {
                       reservedSize: 20,
                     ),
                   ),
-                  leftTitles: AxisTitles(
+                  leftTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
-                  topTitles: AxisTitles(
+                  topTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
-                  rightTitles: AxisTitles(
+                  rightTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
                 ),

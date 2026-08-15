@@ -112,7 +112,7 @@ class _FirebasePhoneFieldState extends State<FirebasePhoneField> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
+                          const Text(
                             '\u{1F1EE}\u{1F1F3}',
                             style: TextStyle(fontSize: 18),
                           ),

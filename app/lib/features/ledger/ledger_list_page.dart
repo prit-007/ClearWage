@@ -2,8 +2,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../models/ledger_model.dart';
-import '../../providers/providers.dart';
+import 'package:go_router/go_router.dart';
+import '../../data/models/ledger_model.dart';
+import '../../core/providers/services.dart';
+import 'providers/ledger_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
@@ -92,11 +94,12 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
         });
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.toString();
           _loading = false;
         });
+      }
     }
   }
 
@@ -284,7 +287,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'ledger_list_fab',
-        onPressed: () => Navigator.pushNamed(context, '/new_ledger'),
+        onPressed: () => context.push('/new_ledger'),
         backgroundColor: cs.primary,
         icon: Icon(PhosphorIconsBold.plus, color: cs.onPrimary),
         label: Text(

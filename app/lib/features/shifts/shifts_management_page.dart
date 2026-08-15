@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../models/shift_model.dart';
-import '../../providers/providers.dart';
+import '../../data/models/shift_model.dart';
+import '../../core/providers/services.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../core/helpers.dart';
+import 'dart:async';
 
 const int _pageSize = 20;
 
@@ -65,16 +66,17 @@ class _ShiftsManagementScreenState
         });
       }
     } catch (err) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
           _error = err.toString();
         });
+      }
     }
   }
 
   Future<void> _onRefresh() async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     setState(() {
       _items = [];
       _page = 0;
@@ -85,14 +87,14 @@ class _ShiftsManagementScreenState
   }
 
   Future<void> _showShiftBottomSheet({Shift? shift}) async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _ShiftFormModal(shift: shift),
     );
-    if (result == true && mounted) _onRefresh();
+    if (result == true && mounted) unawaited(_onRefresh());
   }
 
   Future<void> _deleteShift(String id) async {
@@ -105,10 +107,10 @@ class _ShiftsManagementScreenState
       isDestructive: true,
     );
     if (confirmed != true) return;
-    HapticFeedback.heavyImpact();
+    unawaited(HapticFeedback.heavyImpact());
     try {
       await ref.read(shiftServiceProvider).delete(id);
-      if (mounted) _onRefresh();
+      if (mounted) unawaited(_onRefresh());
     } catch (e) {
       if (mounted) showError(context, e);
     }
@@ -483,8 +485,9 @@ class _ShiftFormModalState extends ConsumerState<_ShiftFormModal> {
               prefixIcon: PhosphorIconsRegular.sun,
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Enter start time';
-                if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim()))
+                if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) {
                   return 'Use HH:MM format';
+                }
                 return null;
               },
             ),
@@ -494,8 +497,9 @@ class _ShiftFormModalState extends ConsumerState<_ShiftFormModal> {
               prefixIcon: PhosphorIconsRegular.moon,
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Enter end time';
-                if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim()))
+                if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) {
                   return 'Use HH:MM format';
+                }
                 return null;
               },
             ),
@@ -534,7 +538,7 @@ class _ShiftFormModalState extends ConsumerState<_ShiftFormModal> {
               onPressed: _saving
                   ? null
                   : () async {
-                      HapticFeedback.mediumImpact();
+                      unawaited(HapticFeedback.mediumImpact());
                       setState(() => _saving = true);
                       try {
                         final body = {

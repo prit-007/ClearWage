@@ -4,15 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/token_storage.dart';
-import '../../models/attendance_model.dart';
-import '../../providers/providers.dart';
+import '../../data/models/attendance_model.dart';
+import '../../core/providers/app_providers.dart';
+import '../../core/providers/services.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
+import 'dart:async';
 
 final myProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>>((
   ref,
@@ -82,7 +85,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen>
   }
 
   Future<void> _pickAndUploadPhoto(String employeeId) async {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     final source = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -172,7 +175,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen>
   }
 
   Future<void> _downloadPayslip() async {
-    HapticFeedback.heavyImpact();
+    unawaited(HapticFeedback.heavyImpact());
     setState(() => _downloading = true);
     try {
       final year = _payslipMonth.year;
@@ -580,8 +583,7 @@ class _ProfileTab extends ConsumerWidget {
               await ref.read(authServiceProvider).logout();
               ref.read(tokenProvider.notifier).state = null;
               await TokenStorage.clear();
-              if (context.mounted)
-                Navigator.of(context).popUntil((route) => route.isFirst);
+              if (context.mounted) context.go('/login');
             },
             icon: const Icon(PhosphorIconsRegular.signOut),
             label: const Text(
@@ -618,8 +620,7 @@ class _ProfileTab extends ConsumerWidget {
                   await ref.read(authServiceProvider).deleteAccount();
                   ref.read(tokenProvider.notifier).state = null;
                   await TokenStorage.clear();
-                  if (context.mounted)
-                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  if (context.mounted) context.go('/login');
                 } catch (e) {
                   if (context.mounted) showError(context, e);
                 }

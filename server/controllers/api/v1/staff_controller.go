@@ -129,10 +129,7 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var employeeID string
-	if claims != nil {
-		employeeID = claims.EmployeeID
-	}
+	employeeID := claims.EmployeeID
 
 	employee, err := ctrl.staffService.CreateEmployee(r.Context(), req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, req.Role, tenantID, employeeID, req.DailyTargetUnits, req.kyc())
 	if err != nil {

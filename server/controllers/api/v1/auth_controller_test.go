@@ -95,7 +95,7 @@ func TestLoginWithFirebase_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	data := resp["data"].(map[string]interface{})
 	if data["tenant_id"] != "t1" {
 		t.Errorf("expected tenant_id t1, got %v", data["tenant_id"])
@@ -209,7 +209,7 @@ func TestRegister_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	data := resp["data"].(map[string]interface{})
 	if data["tenant_id"] != "t1" {
 		t.Errorf("expected tenant_id t1, got %v", data["tenant_id"])

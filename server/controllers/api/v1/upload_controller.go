@@ -33,7 +33,9 @@ func NewUploadController(staffService *services.StaffService, logger *zerolog.Lo
 	if d := os.Getenv("UPLOAD_DIR"); d != "" {
 		uploadDir = d
 	}
-	os.MkdirAll(uploadDir, 0755)
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		logger.Warn().Err(err).Msg("failed to create upload directory")
+	}
 	return &UploadController{
 		staffService: staffService,
 		logger:       logger,
@@ -53,7 +55,7 @@ func uploadBytes(r *http.Request) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", fmt.Errorf("file field is required")
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	data, err := io.ReadAll(io.LimitReader(file, maxUploadSize))
 	if err != nil {
 		return nil, "", err
@@ -107,11 +109,16 @@ func (c *UploadController) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 		}
 		photoURL = cr.SecureURL
 	} else {
-		n, _ := rand.Int(rand.Reader, big.NewInt(1<<62))
+		n, randErr := rand.Int(rand.Reader, big.NewInt(1<<62))
+		if randErr != nil {
+			c.logger.Error().Err(randErr).Msg("failed to generate random number")
+			utils.JSONError(w, http.StatusInternalServerError, "Internal error")
+			return
+		}
 		localName := fmt.Sprintf("%s-%d%s", employeeID, n.Int64(), ext)
 		destPath := filepath.Join(c.uploadDir, localName)
-		if err := c.saveFile(destPath, bytes.NewReader(data)); err != nil {
-			c.logger.Error().Err(err).Msg("failed to save photo")
+		if saveErr := c.saveFile(destPath, bytes.NewReader(data)); saveErr != nil {
+			c.logger.Error().Err(saveErr).Msg("failed to save photo")
 			utils.JSONError(w, http.StatusInternalServerError, "Failed to save file")
 			return
 		}
@@ -187,11 +194,16 @@ func (c *UploadController) UploadDocument(w http.ResponseWriter, r *http.Request
 		if existingOK && existing.FilePath != "" {
 			c.removeFile(existing.FilePath)
 		}
-		n, _ := rand.Int(rand.Reader, big.NewInt(1<<62))
+		n, randErr := rand.Int(rand.Reader, big.NewInt(1<<62))
+		if randErr != nil {
+			c.logger.Error().Err(randErr).Msg("failed to generate random number")
+			utils.JSONError(w, http.StatusInternalServerError, "Internal error")
+			return
+		}
 		localName := fmt.Sprintf("%s-%s-%d%s", employeeID, docType, n.Int64(), ext)
 		destPath := filepath.Join(c.uploadDir, localName)
-		if err := c.saveFile(destPath, bytes.NewReader(data)); err != nil {
-			c.logger.Error().Err(err).Msg("failed to save document")
+		if saveErr := c.saveFile(destPath, bytes.NewReader(data)); saveErr != nil {
+			c.logger.Error().Err(saveErr).Msg("failed to save document")
 			utils.JSONError(w, http.StatusInternalServerError, "Failed to save file")
 			return
 		}
@@ -290,7 +302,7 @@ func (c *UploadController) saveFile(destPath string, src io.Reader) error {
 	if err != nil {
 		return err
 	}
-	defer dst.Close()
+	defer func() { _ = dst.Close() }()
 	if _, err := io.Copy(dst, src); err != nil {
 		return err
 	}
@@ -302,8 +314,14 @@ func (c *UploadController) removeFile(filePath string) {
 		return
 	}
 	filename := filepath.Base(filePath)
-	absPath, _ := filepath.Abs(filepath.Join(c.uploadDir, filename))
-	absDir, _ := filepath.Abs(c.uploadDir)
+	absPath, err := filepath.Abs(filepath.Join(c.uploadDir, filename))
+	if err != nil {
+		return
+	}
+	absDir, err := filepath.Abs(c.uploadDir)
+	if err != nil {
+		return
+	}
 	if strings.HasPrefix(absPath, absDir) {
 		_ = os.Remove(absPath)
 	}
@@ -311,8 +329,16 @@ func (c *UploadController) removeFile(filePath string) {
 
 func (c *UploadController) ServeFile(w http.ResponseWriter, r *http.Request) {
 	file := chi.URLParam(r, "file")
-	absPath, _ := filepath.Abs(filepath.Join(c.uploadDir, file))
-	absDir, _ := filepath.Abs(c.uploadDir)
+	absPath, err := filepath.Abs(filepath.Join(c.uploadDir, file))
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	absDir, err := filepath.Abs(c.uploadDir)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 	if !strings.HasPrefix(absPath, absDir) {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return

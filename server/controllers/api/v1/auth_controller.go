@@ -40,9 +40,9 @@ func NewAuthController(querier repositories.Querier, logger *zerolog.Logger, cfg
 				return nil, fmt.Errorf("failed to decode FIREBASE_CRED_BASE64: %w", err)
 			}
 		}
-		firebaseOpt = option.WithCredentialsJSON(credsJSON)
+		firebaseOpt = option.WithCredentialsJSON(credsJSON) //nolint:staticcheck // deprecated Firebase API with no replacement
 	} else {
-		firebaseOpt = option.WithCredentialsFile(cfg.FirebaseCredentialsPath)
+		firebaseOpt = option.WithCredentialsFile(cfg.FirebaseCredentialsPath) //nolint:staticcheck // deprecated Firebase API with no replacement
 	}
 	firebaseApp, err := firebase.NewApp(context.Background(), nil, firebaseOpt)
 	if err != nil {

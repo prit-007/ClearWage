@@ -178,9 +178,9 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 			utils.JSONError(w, http.StatusInternalServerError, "Failed to export")
 			return
 		}
-		writer.Write([]string{"EmployeeID", "Name", "Phone", "OutstandingBalance", "MonthlyWage"})
+		_ = writer.Write([]string{"EmployeeID", "Name", "Phone", "OutstandingBalance", "MonthlyWage"})
 		for _, d := range defaulters {
-			writer.Write([]string{
+			_ = writer.Write([]string{
 				d.EmployeeID, d.Name, d.Phone,
 				fmt.Sprintf("%.2f", d.OutstandingBalance),
 				fmt.Sprintf("%.2f", d.MonthlyWage),
@@ -200,9 +200,9 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 			utils.JSONError(w, http.StatusInternalServerError, "Failed to export")
 			return
 		}
-		writer.Write([]string{"Month", "TotalWages", "Headcount"})
+		_ = writer.Write([]string{"Month", "TotalWages", "Headcount"})
 		for _, t := range trends {
-			writer.Write([]string{
+			_ = writer.Write([]string{
 				t.Month,
 				fmt.Sprintf("%.2f", t.TotalWages.InexactFloat64()),
 				strconv.Itoa(t.Headcount),

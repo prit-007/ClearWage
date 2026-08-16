@@ -119,7 +119,7 @@ func (c *PayrollController) GeneratePayslip(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Disposition", `attachment; filename="`+filename+`"`)
 
 
-	w.Write(pdfData)
+	_, _ = w.Write(pdfData)
 }
 
 func (c *PayrollController) LockMonth(w http.ResponseWriter, r *http.Request) {

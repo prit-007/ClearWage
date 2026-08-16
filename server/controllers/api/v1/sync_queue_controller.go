@@ -66,7 +66,11 @@ func (c *SyncQueueController) ListPending(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	limit, offset := parseAllLimitOffset(r)
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	events, err := c.syncService.ListPending(r.Context(), tenantID, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list pending sync events")

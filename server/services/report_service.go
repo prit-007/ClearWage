@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -193,8 +194,11 @@ func (s *ReportService) GetAttendanceTrends(ctx context.Context, tenantID string
 		}
 	}
 
-	start, _ := time.Parse("2006-01-02", startDate)
-	end, _ := time.Parse("2006-01-02", endDate)
+	start, startErr := time.Parse("2006-01-02", startDate)
+	end, endErr := time.Parse("2006-01-02", endDate)
+	if startErr != nil || endErr != nil {
+		return nil, fmt.Errorf("invalid date range: %w", errors.Join(startErr, endErr))
+	}
 	result := make([]AttendanceTrend, 0, days+1)
 	for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
 		dateStr := d.Format("2006-01-02")

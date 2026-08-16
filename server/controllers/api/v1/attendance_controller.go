@@ -181,7 +181,11 @@ func (c *AttendanceController) ListByDate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	limit, offset := parseAllLimitOffset(r)
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	attendance, err := c.attendanceService.ListByDate(r.Context(), tenantID, date, limit, offset)
 	if err != nil {
@@ -273,7 +277,11 @@ func (c *AttendanceController) ListByEmployee(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	limit, offset := parseAllLimitOffset(r)
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	attendance, err := c.attendanceService.ListByEmployeeMonth(r.Context(), employeeID, tenantID, startDate, endDate, limit, offset)
 	if err != nil {

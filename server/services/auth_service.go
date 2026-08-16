@@ -66,10 +66,10 @@ func (s *AuthService) Register(ctx context.Context, params RegisterParams) (Veri
 		return VerifyResult{}, errors.New("phone number not found in Firebase token")
 	}
 
-	if _, err := s.queries.FindTenantByPhone(ctx, phone); err == nil {
+	if _, regErr := s.queries.FindTenantByPhone(ctx, phone); regErr == nil {
 		return VerifyResult{}, errors.New("phone number already registered")
-	} else if !errors.Is(err, repositories.ErrNotFound) {
-		return VerifyResult{}, fmt.Errorf("database error: %w", err)
+	} else if !errors.Is(regErr, repositories.ErrNotFound) {
+		return VerifyResult{}, fmt.Errorf("database error: %w", regErr)
 	}
 
 	tenant, err := s.queries.CreateTenant(ctx, repositories.CreateTenantParams{
@@ -109,27 +109,27 @@ func (s *AuthService) LoginWithFirebase(ctx context.Context, idToken string) (Ve
 		return VerifyResult{}, errors.New("phone number not found in Firebase token")
 	}
 
-	if emp, err := s.queries.FindEmployeeByPhoneOnly(ctx, phone); err == nil {
+	if emp, empErr := s.queries.FindEmployeeByPhoneOnly(ctx, phone); empErr == nil {
 		if !emp.IsActive {
 			return VerifyResult{}, errors.New("account is deactivated")
 		}
-		jwtToken, err := pkg.GenerateToken(s.cfg, emp.TenantID, emp.ID, emp.Role, s.tokenTTL())
-		if err != nil {
-			return VerifyResult{}, fmt.Errorf("failed to generate token: %w", err)
+		jwtToken, empTokErr := pkg.GenerateToken(s.cfg, emp.TenantID, emp.ID, emp.Role, s.tokenTTL())
+		if empTokErr != nil {
+			return VerifyResult{}, fmt.Errorf("failed to generate token: %w", empTokErr)
 		}
 		return VerifyResult{Token: jwtToken, TenantID: emp.TenantID, EmployeeID: emp.ID, Role: emp.Role}, nil
-	} else if !errors.Is(err, repositories.ErrNotFound) {
-		return VerifyResult{}, fmt.Errorf("database error looking up employee: %w", err)
+	} else if !errors.Is(empErr, repositories.ErrNotFound) {
+		return VerifyResult{}, fmt.Errorf("database error looking up employee: %w", empErr)
 	}
 
-	if tenant, err := s.queries.FindTenantByPhone(ctx, phone); err == nil {
-		jwtToken, err := pkg.GenerateToken(s.cfg, tenant.ID, "", "owner", s.tokenTTL())
-		if err != nil {
-			return VerifyResult{}, fmt.Errorf("failed to generate token: %w", err)
+	if tenant, tenErr := s.queries.FindTenantByPhone(ctx, phone); tenErr == nil {
+		jwtToken, tenTokErr := pkg.GenerateToken(s.cfg, tenant.ID, "", "owner", s.tokenTTL())
+		if tenTokErr != nil {
+			return VerifyResult{}, fmt.Errorf("failed to generate token: %w", tenTokErr)
 		}
 		return VerifyResult{Token: jwtToken, TenantID: tenant.ID, EmployeeID: "", Role: "owner"}, nil
-	} else if !errors.Is(err, repositories.ErrNotFound) {
-		return VerifyResult{}, fmt.Errorf("database error looking up tenant: %w", err)
+	} else if !errors.Is(tenErr, repositories.ErrNotFound) {
+		return VerifyResult{}, fmt.Errorf("database error looking up tenant: %w", tenErr)
 	}
 
 	return VerifyResult{}, errors.New("phone number not registered")

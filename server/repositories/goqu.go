@@ -590,9 +590,10 @@ func (q *GoquQuerier) ListEmployeesByTenant(ctx context.Context, arg ListEmploye
 		goqu.C("tenant_id").Eq(arg.TenantID),
 	)
 	if arg.Status != nil {
-		if *arg.Status == "active" {
+		switch *arg.Status {
+		case "active":
 			query = query.Where(goqu.C("is_active").Eq(true))
-		} else if *arg.Status == "inactive" {
+		case "inactive":
 			query = query.Where(goqu.C("is_active").Eq(false))
 		}
 	} else {

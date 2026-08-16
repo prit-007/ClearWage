@@ -193,7 +193,7 @@ func (ctrl *MeController) Payslip(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
 	w.WriteHeader(http.StatusOK)
-	w.Write(pdfBytes)
+	_, _ = w.Write(pdfBytes)
 }
 
 type meAdvanceRequest struct {

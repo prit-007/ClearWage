@@ -37,7 +37,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			if err != nil {
 				return err
 			}
-			defer sqlDB.Close()
+			defer func() { _ = sqlDB.Close() }()
 
 			sqlDB.SetMaxOpenConns(cfg.DB.MaxConns)
 			sqlDB.SetMaxIdleConns(cfg.DB.MaxIdleConns)
@@ -63,7 +63,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("ok"))
+				_, _ = w.Write([]byte("ok"))
 			})
 
 			r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {

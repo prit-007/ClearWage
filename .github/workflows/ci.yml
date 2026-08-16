@@ -29,7 +29,7 @@ jobs:
           cache-dependency-path: server/go.sum
       - uses: sqlc-dev/setup-sqlc@v1
         with:
-          version: 'v1.31.1'
+          sqlc-version: 'v1.31.1'
       - name: Verify sqlc generated code is up to date
         run: |
           sqlc generate
@@ -45,7 +45,7 @@ jobs:
           go-version: '1.26.x'
           cache: true
           cache-dependency-path: server/go.sum
-      - uses: golangci/golangci-lint-action@v4
+      - uses: golangci/golangci-lint-action@v7
         with:
           version: latest
           working-directory: server

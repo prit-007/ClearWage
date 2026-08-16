@@ -4,7 +4,8 @@ linters-settings:
   misspell:
     locale: US
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
   gosimple:
     checks: ["all"]
 

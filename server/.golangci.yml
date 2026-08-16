@@ -1,3 +1,5 @@
+version: "2"
+
 linters-settings:
   errcheck:
     check-blank: true
@@ -6,8 +8,6 @@ linters-settings:
   govet:
     enable:
       - shadow
-  gosimple:
-    checks: ["all"]
 
 linters:
   enable:
@@ -15,7 +15,6 @@ linters:
     - govet
     - staticcheck
     - unused
-    - gosimple
     - ineffassign
     - misspell
 

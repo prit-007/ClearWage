@@ -1,14 +1,5 @@
 version: "2"
 
-linters-settings:
-  errcheck:
-    check-blank: true
-  misspell:
-    locale: US
-  govet:
-    enable:
-      - shadow
-
 linters:
   enable:
     - errcheck
@@ -17,6 +8,14 @@ linters:
     - unused
     - ineffassign
     - misspell
+  settings:
+    errcheck:
+      check-blank: true
+    misspell:
+      locale: US
+    govet:
+      enable:
+        - shadow
 
 run:
   timeout: 5m

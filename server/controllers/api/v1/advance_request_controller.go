@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -13,35 +14,56 @@ import (
 	"github.com/vivek-app/vivek_app/utils"
 )
 
-func parseLimitOffset(r *http.Request) (int32, int32) {
-	limitStr := r.URL.Query().Get("limit")
-	offsetStr := r.URL.Query().Get("offset")
-	limit, _ := strconv.Atoi(limitStr)
-	if limit <= 0 || limit > 100 {
-		limit = 20
-	}
-	offset, _ := strconv.Atoi(offsetStr)
-	if offset < 0 {
-		offset = 0
-	}
-	return int32(limit), int32(offset)
-}
-
-func parseAllLimitOffset(r *http.Request) (int32, int32) {
+func parseLimitOffset(r *http.Request) (int32, int32, error) {
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
 	if limitStr == "" {
-		return 100000, 0
+		return 20, 0, nil
 	}
-	limit, _ := strconv.Atoi(limitStr)
-	if limit <= 0 || limit > 100000 {
-		limit = 100000
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid limit parameter")
 	}
-	offset, _ := strconv.Atoi(offsetStr)
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	offset := 0
+	if offsetStr != "" {
+		offset, err = strconv.Atoi(offsetStr)
+		if err != nil {
+			return 0, 0, fmt.Errorf("invalid offset parameter")
+		}
+	}
 	if offset < 0 {
 		offset = 0
 	}
-	return int32(limit), int32(offset)
+	return int32(limit), int32(offset), nil
+}
+
+func parseAllLimitOffset(r *http.Request) (int32, int32, error) {
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
+	if limitStr == "" {
+		return 100, 0, nil
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid limit parameter")
+	}
+	if limit <= 0 || limit > 100 {
+		limit = 100
+	}
+	offset := 0
+	if offsetStr != "" {
+		offset, err = strconv.Atoi(offsetStr)
+		if err != nil {
+			return 0, 0, fmt.Errorf("invalid offset parameter")
+		}
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return int32(limit), int32(offset), nil
 }
 
 type AdvanceRequestController struct {
@@ -118,7 +140,11 @@ func (c *AdvanceRequestController) List(w http.ResponseWriter, r *http.Request) 
 	}
 
 	status := r.URL.Query().Get("status")
-	limit, offset := parseLimitOffset(r)
+	limit, offset, err := parseLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	requests, err := c.advanceRequestService.ListRequests(r.Context(), tenantID, status, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list advance requests")

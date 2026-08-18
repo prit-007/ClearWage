@@ -1,0 +1,12 @@
+Factory Workforce is a multi-tenant workforce management platform built for factory-floor realities. Owners and supervisors get full control: staff directory, daily attendance rosters, shift timings, holidays, leave policies, a Jama/Udhaar ledger, payroll previews and defaulters reports. Employees get a read-only view of their attendance, payslips and advance requests.
+
+Key features:
+- Daily attendance roster with one-tap Mark All Present
+- Shift timing management with grace periods
+- Ledger (Jama / Udhaar) with month-to-date summaries
+- Payroll preview and wage trends
+- Advance (Udhaar) request approval queue
+- KYC document uploads
+- Offline-friendly with background sync
+
+Requires an account from your factory administrator to get started.

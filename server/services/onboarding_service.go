@@ -66,7 +66,20 @@ func (s *OnboardingService) Setup(ctx context.Context, tenantID string, req Onbo
 		}
 	}
 
+	existingShifts, _ := s.querier.ListShiftsByTenant(ctx, repositories.ListShiftsByTenantParams{
+		TenantID: tenantID,
+		Limit:    100,
+		Offset:   0,
+	})
+	existingByName := make(map[string]bool, len(existingShifts))
+	for _, es := range existingShifts {
+		existingByName[es.Name] = true
+	}
+
 	for _, sh := range req.Shifts {
+		if existingByName[sh.Name] {
+			continue
+		}
 		if _, err := s.querier.CreateShift(ctx, repositories.CreateShiftParams{
 			TenantID:           tenantID,
 			Name:               sh.Name,
@@ -105,7 +118,20 @@ func (s *OnboardingService) Setup(ctx context.Context, tenantID string, req Onbo
 		}
 	}
 
+	existingHolidays, _ := s.querier.ListHolidaysByTenant(ctx, repositories.ListHolidaysByTenantParams{
+		TenantID: tenantID,
+		Limit:    100,
+		Offset:   0,
+	})
+	existingDates := make(map[string]bool, len(existingHolidays))
+	for _, eh := range existingHolidays {
+		existingDates[eh.Date] = true
+	}
+
 	for _, h := range req.Holidays {
+		if existingDates[h.Date] {
+			continue
+		}
 		if _, err := s.querier.CreateHoliday(ctx, repositories.CreateHolidayParams{
 			TenantID:    tenantID,
 			Name:        h.Name,

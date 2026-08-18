@@ -15,6 +15,10 @@ import (
 	"time"
 )
 
+var cloudinaryHTTPClient = &http.Client{
+	Timeout: 30 * time.Second,
+}
+
 const cloudinaryBaseURL = "https://api.cloudinary.com/v1_1"
 
 type CloudinaryResult struct {
@@ -87,11 +91,11 @@ func UploadToCloudinary(ctx context.Context, cloudName, apiKey, apiSecret, folde
 	if err != nil {
 		return nil, err
 	}
-	if _, err := fw.Write(fileBytes); err != nil {
-		return nil, err
+	if _, fwErr := fw.Write(fileBytes); fwErr != nil {
+		return nil, fwErr
 	}
-	if err := mp.Close(); err != nil {
-		return nil, err
+	if mpErr := mp.Close(); mpErr != nil {
+		return nil, mpErr
 	}
 
 	endpoint := fmt.Sprintf("%s/%s/%s/upload", cloudinaryBaseURL, cloudName, resourceType)
@@ -101,11 +105,11 @@ func UploadToCloudinary(ctx context.Context, cloudName, apiKey, apiSecret, folde
 	}
 	req.Header.Set("Content-Type", mp.FormDataContentType())
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := cloudinaryHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("cloudinary upload request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -147,11 +151,11 @@ func DeleteFromCloudinary(ctx context.Context, cloudName, apiKey, apiSecret, pub
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := cloudinaryHTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("cloudinary destroy request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("cloudinary destroy failed (%d): %s", resp.StatusCode, string(body))

@@ -98,7 +98,7 @@ func TestLedgerGetBalance_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	if resp["status"] != "success" {
 		t.Errorf("expected success, got %v", resp["status"])
 	}
@@ -205,7 +205,7 @@ func TestLedgerListByEmployee_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	if resp["status"] != "success" {
 		t.Errorf("expected success, got %v", resp["status"])
 	}
@@ -325,7 +325,7 @@ func TestLedgerSummary_Success(t *testing.T) {
 		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	data := resp["data"].(map[string]interface{})
 	netBalance := data["net_balance"]
 	nb := 0.0

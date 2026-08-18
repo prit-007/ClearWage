@@ -110,7 +110,11 @@ func (c *LedgerController) ListByEmployee(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	limit, offset := parseAllLimitOffset(r)
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	entries, err := c.ledgerService.ListByEmployeeMonth(r.Context(), employeeID, tenantID, startDate, endDate, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list ledger entries")
@@ -171,7 +175,11 @@ func (c *LedgerController) ListByTenant(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	limit, offset := parseLimitOffset(r)
+	limit, offset, err := parseLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	entries, err := c.ledgerService.ListByTenant(r.Context(), tenantID, startDate, endDate, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list global ledger feed")

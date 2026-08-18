@@ -139,7 +139,7 @@ func TestAttendanceService_UpdateAttendance(t *testing.T) {
 		"present",
 		&now, nil,
 		"0", "1", nil,
-		"00000000-0000-0000-0000-000000000004",
+		"00000000-0000-0000-0000-000000000004", 1,
 	)
 	if err != nil {
 		t.Fatalf("UpdateAttendance failed: %v", err)
@@ -243,7 +243,7 @@ func TestAttendanceService_UpdateAttendance_DBError(t *testing.T) {
 		"present",
 		nil, nil,
 		"0", "1", nil,
-		"00000000-0000-0000-0000-000000000004",
+		"00000000-0000-0000-0000-000000000004", 1,
 	)
 	if err == nil {
 		t.Fatal("expected error, got nil")

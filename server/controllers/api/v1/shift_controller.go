@@ -71,6 +71,16 @@ func (c *ShiftController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !utils.ValidateTime(req.StartTime) || !utils.ValidateTime(req.EndTime) {
+		utils.JSONFail(w, http.StatusBadRequest, "start_time and end_time must be in HH:MM format")
+		return
+	}
+
+	if req.GraceMinutes < 0 {
+		utils.JSONFail(w, http.StatusBadRequest, "grace_minutes must be non-negative")
+		return
+	}
+
 	claims := middlewares.GetClaims(r.Context())
 	var createdBy string
 	if claims != nil {
@@ -104,7 +114,11 @@ func (c *ShiftController) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	limit, offset := parseAllLimitOffset(r)
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	shifts, err := c.shiftService.ListShifts(r.Context(), tenantID, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list shifts")
@@ -177,6 +191,16 @@ func (c *ShiftController) Update(w http.ResponseWriter, r *http.Request) {
 
 	if len(req.Name) > 50 {
 		utils.JSONFail(w, http.StatusBadRequest, "name must be at most 50 characters")
+		return
+	}
+
+	if !utils.ValidateTime(req.StartTime) || !utils.ValidateTime(req.EndTime) {
+		utils.JSONFail(w, http.StatusBadRequest, "start_time and end_time must be in HH:MM format")
+		return
+	}
+
+	if req.GraceMinutes < 0 {
+		utils.JSONFail(w, http.StatusBadRequest, "grace_minutes must be non-negative")
 		return
 	}
 

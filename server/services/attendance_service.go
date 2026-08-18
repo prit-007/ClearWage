@@ -114,7 +114,7 @@ func (s *AttendanceService) ListByEmployeeMonth(ctx context.Context, employeeID,
 	})
 }
 
-func (s *AttendanceService) UpdateAttendance(ctx context.Context, id, tenantID, shiftID, status string, checkIn, checkOut *time.Time, overtimeHours, overtimeRate string, unitsProduced *int32, editedBy string) (repositories.Attendance, error) {
+func (s *AttendanceService) UpdateAttendance(ctx context.Context, id, tenantID, shiftID, status string, checkIn, checkOut *time.Time, overtimeHours, overtimeRate string, unitsProduced *int32, editedBy string, expectedVersion int32) (repositories.Attendance, error) {
 	otHours, err := parseFloat(overtimeHours, "overtime_hours")
 	if err != nil {
 		return repositories.Attendance{}, err
@@ -142,6 +142,7 @@ func (s *AttendanceService) UpdateAttendance(ctx context.Context, id, tenantID, 
 		OvertimeRateMultiplier: otRate,
 		UnitsProduced:          unitsProduced,
 		EditedBy:               eb,
+		ExpectedVersion:        expectedVersion,
 	})
 	if err == nil {
 		logActivity(ctx, s.querier, tenantID, editedBy, "updated_attendance", "attendance", &id, nil)

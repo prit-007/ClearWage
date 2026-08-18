@@ -59,7 +59,7 @@ func TestMeOverview_Success(t *testing.T) {
 		Return([]repositories.EmployeeDocument{}, nil)
 	mockQuerier.EXPECT().
 		FindTenantByID(gomock.Any(), "t1").
-		Return(repositories.Tenant{Name: "Vivek Fabrics"}, nil)
+		Return(repositories.Tenant{Name: "Vivek Fabrics", Timezone: "Asia/Kolkata"}, nil).Times(2)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/me/overview", nil)
 	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "employee"))
@@ -71,7 +71,7 @@ func TestMeOverview_Success(t *testing.T) {
 		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	if resp["status"] != "success" {
 		t.Errorf("expected success, got %v", resp["status"])
 	}

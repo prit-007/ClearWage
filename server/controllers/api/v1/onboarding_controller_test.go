@@ -32,6 +32,9 @@ func TestOnboardingSetup_Success(t *testing.T) {
 		UpdateTenantProfile(gomock.Any(), gomock.Any()).
 		Return(nil)
 	mockQuerier.EXPECT().
+		ListShiftsByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Shift{}, nil)
+	mockQuerier.EXPECT().
 		CreateShift(gomock.Any(), gomock.Any()).
 		Return(repositories.Shift{}, nil).
 		Times(2)
@@ -41,6 +44,9 @@ func TestOnboardingSetup_Success(t *testing.T) {
 	mockQuerier.EXPECT().
 		UpsertLeavePolicy(gomock.Any(), gomock.Any()).
 		Return(repositories.LeavePolicy{}, nil)
+	mockQuerier.EXPECT().
+		ListHolidaysByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Holiday{}, nil)
 	mockQuerier.EXPECT().
 		CreateHoliday(gomock.Any(), gomock.Any()).
 		Return(repositories.Holiday{}, nil).

@@ -2,15 +2,18 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"strings"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
+	"github.com/google/uuid"
 	"github.com/vivek-app/vivek_app/repositories/db"
 )
 
 var ErrNotFound = errors.New("not found")
+var ErrConcurrentModification = errors.New("concurrent modification detected, please retry")
 
 type GoquQuerier struct {
 	db   *goqu.Database
@@ -590,9 +593,10 @@ func (q *GoquQuerier) ListEmployeesByTenant(ctx context.Context, arg ListEmploye
 		goqu.C("tenant_id").Eq(arg.TenantID),
 	)
 	if arg.Status != nil {
-		if *arg.Status == "active" {
+		switch *arg.Status {
+		case "active":
 			query = query.Where(goqu.C("is_active").Eq(true))
-		} else if *arg.Status == "inactive" {
+		case "inactive":
 			query = query.Where(goqu.C("is_active").Eq(false))
 		}
 	} else {
@@ -823,6 +827,7 @@ func (q *GoquQuerier) UpdateAttendance(ctx context.Context, arg UpdateAttendance
 		"overtime_hours": arg.OvertimeHours,
 		"edited_by":      arg.EditedBy,
 		"edited_at":      goqu.L("now()"),
+		"version":        goqu.L("version + 1"),
 		"updated_at":     goqu.L("now()"),
 	}
 	if arg.OvertimeRateMultiplier > 0 {
@@ -847,12 +852,13 @@ func (q *GoquQuerier) UpdateAttendance(ctx context.Context, arg UpdateAttendance
 	found, err := q.db.Update("attendance").Set(rec).Where(
 		goqu.C("id").Eq(arg.ID),
 		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("version").Eq(arg.ExpectedVersion),
 	).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &a)
 	if err != nil {
 		return Attendance{}, err
 	}
 	if !found {
-		return Attendance{}, ErrNotFound
+		return Attendance{}, ErrConcurrentModification
 	}
 	return a, nil
 }
@@ -883,18 +889,20 @@ func (q *GoquQuerier) UpdateEmployee(ctx context.Context, arg UpdateEmployeePara
 		"permanent_address":       arg.PermanentAddress,
 		"role":                    arg.Role,
 		"is_active":               arg.IsActive,
+		"version":                 goqu.L("version + 1"),
 		"updated_at":              goqu.L("now()"),
 	}
 	var e Employee
 	found, err := q.db.Update("employees").Set(rec).Where(
 		goqu.C("id").Eq(arg.ID),
 		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("version").Eq(arg.ExpectedVersion),
 	).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &e)
 	if err != nil {
 		return Employee{}, err
 	}
 	if !found {
-		return Employee{}, ErrNotFound
+		return Employee{}, ErrConcurrentModification
 	}
 	return e, nil
 }
@@ -1064,6 +1072,127 @@ func (q *GoquQuerier) UpsertTenantConfig(ctx context.Context, arg UpsertTenantCo
 		return TenantConfig{}, errors.New("insert did not return a row")
 	}
 	return tc, nil
+}
+
+func parseUUID(s string) uuid.UUID {
+	u, _ := uuid.Parse(s)
+	return u
+}
+
+func (q *GoquQuerier) CreateDispute(ctx context.Context, arg CreateDisputeParams) (LedgerDispute, error) {
+	dbArg := db.CreateDisputeParams{
+		TenantID:   parseUUID(arg.TenantID),
+		LedgerID:   parseUUID(arg.LedgerID),
+		EmployeeID: parseUUID(arg.EmployeeID),
+		RaisedBy:   parseUUID(arg.RaisedBy),
+		Reason:     arg.Reason,
+	}
+	d, err := q.sqlc.CreateDispute(ctx, dbArg)
+	if err != nil {
+		return LedgerDispute{}, err
+	}
+	return LedgerDispute{
+		ID:         d.ID.String(),
+		TenantID:   d.TenantID.String(),
+		LedgerID:   d.LedgerID.String(),
+		EmployeeID: d.EmployeeID.String(),
+		RaisedBy:   d.RaisedBy.String(),
+		Reason:     d.Reason,
+		Status:     d.Status,
+		CreatedAt:  d.CreatedAt,
+		UpdatedAt:  d.UpdatedAt,
+	}, nil
+}
+
+func (q *GoquQuerier) ListDisputesByTenant(ctx context.Context, arg ListDisputesByTenantParams) ([]ListDisputesByTenantRow, error) {
+	dbArg := db.ListDisputesByTenantParams{
+		TenantID: parseUUID(arg.TenantID),
+		Status:   arg.Status,
+		Limit:    arg.Limit,
+		Offset:   arg.Offset,
+	}
+	rows, err := q.sqlc.ListDisputesByTenant(ctx, dbArg)
+	if err != nil {
+		return nil, err
+	}
+	var result []ListDisputesByTenantRow
+	for _, r := range rows {
+		row := ListDisputesByTenantRow{
+			ID:         r.ID.String(),
+			TenantID:   r.TenantID.String(),
+			LedgerID:   r.LedgerID.String(),
+			EmployeeID: r.EmployeeID.String(),
+			RaisedBy:   r.RaisedBy.String(),
+			Reason:     r.Reason,
+			Status:     r.Status,
+			CreatedAt:  r.CreatedAt,
+			UpdatedAt:  r.UpdatedAt,
+		}
+		if r.ResolvedBy.Valid {
+			s := r.ResolvedBy.UUID.String()
+			row.ResolvedBy = &s
+		}
+		if r.ResolutionNote.Valid {
+			row.ResolutionNote = &r.ResolutionNote.String
+		}
+		if r.RaisedByName.Valid {
+			row.RaisedByName = r.RaisedByName.String
+		}
+		result = append(result, row)
+	}
+	return result, nil
+}
+
+func (q *GoquQuerier) ResolveDispute(ctx context.Context, arg ResolveDisputeParams) (LedgerDispute, error) {
+	dbArg := db.ResolveDisputeParams{
+		ID:         parseUUID(arg.ID),
+		ResolvedBy: uuid.NullUUID{UUID: parseUUID(arg.ResolvedBy), Valid: true},
+		TenantID:   parseUUID(arg.TenantID),
+	}
+	if arg.ResolutionNote != nil {
+		dbArg.ResolutionNote = sql.NullString{String: *arg.ResolutionNote, Valid: true}
+	}
+	d, err := q.sqlc.ResolveDispute(ctx, dbArg)
+	if err != nil {
+		return LedgerDispute{}, err
+	}
+	return LedgerDispute{
+		ID:         d.ID.String(),
+		TenantID:   d.TenantID.String(),
+		LedgerID:   d.LedgerID.String(),
+		EmployeeID: d.EmployeeID.String(),
+		RaisedBy:   d.RaisedBy.String(),
+		Reason:     d.Reason,
+		Status:     d.Status,
+		CreatedAt:  d.CreatedAt,
+		UpdatedAt:  d.UpdatedAt,
+	}, nil
+}
+
+func (q *GoquQuerier) RejectDispute(ctx context.Context, arg RejectDisputeParams) (LedgerDispute, error) {
+	dbArg := db.RejectDisputeParams{
+		ID:         parseUUID(arg.ID),
+		ResolvedBy: uuid.NullUUID{UUID: parseUUID(arg.ResolvedBy), Valid: true},
+		TenantID:   parseUUID(arg.TenantID),
+	}
+	if arg.ResolutionNote != nil {
+		dbArg.ResolutionNote = sql.NullString{String: *arg.ResolutionNote, Valid: true}
+	}
+	d, err := q.sqlc.RejectDispute(ctx, dbArg)
+	if err != nil {
+		return LedgerDispute{}, err
+	}
+	return LedgerDispute{
+		ID:         d.ID.String(),
+		TenantID:   d.TenantID.String(),
+		LedgerID:   d.LedgerID.String(),
+		EmployeeID: d.EmployeeID.String(),
+		RaisedBy:   d.RaisedBy.String(),
+		Reason:     d.Reason,
+		Status:     d.Status,
+		CreatedAt:  d.CreatedAt,
+		UpdatedAt:  d.UpdatedAt,
+	}, nil
 }
 
 var _ Querier = (*GoquQuerier)(nil)

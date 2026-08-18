@@ -6,8 +6,17 @@ A multi-tenant workforce management platform built for factory-floor realities. 
 
 ```
 vivek_app/
-├── .github/workflows/   # CI pipelines (lint, test, build)
-├── .kilo/               # Kilo agent/command configs
+├── .github/
+│   ├── workflows/ci.yml            # CI + tag-triggered release pipeline
+│   └── actions/flutter-prep/       # shared Flutter pre-build action
+├── AGENTS.md                       # editor/agent operating contract
+├── CONTRIBUTING.md                 # contributor onboarding
+├── docs/
+│   ├── ARCHITECTURE.md             # current-state code map
+│   ├── API.md                      # full REST API reference
+│   ├── adr/                        # Architecture Decision Records
+│   ├── planning/                   # product blueprint + optimization plans
+│   └── IMPLEMENTATION-CHECKLIST.md # task tracker
 ├── server/              # Golang REST API backend
 │   ├── cli/             # Cobra CLI commands (api, migrate)
 │   ├── config/          # Env config loading (envconfig)
@@ -16,13 +25,32 @@ vivek_app/
 │   ├── middlewares/      # Auth, tenant, logging
 │   ├── mocks/           # Generated mocks (GoMock)
 │   ├── models/          # Domain models
-│   ├── repositories/    # goqu queries, querier interface
+│   ├── repositories/    # goqu queries, sqlc generated code, querier interface
 │   ├── services/        # Business logic layer
 │   ├── tests/           # Integration test helpers
 │   └── uploads/         # File storage directory
-├── app/                 # Flutter mobile app
-└── plan.md              # V1 architecture & page blueprint
+└── app/                 # Flutter mobile app
+    ├── lib/             # core/ (plumbing), data/ (models+services),
+    │                    # features/ (screens + per-feature providers)
+    ├── test/            # mirrors lib/ 1:1
+    ├── fastlane/        # store metadata + per-versionCode changelogs
+    └── CHANGELOG.md     # Keep-a-Changelog, one entry per release tag
 ```
+
+## Documentation index
+
+| Doc | Reader | What it is |
+|-----|--------|-----------|
+| [README.md](README.md) | Users | What it is, stack, setup, deployment |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributors | Dev loop, style, testing, releasing |
+| [AGENTS.md](AGENTS.md) | Editors/agents | Machine-readable operating contract, commands, gotchas, release checklist |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | All | Current-state code map, "common changes & where to make them" |
+| [docs/API.md](docs/API.md) | Integrators | Full REST API reference |
+| [docs/adr/](docs/adr/) | All | Architecture Decision Records (0001–0006) |
+| [docs/planning/product-blueprint.md](docs/planning/product-blueprint.md) | Product | V1 architecture & page blueprint |
+| [docs/planning/backend-optimization-plan.md](docs/planning/backend-optimization-plan.md) | Backend | sqlc/decimal/caching optimization plan |
+| [docs/IMPLEMENTATION-CHECKLIST.md](docs/IMPLEMENTATION-CHECKLIST.md) | All | Phase-by-phase task tracker |
+| [app/CHANGELOG.md](app/CHANGELOG.md) | Release | Keep-a-Changelog entries, one per tag |
 
 ## Technology Stack
 
@@ -222,7 +250,7 @@ Base path: `/api/v1`
 | Me / Profile | `me_controller.go` |
 
 Swagger UI: `http://localhost:8080/swagger` (auto-generated via annotations in `app.go`).
-Full API docs: `API_DOCS.md`
+Full API docs: `docs/API.md`
 
 ### Auth Endpoints (Public)
 
@@ -327,11 +355,17 @@ go test -v ./tests/
 
 GitHub Actions (`.github/workflows/ci.yml`):
 
-1. **Lint** — `golangci-lint` with 5m timeout
-2. **Test** — `go test -v -count=1` across unit test packages
-3. **Build** — `go build -v ./...`
+1. **Server** — `sqlc-check` (generated-code diff), **lint** (`golangci-lint`),
+   **test**, **build**
+2. **Flutter** — `flutter-analyze-and-test`: `dart format
+   --set-exit-if-changed` → `flutter analyze` → `flutter test --coverage
+   -x network`
+3. **Release** (tags `v*` only) — builds split-per-ABI + universal APKs,
+   extracts the CHANGELOG entry at the tag, and attaches everything to the
+   GitHub release.
 
-PR merges are blocked unless all jobs pass.
+PR merges are blocked unless all jobs pass. Any new Flutter pre-build step goes
+in `.github/actions/flutter-prep/action.yml` so every job gets it.
 
 ## Key Design Decisions
 
@@ -345,7 +379,7 @@ PR merges are blocked unless all jobs pass.
 
 ## Roadmap
 
-See `plan.md` for the full V1 blueprint including:
+See `docs/planning/product-blueprint.md` for the full V1 blueprint including:
 - Flutter frontend (Riverpod + Isar)
 - WhatsApp dispatch via `url_launcher`
 - KYC document vault with offline image compression

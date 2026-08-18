@@ -32,6 +32,9 @@ func TestDashboardGet_WithoutTrends(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
+		FindTenantByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Tenant{Timezone: "Asia/Kolkata"}, nil)
+	mockQuerier.EXPECT().
 		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
 		Return(repositories.DashboardSnapshot{
 			TotalStaff: 1, AttendanceCount: 1, Present: 1,
@@ -52,7 +55,7 @@ func TestDashboardGet_WithoutTrends(t *testing.T) {
 		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	if resp["status"] != "success" {
 		t.Errorf("expected success, got %v", resp["status"])
 	}
@@ -66,6 +69,9 @@ func TestDashboardGet_WithTrends(t *testing.T) {
 	ctrl, mockQuerier, cleanup := setupDashboardTest(t)
 	defer cleanup()
 
+	mockQuerier.EXPECT().
+		FindTenantByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Tenant{Timezone: "Asia/Kolkata"}, nil).Times(2)
 	mockQuerier.EXPECT().
 		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
 		Return(repositories.DashboardSnapshot{
@@ -90,7 +96,7 @@ func TestDashboardGet_WithTrends(t *testing.T) {
 		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	data := resp["data"].(map[string]interface{})
 	trends, ok := data["trends"].([]interface{})
 	if !ok || len(trends) == 0 {
@@ -116,6 +122,9 @@ func TestDashboardGet_DBError(t *testing.T) {
 	ctrl, mockQuerier, cleanup := setupDashboardTest(t)
 	defer cleanup()
 
+	mockQuerier.EXPECT().
+		FindTenantByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Tenant{Timezone: "Asia/Kolkata"}, nil)
 	mockQuerier.EXPECT().
 		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
 		Return(repositories.DashboardSnapshot{}, errors.New("db error"))

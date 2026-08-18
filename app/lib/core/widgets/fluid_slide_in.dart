@@ -14,7 +14,10 @@ class FluidSlideIn extends StatelessWidget {
       builder: (context, value, child) {
         return Opacity(
           opacity: value.clamp(0.0, 1.0),
-          child: Transform.translate(offset: Offset(0, 15 * (1 - value)), child: child),
+          child: Transform.translate(
+            offset: Offset(0, 15 * (1 - value)),
+            child: child,
+          ),
         );
       },
       child: child,

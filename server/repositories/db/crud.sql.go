@@ -14,6 +14,45 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+const createDispute = `-- name: CreateDispute :one
+INSERT INTO ledger_disputes (tenant_id, ledger_id, employee_id, raised_by, reason)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, tenant_id, ledger_id, employee_id, raised_by, reason, status, resolved_by, resolution_note, created_at, updated_at
+`
+
+type CreateDisputeParams struct {
+	TenantID   uuid.UUID `json:"tenant_id"`
+	LedgerID   uuid.UUID `json:"ledger_id"`
+	EmployeeID uuid.UUID `json:"employee_id"`
+	RaisedBy   uuid.UUID `json:"raised_by"`
+	Reason     string    `json:"reason"`
+}
+
+func (q *Queries) CreateDispute(ctx context.Context, arg CreateDisputeParams) (LedgerDispute, error) {
+	row := q.db.QueryRowContext(ctx, createDispute,
+		arg.TenantID,
+		arg.LedgerID,
+		arg.EmployeeID,
+		arg.RaisedBy,
+		arg.Reason,
+	)
+	var i LedgerDispute
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.LedgerID,
+		&i.EmployeeID,
+		&i.RaisedBy,
+		&i.Reason,
+		&i.Status,
+		&i.ResolvedBy,
+		&i.ResolutionNote,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listAttendanceByDateRangeExplicit = `-- name: ListAttendanceByDateRangeExplicit :many
 SELECT
   a.id, a.tenant_id, a.employee_id, a.date, a.shift_id,
@@ -197,6 +236,78 @@ func (q *Queries) ListAttendanceByEmployeeMonthExplicit(ctx context.Context, arg
 			&i.UpdatedAt,
 			&i.EmployeeName,
 			&i.EmployeePhoto,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDisputesByTenant = `-- name: ListDisputesByTenant :many
+SELECT ld.id, ld.tenant_id, ld.ledger_id, ld.employee_id, ld.raised_by, ld.reason, ld.status, ld.resolved_by, ld.resolution_note, ld.created_at, ld.updated_at, emp.name AS raised_by_name
+FROM ledger_disputes ld
+LEFT JOIN employees emp ON ld.raised_by = emp.id
+WHERE ld.tenant_id = $1 AND ld.status = $2
+ORDER BY ld.created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type ListDisputesByTenantParams struct {
+	TenantID uuid.UUID `json:"tenant_id"`
+	Status   string    `json:"status"`
+	Limit    int32     `json:"limit"`
+	Offset   int32     `json:"offset"`
+}
+
+type ListDisputesByTenantRow struct {
+	ID             uuid.UUID      `json:"id"`
+	TenantID       uuid.UUID      `json:"tenant_id"`
+	LedgerID       uuid.UUID      `json:"ledger_id"`
+	EmployeeID     uuid.UUID      `json:"employee_id"`
+	RaisedBy       uuid.UUID      `json:"raised_by"`
+	Reason         string         `json:"reason"`
+	Status         string         `json:"status"`
+	ResolvedBy     uuid.NullUUID  `json:"resolved_by"`
+	ResolutionNote sql.NullString `json:"resolution_note"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	RaisedByName   sql.NullString `json:"raised_by_name"`
+}
+
+func (q *Queries) ListDisputesByTenant(ctx context.Context, arg ListDisputesByTenantParams) ([]ListDisputesByTenantRow, error) {
+	rows, err := q.db.QueryContext(ctx, listDisputesByTenant,
+		arg.TenantID,
+		arg.Status,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDisputesByTenantRow{}
+	for rows.Next() {
+		var i ListDisputesByTenantRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.LedgerID,
+			&i.EmployeeID,
+			&i.RaisedBy,
+			&i.Reason,
+			&i.Status,
+			&i.ResolvedBy,
+			&i.ResolutionNote,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.RaisedByName,
 		); err != nil {
 			return nil, err
 		}
@@ -486,4 +597,80 @@ func (q *Queries) ListLedgerByTenantExplicit(ctx context.Context, arg ListLedger
 		return nil, err
 	}
 	return items, nil
+}
+
+const rejectDispute = `-- name: RejectDispute :one
+UPDATE ledger_disputes
+SET status = 'rejected', resolved_by = $2, resolution_note = $3, updated_at = now()
+WHERE id = $1 AND tenant_id = $4
+RETURNING id, tenant_id, ledger_id, employee_id, raised_by, reason, status, resolved_by, resolution_note, created_at, updated_at
+`
+
+type RejectDisputeParams struct {
+	ID             uuid.UUID      `json:"id"`
+	ResolvedBy     uuid.NullUUID  `json:"resolved_by"`
+	ResolutionNote sql.NullString `json:"resolution_note"`
+	TenantID       uuid.UUID      `json:"tenant_id"`
+}
+
+func (q *Queries) RejectDispute(ctx context.Context, arg RejectDisputeParams) (LedgerDispute, error) {
+	row := q.db.QueryRowContext(ctx, rejectDispute,
+		arg.ID,
+		arg.ResolvedBy,
+		arg.ResolutionNote,
+		arg.TenantID,
+	)
+	var i LedgerDispute
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.LedgerID,
+		&i.EmployeeID,
+		&i.RaisedBy,
+		&i.Reason,
+		&i.Status,
+		&i.ResolvedBy,
+		&i.ResolutionNote,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const resolveDispute = `-- name: ResolveDispute :one
+UPDATE ledger_disputes
+SET status = 'resolved', resolved_by = $2, resolution_note = $3, updated_at = now()
+WHERE id = $1 AND tenant_id = $4
+RETURNING id, tenant_id, ledger_id, employee_id, raised_by, reason, status, resolved_by, resolution_note, created_at, updated_at
+`
+
+type ResolveDisputeParams struct {
+	ID             uuid.UUID      `json:"id"`
+	ResolvedBy     uuid.NullUUID  `json:"resolved_by"`
+	ResolutionNote sql.NullString `json:"resolution_note"`
+	TenantID       uuid.UUID      `json:"tenant_id"`
+}
+
+func (q *Queries) ResolveDispute(ctx context.Context, arg ResolveDisputeParams) (LedgerDispute, error) {
+	row := q.db.QueryRowContext(ctx, resolveDispute,
+		arg.ID,
+		arg.ResolvedBy,
+		arg.ResolutionNote,
+		arg.TenantID,
+	)
+	var i LedgerDispute
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.LedgerID,
+		&i.EmployeeID,
+		&i.RaisedBy,
+		&i.Reason,
+		&i.Status,
+		&i.ResolvedBy,
+		&i.ResolutionNote,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

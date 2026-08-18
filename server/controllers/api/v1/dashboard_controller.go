@@ -34,6 +34,12 @@ func (c *DashboardController) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || (claims.Role != "owner" && claims.Role != "supervisor") {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
 	data, err := c.dashboardService.GetDashboard(r.Context(), tenantID)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to get dashboard data")

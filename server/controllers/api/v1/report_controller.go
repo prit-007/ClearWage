@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/rs/zerolog"
 	"github.com/vivek-app/vivek_app/config"
@@ -31,6 +32,12 @@ func (c *ReportController) DailySummary(w http.ResponseWriter, r *http.Request) 
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
 		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || (claims.Role != "owner" && claims.Role != "supervisor") {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
@@ -93,6 +100,12 @@ func (c *ReportController) WageBillTrends(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || (claims.Role != "owner" && claims.Role != "supervisor") {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
 	monthsStr := r.URL.Query().Get("months")
 	months := 6
 	if monthsStr != "" {
@@ -115,6 +128,12 @@ func (c *ReportController) DefaultersList(w http.ResponseWriter, r *http.Request
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
 		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || (claims.Role != "owner" && claims.Role != "supervisor") {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
@@ -160,14 +179,28 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || (claims.Role != "owner" && claims.Role != "supervisor") {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
 	reportType := r.URL.Query().Get("type")
 	if reportType == "" {
 		utils.JSONFail(w, http.StatusBadRequest, "type query parameter is required (defaulters, trends)")
 		return
 	}
 
+	safeName := strings.NewReplacer(
+		"../", "", "..\\", "", "/", "", "\\", "",
+		"\r", "", "\n", "", "\x00", "",
+	).Replace(reportType)
+	if safeName == "" {
+		safeName = "report"
+	}
+
 	w.Header().Set("Content-Type", "text/csv")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.csv", reportType))
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.csv"`, safeName))
 	writer := csv.NewWriter(w)
 
 	switch reportType {
@@ -178,9 +211,9 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 			utils.JSONError(w, http.StatusInternalServerError, "Failed to export")
 			return
 		}
-		writer.Write([]string{"EmployeeID", "Name", "Phone", "OutstandingBalance", "MonthlyWage"})
+		_ = writer.Write([]string{"EmployeeID", "Name", "Phone", "OutstandingBalance", "MonthlyWage"})
 		for _, d := range defaulters {
-			writer.Write([]string{
+			_ = writer.Write([]string{
 				d.EmployeeID, d.Name, d.Phone,
 				fmt.Sprintf("%.2f", d.OutstandingBalance),
 				fmt.Sprintf("%.2f", d.MonthlyWage),
@@ -200,9 +233,9 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 			utils.JSONError(w, http.StatusInternalServerError, "Failed to export")
 			return
 		}
-		writer.Write([]string{"Month", "TotalWages", "Headcount"})
+		_ = writer.Write([]string{"Month", "TotalWages", "Headcount"})
 		for _, t := range trends {
-			writer.Write([]string{
+			_ = writer.Write([]string{
 				t.Month,
 				fmt.Sprintf("%.2f", t.TotalWages.InexactFloat64()),
 				strconv.Itoa(t.Headcount),

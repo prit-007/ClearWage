@@ -48,7 +48,7 @@ func runGooseMigration(dbCfg config.DBConfig, direction string) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err

@@ -91,6 +91,12 @@ func TestLoginWithFirebase_Success_ExistingTenant(t *testing.T) {
 			Phone: "+91-9876543210",
 		}, nil)
 
+	mockQuerier.EXPECT().
+		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Employee{
+			{ID: "e1", TenantID: "t1", Role: "owner", IsActive: true},
+		}, nil)
+
 	svc := NewAuthService(cfg, verifier, mockQuerier)
 	result, err := svc.LoginWithFirebase(context.Background(), "valid-id-token")
 	if err != nil {
@@ -104,6 +110,9 @@ func TestLoginWithFirebase_Success_ExistingTenant(t *testing.T) {
 	}
 	if result.Role != "owner" {
 		t.Errorf("expected role owner, got %s", result.Role)
+	}
+	if result.EmployeeID != "e1" {
+		t.Errorf("expected employee_id e1, got %s", result.EmployeeID)
 	}
 }
 

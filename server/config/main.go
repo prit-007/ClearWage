@@ -16,9 +16,9 @@ type AppConfig struct {
 	Port                    string `envconfig:"APP_PORT"`
 	PprofAddr               string `envconfig:"PPROF_ADDR"`
 	Secret                  string `envconfig:"JWT_SECRET"`
-	TokenTTL                int    `envconfig:"TOKEN_TTL" default:"72"`
+	TokenTTL                int    `envconfig:"TOKEN_TTL" default:"24"`
 	DB                      DBConfig
-	AllowedOrigin           string `envconfig:"ALLOWED_ORIGIN" default:"*"`
+	AllowedOrigin           string `envconfig:"ALLOWED_ORIGIN" default:"http://localhost:3000"`
 	FirebaseCredentialsPath string `envconfig:"FIREBASE_CREDENTIALS_PATH"`
 	FirebaseCredBase64      string `envconfig:"FIREBASE_CRED_BASE64"`
 	FirebaseProjectID       string `envconfig:"FIREBASE_PROJECT_ID"`

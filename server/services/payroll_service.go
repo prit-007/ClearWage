@@ -193,11 +193,13 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 					otPay = computedOTHours * hourlyRate * tc.OTMultiplierDefault.InexactFloat64()
 				}
 
-				if tc.OTRounding > 0 && computedOTHours > 0 {
-					minutes := computedOTHours * 60.0
-					rounded := math.Round(minutes/float64(tc.OTRounding)) * float64(tc.OTRounding)
-					computedOTHours = rounded / 60.0
-				}
+			if tc.OTRounding > 0 && computedOTHours > 0 {
+				minutes := computedOTHours * 60.0
+				rounded := math.Round(minutes/float64(tc.OTRounding)) * float64(tc.OTRounding)
+				computedOTHours = rounded / 60.0
+				hourlyRate := dailyWageRate / 8.0
+				otPay = computedOTHours * hourlyRate * tc.OTMultiplierDefault.InexactFloat64()
+			}
 			}
 
 			computedWage := dayWage + otPay
@@ -207,8 +209,8 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 
 		if tc.WeekOffPaid {
 			start, parseErr := time.Parse("2006-01-02", startDate)
-			end, _ := time.Parse("2006-01-02", endDate)
-			if parseErr == nil {
+			end, endErr := time.Parse("2006-01-02", endDate)
+			if parseErr == nil && endErr == nil {
 				for d := start; d.Before(end); d = d.AddDate(0, 0, 1) {
 					dateStr := d.Format("2006-01-02")
 					if !employeeDates[dateStr] && (isWeeklyOffDay(tc.WeeklyOffs, d.Weekday()) || holidayMap[dateStr]) {

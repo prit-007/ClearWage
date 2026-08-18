@@ -56,6 +56,11 @@ func (c *HolidayController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !utils.ValidateDate(req.Date) {
+		utils.JSONFail(w, http.StatusBadRequest, "date must be in YYYY-MM-DD format")
+		return
+	}
+
 	if len(req.Name) > 50 {
 		utils.JSONFail(w, http.StatusBadRequest, "name must be at most 50 characters")
 		return
@@ -78,7 +83,11 @@ func (c *HolidayController) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	limit, offset := parseAllLimitOffset(r)
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	holidays, err := c.holidayService.ListHolidays(r.Context(), tenantID, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list holidays")

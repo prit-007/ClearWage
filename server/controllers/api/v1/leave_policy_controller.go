@@ -43,6 +43,12 @@ func (c *LeavePolicyController) Upsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || (claims.Role != "owner" && claims.Role != "supervisor") {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
 	if req.PaidLeaveDaysPerYear < 0 || req.UnpaidLeaveDaysPerYear < 0 {
 		utils.JSONFail(w, http.StatusBadRequest, "Leave days must be non-negative")
 		return

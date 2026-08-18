@@ -2,7 +2,9 @@ package v1
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/rs/zerolog"
 	"github.com/vivek-app/vivek_app/config"
@@ -115,11 +117,20 @@ func (c *PayrollController) GeneratePayslip(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	safeFilename := strings.NewReplacer(
+		"../", "", "..\\", "", "/", "", "\\", "",
+		"\r", "", "\n", "", "\x00", "",
+	).Replace(filename)
+	if safeFilename == "" {
+		safeFilename = "payslip.pdf"
+	}
+
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", `attachment; filename="`+filename+`"`)
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, safeFilename))
 
-
-	w.Write(pdfData)
+	if _, err := w.Write(pdfData); err != nil {
+		c.logger.Error().Err(err).Msg("failed to write payslip PDF to response")
+	}
 }
 
 func (c *PayrollController) LockMonth(w http.ResponseWriter, r *http.Request) {

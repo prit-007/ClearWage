@@ -2,19 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../models/advance_request_model.dart';
-import '../../providers/providers.dart';
-import '../dashboard/dashboard_page.dart';
+import '../../data/models/advance_request_model.dart';
+import '../../core/providers/services.dart';
+import '../dashboard/providers/dashboard_providers.dart';
+import '../ledger/providers/ledger_providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/helpers.dart';
+import 'dart:async';
 
 const int _pageSize = 20;
 
 class AdvanceRequestsScreen extends ConsumerStatefulWidget {
   const AdvanceRequestsScreen({super.key});
   @override
-  ConsumerState<AdvanceRequestsScreen> createState() => _AdvanceRequestsScreenState();
+  ConsumerState<AdvanceRequestsScreen> createState() =>
+      _AdvanceRequestsScreenState();
 }
 
 class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
@@ -40,13 +43,21 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
   }
 
   void _onScroll() {
-    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200 && !_loadingMore && _hasMore) {
+    if (_scrollCtrl.position.pixels >=
+            _scrollCtrl.position.maxScrollExtent - 200 &&
+        !_loadingMore &&
+        _hasMore) {
       _loadMore();
     }
   }
 
   Future<void> _fetch() async {
-    setState(() { _loading = true; _error = null; _requests = []; _hasMore = true; });
+    setState(() {
+      _loading = true;
+      _error = null;
+      _requests = [];
+      _hasMore = true;
+    });
     try {
       final svc = ref.read(advanceRequestServiceProvider);
       final requests = await svc.list(limit: _pageSize, offset: 0);
@@ -58,7 +69,12 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -67,7 +83,10 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
     setState(() => _loadingMore = true);
     try {
       final svc = ref.read(advanceRequestServiceProvider);
-      final requests = await svc.list(limit: _pageSize, offset: _requests.length);
+      final requests = await svc.list(
+        limit: _pageSize,
+        offset: _requests.length,
+      );
       if (mounted) {
         setState(() {
           _requests.addAll(requests);
@@ -82,7 +101,7 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
 
   Future<void> _handleActionSheet(AdvanceRequest req) async {
     if (!req.isPending) return;
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
 
     final action = await showModalBottomSheet<String>(
       context: context,
@@ -97,7 +116,12 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
           child: SafeArea(
-            child: _AdvanceActionSheetContent(cs: cs, tt: tt, req: req, ref: ref),
+            child: _AdvanceActionSheetContent(
+              cs: cs,
+              tt: tt,
+              req: req,
+              ref: ref,
+            ),
           ),
         );
       },
@@ -127,25 +151,43 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
                 pinned: true,
                 elevation: 0,
                 leading: IconButton(
-                  icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+                  icon: Icon(
+                    PhosphorIconsRegular.arrowLeft,
+                    color: cs.onSurface,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
-                title: Text('Jama Requests', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                title: Text(
+                  'Jama Requests',
+                  style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
                 centerTitle: true,
               ),
               if (_loading)
-                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                )
               else if (_error != null)
                 SliverFillRemaining(
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(PhosphorIconsFill.warningCircle, size: 48, color: Theme.of(context).colorScheme.error),
+                        Icon(
+                          PhosphorIconsFill.warningCircle,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                         const SizedBox(height: 16),
-                        Text('Failed to load requests', style: Theme.of(context).textTheme.titleMedium),
+                        Text(
+                          'Failed to load requests',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         const SizedBox(height: 8),
-                        Text(_error!, style: Theme.of(context).textTheme.bodySmall),
+                        Text(
+                          _error!,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                         const SizedBox(height: 16),
                         FilledButton.icon(
                           icon: const Icon(PhosphorIconsFill.arrowClockwise),
@@ -163,11 +205,26 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.3), shape: BoxShape.circle),
-                        child: PhosphorIcon(PhosphorIconsDuotone.wallet, size: 64, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerHighest.withValues(
+                            alpha: 0.3,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: PhosphorIcon(
+                          PhosphorIconsDuotone.wallet,
+                          size: 64,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                        ),
                       ),
                       const SizedBox(height: 24),
-                      Text('No pending requests', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
+                      Text(
+                        'No pending requests',
+                        style: tt.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 )
@@ -175,23 +232,27 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final req = _requests[index];
-                        return FluidSlideIn(
-                          delay: index * 80,
-                          child: _AdvanceRequestCard(cs: cs, tt: tt, request: req, onAction: () => _handleActionSheet(req)),
-                        );
-                      },
-                      childCount: _requests.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final req = _requests[index];
+                      return FluidSlideIn(
+                        delay: index * 80,
+                        child: _AdvanceRequestCard(
+                          cs: cs,
+                          tt: tt,
+                          request: req,
+                          onAction: () => _handleActionSheet(req),
+                        ),
+                      );
+                    }, childCount: _requests.length),
                   ),
                 ),
               if (_loadingMore)
                 const SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.only(bottom: 24),
-                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    child: Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   ),
                 ),
             ],
@@ -208,34 +269,40 @@ class _AdvanceActionSheetContent extends ConsumerStatefulWidget {
   final AdvanceRequest req;
   final WidgetRef ref;
 
-  const _AdvanceActionSheetContent({required this.cs, required this.tt, required this.req, required this.ref});
+  const _AdvanceActionSheetContent({
+    required this.cs,
+    required this.tt,
+    required this.req,
+    required this.ref,
+  });
 
   @override
-  ConsumerState<_AdvanceActionSheetContent> createState() => _AdvanceActionSheetContentState();
+  ConsumerState<_AdvanceActionSheetContent> createState() =>
+      _AdvanceActionSheetContentState();
 }
 
-class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetContent> {
+class _AdvanceActionSheetContentState
+    extends ConsumerState<_AdvanceActionSheetContent> {
   bool _loading = false;
 
   Future<void> _approve() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirm'),
-        content: const Text('Approve this advance request?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Approve')),
-        ],
-      ),
+    final confirm = await showConfirmDialog(
+      context,
+      title: 'Approve Advance',
+      message: 'Approve this advance request?',
+      confirmLabel: 'Approve',
+      icon: PhosphorIconsRegular.checkCircle,
     );
     if (confirm != true) return;
     setState(() => _loading = true);
     try {
-      HapticFeedback.heavyImpact();
+      unawaited(HapticFeedback.heavyImpact());
       final now = DateTime.now();
-      final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-      await widget.ref.read(advanceRequestServiceProvider).approve(widget.req.id, date: date);
+      final date =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      await widget.ref
+          .read(advanceRequestServiceProvider)
+          .approve(widget.req.id, date: date);
       widget.ref.invalidate(dashboardDataProvider);
       widget.ref.read(ledgerRefreshProvider.notifier).state++;
       if (mounted) Navigator.pop(context, 'approved');
@@ -246,21 +313,18 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
   }
 
   Future<void> _deny() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirm'),
-        content: const Text('Deny this advance request?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Deny')),
-        ],
-      ),
+    final confirm = await showConfirmDialog(
+      context,
+      title: 'Deny Advance',
+      message: 'Deny this advance request?',
+      confirmLabel: 'Deny',
+      icon: PhosphorIconsRegular.xCircle,
+      isDestructive: true,
     );
     if (confirm != true) return;
     setState(() => _loading = true);
     try {
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       await widget.ref.read(advanceRequestServiceProvider).deny(widget.req.id);
       widget.ref.invalidate(dashboardDataProvider);
       widget.ref.read(ledgerRefreshProvider.notifier).state++;
@@ -280,25 +344,50 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
       children: [
         sheetHandle(cs),
         const SizedBox(height: 24),
-        CircleAvatar(radius: 32, backgroundColor: cs.primaryContainer, child: PhosphorIcon(PhosphorIconsDuotone.handCoins, size: 32, color: cs.primary)),
+        CircleAvatar(
+          radius: 32,
+          backgroundColor: cs.primaryContainer,
+          child: PhosphorIcon(
+            PhosphorIconsDuotone.handCoins,
+            size: 32,
+            color: cs.primary,
+          ),
+        ),
         const SizedBox(height: 16),
-        Text(widget.req.employeeName, style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-        Text('Requests an advance of \u20B9${widget.req.amount.toStringAsFixed(0)}', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+        Text(
+          widget.req.employeeName,
+          style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        Text(
+          'Requests an advance of \u20B9${widget.req.amount.toStringAsFixed(0)}',
+          style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+        ),
         const SizedBox(height: 24),
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Row(
             children: [
               Icon(PhosphorIconsRegular.quotes, color: cs.primary, size: 20),
               const SizedBox(width: 12),
-              Expanded(child: Text(widget.req.note, style: tt.bodyMedium?.copyWith(fontStyle: FontStyle.italic))),
+              Expanded(
+                child: Text(
+                  widget.req.note,
+                  style: tt.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+                ),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 32),
         if (_loading)
-          const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: CircularProgressIndicator())
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: CircularProgressIndicator(),
+          )
         else
           Row(
             children: [
@@ -307,10 +396,19 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
                   onPressed: _deny,
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     side: const BorderSide(color: Color(0xFFEF4444)),
                   ),
-                  child: const Text('Deny', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w700, fontSize: 16)),
+                  child: const Text(
+                    'Deny',
+                    style: TextStyle(
+                      color: Color(0xFFEF4444),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -320,9 +418,14 @@ class _AdvanceActionSheetContentState extends ConsumerState<_AdvanceActionSheetC
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: const Color(0xFF10B981),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
-                  child: const Text('Approve', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                  child: const Text(
+                    'Approve',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  ),
                 ),
               ),
             ],
@@ -338,13 +441,26 @@ class _AdvanceRequestCard extends StatelessWidget {
   final AdvanceRequest request;
   final VoidCallback onAction;
 
-  const _AdvanceRequestCard({required this.cs, required this.tt, required this.request, required this.onAction});
+  const _AdvanceRequestCard({
+    required this.cs,
+    required this.tt,
+    required this.request,
+    required this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isPending = request.isPending;
-    final statusColor = isPending ? const Color(0xFFF59E0B) : request.isApproved ? const Color(0xFF10B981) : const Color(0xFFEF4444);
-    final statusLabel = isPending ? 'Pending Action' : request.isApproved ? 'Approved' : 'Denied';
+    final statusColor = isPending
+        ? const Color(0xFFF59E0B)
+        : request.isApproved
+        ? const Color(0xFF10B981)
+        : const Color(0xFFEF4444);
+    final statusLabel = isPending
+        ? 'Pending Action'
+        : request.isApproved
+        ? 'Approved'
+        : 'Denied';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -352,7 +468,13 @@ class _AdvanceRequestCard extends StatelessWidget {
         color: cs.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -368,17 +490,44 @@ class _AdvanceRequestCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       child: Row(
                         children: [
-                          Icon(isPending ? PhosphorIconsFill.clockUser : PhosphorIconsFill.checkCircle, color: statusColor, size: 12),
+                          Icon(
+                            isPending
+                                ? PhosphorIconsFill.clockUser
+                                : PhosphorIconsFill.checkCircle,
+                            color: statusColor,
+                            size: 12,
+                          ),
                           const SizedBox(width: 6),
-                          Text(statusLabel.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: statusColor, letterSpacing: 0.5)),
+                          Text(
+                            statusLabel.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: statusColor,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    Text('\u20B9${request.amount.toStringAsFixed(0)}', style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w900, color: cs.primary, letterSpacing: -1.0)),
+                    Text(
+                      '\u20B9${request.amount.toStringAsFixed(0)}',
+                      style: tt.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: cs.primary,
+                        letterSpacing: -1.0,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -394,13 +543,29 @@ class _AdvanceRequestCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(request.employeeName, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                          Text(
+                            request.employeeName,
+                            style: tt.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                           const SizedBox(height: 2),
-                          Text(request.note, style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text(
+                            request.note,
+                            style: tt.bodySmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ],
                       ),
                     ),
-                    if (isPending) Icon(PhosphorIconsRegular.caretRight, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                    if (isPending)
+                      Icon(
+                        PhosphorIconsRegular.caretRight,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                      ),
                   ],
                 ),
               ],

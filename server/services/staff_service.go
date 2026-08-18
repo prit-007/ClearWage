@@ -10,6 +10,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/pkg/cache"
 	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/vivek-app/vivek_app/utils"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -204,6 +205,7 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 		PermanentAddress:      permanentAddress,
 		Role:                  role,
 		IsActive:              existing.IsActive,
+		ExpectedVersion:       existing.Version,
 	})
 	if err == nil {
 		logActivity(ctx, s.querier, tenantID, employeeID, "updated_employee", "employee", &employeeID, nil)
@@ -336,7 +338,7 @@ func (s *StaffService) fetchOverview(ctx context.Context, employeeID, tenantID s
 		return EmployeeOverview{}, err
 	}
 
-	now := time.Now()
+	now := utils.TenantNow(s.getTimezone(ctx, tenantID))
 	startDate := fmt.Sprintf("%d-01-01", now.Year())
 	endDate := now.Format("2006-01-02")
 
@@ -445,4 +447,12 @@ func decimalPtrToFloat(d *decimal.Decimal) *float64 {
 	}
 	v := d.InexactFloat64()
 	return &v
+}
+
+func (s *StaffService) getTimezone(ctx context.Context, tenantID string) string {
+	t, err := s.querier.FindTenantByID(ctx, tenantID)
+	if err != nil {
+		return utils.DefaultTimezone
+	}
+	return t.Timezone
 }

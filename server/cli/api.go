@@ -37,7 +37,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			if err != nil {
 				return err
 			}
-			defer sqlDB.Close()
+			defer func() { _ = sqlDB.Close() }()
 
 			sqlDB.SetMaxOpenConns(cfg.DB.MaxConns)
 			sqlDB.SetMaxIdleConns(cfg.DB.MaxIdleConns)
@@ -63,7 +63,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("ok"))
+				_, _ = w.Write([]byte("ok"))
 			})
 
 			r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
@@ -158,6 +158,16 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Get("/{id}", ledgerCtrl.ListByEmployee)
 				r.Get("/{id}/balance", ledgerCtrl.GetBalance)
 				r.Post("/{id}/settle", ledgerCtrl.SettleAccount)
+			})
+
+			disputeCtrl := ctrl.NewDisputeController(services.NewDisputeService(querier), logger, cfg)
+			r.Route("/api/v1/disputes", func(r chi.Router) {
+				r.Use(mw.AuthMiddleware(cfg))
+				r.Use(mw.TenantMiddleware())
+				r.Post("/", disputeCtrl.Create)
+				r.Get("/", disputeCtrl.List)
+				r.Post("/resolve", disputeCtrl.Resolve)
+				r.Post("/reject", disputeCtrl.Reject)
 			})
 
 			syncCtrl := ctrl.NewSyncQueueController(services.NewSyncQueueService(querier), logger, cfg)

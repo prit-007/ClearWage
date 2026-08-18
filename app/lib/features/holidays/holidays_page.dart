@@ -4,10 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../core/widgets/validated_field.dart';
-import '../../models/holiday_model.dart';
-import '../../providers/providers.dart';
+import '../../data/models/holiday_model.dart';
+import '../../core/providers/services.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/helpers.dart';
+import 'dart:async';
 
 const int _pageSize = 20;
 
@@ -40,7 +41,10 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
   }
 
   void _onScroll() {
-    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200 && !_loading && _hasMore) {
+    if (_scrollCtrl.position.pixels >=
+            _scrollCtrl.position.maxScrollExtent - 200 &&
+        !_loading &&
+        _hasMore) {
       _fetch();
     }
   }
@@ -49,7 +53,9 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
     if (_loading || !_hasMore) return;
     setState(() => _loading = true);
     try {
-      final items = await ref.read(holidayServiceProvider).list(limit: _pageSize, offset: _page * _pageSize);
+      final items = await ref
+          .read(holidayServiceProvider)
+          .list(limit: _pageSize, offset: _page * _pageSize);
       if (mounted) {
         setState(() {
           _items.addAll(items);
@@ -59,12 +65,17 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
         });
       }
     } catch (err) {
-      if (mounted) setState(() { _loading = false; _error = err.toString(); });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = err.toString();
+        });
+      }
     }
   }
 
   Future<void> _onRefresh() async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     setState(() {
       _items = [];
       _page = 0;
@@ -75,7 +86,7 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
   }
 
   Future<void> _showHolidaySheet() async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
@@ -85,7 +96,7 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
     if (result != null) {
       try {
         await ref.read(holidayServiceProvider).create(result);
-        if (mounted) _onRefresh();
+        if (mounted) unawaited(_onRefresh());
       } catch (e) {
         if (mounted) showError(context, e);
       }
@@ -93,22 +104,19 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
   }
 
   Future<void> _deleteHoliday(String id) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Holiday'),
-        content: const Text('Are you sure you want to delete this holiday?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error))),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Delete Holiday',
+      message: 'Are you sure you want to delete this holiday?',
+      confirmLabel: 'Delete',
+      icon: PhosphorIconsRegular.trash,
+      isDestructive: true,
     );
     if (confirmed != true) return;
-    HapticFeedback.heavyImpact();
+    unawaited(HapticFeedback.heavyImpact());
     try {
       await ref.read(holidayServiceProvider).delete(id);
-      if (mounted) _onRefresh();
+      if (mounted) unawaited(_onRefresh());
     } catch (e) {
       if (mounted) showError(context, e);
     }
@@ -128,17 +136,25 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
           onRefresh: _onRefresh,
           child: CustomScrollView(
             controller: _scrollCtrl,
-            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
             slivers: [
               SliverAppBar(
                 backgroundColor: cs.surface.withValues(alpha: 0.95),
                 pinned: true,
                 elevation: 0,
                 leading: IconButton(
-                  icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+                  icon: Icon(
+                    PhosphorIconsRegular.arrowLeft,
+                    color: cs.onSurface,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
-                title: Text('Holidays', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                title: Text(
+                  'Holidays',
+                  style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
                 centerTitle: true,
                 actions: [
                   IconButton(
@@ -154,11 +170,21 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(PhosphorIconsFill.warningCircle, size: 48, color: Theme.of(context).colorScheme.error),
+                        Icon(
+                          PhosphorIconsFill.warningCircle,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                         const SizedBox(height: 16),
-                        Text('Failed to load holidays', style: Theme.of(context).textTheme.titleMedium),
+                        Text(
+                          'Failed to load holidays',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         const SizedBox(height: 8),
-                        Text(_error!, style: Theme.of(context).textTheme.bodySmall),
+                        Text(
+                          _error!,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                         const SizedBox(height: 16),
                         FilledButton.icon(
                           icon: const Icon(PhosphorIconsFill.arrowClockwise),
@@ -170,15 +196,27 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
                   ),
                 )
               else if (_loading && _items.isEmpty)
-                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                )
               else if (_items.isEmpty)
                 SliverFillRemaining(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      PhosphorIcon(PhosphorIconsDuotone.calendarStar, size: 72, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                      PhosphorIcon(
+                        PhosphorIconsDuotone.calendarStar,
+                        size: 72,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+                      ),
                       const SizedBox(height: 24),
-                      Text('No holidays configured', style: tt.titleMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
+                      Text(
+                        'No holidays configured',
+                        style: tt.titleMedium?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ],
                   ),
                 )
@@ -186,23 +224,30 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final h = _items[index];
-                        return FluidSlideIn(
-                          delay: index * 80,
-                          child: _PremiumHolidayCard(cs: cs, tt: tt, holiday: h, onDelete: () => _deleteHoliday(h.id)),
-                        );
-                      },
-                      childCount: _items.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final h = _items[index];
+                      return FluidSlideIn(
+                        delay: index * 80,
+                        child: _PremiumHolidayCard(
+                          cs: cs,
+                          tt: tt,
+                          holiday: h,
+                          onDelete: () => _deleteHoliday(h.id),
+                        ),
+                      );
+                    }, childCount: _items.length),
                   ),
                 ),
                 if (_loading)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 24),
-                      child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary)),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: cs.primary,
+                        ),
+                      ),
                     ),
                   ),
               ],
@@ -220,7 +265,12 @@ class _PremiumHolidayCard extends StatelessWidget {
   final Holiday holiday;
   final VoidCallback onDelete;
 
-  const _PremiumHolidayCard({required this.cs, required this.tt, required this.holiday, required this.onDelete});
+  const _PremiumHolidayCard({
+    required this.cs,
+    required this.tt,
+    required this.holiday,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -234,7 +284,13 @@ class _PremiumHolidayCard extends StatelessWidget {
         color: cs.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -248,8 +304,24 @@ class _PremiumHolidayCard extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Text(month, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: cs.tertiary, letterSpacing: 1.0)),
-                  Text(day, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: cs.tertiary, letterSpacing: -1.0)),
+                  Text(
+                    month,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: cs.tertiary,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  Text(
+                    day,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: cs.tertiary,
+                      letterSpacing: -1.0,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -258,21 +330,41 @@ class _PremiumHolidayCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(holiday.name, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                  Text(
+                    holiday.name,
+                    style: tt.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   if (holiday.isRecurring)
                     Row(
                       children: [
-                        Icon(PhosphorIconsRegular.arrowClockwise, size: 14, color: cs.onSurfaceVariant),
+                        Icon(
+                          PhosphorIconsRegular.arrowClockwise,
+                          size: 14,
+                          color: cs.onSurfaceVariant,
+                        ),
                         const SizedBox(width: 4),
-                        Text('Recurring', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
+                        Text(
+                          'Recurring',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
                 ],
               ),
             ),
             IconButton(
-              icon: Icon(PhosphorIconsRegular.trash, color: cs.error.withValues(alpha: 0.7)),
+              icon: Icon(
+                PhosphorIconsRegular.trash,
+                color: cs.error.withValues(alpha: 0.7),
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 onDelete();
@@ -322,7 +414,9 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
     final tt = Theme.of(context).textTheme;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -336,45 +430,87 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
             children: [
               Center(child: sheetHandle(cs)),
               const SizedBox(height: 24),
-              Text('Mark Factory Holiday', style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+              Text(
+                'Mark Factory Holiday',
+                style: tt.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+              ),
               const SizedBox(height: 32),
 
               ValidatedField(
                 controller: _nameCtrl,
-                label: 'Holiday Name',
+                label: 'Holiday Name *',
                 prefixIcon: PhosphorIconsRegular.sparkle,
-                validator: (v) => v == null || v.trim().isEmpty ? 'Enter holiday name' : null,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Enter holiday name' : null,
               ),
               const SizedBox(height: 24),
 
-              Text('Date', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: cs.onSurfaceVariant)),
+              Text(
+                'Date *',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
               const SizedBox(height: 8),
               InkWell(
                 onTap: () async {
-                  HapticFeedback.selectionClick();
+                  unawaited(HapticFeedback.selectionClick());
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: _selectedDate ?? DateTime.now(),
                     firstDate: DateTime(2023),
                     lastDate: DateTime(2028),
                   );
-                  if (picked != null) setState(() { _selectedDate = picked; _dateError = null; });
+                  if (picked != null) {
+                    setState(() {
+                      _selectedDate = picked;
+                      _dateError = null;
+                    });
+                  }
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: _dateError != null ? cs.error.withValues(alpha: 0.5) : Colors.transparent, width: 2),
+                    border: Border.all(
+                      color: _dateError != null
+                          ? cs.error.withValues(alpha: 0.5)
+                          : Colors.transparent,
+                      width: 2,
+                    ),
                   ),
                   child: Row(
                     children: [
-                      Icon(PhosphorIconsRegular.calendarBlank, color: _dateError != null ? cs.error : cs.onSurfaceVariant),
+                      Icon(
+                        PhosphorIconsRegular.calendarBlank,
+                        color: _dateError != null
+                            ? cs.error
+                            : cs.onSurfaceVariant,
+                      ),
                       const SizedBox(width: 16),
-                      Text(
-                        _selectedDate == null ? 'Select Date' : DateFormat('dd MMM yyyy').format(_selectedDate!),
-                        style: TextStyle(fontWeight: FontWeight.w700, color: _selectedDate == null ? cs.onSurfaceVariant : cs.onSurface, fontSize: 16),
+                      Expanded(
+                        child: Text(
+                          _selectedDate == null
+                              ? 'Select Date'
+                              : formatDate(_selectedDate!),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: _selectedDate == null
+                                ? cs.onSurfaceVariant
+                                : cs.onSurface,
+                            fontSize: 16,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -385,9 +521,20 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
                   padding: const EdgeInsets.only(left: 16, top: 4),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline_rounded, size: 14, color: cs.error),
+                      Icon(
+                        Icons.error_outline_rounded,
+                        size: 14,
+                        color: cs.error,
+                      ),
                       const SizedBox(width: 6),
-                      Text(_dateError!, style: tt.bodySmall?.copyWith(color: cs.error, fontWeight: FontWeight.w600, fontSize: 12)),
+                      Text(
+                        _dateError!,
+                        style: tt.bodySmall?.copyWith(
+                          color: cs.error,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -396,17 +543,34 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Repeats Annually', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                      Text('Automatically mark this every year', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Repeats Annually',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                        Text(
+                          'Automatically mark this every year',
+                          style: TextStyle(
+                            color: cs.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   Switch.adaptive(
                     value: _recurring,
                     activeTrackColor: cs.primary,
-                    onChanged: (v) { HapticFeedback.lightImpact(); setState(() => _recurring = v); },
+                    onChanged: (v) {
+                      HapticFeedback.lightImpact();
+                      setState(() => _recurring = v);
+                    },
                   ),
                 ],
               ),
@@ -418,16 +582,22 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
                   HapticFeedback.heavyImpact();
                   Navigator.pop(context, {
                     'name': _nameCtrl.text.trim(),
-                    'date': '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}',
+                    'date':
+                        '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}',
                     'is_recurring': _recurring,
                   });
                 },
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(60),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   elevation: 0,
                 ),
-                child: const Text('Add Holiday', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: const Text(
+                  'Add Holiday',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
             ],
           ),

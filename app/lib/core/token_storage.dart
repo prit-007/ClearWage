@@ -1,35 +1,37 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../models/auth_model.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../data/models/auth_model.dart';
 
 class TokenStorage {
-  static const _key = 'auth_token';
+  static const _tokenKey = 'auth_token';
   static const _userInfoKey = 'user_info';
 
+  static const _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+  );
+
   static Future<String?> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_key);
+    return _storage.read(key: _tokenKey);
   }
 
   static Future<void> save(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, token);
+    await _storage.write(key: _tokenKey, value: token);
   }
 
   static Future<void> clear() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key);
-    await prefs.remove(_userInfoKey);
+    await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _userInfoKey);
   }
 
   static Future<void> saveUserInfo(AppUser info) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userInfoKey, jsonEncode(info.toJson()));
+    await _storage.write(key: _userInfoKey, value: jsonEncode(info.toJson()));
   }
 
   static Future<AppUser?> loadUserInfo() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_userInfoKey);
+    final raw = await _storage.read(key: _userInfoKey);
     if (raw == null) return null;
     try {
       return AppUser.fromJson(jsonDecode(raw) as Map<String, dynamic>);

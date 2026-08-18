@@ -14,6 +14,7 @@ class ValidatedField extends StatefulWidget {
   final int? maxLines;
   final String? Function(String?)? validator;
   final ValueChanged<String>? onChanged;
+  final VoidCallback? onTap;
 
   const ValidatedField({
     super.key,
@@ -28,6 +29,7 @@ class ValidatedField extends StatefulWidget {
     this.maxLines,
     this.validator,
     this.onChanged,
+    this.onTap,
   });
 
   @override
@@ -88,15 +90,15 @@ class _ValidatedFieldState extends State<ValidatedField> {
                   color: !widget.enabled
                       ? cs.surfaceContainerHighest.withValues(alpha: 0.1)
                       : _isFocused
-                          ? cs.primary.withValues(alpha: 0.02)
-                          : cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                      ? cs.primary.withValues(alpha: 0.02)
+                      : cs.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: hasError
                         ? cs.error.withValues(alpha: _isFocused ? 1.0 : 0.5)
                         : _isFocused
-                            ? cs.primary
-                            : cs.outlineVariant.withValues(alpha: 0.3),
+                        ? cs.primary
+                        : cs.outlineVariant.withValues(alpha: 0.3),
                     width: _isFocused || hasError ? 2 : 1,
                   ),
                   boxShadow: _isFocused && !hasError
@@ -105,7 +107,7 @@ class _ValidatedFieldState extends State<ValidatedField> {
                             color: cs.primary.withValues(alpha: 0.1),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
-                          )
+                          ),
                         ]
                       : [],
                 ),
@@ -121,6 +123,7 @@ class _ValidatedFieldState extends State<ValidatedField> {
                     fontWeight: FontWeight.w600,
                     color: widget.enabled ? cs.onSurface : cs.onSurfaceVariant,
                   ),
+                  onTap: widget.readOnly ? widget.onTap : null,
                   onChanged: (val) {
                     state.didChange(val);
                     if (widget.onChanged != null) widget.onChanged!(val);
@@ -137,7 +140,10 @@ class _ValidatedFieldState extends State<ValidatedField> {
                     errorBorder: InputBorder.none,
                     focusedErrorBorder: InputBorder.none,
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                     prefixIcon: widget.prefixIcon != null
                         ? PhosphorIcon(
                             widget.prefixIcon!,
@@ -145,8 +151,8 @@ class _ValidatedFieldState extends State<ValidatedField> {
                             color: hasError
                                 ? cs.error
                                 : _isFocused
-                                    ? cs.primary
-                                    : cs.onSurfaceVariant,
+                                ? cs.primary
+                                : cs.onSurfaceVariant,
                           )
                         : null,
                   ),
@@ -159,7 +165,11 @@ class _ValidatedFieldState extends State<ValidatedField> {
                   padding: const EdgeInsets.only(top: 8, left: 4),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline_rounded, size: 14, color: cs.error),
+                      Icon(
+                        Icons.error_outline_rounded,
+                        size: 14,
+                        color: cs.error,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         state.errorText!,

@@ -62,6 +62,12 @@ func TestLoginWithFirebase_Success(t *testing.T) {
 		FindTenantByPhone(gomock.Any(), gomock.Any()).
 		Return(repositories.Tenant{ID: "t1", Name: "Test Corp", Phone: "+91-9876543210"}, nil)
 
+	mockQ.EXPECT().
+		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Employee{
+			{ID: "e1", TenantID: "t1", Role: "owner", IsActive: true},
+		}, nil)
+
 	body, _ := json.Marshal(map[string]string{"id_token": "valid-id-token"})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/firebase-login", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -95,7 +101,7 @@ func TestLoginWithFirebase_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	data := resp["data"].(map[string]interface{})
 	if data["tenant_id"] != "t1" {
 		t.Errorf("expected tenant_id t1, got %v", data["tenant_id"])
@@ -209,7 +215,7 @@ func TestRegister_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	data := resp["data"].(map[string]interface{})
 	if data["tenant_id"] != "t1" {
 		t.Errorf("expected tenant_id t1, got %v", data["tenant_id"])

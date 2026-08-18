@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 
 	"github.com/shopspring/decimal"
@@ -21,6 +22,12 @@ func (s *LedgerService) CreateEntry(ctx context.Context, tenantID, employeeID, d
 	amt, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
 		return repositories.Ledger{}, fmt.Errorf("invalid amount: %w", err)
+	}
+	if math.IsNaN(amt) || math.IsInf(amt, 0) {
+		return repositories.Ledger{}, fmt.Errorf("invalid amount: must be a finite number")
+	}
+	if amt <= 0 {
+		return repositories.Ledger{}, fmt.Errorf("amount must be positive")
 	}
 	var n *string
 	if note != "" {
@@ -101,7 +108,7 @@ func (s *LedgerService) SettleEmployee(ctx context.Context, employeeID, tenantID
 		TenantID:   tenantID,
 	})
 	if err != nil {
-		return repositories.Ledger{}, err
+		return repositories.Ledger{}, fmt.Errorf("failed to read balance: %w", err)
 	}
 
 	if balance == 0 {
@@ -118,7 +125,7 @@ func (s *LedgerService) SettleEmployee(ctx context.Context, employeeID, tenantID
 		amt = -balance
 	}
 	note := "Full & final settlement"
-	return s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
+	entry, err := s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
 		TenantID:   tenantID,
 		EmployeeID: employeeID,
 		Date:       date,
@@ -127,4 +134,17 @@ func (s *LedgerService) SettleEmployee(ctx context.Context, employeeID, tenantID
 		Note:       &note,
 		CreatedBy:  createdBy,
 	})
+	if err != nil {
+		return repositories.Ledger{}, fmt.Errorf("failed to create settlement entry: %w", err)
+	}
+
+	newBalance, balErr := s.querier.GetBalanceByEmployee(ctx, repositories.GetBalanceByEmployeeParams{
+		EmployeeID: employeeID,
+		TenantID:   tenantID,
+	})
+	if balErr == nil && newBalance != 0 {
+		return repositories.Ledger{}, fmt.Errorf("concurrent modification detected: balance changed during settlement")
+	}
+
+	return entry, nil
 }

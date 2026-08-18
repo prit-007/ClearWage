@@ -18,6 +18,9 @@ func TestDashboardService_GetDashboard(t *testing.T) {
 	svc := NewDashboardService(mockQuerier)
 
 	mockQuerier.EXPECT().
+		FindTenantByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Tenant{Timezone: "Asia/Kolkata"}, nil)
+	mockQuerier.EXPECT().
 		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
 		Return(repositories.DashboardSnapshot{
 			TotalStaff: 2, AttendanceCount: 1, Present: 1,
@@ -53,6 +56,9 @@ func TestDashboardService_GetDashboard_ZeroStaff(t *testing.T) {
 	mockQuerier := mocks.NewMockQuerier(ctrl)
 	svc := NewDashboardService(mockQuerier)
 
+	mockQuerier.EXPECT().
+		FindTenantByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Tenant{Timezone: "Asia/Kolkata"}, nil)
 	mockQuerier.EXPECT().
 		GetDashboardSnapshot(gomock.Any(), "t1", gomock.Any(), gomock.Any()).
 		Return(repositories.DashboardSnapshot{

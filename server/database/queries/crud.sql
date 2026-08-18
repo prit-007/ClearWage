@@ -79,3 +79,28 @@ WHERE l.employee_id = $1
   AND l.date <= $4
 ORDER BY l.date ASC
 LIMIT $5 OFFSET $6;
+
+-- name: CreateDispute :one
+INSERT INTO ledger_disputes (tenant_id, ledger_id, employee_id, raised_by, reason)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING *;
+
+-- name: ListDisputesByTenant :many
+SELECT ld.*, emp.name AS raised_by_name
+FROM ledger_disputes ld
+LEFT JOIN employees emp ON ld.raised_by = emp.id
+WHERE ld.tenant_id = $1 AND ld.status = $2
+ORDER BY ld.created_at DESC
+LIMIT $3 OFFSET $4;
+
+-- name: ResolveDispute :one
+UPDATE ledger_disputes
+SET status = 'resolved', resolved_by = $2, resolution_note = $3, updated_at = now()
+WHERE id = $1 AND tenant_id = $4
+RETURNING *;
+
+-- name: RejectDispute :one
+UPDATE ledger_disputes
+SET status = 'rejected', resolved_by = $2, resolution_note = $3, updated_at = now()
+WHERE id = $1 AND tenant_id = $4
+RETURNING *;

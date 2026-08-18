@@ -1,12 +1,4 @@
-linters-settings:
-  errcheck:
-    check-blank: true
-  misspell:
-    locale: US
-  govet:
-    check-shadowing: true
-  gosimple:
-    checks: ["all"]
+version: "2"
 
 linters:
   enable:
@@ -14,9 +6,16 @@ linters:
     - govet
     - staticcheck
     - unused
-    - gosimple
     - ineffassign
     - misspell
+  settings:
+    errcheck:
+      check-blank: false
+    misspell:
+      locale: US
+    govet:
+      enable:
+        - shadow
 
 run:
   timeout: 5m

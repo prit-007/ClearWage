@@ -21,7 +21,7 @@ func NewTestDB() (*sql.DB, error) {
 	}
 
 	if err := applyMigrations(db); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("failed to apply migrations: %w", err)
 	}
 

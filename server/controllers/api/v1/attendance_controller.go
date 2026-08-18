@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/vivek-app/vivek_app/config"
 	"github.com/vivek-app/vivek_app/middlewares"
+	"github.com/vivek-app/vivek_app/repositories"
 	"github.com/vivek-app/vivek_app/services"
 	"github.com/vivek-app/vivek_app/utils"
 )
@@ -41,6 +42,7 @@ type createAttendanceRequest struct {
 	OvertimeHours         string     `json:"overtime_hours,omitempty"`
 	OvertimeRateMultiplier string    `json:"overtime_rate_multiplier,omitempty"`
 	UnitsProduced         *int32     `json:"units_produced,omitempty"`
+	Version               *int32     `json:"version,omitempty"`
 }
 
 const (
@@ -181,7 +183,11 @@ func (c *AttendanceController) ListByDate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	limit, offset := parseAllLimitOffset(r)
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	attendance, err := c.attendanceService.ListByDate(r.Context(), tenantID, date, limit, offset)
 	if err != nil {
@@ -273,7 +279,11 @@ func (c *AttendanceController) ListByEmployee(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	limit, offset := parseAllLimitOffset(r)
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	attendance, err := c.attendanceService.ListByEmployeeMonth(r.Context(), employeeID, tenantID, startDate, endDate, limit, offset)
 	if err != nil {
@@ -329,11 +339,19 @@ func (c *AttendanceController) Update(w http.ResponseWriter, r *http.Request) {
 	if otHours == "" {
 		otHours = "0"
 	}
+	var version int32
+	if req.Version != nil {
+		version = *req.Version
+	}
 	att, err := c.attendanceService.UpdateAttendance(
 		r.Context(), id, tenantID, req.ShiftID, req.Status,
-		req.CheckInTime, req.CheckOutTime, otHours, req.OvertimeRateMultiplier, req.UnitsProduced, claims.EmployeeID,
+		req.CheckInTime, req.CheckOutTime, otHours, req.OvertimeRateMultiplier, req.UnitsProduced, claims.EmployeeID, version,
 	)
 	if err != nil {
+		if err == repositories.ErrConcurrentModification {
+			utils.JSONFail(w, http.StatusConflict, "Record was modified by another user. Please refresh and try again.")
+			return
+		}
 		c.logger.Error().Err(err).Msg("failed to update attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to update attendance")
 		return

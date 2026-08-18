@@ -18,6 +18,7 @@ import '../../core/helpers.dart';
 import '../../core/logger.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import 'add_employee_page.dart';
+import '../../core/responsive.dart';
 import 'dart:async';
 
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
@@ -102,9 +103,8 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
 
   Future<void> _pickAndUploadPhoto() async {
     unawaited(HapticFeedback.selectionClick());
-    final source = await showModalBottomSheet<String>(
+    final source = await showAdaptiveSheet<String>(
       context: context,
-      backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -229,7 +229,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
       body: Stack(
         children: [
           NestedScrollView(
-            physics: const BouncingScrollPhysics(),
+            physics: AppScrollPhysics.physics(),
             headerSliverBuilder: (_, _) => [
               SliverAppBar(
                 backgroundColor: cs.surfaceContainerLowest,
@@ -367,7 +367,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
             ],
             body: TabBarView(
               controller: _tabCtrl,
-              physics: const BouncingScrollPhysics(),
+              physics: AppScrollPhysics.physics(),
               children: [
                 _InfoTab(
                   cs: cs,
@@ -781,9 +781,8 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
 
   Future<void> _upload(String type) async {
     unawaited(HapticFeedback.selectionClick());
-    final source = await showModalBottomSheet<String>(
+    final source = await showAdaptiveSheet<String>(
       context: context,
-      backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(

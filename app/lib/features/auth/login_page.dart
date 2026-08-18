@@ -12,6 +12,7 @@ import '../../core/widgets/firebase_phone_field.dart';
 import '../../data/models/auth_model.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/providers/services.dart';
+import '../../core/responsive.dart';
 import 'register_page.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -200,10 +201,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _showServerDialog() async {
-    await showModalBottomSheet<void>(
+    await showAdaptiveSheet<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (_) =>
           _ServerConfigSheet(initialUrl: ref.read(serverUrlProvider)),
     );
@@ -247,7 +246,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
+            physics: AppScrollPhysics.physics(),
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

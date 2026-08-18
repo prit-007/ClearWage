@@ -8,6 +8,7 @@ import '../../core/widgets/premium_macro_field.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
+import '../../core/responsive.dart';
 import 'dart:async';
 
 final leavePolicyProvider = FutureProvider.autoDispose<Map<String, dynamic>?>((
@@ -149,7 +150,7 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
                 child: Stack(
                   children: [
                     ListView(
-                      physics: const BouncingScrollPhysics(),
+                      physics: AppScrollPhysics.physics(),
                       padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
                       children: [
                         FluidSlideIn(

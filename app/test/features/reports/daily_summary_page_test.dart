@@ -115,5 +115,21 @@ void main() {
           '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
       expect(fakeService.lastDate, expectedDate);
     });
+
+    testWidgets('shows calendar icon to pick date', (tester) async {
+      fakeService.setDailySummary(
+        DailySummaryData(
+          totalWorkers: 10,
+          present: 10,
+          absent: 0,
+          onLeave: 0,
+          totalWageBill: 0,
+        ),
+      );
+      await tester.pumpWidget(_buildApp(fakeService));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(IconButton), findsWidgets);
+    });
   });
 }

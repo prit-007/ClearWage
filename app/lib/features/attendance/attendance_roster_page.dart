@@ -16,6 +16,7 @@ import '../../core/helpers.dart';
 import '../../core/api_exceptions.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../data/models/shift_model.dart';
+import '../../core/responsive.dart';
 import 'dart:async';
 
 enum _AttStatus { present, absent, halfDay }
@@ -289,8 +290,8 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
             await ref.read(rosterByDateProvider(_dateStr).future);
           },
           child: CustomScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
+            physics: AppScrollPhysics.physics(
+              parent: const AlwaysScrollableScrollPhysics(),
             ),
             slivers: [
               SliverAppBar(

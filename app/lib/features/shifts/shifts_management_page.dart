@@ -7,6 +7,7 @@ import '../../core/providers/services.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../core/helpers.dart';
+import '../../core/responsive.dart';
 import 'dart:async';
 
 const int _pageSize = 20;
@@ -88,10 +89,8 @@ class _ShiftsManagementScreenState
 
   Future<void> _showShiftBottomSheet({Shift? shift}) async {
     unawaited(HapticFeedback.mediumImpact());
-    final result = await showModalBottomSheet<bool>(
+    final result = await showAdaptiveSheet<bool>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (_) => _ShiftFormModal(shift: shift),
     );
     if (result == true && mounted) unawaited(_onRefresh());
@@ -130,8 +129,8 @@ class _ShiftsManagementScreenState
           onRefresh: _onRefresh,
           child: CustomScrollView(
             controller: _scrollCtrl,
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
+            physics: AppScrollPhysics.physics(
+              parent: const AlwaysScrollableScrollPhysics(),
             ),
             slivers: [
               SliverAppBar(

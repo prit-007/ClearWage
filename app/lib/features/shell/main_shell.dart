@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/helpers.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/responsive.dart';
 import '../attendance/attendance_roster_page.dart';
 import '../dashboard/dashboard_page.dart';
 import '../ledger/ledger_list_page.dart';
@@ -25,6 +27,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
+    final isWide = AppBreakpoints.isDesktop(context);
 
     ref.listen<bool>(sessionExpiredProvider, (prev, next) {
       if (next && prev != true) {
@@ -49,14 +52,15 @@ class _MainShellState extends ConsumerState<MainShell> {
     final pages = <Widget, String>{
       const DashboardScreen(): 'home',
       if (isAdmin) const StaffDirectoryScreen(): 'staff',
-      const AttendanceRosterPage(): 'attendance',
+      if (isAdmin) const AttendanceRosterPage(): 'attendance',
       if (isAdmin) const LedgerListScreen(): 'ledger',
-      const ReportsHubScreen(): 'reports',
+      if (isAdmin) const ReportsHubScreen(): 'reports',
       if (isAdmin) const DisputesListScreen(): 'disputes',
     };
 
     final pageWidgets = pages.keys.toList();
-    final selectedIdx = pages.values.toList().indexOf(_selectedPageId);
+    final pageIds = pages.values.toList();
+    final selectedIdx = pageIds.indexOf(_selectedPageId);
     final effectiveIdx = selectedIdx >= 0 ? selectedIdx : 0;
 
     final navItems = <NavigationDestination>[
@@ -71,22 +75,24 @@ class _MainShellState extends ConsumerState<MainShell> {
           selectedIcon: Icon(Icons.groups),
           label: 'Staff',
         ),
-      const NavigationDestination(
-        icon: Icon(Icons.event_available_outlined),
-        selectedIcon: Icon(Icons.event_available),
-        label: 'Attendance',
-      ),
+      if (isAdmin)
+        const NavigationDestination(
+          icon: Icon(Icons.event_available_outlined),
+          selectedIcon: Icon(Icons.event_available),
+          label: 'Attendance',
+        ),
       if (isAdmin)
         const NavigationDestination(
           icon: Icon(Icons.account_balance_wallet_outlined),
           selectedIcon: Icon(Icons.account_balance_wallet),
           label: 'Ledger',
         ),
-      const NavigationDestination(
-        icon: Icon(Icons.analytics_outlined),
-        selectedIcon: Icon(Icons.analytics),
-        label: 'Reports',
-      ),
+      if (isAdmin)
+        const NavigationDestination(
+          icon: Icon(Icons.analytics_outlined),
+          selectedIcon: Icon(Icons.analytics),
+          label: 'Reports',
+        ),
       if (isAdmin)
         const NavigationDestination(
           icon: Icon(Icons.flag_outlined),
@@ -94,6 +100,16 @@ class _MainShellState extends ConsumerState<MainShell> {
           label: 'Disputes',
         ),
     ];
+
+    final railDestinations = navItems
+        .map(
+          (item) => NavigationRailDestination(
+            icon: item.icon,
+            selectedIcon: item.selectedIcon,
+            label: Text(item.label),
+          ),
+        )
+        .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -125,10 +141,11 @@ class _MainShellState extends ConsumerState<MainShell> {
                 child: Text('Shift Timings'),
               ),
               const PopupMenuItem(value: '/holidays', child: Text('Holidays')),
-              const PopupMenuItem(
-                value: '/debug/logs',
-                child: Text('App Logs'),
-              ),
+              if (kDebugMode)
+                const PopupMenuItem(
+                  value: '/debug/logs',
+                  child: Text('App Logs'),
+                ),
               if (isAdmin)
                 const PopupMenuItem(
                   value: '/advance-requests',
@@ -148,15 +165,57 @@ class _MainShellState extends ConsumerState<MainShell> {
           ),
         ],
       ),
-      body: IndexedStack(index: effectiveIdx, children: pageWidgets),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: effectiveIdx,
-        onDestinationSelected: (i) {
-          final pageIds = pages.values.toList();
-          if (i < pageIds.length) setState(() => _selectedPageId = pageIds[i]);
-        },
-        destinations: navItems,
-      ),
+      body: isWide
+          ? Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: effectiveIdx,
+                  onDestinationSelected: (i) {
+                    if (i < pageIds.length) {
+                      setState(() => _selectedPageId = pageIds[i]);
+                    }
+                  },
+                  labelType: NavigationRailLabelType.all,
+                  backgroundColor: cs.surface,
+                  indicatorColor: cs.primaryContainer.withValues(alpha: 0.5),
+                  selectedIconTheme: IconThemeData(color: cs.primary),
+                  selectedLabelTextStyle: TextStyle(
+                    color: cs.primary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                  unselectedLabelTextStyle: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                  destinations: railDestinations,
+                ),
+                VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: cs.outlineVariant.withValues(alpha: 0.3),
+                ),
+                Expanded(
+                  child: IndexedStack(
+                    index: effectiveIdx,
+                    children: pageWidgets,
+                  ),
+                ),
+              ],
+            )
+          : IndexedStack(index: effectiveIdx, children: pageWidgets),
+      bottomNavigationBar: isWide
+          ? null
+          : NavigationBar(
+              selectedIndex: effectiveIdx,
+              onDestinationSelected: (i) {
+                if (i < pageIds.length) {
+                  setState(() => _selectedPageId = pageIds[i]);
+                }
+              },
+              destinations: navItems,
+            ),
     );
   }
 }

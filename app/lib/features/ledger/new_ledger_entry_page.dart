@@ -8,6 +8,7 @@ import 'providers/ledger_providers.dart';
 import '../staff/providers/staff_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/employee_avatar.dart';
+import '../../core/responsive.dart';
 import 'dart:async';
 
 class NewLedgerEntryScreen extends ConsumerStatefulWidget {
@@ -84,13 +85,8 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
   }
 
   Future<void> _showEmployeePicker(BuildContext context) async {
-    await showModalBottomSheet<void>(
+    await showAdaptiveSheet<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (_) => _EmployeePickerSheet(
         selectedEmployeeId: _selectedEmployeeId,
         onSelected: (id, name) {

@@ -5,14 +5,18 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/providers/services.dart';
 import '../../data/models/report_models.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/helpers.dart';
+import '../../core/responsive.dart';
+
+final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
 
 final dailySummaryProvider = FutureProvider.autoDispose<DailySummaryData>((
   ref,
 ) {
-  final now = DateTime.now();
-  final date =
-      '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-  return ref.watch(reportServiceProvider).dailySummary(date: date);
+  final date = ref.watch(selectedDateProvider);
+  final dateStr =
+      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  return ref.watch(reportServiceProvider).dailySummary(date: dateStr);
 });
 
 class DailySummaryScreen extends ConsumerWidget {
@@ -23,12 +27,13 @@ class DailySummaryScreen extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final summaryAsync = ref.watch(dailySummaryProvider);
+    final selectedDate = ref.watch(selectedDateProvider);
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
       body: SafeArea(
         child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: AppScrollPhysics.physics(),
           slivers: [
             SliverAppBar(
               backgroundColor: cs.surfaceContainerLowest.withValues(
@@ -45,6 +50,25 @@ class DailySummaryScreen extends ConsumerWidget {
                 style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
               centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: PhosphorIcon(
+                    PhosphorIconsRegular.calendarBlank,
+                    color: cs.onSurfaceVariant,
+                  ),
+                  onPressed: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      ref.read(selectedDateProvider.notifier).state = picked;
+                    }
+                  },
+                ),
+              ],
             ),
             summaryAsync.when(
               loading: () => const SliverFillRemaining(
@@ -98,6 +122,11 @@ class DailySummaryScreen extends ConsumerWidget {
                     delegate: SliverChildListDelegate([
                       FluidSlideIn(
                         delay: 0,
+                        child: _DateChip(cs: cs, tt: tt, date: selectedDate),
+                      ),
+                      const SizedBox(height: 16),
+                      FluidSlideIn(
+                        delay: 0,
                         child: _DailyHeroCard(
                           cs: cs,
                           tt: tt,
@@ -109,26 +138,21 @@ class DailySummaryScreen extends ConsumerWidget {
                       const SizedBox(height: 16),
                       FluidSlideIn(
                         delay: 100,
-                        child: Row(
+                        child: ResponsiveStatRow(
                           children: [
-                            Expanded(
-                              child: _StatTile(
-                                cs: cs,
-                                label: 'Absent',
-                                value: '$absent',
-                                color: const Color(0xFFEF4444),
-                                icon: PhosphorIconsDuotone.xCircle,
-                              ),
+                            _StatTile(
+                              cs: cs,
+                              label: 'Absent',
+                              value: '$absent',
+                              color: const Color(0xFFEF4444),
+                              icon: PhosphorIconsDuotone.xCircle,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _StatTile(
-                                cs: cs,
-                                label: 'On Leave',
-                                value: '$onLeave',
-                                color: const Color(0xFFF59E0B),
-                                icon: PhosphorIconsDuotone.bed,
-                              ),
+                            _StatTile(
+                              cs: cs,
+                              label: 'On Leave',
+                              value: '$onLeave',
+                              color: const Color(0xFFF59E0B),
+                              icon: PhosphorIconsDuotone.bed,
                             ),
                           ],
                         ),
@@ -399,6 +423,44 @@ class _StatTile extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: cs.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DateChip extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final DateTime date;
+
+  const _DateChip({required this.cs, required this.tt, required this.date});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: cs.primaryContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PhosphorIcon(
+            PhosphorIconsFill.calendarCheck,
+            size: 16,
+            color: cs.primary,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            formatDate(date),
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: cs.primary,
+              fontSize: 13,
             ),
           ),
         ],

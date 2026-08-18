@@ -8,6 +8,7 @@ import '../dashboard/providers/dashboard_providers.dart';
 import '../ledger/providers/ledger_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/logger.dart';
+import '../../core/responsive.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
 import '../../core/widgets/employee_avatar.dart';
@@ -226,7 +227,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
         child: Stack(
           children: [
             CustomScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: AppScrollPhysics.physics(),
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
@@ -439,24 +440,19 @@ class _PayrollSummaryGlassCard extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(24),
-            child: Row(
+            child: ResponsiveStatRow(
               children: [
-                Expanded(
-                  child: _PayStat(
-                    cs: cs,
-                    label: 'Gross Pay',
-                    value: '₹${gross.toStringAsFixed(0)}',
-                    color: cs.onSurface,
-                  ),
+                _PayStat(
+                  cs: cs,
+                  label: 'Gross Pay',
+                  value: '₹${gross.toStringAsFixed(0)}',
+                  color: cs.onSurface,
                 ),
-                Container(width: 1, height: 40, color: cs.outlineVariant),
-                Expanded(
-                  child: _PayStat(
-                    cs: cs,
-                    label: 'Udhaar Deducted',
-                    value: '-₹${udhaar.toStringAsFixed(0)}',
-                    color: const Color(0xFFEF4444),
-                  ),
+                _PayStat(
+                  cs: cs,
+                  label: 'Udhaar Deducted',
+                  value: '-₹${udhaar.toStringAsFixed(0)}',
+                  color: const Color(0xFFEF4444),
                 ),
               ],
             ),

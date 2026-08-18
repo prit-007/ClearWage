@@ -1,0 +1,5 @@
+Responsive desktop/tablet layout, adaptive sheets and scroll physics, employee-role UX gating, and comprehensive test coverage (380 tests).
+
+Contract fixes: wage_amount as string, supervisor role enum, OT trigger/rounding/multiplier constraints.
+
+Date picker on Daily Summary, visible dispute button on ledger rows, dead code removal.

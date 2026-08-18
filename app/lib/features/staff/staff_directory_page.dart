@@ -12,6 +12,7 @@ import '../../core/widgets/employee_avatar.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/logger.dart';
+import '../../core/responsive.dart';
 
 const int _pageSize = 20;
 
@@ -148,14 +149,8 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
 
   Future<void> _openFilters() async {
     unawaited(HapticFeedback.selectionClick());
-    final cs = Theme.of(context).colorScheme;
-    final result = await showModalBottomSheet<_FilterResult>(
+    final result = await showAdaptiveSheet<_FilterResult>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: cs.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (ctx) => _FilterSheet(
         roleFilters: _roleFilters,
         wageFilters: _wageFilters,
@@ -206,8 +201,8 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
         onRefresh: _onRefresh,
         child: CustomScrollView(
           controller: _scrollCtrl,
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
+          physics: AppScrollPhysics.physics(
+            parent: const AlwaysScrollableScrollPhysics(),
           ),
           slivers: [
             SliverAppBar(
@@ -792,7 +787,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: ['employee', 'manager'].map((role) {
+              children: ['employee', 'supervisor'].map((role) {
                 final selected = _roles.contains(role);
                 return FilterChip(
                   label: Text(

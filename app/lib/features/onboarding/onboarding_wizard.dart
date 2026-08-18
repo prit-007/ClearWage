@@ -61,7 +61,9 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
           },
         ],
         'ot_settings': {
-          'ot_trigger': _otTrigger == 0 ? 'after_shift_end' : 'after_threshold',
+          'ot_trigger': _otTrigger == 0
+              ? 'after_shift_end'
+              : 'after_daily_hours',
           'ot_threshold_hours': _otTrigger.toDouble(),
           'ot_multiplier_default': 1.5,
           'ot_rounding': 30,

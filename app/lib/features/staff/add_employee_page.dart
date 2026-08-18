@@ -14,6 +14,7 @@ import '../../core/app_config.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../core/helpers.dart';
+import '../../core/responsive.dart';
 import 'dart:async';
 
 class AddEmployeeScreen extends ConsumerStatefulWidget {
@@ -132,9 +133,8 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
 
   Future<void> _pickPhoto() async {
     unawaited(HapticFeedback.selectionClick());
-    final source = await showModalBottomSheet<String>(
+    final source = await showAdaptiveSheet<String>(
       context: context,
-      backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -222,7 +222,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
             ? null
             : _desigCtrl.text.trim(),
         'wage_type': _wageType,
-        'wage_amount': double.tryParse(_wageCtrl.text.trim()) ?? 0,
+        'wage_amount': _wageCtrl.text.trim(),
         'role': _role,
         'default_shift_id': _selectedShiftId,
         'date_of_joining': _dojCtrl.text.trim().isEmpty
@@ -422,7 +422,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
             Form(
               key: _formKey,
               child: ListView(
-                physics: const BouncingScrollPhysics(),
+                physics: AppScrollPhysics.physics(),
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
                 children: [
                   FluidSlideIn(
@@ -1122,7 +1122,7 @@ class _RoleSelector extends StatelessWidget {
                   ),
                 ),
                 DropdownMenuItem(
-                  value: 'manager',
+                  value: 'supervisor',
                   child: Row(
                     children: [
                       PhosphorIcon(

@@ -12,6 +12,7 @@ import '../../core/widgets/validated_field.dart';
 import '../../data/models/auth_model.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/providers/services.dart';
+import '../../core/responsive.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -240,7 +241,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
+            physics: AppScrollPhysics.physics(),
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

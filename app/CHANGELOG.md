@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.7] - 2026-08-18
+
+### Added
+
+- Responsive layout foundation: `AppBreakpoints`, `ResponsiveContent`,
+  `AppScrollPhysics`, `showAdaptiveSheet`, and `ResponsiveStatRow` in
+  `core/responsive.dart` for desktop/tablet adaptive UI.
+- NavigationRail on wide screens (≥ 900 px) in `main_shell.dart`; bottom
+  NavigationBar kept for phones.
+- Daily Summary now has a date picker to view any day's report.
+- Visible dispute icon on every ledger row (previously long-press only).
+- Comprehensive test coverage: 22 new test files covering all untested
+  models, services, and core helpers (380 total tests, up from ~138).
+
+### Changed
+
+- All 11 bottom sheets now use `showAdaptiveSheet` — centered dialog on
+  desktop (≥ 900 px), bottom sheet on phones.
+- All 19 screens with hardcoded `BouncingScrollPhysics` now use
+  `AppScrollPhysics.physics()` — platform-adaptive (Bouncing on iOS/macOS,
+  Clamping on desktop/web).
+- Dashboard, Daily Summary, Ledger, and Payroll stat grids use
+  `ResponsiveStatRow` — `Wrap` on wide screens, `Row` on phones.
+- `wage_amount` sent as raw string to match Go's `string` field
+  (`staff_controller.go`).
+- Role vocabulary aligned to DB enum: Flutter sends `supervisor` instead of
+  `manager`; server accepts both and maps legacy `manager` → `supervisor`.
+- Onboarding OT trigger fixed: `after_threshold` → `after_daily_hours`.
+- Payroll settings: `ot_rounding` constrained to 15/30/60, OT multiplier
+  replaced with 1.0/1.5/2.0 segmented selector, default `otTrigger` in
+  `PayrollSettings` model fixed to `after_daily_hours`.
+- Employee role no longer sees Attendance, Reports, Staff, Ledger, or
+  Disputes tabs — Home only.
+- Debug logs menu item gated behind `kDebugMode`.
+- Orientation lock now only applies on Android/iOS (skipped on web/desktop).
+- `web/manifest.json` orientation changed from `portrait-primary` to `any`.
+- `web/index.html` now has viewport meta tag, proper title and description.
+- Dead `AppTheme` class and `core/theme/` directory removed.
+
+### Fixed
+
+- `POST /api/v1/staff` no longer fails with "invalid request body" (wage
+  amount sent as string).
+- `role: supervisor` no longer triggers DB CHECK violation (was sending
+  `manager` which isn't in the enum).
+- Onboarding `/setup` no longer 500s on `ot_trigger` (was sending invalid
+  enum value).
+- Payroll settings save no longer 500s on `ot_rounding: 0` or invalid
+  `ot_multiplier_default`.
+
 ## [0.5.6] - 2026-08-18
 
 ### Fixed

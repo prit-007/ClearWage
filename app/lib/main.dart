@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,10 +15,13 @@ void main() {
     () async {
       WidgetsFlutterBinding.ensureInitialized();
       AppLogger.init();
-      await SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.portraitDown,
-      ]);
+
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        await SystemChrome.setPreferredOrientations([
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+        ]);
+      }
 
       FlutterError.onError = (details) {
         AppLogger.error('Flutter error', details.exception, details.stack);

@@ -159,7 +159,7 @@ void main() {
       expect(settings.otThresholdHours, 8);
       expect(settings.otMultiplierDefault, 2);
       expect(settings.otRounding, 30);
-      expect(settings.otTrigger, 'above_threshold');
+      expect(settings.otTrigger, 'after_daily_hours');
       expect(settings.wageBasis, 'monthly');
       expect(settings.weekOffPaid, true);
       expect(settings.weeklyOffs, [1]);

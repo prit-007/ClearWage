@@ -84,7 +84,7 @@ class PayrollSettings {
             ? safeToDouble(json['ot_multiplier_default'])
             : 2,
         otRounding: safeToInt(json['ot_rounding'], 30),
-        otTrigger: json['ot_trigger'] as String? ?? 'above_threshold',
+        otTrigger: json['ot_trigger'] as String? ?? 'after_daily_hours',
         wageBasis: json['wage_basis'] as String? ?? 'monthly',
         weekOffPaid: json['week_off_paid'] as bool? ?? true,
         weeklyOffs: _parseWeeklyOffs(json['weekly_offs']),

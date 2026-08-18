@@ -13,8 +13,10 @@ import '../../core/providers/services.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/tactile_toggle.dart';
 import '../../core/helpers.dart';
+import '../../core/api_exceptions.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../data/models/shift_model.dart';
+import '../../core/responsive.dart';
 import 'dart:async';
 
 enum _AttStatus { present, absent, halfDay }
@@ -138,10 +140,23 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
         'status': statusMap[newStatus],
         'overtime_hours': ot.toStringAsFixed(1),
         'shift_id': shiftId,
+        'version': att.version,
       });
       ref.invalidate(rosterByDateProvider(_dateStr));
     } catch (e) {
-      if (mounted) showError(context, e);
+      if (!mounted) return;
+      if (e is ApiException && e.statusCode == 409) {
+        ref.invalidate(rosterByDateProvider(_dateStr));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Record changed elsewhere. Refreshed — please try again.',
+            ),
+          ),
+        );
+      } else {
+        showError(context, e);
+      }
     }
   }
 
@@ -275,8 +290,8 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
             await ref.read(rosterByDateProvider(_dateStr).future);
           },
           child: CustomScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
+            physics: AppScrollPhysics.physics(
+              parent: const AlwaysScrollableScrollPhysics(),
             ),
             slivers: [
               SliverAppBar(
@@ -554,6 +569,7 @@ _MergedRow _rosterRowToMerged(RosterRow row, String date) {
       overtimeHours: row.overtimeHours,
       computedWage: row.computedWage,
       isLocked: row.isLocked,
+      version: row.version,
     ),
   );
 }

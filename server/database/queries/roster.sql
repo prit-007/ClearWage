@@ -19,7 +19,8 @@ SELECT
   a.check_out_time,
   a.overtime_hours,
   a.is_locked,
-  a.computed_wage
+  a.computed_wage,
+  a.version
 FROM employees e
 LEFT JOIN shifts def_s
   ON e.default_shift_id = def_s.id

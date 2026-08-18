@@ -6,6 +6,7 @@ import '../../core/providers/services.dart';
 import '../../data/models/report_models.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
+import '../../core/responsive.dart';
 
 final defaultersProvider = FutureProvider.autoDispose<List<DefaulterItem>>((
   ref,
@@ -26,7 +27,7 @@ class DefaultersScreen extends ConsumerWidget {
       backgroundColor: cs.surfaceContainerLowest,
       body: SafeArea(
         child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: AppScrollPhysics.physics(),
           slivers: [
             SliverAppBar(
               backgroundColor: cs.surfaceContainerLowest.withValues(

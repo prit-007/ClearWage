@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/models/dashboard_model.dart';
 import '../../data/models/report_models.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/responsive.dart';
 import 'providers/dashboard_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
@@ -87,7 +88,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             color: cs.primary,
             child: FluidSlideIn(
               child: CustomScrollView(
-                physics: const BouncingScrollPhysics(),
+                physics: AppScrollPhysics.physics(),
                 slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
@@ -137,58 +138,48 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         _AttendanceOverviewCard(cs: cs, tt: tt, data: data),
                         const SizedBox(height: 16),
                         if (isAdmin)
-                          Row(
+                          ResponsiveStatRow(
                             children: [
-                              Expanded(
-                                child: _GlassStatCard(
-                                  cs: cs,
-                                  tt: tt,
-                                  icon: PhosphorIconsDuotone.users,
-                                  label: 'Total Staff',
-                                  value: '${data.totalWorkforce}',
-                                  color: cs.secondary,
-                                ),
+                              _GlassStatCard(
+                                cs: cs,
+                                tt: tt,
+                                icon: PhosphorIconsDuotone.users,
+                                label: 'Total Staff',
+                                value: '${data.totalWorkforce}',
+                                color: cs.secondary,
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _GlassStatCard(
-                                  cs: cs,
-                                  tt: tt,
-                                  icon: PhosphorIconsDuotone.wallet,
-                                  label: 'Payroll (MTD)',
-                                  value:
-                                      '\u20B9${data.wageBillMtd.toStringAsFixed(0)}',
-                                  color: cs.primary,
-                                ),
+                              _GlassStatCard(
+                                cs: cs,
+                                tt: tt,
+                                icon: PhosphorIconsDuotone.wallet,
+                                label: 'Payroll (MTD)',
+                                value:
+                                    '\u20B9${data.wageBillMtd.toStringAsFixed(0)}',
+                                color: cs.primary,
                               ),
                             ],
                           ),
                         if (isAdmin)
                           Padding(
                             padding: const EdgeInsets.only(top: 16),
-                            child: Row(
+                            child: ResponsiveStatRow(
                               children: [
-                                Expanded(
-                                  child: _GlassStatCard(
-                                    cs: cs,
-                                    tt: tt,
-                                    icon: PhosphorIconsDuotone.coins,
-                                    label: 'Outstanding (Udhaar)',
-                                    value:
-                                        '\u20B9${data.totalOutstanding.toStringAsFixed(0)}',
-                                    color: const Color(0xFFF59E0B),
-                                  ),
+                                _GlassStatCard(
+                                  cs: cs,
+                                  tt: tt,
+                                  icon: PhosphorIconsDuotone.coins,
+                                  label: 'Outstanding (Udhaar)',
+                                  value:
+                                      '\u20B9${data.totalOutstanding.toStringAsFixed(0)}',
+                                  color: const Color(0xFFF59E0B),
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: _GlassStatCard(
-                                    cs: cs,
-                                    tt: tt,
-                                    icon: PhosphorIconsDuotone.warningCircle,
-                                    label: 'Defaulters',
-                                    value: '${data.defaultersCount}',
-                                    color: const Color(0xFFEF4444),
-                                  ),
+                                _GlassStatCard(
+                                  cs: cs,
+                                  tt: tt,
+                                  icon: PhosphorIconsDuotone.warningCircle,
+                                  label: 'Defaulters',
+                                  value: '${data.defaultersCount}',
+                                  color: const Color(0xFFEF4444),
                                 ),
                               ],
                             ),
@@ -196,29 +187,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         if (!isAdmin)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
+                            child: ResponsiveStatRow(
                               children: [
-                                Expanded(
-                                  child: _GlassStatCard(
-                                    cs: cs,
-                                    tt: tt,
-                                    icon: PhosphorIconsDuotone.checkCircle,
-                                    label: 'Present Today',
-                                    value: '${data.presentToday}',
-                                    color: const Color(0xFF10B981),
-                                  ),
+                                _GlassStatCard(
+                                  cs: cs,
+                                  tt: tt,
+                                  icon: PhosphorIconsDuotone.checkCircle,
+                                  label: 'Present Today',
+                                  value: '${data.presentToday}',
+                                  color: const Color(0xFF10B981),
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: _GlassStatCard(
-                                    cs: cs,
-                                    tt: tt,
-                                    icon: PhosphorIconsDuotone.wallet,
-                                    label: 'Outstanding',
-                                    value:
-                                        '\u20B9${data.totalOutstanding.toStringAsFixed(0)}',
-                                    color: cs.primary,
-                                  ),
+                                _GlassStatCard(
+                                  cs: cs,
+                                  tt: tt,
+                                  icon: PhosphorIconsDuotone.wallet,
+                                  label: 'Outstanding',
+                                  value:
+                                      '\u20B9${data.totalOutstanding.toStringAsFixed(0)}',
+                                  color: cs.primary,
                                 ),
                               ],
                             ),

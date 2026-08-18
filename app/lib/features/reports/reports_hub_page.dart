@@ -5,6 +5,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/responsive.dart';
 
 class ReportsHubScreen extends ConsumerWidget {
   const ReportsHubScreen({super.key});
@@ -45,7 +46,7 @@ class ReportsHubScreen extends ConsumerWidget {
       backgroundColor: cs.surface,
       body: SafeArea(
         child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: AppScrollPhysics.physics(),
           slivers: [
             SliverAppBar(
               backgroundColor: cs.surface.withValues(alpha: 0.95),

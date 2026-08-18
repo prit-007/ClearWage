@@ -126,9 +126,13 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if req.Role != "" && req.Role != "employee" && req.Role != "manager" {
-		utils.JSONFail(w, http.StatusBadRequest, "role must be one of: employee, manager")
+	if req.Role != "" && req.Role != "employee" && req.Role != "manager" && req.Role != "supervisor" {
+		utils.JSONFail(w, http.StatusBadRequest, "role must be one of: employee, supervisor")
 		return
+	}
+	// Accept legacy "manager" as "supervisor"
+	if req.Role == "manager" {
+		req.Role = "supervisor"
 	}
 
 	tenantID := middlewares.GetTenantID(r.Context())
@@ -385,9 +389,13 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if req.Role != "" && req.Role != "employee" && req.Role != "manager" && req.Role != "owner" {
-		utils.JSONFail(w, http.StatusBadRequest, "role must be one of: employee, manager, owner")
+	if req.Role != "" && req.Role != "employee" && req.Role != "manager" && req.Role != "supervisor" && req.Role != "owner" {
+		utils.JSONFail(w, http.StatusBadRequest, "role must be one of: employee, supervisor, owner")
 		return
+	}
+	// Accept legacy "manager" as "supervisor"
+	if req.Role == "manager" {
+		req.Role = "supervisor"
 	}
 	if req.Role == "owner" && claims != nil && claims.Role != "owner" {
 		utils.JSONFail(w, http.StatusForbidden, "only the owner can assign the owner role")

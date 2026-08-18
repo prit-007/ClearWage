@@ -1,0 +1,1 @@
+Offline log viewer (Settings → App Logs), smoother page transitions, ledger disputes, tenant-aware reports, and conflict-safe attendance editing with stability fixes for login and ledger screens.

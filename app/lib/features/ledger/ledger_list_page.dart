@@ -12,6 +12,7 @@ import '../../core/helpers.dart';
 import '../disputes/raise_dispute_dialog.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
+import '../../core/responsive.dart';
 
 const int _pageSize = 20;
 
@@ -165,7 +166,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
           onRefresh: _fetch,
           child: CustomScrollView(
             controller: _scrollCtrl,
-            physics: const BouncingScrollPhysics(),
+            physics: AppScrollPhysics.physics(),
             slivers: [
               SliverAppBar(
                 backgroundColor: cs.surface.withValues(alpha: 0.9),
@@ -414,24 +415,19 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Row(
+                  ResponsiveStatRow(
                     children: [
-                      Expanded(
-                        child: _SummaryStat(
-                          label: 'Total Jama',
-                          value: '\u20B9${jama.toStringAsFixed(0)}',
-                          icon: PhosphorIconsFill.arrowUpRight,
-                          color: const Color(0xFF10B981),
-                        ),
+                      _SummaryStat(
+                        label: 'Total Jama',
+                        value: '\u20B9${jama.toStringAsFixed(0)}',
+                        icon: PhosphorIconsFill.arrowUpRight,
+                        color: const Color(0xFF10B981),
                       ),
-                      Container(width: 1, height: 40, color: cs.outlineVariant),
-                      Expanded(
-                        child: _SummaryStat(
-                          label: 'Total Udhaar',
-                          value: '\u20B9${udhaar.toStringAsFixed(0)}',
-                          icon: PhosphorIconsFill.arrowDownLeft,
-                          color: const Color(0xFFEF4444),
-                        ),
+                      _SummaryStat(
+                        label: 'Total Udhaar',
+                        value: '\u20B9${udhaar.toStringAsFixed(0)}',
+                        icon: PhosphorIconsFill.arrowDownLeft,
+                        color: const Color(0xFFEF4444),
                       ),
                     ],
                   ),
@@ -508,28 +504,11 @@ class _LedgerRow extends StatelessWidget {
 
     return GestureDetector(
       onLongPress: () {
-        showModalBottomSheet(
-          context: context,
-          builder: (ctx) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.flag_outlined),
-                  title: const Text('Raise Dispute'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    showRaiseDisputeDialog(
-                      context,
-                      disputeService: disputeService,
-                      ledgerId: entry.id,
-                      employeeId: entry.employeeId,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
+        showRaiseDisputeDialog(
+          context,
+          disputeService: disputeService,
+          ledgerId: entry.id,
+          employeeId: entry.employeeId,
         );
       },
       child: Container(
@@ -567,30 +546,56 @@ class _LedgerRow extends StatelessWidget {
               ),
             ],
           ),
-          trailing: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                '${isJama ? '+' : '-'}\u20B9${entry.amount.toStringAsFixed(0)}',
-                style: tt.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: amtColor,
-                ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${isJama ? '+' : '-'}\u20B9${entry.amount.toStringAsFixed(0)}',
+                    style: tt.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: amtColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: amtColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      isJama ? 'Jama' : 'Udhaar',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: amtColor,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: amtColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () => showRaiseDisputeDialog(
+                  context,
+                  disputeService: disputeService,
+                  ledgerId: entry.id,
+                  employeeId: entry.employeeId,
                 ),
-                child: Text(
-                  isJama ? 'Jama' : 'Udhaar',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: amtColor,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    PhosphorIconsRegular.flag,
+                    size: 16,
+                    color: cs.onSurfaceVariant.withValues(alpha: 0.5),
                   ),
                 ),
               ),

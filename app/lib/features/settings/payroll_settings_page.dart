@@ -9,6 +9,7 @@ import '../../core/widgets/premium_macro_field.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
+import '../../core/responsive.dart';
 import 'dart:async';
 
 final payrollSettingsProvider = FutureProvider.autoDispose<PayrollSettings>((
@@ -30,6 +31,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
   final _roundingCtrl = TextEditingController();
   String _wageBasis = 'calendar';
   String _otTrigger = 'after_shift_end';
+  double _selectedMultiplier = 1.5;
   bool _loaded = false;
   bool _saving = false;
   bool _dirty = false;
@@ -72,6 +74,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
     _wageBasis = data.wageBasis;
     _weekOffPaid = data.weekOffPaid;
     _weeklyOffs = List.of(data.weeklyOffs);
+    _selectedMultiplier = data.otMultiplierDefault;
   }
 
   String? _thresholdError;
@@ -84,12 +87,13 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
       _thresholdError = double.tryParse(_thresholdCtrl.text) == null
           ? 'Enter a valid number'
           : null;
-      _otMultiplierError = double.tryParse(_otMultiplierCtrl.text) == null
-          ? 'Enter a valid number'
+      final m = double.tryParse(_otMultiplierCtrl.text);
+      _otMultiplierError = m == null || ![1.0, 1.5, 2.0].contains(m)
+          ? 'Must be 1.0, 1.5, or 2.0'
           : null;
       final r = int.tryParse(_roundingCtrl.text);
-      _roundingError = r == null || r < 0 || r > 100000
-          ? 'Enter a valid number (0–100,000)'
+      _roundingError = r == null || ![15, 30, 60].contains(r)
+          ? 'Must be 15, 30, or 60'
           : null;
     });
     return _thresholdError == null &&
@@ -109,7 +113,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
         'ot_trigger': _otTrigger,
         'ot_threshold_hours': double.tryParse(_thresholdCtrl.text) ?? 8,
         'ot_multiplier_default': double.tryParse(_otMultiplierCtrl.text) ?? 1.5,
-        'ot_rounding': int.tryParse(_roundingCtrl.text) ?? 0,
+        'ot_rounding': int.tryParse(_roundingCtrl.text) ?? 30,
         'wage_basis': _wageBasis,
         'week_off_paid': _weekOffPaid,
         'weekly_offs': _weeklyOffs.join(','),
@@ -192,7 +196,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
         child: Stack(
           children: [
             ListView(
-              physics: const BouncingScrollPhysics(),
+              physics: AppScrollPhysics.physics(),
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 240),
               children: [
                 FluidSlideIn(
@@ -338,15 +342,92 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
                 FluidSlideIn(
                   delay: 300,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      PremiumMacroField(
-                        cs: cs,
-                        tt: tt,
-                        label: 'OT Multiplier',
-                        subtitle: 'e.g., 1.5x Hourly Rate',
-                        ctrl: _otMultiplierCtrl,
-                        icon: PhosphorIconsFill.trendUp,
-                        activeColor: const Color(0xFFF59E0B),
+                      Text(
+                        'OT Multiplier',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Select the overtime pay rate',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [1.0, 1.5, 2.0].map((val) {
+                          final isSelected = _selectedMultiplier == val;
+                          return Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                right: val != 2.0 ? 8 : 0,
+                              ),
+                              child: InkWell(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setState(() {
+                                    _selectedMultiplier = val;
+                                    _otMultiplierCtrl.text = val.toString();
+                                    _dirty = true;
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(14),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? cs.primaryContainer.withValues(
+                                            alpha: 0.4,
+                                          )
+                                        : cs.surface,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? cs.primary
+                                          : cs.outlineVariant.withValues(
+                                              alpha: 0.5,
+                                            ),
+                                      width: isSelected ? 2 : 1,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        PhosphorIconsFill.trendUp,
+                                        color: isSelected
+                                            ? cs.primary
+                                            : cs.onSurfaceVariant,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        '${val}x',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          color: isSelected
+                                              ? cs.primary
+                                              : cs.onSurfaceVariant,
+                                          fontSize: 16,
+                                          letterSpacing: -0.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
                       if (_otMultiplierError != null)
                         Padding(

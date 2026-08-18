@@ -9,6 +9,7 @@ import '../ledger/providers/ledger_providers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/helpers.dart';
+import '../../core/responsive.dart';
 import 'dart:async';
 
 const int _pageSize = 20;
@@ -103,9 +104,8 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
     if (!req.isPending) return;
     unawaited(HapticFeedback.mediumImpact());
 
-    final action = await showModalBottomSheet<String>(
+    final action = await showAdaptiveSheet<String>(
       context: context,
-      backgroundColor: Colors.transparent,
       builder: (ctx) {
         final cs = Theme.of(ctx).colorScheme;
         final tt = Theme.of(ctx).textTheme;
@@ -144,7 +144,7 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
           onRefresh: _fetch,
           child: CustomScrollView(
             controller: _scrollCtrl,
-            physics: const BouncingScrollPhysics(),
+            physics: AppScrollPhysics.physics(),
             slivers: [
               SliverAppBar(
                 backgroundColor: cs.surface.withValues(alpha: 0.95),

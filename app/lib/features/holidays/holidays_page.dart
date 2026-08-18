@@ -8,6 +8,7 @@ import '../../data/models/holiday_model.dart';
 import '../../core/providers/services.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/helpers.dart';
+import '../../core/responsive.dart';
 import 'dart:async';
 
 const int _pageSize = 20;
@@ -87,10 +88,8 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
 
   Future<void> _showHolidaySheet() async {
     unawaited(HapticFeedback.mediumImpact());
-    final result = await showModalBottomSheet<Map<String, dynamic>>(
+    final result = await showAdaptiveSheet<Map<String, dynamic>>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (_) => const _HolidayFormSheet(),
     );
     if (result != null) {
@@ -136,8 +135,8 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
           onRefresh: _onRefresh,
           child: CustomScrollView(
             controller: _scrollCtrl,
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
+            physics: AppScrollPhysics.physics(
+              parent: const AlwaysScrollableScrollPhysics(),
             ),
             slivers: [
               SliverAppBar(

@@ -1,12 +1,12 @@
 {
-    "name": "vivek_app",
-    "short_name": "vivek_app",
+    "name": "Factory Workforce",
+    "short_name": "Factory Workforce",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "description": "Factory workforce management app for tracking attendance, payroll, and staff.",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

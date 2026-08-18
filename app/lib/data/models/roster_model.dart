@@ -20,6 +20,7 @@ class RosterRow {
   final double overtimeHours;
   final double computedWage;
   final bool isLocked;
+  final int version;
 
   RosterRow({
     required this.employeeId,
@@ -41,6 +42,7 @@ class RosterRow {
     required this.overtimeHours,
     required this.computedWage,
     required this.isLocked,
+    this.version = 0,
   });
 
   bool get hasAttendance => attendanceId != null && attendanceId!.isNotEmpty;
@@ -65,5 +67,6 @@ class RosterRow {
     overtimeHours: safeToDouble(json['overtime_hours']),
     computedWage: safeToDouble(json['computed_wage']),
     isLocked: json['is_locked'] as bool? ?? false,
+    version: json['version'] as int? ?? 0,
   );
 }

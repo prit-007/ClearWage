@@ -15,6 +15,7 @@ import '../../core/providers/services.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
+import '../../core/responsive.dart';
 import 'dart:async';
 
 final myProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>>((
@@ -86,9 +87,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen>
 
   Future<void> _pickAndUploadPhoto(String employeeId) async {
     unawaited(HapticFeedback.selectionClick());
-    final source = await showModalBottomSheet<String>(
+    final source = await showAdaptiveSheet<String>(
       context: context,
-      backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -277,7 +277,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen>
               final employeeId = data['id'] as String? ?? '';
 
               return NestedScrollView(
-                physics: const BouncingScrollPhysics(),
+                physics: AppScrollPhysics.physics(),
                 headerSliverBuilder: (_, _) => [
                   SliverAppBar(
                     backgroundColor: cs.surfaceContainerLowest.withValues(
@@ -466,7 +466,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen>
                 ],
                 body: TabBarView(
                   controller: _tabCtrl,
-                  physics: const BouncingScrollPhysics(),
+                  physics: AppScrollPhysics.physics(),
                   children: [
                     _ProfileTab(cs: cs, tt: tt, data: data),
                     _MyAttendanceTab(cs: cs, tt: tt),

@@ -28,6 +28,7 @@ import '../features/staff/employee_profile_page.dart';
 import '../features/staff/staff_directory_page.dart';
 import 'logger.dart';
 import 'providers/app_providers.dart';
+import 'responsive.dart';
 
 const _transitionDuration = Duration(milliseconds: 300);
 
@@ -42,6 +43,9 @@ Page<void> _slideUpPage(GoRouterState state, Widget child) {
         curve: Curves.easeOutCubic,
         reverseCurve: Curves.easeInCubic,
       );
+      if (AppBreakpoints.isDesktop(context)) {
+        return FadeTransition(opacity: curved, child: child);
+      }
       return FadeTransition(
         opacity: curved,
         child: SlideTransition(

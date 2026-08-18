@@ -180,6 +180,7 @@ func (q *GoquQuerier) ListRosterByDate(ctx context.Context, tenantID, date strin
 			OvertimeHours:     nullNumericPtr(r.OvertimeHours),
 			IsLocked:          nullBoolPtr(r.IsLocked),
 			ComputedWage:      nullNumericPtr(r.ComputedWage),
+			Version:           nullInt32Ptr(r.Version),
 		})
 	}
 	return result, nil

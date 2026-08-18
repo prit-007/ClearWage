@@ -304,3 +304,26 @@ func (c *LedgerController) SettleAccount(w http.ResponseWriter, r *http.Request)
 
 	utils.JSONSuccess(w, http.StatusOK, entry)
 }
+
+func (c *LedgerController) BalanceSummary(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims != nil && claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	summary, err := c.ledgerService.GetEmployeeBalanceSummary(r.Context(), tenantID)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to get balance summary")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to get balance summary")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, summary)
+}

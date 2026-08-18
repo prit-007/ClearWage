@@ -442,6 +442,21 @@ func (mr *MockQuerierMockRecorder) GetDashboardSnapshot(ctx, tenantID, today, mo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDashboardSnapshot", reflect.TypeOf((*MockQuerier)(nil).GetDashboardSnapshot), ctx, tenantID, today, monthStart)
 }
 
+// GetEmployeeBalanceSummary mocks base method.
+func (m *MockQuerier) GetEmployeeBalanceSummary(ctx context.Context, tenantID string) ([]repositories.EmployeeBalanceSummary, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmployeeBalanceSummary", ctx, tenantID)
+	ret0, _ := ret[0].([]repositories.EmployeeBalanceSummary)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmployeeBalanceSummary indicates an expected call of GetEmployeeBalanceSummary.
+func (mr *MockQuerierMockRecorder) GetEmployeeBalanceSummary(ctx, tenantID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeBalanceSummary", reflect.TypeOf((*MockQuerier)(nil).GetEmployeeBalanceSummary), ctx, tenantID)
+}
+
 // GetEmployeeAttendanceSummary mocks base method.
 func (m *MockQuerier) GetEmployeeAttendanceSummary(ctx context.Context, arg repositories.GetEmployeeAttendanceSummaryParams) (repositories.EmployeeAttendanceSummary, error) {
 	m.ctrl.T.Helper()

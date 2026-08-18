@@ -35,7 +35,7 @@ LIMIT $4 OFFSET $5;
 SELECT
   l.id, l.tenant_id, l.employee_id, l.date, l.type,
   l.amount, l.note, l.linked_payroll_month, l.created_by,
-  l.created_at, l.updated_at,
+  l.created_at,
   emp.name AS employee_name,
   emp.photo_url AS employee_photo
 FROM ledger l
@@ -68,7 +68,7 @@ LIMIT $5 OFFSET $6;
 SELECT
   l.id, l.tenant_id, l.employee_id, l.date, l.type,
   l.amount, l.note, l.linked_payroll_month, l.created_by,
-  l.created_at, l.updated_at,
+  l.created_at,
   emp.name AS employee_name,
   emp.photo_url AS employee_photo
 FROM ledger l

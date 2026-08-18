@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-08-18
+
+### Added
+
+- Employee dashboard using `/me/overview` — employees no longer get 403 on Home.
+  Shows attendance summary, outstanding balance, and 7 quick-action cards:
+  My Attendance, My Payslip, Request Advance, My Ledger, My Advance Requests,
+  My Reports, Shift Timings.
+- Employee-facing pages: My Attendance (with month picker), My Advance Requests
+  (read-only status view), My Shifts (read-only), My Holidays (read-only),
+  My Reports, My Ledger (with monthly summary card).
+- Owner Balance Sheet (`/balance-sheet`) — per-employee balance breakdown with
+  color-coded amounts, drill-down to individual ledgers.
+- Employee monthly ledger summary — "Wages Earned", "Advances Taken", "Net
+  Position" card on My Ledger page.
+- Admin advance request creation removed — employees create their own requests
+  via the dashboard; admins only approve/deny.
+- CSV export button on Reports Hub (placeholder).
+- Employee settings menu: My Profile, Shift Timings, Holidays, My Advance
+  Requests, My Reports.
+- Server: `GET /api/v1/ledger/balance-summary` endpoint for per-employee balance
+  breakdown.
+- Server: Migration 00023 — ledger CHECK constraint now includes `wage` type,
+  performance indexes added.
+- 462 tests total (80+ new widget tests across 11 new test files).
+
+### Changed
+
+- Payroll finalization now writes `type='jama'` ledger entries (was `'wage'`),
+  so the balance equation `net = udhaar - jama` is complete. After payroll,
+  employee balance correctly reflects wages paid.
+- Dashboard `wage_bill_mtd` SQL now includes `wage` type entries — shows true
+  wage bill, not just advances given.
+- Advance approval auto-dates to today when date not provided.
+- Employee bottom nav: Home + My Attendance (2 tabs). Disputes removed from
+  bottom nav, moved to admin settings menu.
+- Roster OT entry: inline 76px TextField replaced with clock icon button that
+  opens a proper AlertDialog with TextField + Save.
+- Employee shifts and holidays pages are now read-only (no create/edit/delete).
+
+### Fixed
+
+- Employee Home tab no longer returns 403 (was calling admin-only dashboard
+  endpoint).
+- Ledger balance now correctly accounts for wages paid (was invisible before).
+
 ## [0.5.7] - 2026-08-18
 
 ### Added

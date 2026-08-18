@@ -90,6 +90,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
         limit: _pageSize,
         offset: 0,
         query: _searchQuery,
+        status: _showInactive ? 'inactive' : null,
       );
       if (mounted) {
         setState(() {
@@ -119,6 +120,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
         limit: _pageSize,
         offset: _offset,
         query: _searchQuery,
+        status: _showInactive ? 'inactive' : null,
       );
       if (mounted) {
         setState(() {

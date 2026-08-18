@@ -102,6 +102,37 @@ func (s *LedgerService) GetSummary(ctx context.Context, tenantID, startDate, end
 	}, nil
 }
 
+type EmployeeBalanceSummary struct {
+	EmployeeID       string          `json:"employee_id"`
+	EmployeeName     string          `json:"employee_name"`
+	Designation      string          `json:"designation,omitempty"`
+	TotalJama        decimal.Decimal `json:"total_jama"`
+	TotalUdhaar      decimal.Decimal `json:"total_udhaar"`
+	NetBalance       decimal.Decimal `json:"net_balance"`
+	LastActivityDate string          `json:"last_activity_date,omitempty"`
+}
+
+func (s *LedgerService) GetEmployeeBalanceSummary(ctx context.Context, tenantID string) ([]EmployeeBalanceSummary, error) {
+	rows, err := s.querier.GetEmployeeBalanceSummary(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]EmployeeBalanceSummary, len(rows))
+	for i, r := range rows {
+		result[i] = EmployeeBalanceSummary{
+			EmployeeID:       r.EmployeeID,
+			EmployeeName:     r.EmployeeName,
+			Designation:      r.Designation,
+			TotalJama:        r.TotalJama,
+			TotalUdhaar:      r.TotalUdhaar,
+			NetBalance:       r.NetBalance,
+			LastActivityDate: r.LastActivityDate,
+		}
+	}
+	return result, nil
+}
+
 func (s *LedgerService) SettleEmployee(ctx context.Context, employeeID, tenantID, date, createdBy string) (repositories.Ledger, error) {
 	balance, err := s.querier.GetBalanceByEmployee(ctx, repositories.GetBalanceByEmployeeParams{
 		EmployeeID: employeeID,

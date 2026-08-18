@@ -39,4 +39,20 @@ class ProfileService {
     );
     return res['data'] as Map<String, dynamic>? ?? {};
   }
+
+  Future<List<int>> getPayslip({
+    required String start,
+    required String end,
+  }) async {
+    return await _client.getRaw(
+      '/api/v1/me/payslip',
+      query: {'start_date': start, 'end_date': end},
+    );
+  }
+
+  Future<void> requestAdvance({required String amount, String? note}) async {
+    final body = <String, dynamic>{'amount': amount};
+    if (note case final n?) body['note'] = n;
+    await _client.post('/api/v1/me/advance-request', body: body);
+  }
 }

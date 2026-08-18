@@ -155,6 +155,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Get("/", ledgerCtrl.ListByTenant)
 				r.Get("/total-outstanding", ledgerCtrl.GetTotalOutstanding)
 				r.Get("/summary", ledgerCtrl.Summary)
+				r.Get("/balance-summary", ledgerCtrl.BalanceSummary)
 				r.Get("/{id}", ledgerCtrl.ListByEmployee)
 				r.Get("/{id}/balance", ledgerCtrl.GetBalance)
 				r.Post("/{id}/settle", ledgerCtrl.SettleAccount)

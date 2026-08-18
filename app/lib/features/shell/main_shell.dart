@@ -8,11 +8,11 @@ import '../../core/helpers.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/responsive.dart';
 import '../attendance/attendance_roster_page.dart';
+import '../attendance/my_attendance_page.dart';
 import '../dashboard/dashboard_page.dart';
 import '../ledger/ledger_list_page.dart';
 import '../reports/reports_hub_page.dart';
 import '../staff/staff_directory_page.dart';
-import '../disputes/disputes_list_page.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
@@ -50,12 +50,16 @@ class _MainShellState extends ConsumerState<MainShell> {
     });
 
     final pages = <Widget, String>{
-      const DashboardScreen(): 'home',
-      if (isAdmin) const StaffDirectoryScreen(): 'staff',
-      if (isAdmin) const AttendanceRosterPage(): 'attendance',
-      if (isAdmin) const LedgerListScreen(): 'ledger',
-      if (isAdmin) const ReportsHubScreen(): 'reports',
-      if (isAdmin) const DisputesListScreen(): 'disputes',
+      if (isAdmin) ...{
+        const DashboardScreen(): 'home',
+        const StaffDirectoryScreen(): 'staff',
+        const AttendanceRosterPage(): 'attendance',
+        const LedgerListScreen(): 'ledger',
+        const ReportsHubScreen(): 'reports',
+      } else ...{
+        const DashboardScreen(): 'home',
+        const MyAttendancePage(): 'my-attendance',
+      },
     };
 
     final pageWidgets = pages.keys.toList();
@@ -69,36 +73,34 @@ class _MainShellState extends ConsumerState<MainShell> {
         selectedIcon: Icon(Icons.home),
         label: 'Home',
       ),
-      if (isAdmin)
+      if (isAdmin) ...[
         const NavigationDestination(
           icon: Icon(Icons.groups_outlined),
           selectedIcon: Icon(Icons.groups),
           label: 'Staff',
         ),
-      if (isAdmin)
         const NavigationDestination(
           icon: Icon(Icons.event_available_outlined),
           selectedIcon: Icon(Icons.event_available),
           label: 'Attendance',
         ),
-      if (isAdmin)
         const NavigationDestination(
           icon: Icon(Icons.account_balance_wallet_outlined),
           selectedIcon: Icon(Icons.account_balance_wallet),
           label: 'Ledger',
         ),
-      if (isAdmin)
         const NavigationDestination(
           icon: Icon(Icons.analytics_outlined),
           selectedIcon: Icon(Icons.analytics),
           label: 'Reports',
         ),
-      if (isAdmin)
+      ] else ...[
         const NavigationDestination(
-          icon: Icon(Icons.flag_outlined),
-          selectedIcon: Icon(Icons.flag),
-          label: 'Disputes',
+          icon: Icon(Icons.event_available_outlined),
+          selectedIcon: Icon(Icons.event_available),
+          label: 'My Attendance',
         ),
+      ],
     ];
 
     final railDestinations = navItems
@@ -136,31 +138,59 @@ class _MainShellState extends ConsumerState<MainShell> {
             ),
             onSelected: (route) => context.push(route),
             itemBuilder: (_) => [
-              const PopupMenuItem(
-                value: '/shifts',
-                child: Text('Shift Timings'),
-              ),
-              const PopupMenuItem(value: '/holidays', child: Text('Holidays')),
-              if (kDebugMode)
+              if (!isAdmin) ...[
                 const PopupMenuItem(
-                  value: '/debug/logs',
-                  child: Text('App Logs'),
+                  value: '/my-profile',
+                  child: Text('My Profile'),
                 ),
-              if (isAdmin)
+                const PopupMenuItem(
+                  value: '/my-shifts',
+                  child: Text('Shift Timings'),
+                ),
+                const PopupMenuItem(
+                  value: '/my-holidays',
+                  child: Text('Holidays'),
+                ),
+                const PopupMenuItem(
+                  value: '/my-advance-requests',
+                  child: Text('My Advance Requests'),
+                ),
+                const PopupMenuItem(
+                  value: '/my-reports',
+                  child: Text('My Reports'),
+                ),
+              ],
+              if (isAdmin) ...[
+                const PopupMenuItem(
+                  value: '/shifts',
+                  child: Text('Shift Timings'),
+                ),
+                const PopupMenuItem(
+                  value: '/holidays',
+                  child: Text('Holidays'),
+                ),
+                if (kDebugMode)
+                  const PopupMenuItem(
+                    value: '/debug/logs',
+                    child: Text('App Logs'),
+                  ),
                 const PopupMenuItem(
                   value: '/advance-requests',
                   child: Text('Advance Requests'),
                 ),
-              if (isAdmin)
                 const PopupMenuItem(
                   value: '/leave-policy',
                   child: Text('Leave Policy'),
                 ),
-              if (isAdmin)
                 const PopupMenuItem(
                   value: '/payroll-settings',
                   child: Text('Payroll Settings'),
                 ),
+                const PopupMenuItem(
+                  value: '/disputes',
+                  child: Text('Disputes'),
+                ),
+              ],
             ],
           ),
         ],

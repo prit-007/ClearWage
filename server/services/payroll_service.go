@@ -277,13 +277,14 @@ func (s *PayrollService) FinalizeAndLock(ctx context.Context, tenantID, startDat
 		if adj, ok := adjustByEmployee[entry.EmployeeID]; ok {
 			amount = adj
 		}
+		note := fmt.Sprintf("Wage for %s", month)
 		_, err := s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
 			TenantID:           tenantID,
 			EmployeeID:         entry.EmployeeID,
 			Date:               endDate,
-			Type:               "wage",
+			Type:               "jama",
 			Amount:             amount,
-			Note:               nil,
+			Note:               &note,
 			LinkedPayrollMonth: &month,
 			CreatedBy:          "system",
 		})

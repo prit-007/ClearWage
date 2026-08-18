@@ -76,4 +76,10 @@ class LedgerService {
       body: {'date': date},
     );
   }
+
+  Future<List<Map<String, dynamic>>> getBalanceSummary() async {
+    final res = await _client.get('/api/v1/ledger/balance-summary');
+    final list = (res['data'] as List<dynamic>?) ?? [];
+    return list.cast<Map<String, dynamic>>();
+  }
 }

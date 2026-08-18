@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,17 +22,17 @@ SELECT
   (SELECT COUNT(*) FROM attendance WHERE attendance.tenant_id = $1 AND attendance.date = $2 AND attendance.status = 'absent')::int AS absent,
   (SELECT COUNT(*) FROM attendance WHERE attendance.tenant_id = $1 AND attendance.date = $2 AND attendance.status IN ('paid_leave','week_off'))::int AS on_leave,
   (SELECT COALESCE(SUM(ledger.amount),0)::numeric FROM ledger WHERE ledger.tenant_id = $1 AND ledger.date = $2 AND ledger.type = 'jama') AS daily_jama_total,
-  (SELECT COALESCE(SUM(CASE WHEN ledger.type='jama' THEN ledger.amount ELSE 0 END),0)::numeric
+  (SELECT COALESCE(SUM(CASE WHEN ledger.type IN ('jama','wage') THEN ledger.amount ELSE 0 END),0)::numeric
      FROM ledger WHERE ledger.tenant_id = $1 AND ledger.date BETWEEN $3 AND $2) AS wage_bill_mtd,
   (SELECT (COALESCE(SUM(CASE WHEN ledger.type='udhaar' THEN ledger.amount ELSE 0 END),0)
-        - COALESCE(SUM(CASE WHEN ledger.type='jama' THEN ledger.amount ELSE 0 END),0))::numeric
+        - COALESCE(SUM(CASE WHEN ledger.type IN ('jama','wage') THEN ledger.amount ELSE 0 END),0))::numeric
      FROM ledger WHERE ledger.tenant_id = $1) AS total_outstanding
 `
 
 type GetDashboardSnapshotParams struct {
 	TenantID   uuid.UUID `json:"tenant_id"`
 	Today      time.Time `json:"today"`
-	MonthStart time.Time `json:"month_start"`
+	MonthStart string    `json:"month_start"`
 }
 
 type GetDashboardSnapshotRow struct {
@@ -61,6 +62,64 @@ func (q *Queries) GetDashboardSnapshot(ctx context.Context, arg GetDashboardSnap
 	return i, err
 }
 
+const getEmployeeBalanceSummary = `-- name: GetEmployeeBalanceSummary :many
+SELECT
+  e.id AS employee_id,
+  e.name AS employee_name,
+  e.designation,
+  COALESCE(SUM(CASE WHEN l.type = 'jama' THEN l.amount ELSE 0 END), 0)::numeric AS total_jama,
+  COALESCE(SUM(CASE WHEN l.type = 'udhaar' THEN l.amount ELSE 0 END), 0)::numeric AS total_udhaar,
+  (COALESCE(SUM(CASE WHEN l.type = 'jama' THEN l.amount ELSE 0 END), 0)
+    - COALESCE(SUM(CASE WHEN l.type = 'udhaar' THEN l.amount ELSE 0 END), 0))::numeric AS net_balance,
+  MAX(l.date) AS last_activity_date
+FROM employees e
+LEFT JOIN ledger l ON l.employee_id = e.id AND l.tenant_id = e.tenant_id
+WHERE e.tenant_id = $1 AND e.is_active = true
+GROUP BY e.id, e.name, e.designation
+ORDER BY net_balance DESC
+`
+
+type GetEmployeeBalanceSummaryRow struct {
+	EmployeeID       uuid.UUID       `json:"employee_id"`
+	EmployeeName     string          `json:"employee_name"`
+	Designation      sql.NullString  `json:"designation"`
+	TotalJama        decimal.Decimal `json:"total_jama"`
+	TotalUdhaar      decimal.Decimal `json:"total_udhaar"`
+	NetBalance       decimal.Decimal `json:"net_balance"`
+	LastActivityDate interface{}     `json:"last_activity_date"`
+}
+
+func (q *Queries) GetEmployeeBalanceSummary(ctx context.Context, tenantID uuid.UUID) ([]GetEmployeeBalanceSummaryRow, error) {
+	rows, err := q.db.QueryContext(ctx, getEmployeeBalanceSummary, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetEmployeeBalanceSummaryRow{}
+	for rows.Next() {
+		var i GetEmployeeBalanceSummaryRow
+		if err := rows.Scan(
+			&i.EmployeeID,
+			&i.EmployeeName,
+			&i.Designation,
+			&i.TotalJama,
+			&i.TotalUdhaar,
+			&i.NetBalance,
+			&i.LastActivityDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listEmployeeBalances = `-- name: ListEmployeeBalances :many
 SELECT ledger.employee_id,
   (COALESCE(SUM(CASE WHEN ledger.type = 'jama' THEN ledger.amount ELSE 0 END),0)
@@ -71,11 +130,11 @@ GROUP BY ledger.employee_id
 `
 
 type ListEmployeeBalancesRow struct {
-	EmployeeID uuid.UUID       `json:"employee_id"`
+	EmployeeID string          `json:"employee_id"`
 	Balance    decimal.Decimal `json:"balance"`
 }
 
-func (q *Queries) ListEmployeeBalances(ctx context.Context, tenantID uuid.UUID) ([]ListEmployeeBalancesRow, error) {
+func (q *Queries) ListEmployeeBalances(ctx context.Context, tenantID string) ([]ListEmployeeBalancesRow, error) {
 	rows, err := q.db.QueryContext(ctx, listEmployeeBalances, tenantID)
 	if err != nil {
 		return nil, err

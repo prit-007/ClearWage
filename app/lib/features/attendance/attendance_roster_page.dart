@@ -612,6 +612,67 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
     super.dispose();
   }
 
+  void _showOtDialog() {
+    final ctrl = TextEditingController(text: _otCtrl.text);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          'Overtime Hours',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+          decoration: InputDecoration(
+            hintText: '0.0',
+            hintStyle: TextStyle(
+              color: widget.cs.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: widget.cs.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () {
+              _otCtrl.text = ctrl.text;
+              if (mounted) setState(() {});
+              Navigator.pop(ctx);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: widget.cs.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Save',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _mark(_AttStatus status) {
     if (_saving) return;
     HapticFeedback.lightImpact();
@@ -717,50 +778,22 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
                 ),
               ),
               const SizedBox(width: 12),
-              Container(
-                width: 76,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: widget.cs.surfaceContainerHighest.withValues(
-                    alpha: 0.3,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color:
-                        _otCtrl.text.isNotEmpty &&
-                            double.tryParse(_otCtrl.text) == null
-                        ? widget.cs.error.withValues(alpha: 0.5)
-                        : widget.cs.outlineVariant.withValues(alpha: 0.3),
-                    width: 1.5,
-                  ),
-                ),
-                child: TextField(
-                  controller: _otCtrl,
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                    color:
-                        _otCtrl.text.isNotEmpty &&
-                            double.tryParse(_otCtrl.text) == null
-                        ? widget.cs.error
-                        : widget.cs.onSurface,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'OT (hrs)',
-                    hintStyle: TextStyle(
-                      fontSize: 12,
-                      color: widget.cs.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
+              Material(
+                color: widget.cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: _showOtDialog,
+                  child: Padding(
+                    padding: const EdgeInsets.all(11),
+                    child: PhosphorIcon(
+                      PhosphorIconsFill.clock,
+                      size: 20,
+                      color: _otCtrl.text.isNotEmpty
+                          ? widget.cs.primary
+                          : widget.cs.onSurfaceVariant,
                     ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 11),
                   ),
-                  onChanged: (_) {
-                    if (mounted) setState(() {});
-                    HapticFeedback.selectionClick();
-                  },
                 ),
               ),
             ],
@@ -913,6 +946,67 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
         });
   }
 
+  void _showOtDialog() {
+    final ctrl = TextEditingController(text: _otCtrl.text);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          'Overtime Hours',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+          decoration: InputDecoration(
+            hintText: '0.0',
+            hintStyle: TextStyle(
+              color: widget.cs.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: widget.cs.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () {
+              _otCtrl.text = ctrl.text;
+              if (mounted) setState(() {});
+              Navigator.pop(ctx);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: widget.cs.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Save',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _changeShift(String? id) {
     if (id == null || id == _shiftId || _saving) return;
     if (widget.attendance.isLocked) {
@@ -1022,55 +1116,21 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                   ],
                 ),
               ),
-              Container(
-                width: 76,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: widget.cs.surfaceContainerHighest.withValues(
-                    alpha: 0.3,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color:
-                        _otCtrl.text.isNotEmpty &&
-                            double.tryParse(_otCtrl.text) == null
-                        ? widget.cs.error.withValues(alpha: 0.5)
-                        : widget.cs.outlineVariant.withValues(alpha: 0.3),
-                    width: 1.5,
-                  ),
-                ),
-                child: TextField(
-                  controller: _otCtrl,
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                    color:
-                        _otCtrl.text.isNotEmpty &&
-                            double.tryParse(_otCtrl.text) == null
-                        ? widget.cs.error
-                        : widget.cs.onSurface,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'OT (hrs)',
-                    hintStyle: TextStyle(
-                      fontSize: 12,
-                      color: widget.cs.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
+              Material(
+                color: widget.cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: _showOtDialog,
+                  child: Padding(
+                    padding: const EdgeInsets.all(11),
+                    child: PhosphorIcon(
+                      PhosphorIconsFill.clock,
+                      size: 20,
+                      color: _otCtrl.text.isNotEmpty
+                          ? widget.cs.primary
+                          : widget.cs.onSurfaceVariant,
                     ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 11),
-                  ),
-                  onChanged: (_) {
-                    if (mounted) setState(() {});
-                    HapticFeedback.selectionClick();
-                  },
-                  onSubmitted: (_) => widget.onUpdate?.call(
-                    widget.attendance,
-                    _status,
-                    double.tryParse(_otCtrl.text) ?? 0,
-                    _shiftId,
                   ),
                 ),
               ),

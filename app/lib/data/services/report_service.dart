@@ -54,4 +54,10 @@ class ReportService {
         .map((e) => AttendanceTrendItem.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  Future<List<int>> exportCsv({required String type, int? months}) async {
+    final query = <String, String>{'type': type};
+    if (months != null) query['months'] = months.toString();
+    return await _client.getRaw('/api/v1/reports/export', query: query);
+  }
 }

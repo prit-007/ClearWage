@@ -4,24 +4,31 @@ import 'package:go_router/go_router.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 import '../features/advance_requests/advance_requests_page.dart';
+import '../features/advance_requests/my_advance_requests_page.dart';
 import '../features/attendance/attendance_roster_page.dart';
+import '../features/attendance/my_attendance_page.dart';
 import '../features/auth/auth_gate.dart';
 import '../features/auth/login_page.dart';
 import '../features/auth/register_page.dart';
 import '../features/dashboard/dashboard_page.dart';
 import '../features/holidays/holidays_page.dart';
+import '../features/holidays/my_holidays_page.dart';
 import '../features/leave_policy/leave_policy_page.dart';
+import '../features/ledger/balance_sheet_page.dart';
 import '../features/ledger/ledger_list_page.dart';
+import '../features/ledger/my_ledger_page.dart';
 import '../features/ledger/new_ledger_entry_page.dart';
 import '../features/disputes/disputes_list_page.dart';
 import '../features/onboarding/onboarding_wizard.dart';
 import '../features/profile/my_profile_page.dart';
 import '../features/reports/daily_summary_page.dart';
 import '../features/reports/defaulters_page.dart';
+import '../features/reports/my_reports_page.dart';
 import '../features/reports/payroll_preview_page.dart';
 import '../features/reports/reports_hub_page.dart';
 import '../features/settings/payroll_settings_page.dart';
 import '../features/shell/main_shell.dart';
+import '../features/shifts/my_shifts_page.dart';
 import '../features/shifts/shifts_management_page.dart';
 import '../features/staff/add_employee_page.dart';
 import '../features/staff/employee_profile_page.dart';
@@ -154,14 +161,29 @@ final routerProvider = Provider<GoRouter>((ref) {
             _slideUpPage(state, const ShiftsManagementScreen()),
       ),
       GoRoute(
+        path: '/my-shifts',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const MyShiftsPage()),
+      ),
+      GoRoute(
         path: '/holidays',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const HolidaysScreen()),
       ),
       GoRoute(
+        path: '/my-holidays',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const MyHolidaysPage()),
+      ),
+      GoRoute(
         path: '/advance-requests',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const AdvanceRequestsScreen()),
+      ),
+      GoRoute(
+        path: '/my-advance-requests',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const MyAdvanceRequestsPage()),
       ),
       GoRoute(
         path: '/leave-policy',
@@ -172,6 +194,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/payroll-settings',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const PayrollSettingsScreen()),
+      ),
+      GoRoute(
+        path: '/my-attendance',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const MyAttendancePage()),
       ),
       GoRoute(
         path: '/reports/payroll',
@@ -194,6 +221,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             _slideUpPage(state, const ReportsHubScreen()),
       ),
       GoRoute(
+        path: '/my-reports',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const MyReportsPage()),
+      ),
+      GoRoute(
         path: '/staff',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const StaffDirectoryScreen()),
@@ -212,6 +244,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/ledger',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const LedgerListScreen()),
+      ),
+      GoRoute(
+        path: '/balance-sheet',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const BalanceSheetPage()),
+      ),
+      GoRoute(
+        path: '/my-ledger',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const MyLedgerPage()),
       ),
       GoRoute(
         path: '/disputes',

@@ -12,6 +12,7 @@ import '../../core/responsive.dart';
 import 'providers/dashboard_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import 'employee_dashboard.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -43,11 +44,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(userInfoProvider);
+    final isAdmin = user?.isAdmin ?? false;
+
+    if (!isAdmin) {
+      return const EmployeeDashboard();
+    }
+
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final asyncData = ref.watch(dashboardDataProvider);
-    final user = ref.watch(userInfoProvider);
-    final isAdmin = user?.isAdmin ?? false;
 
     return Scaffold(
       backgroundColor: cs.surface,

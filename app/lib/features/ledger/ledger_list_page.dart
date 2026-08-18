@@ -177,7 +177,16 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                   style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 centerTitle: true,
-                actions: const [],
+                actions: [
+                  IconButton(
+                    onPressed: () => context.push('/balance-sheet'),
+                    icon: PhosphorIcon(
+                      PhosphorIconsRegular.users,
+                      color: cs.onSurface,
+                    ),
+                    tooltip: 'Balance Sheet',
+                  ),
+                ],
               ),
               SliverToBoxAdapter(
                 child: Padding(

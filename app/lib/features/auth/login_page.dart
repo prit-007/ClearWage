@@ -200,91 +200,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _showServerDialog() async {
-    final urlCtrl = TextEditingController(text: ref.read(serverUrlProvider));
-    await showModalBottomSheet(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-          left: 16,
-          right: 16,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Theme.of(
-                context,
-              ).colorScheme.outlineVariant.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    PhosphorIconsFill.gear,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Server Configuration',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: urlCtrl,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-                decoration: InputDecoration(
-                  labelText: 'Server Address',
-                  hintText: 'http://192.168.1.100:8081',
-                  filled: true,
-                  prefixIcon: Icon(
-                    PhosphorIconsRegular.globe,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                keyboardType: TextInputType.url,
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () {
-                  HapticFeedback.selectionClick();
-                  ref.read(serverUrlProvider.notifier).state = urlCtrl.text
-                      .trim();
-                  Navigator.pop(context);
-                },
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text(
-                  'Save Configuration',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      builder: (_) =>
+          _ServerConfigSheet(initialUrl: ref.read(serverUrlProvider)),
     );
-    urlCtrl.dispose();
   }
 
   @override
@@ -577,6 +499,106 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 const SizedBox(height: 24),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ServerConfigSheet extends ConsumerStatefulWidget {
+  final String initialUrl;
+
+  const _ServerConfigSheet({required this.initialUrl});
+
+  @override
+  ConsumerState<_ServerConfigSheet> createState() => _ServerConfigSheetState();
+}
+
+class _ServerConfigSheetState extends ConsumerState<_ServerConfigSheet> {
+  late final TextEditingController _urlCtrl = TextEditingController(
+    text: widget.initialUrl,
+  );
+
+  @override
+  void dispose() {
+    _urlCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: 16,
+        right: 16,
+      ),
+      child: SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(PhosphorIconsFill.gear, color: cs.primary),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Server Configuration',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _urlCtrl,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
+                  labelText: 'Server Address',
+                  hintText: 'http://192.168.1.100:8081',
+                  filled: true,
+                  prefixIcon: Icon(
+                    PhosphorIconsRegular.globe,
+                    color: cs.onSurfaceVariant,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                keyboardType: TextInputType.url,
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  ref.read(serverUrlProvider.notifier).state = _urlCtrl.text
+                      .trim();
+                  Navigator.pop(context);
+                },
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text(
+                  'Save Configuration',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
           ),
         ),
       ),

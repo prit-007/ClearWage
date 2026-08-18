@@ -50,6 +50,8 @@ files are excluded from lints.
   `lib/core/router.dart`.
 - go_router for navigation (`context.go` / `context.push`), never
   `Navigator.pushNamed*`.
+- All app logging goes through `AppLogger` (`lib/core/logger.dart`); don't
+  `debugPrint` directly. The log viewer is `/debug/logs` (Settings → App Logs).
 - Lints are enforced (`analysis_options.yaml`); keep `flutter analyze` clean.
 - No comments unless they explain a non-obvious "why"; no dead code.
 

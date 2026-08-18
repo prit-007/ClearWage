@@ -16,6 +16,7 @@ class Attendance {
   final String? shiftName;
   final String? shiftStartTime;
   final String? shiftEndTime;
+  final int version;
 
   Attendance({
     required this.id,
@@ -33,6 +34,7 @@ class Attendance {
     this.shiftName,
     this.shiftStartTime,
     this.shiftEndTime,
+    this.version = 0,
   });
 
   factory Attendance.fromJson(Map<String, dynamic> json) => Attendance(
@@ -51,6 +53,7 @@ class Attendance {
     shiftName: json['shift_name'] as String?,
     shiftStartTime: json['shift_start_time'] as String?,
     shiftEndTime: json['shift_end_time'] as String?,
+    version: json['version'] as int? ?? 0,
   );
 
   Map<String, dynamic> toJson() => {

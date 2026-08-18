@@ -34,7 +34,8 @@ SELECT
   a.check_out_time,
   a.overtime_hours,
   a.is_locked,
-  a.computed_wage
+  a.computed_wage,
+  a.version
 FROM employees e
 LEFT JOIN shifts def_s
   ON e.default_shift_id = def_s.id
@@ -77,6 +78,7 @@ type ListRosterByDateRow struct {
 	OvertimeHours     sql.NullString `json:"overtime_hours"`
 	IsLocked          sql.NullBool   `json:"is_locked"`
 	ComputedWage      sql.NullString `json:"computed_wage"`
+	Version           sql.NullInt32  `json:"version"`
 }
 
 func (q *Queries) ListRosterByDate(ctx context.Context, arg ListRosterByDateParams) ([]ListRosterByDateRow, error) {
@@ -109,6 +111,7 @@ func (q *Queries) ListRosterByDate(ctx context.Context, arg ListRosterByDatePara
 			&i.OvertimeHours,
 			&i.IsLocked,
 			&i.ComputedWage,
+			&i.Version,
 		); err != nil {
 			return nil, err
 		}

@@ -15,7 +15,7 @@
 └──────────────────────────┘       └───────────┬──────────────┘
                                                 │
                                         ┌──────────────────┐
-                                        │ PostgreSQL (18    │
+                                        │ PostgreSQL (22    │
                                         │ migrations)       │
                                         └──────────────────┘
 ```
@@ -32,9 +32,10 @@
 - **Framework**: Flutter + Riverpod + Material Design 3
 - **Auth**: Firebase Auth (`firebase_core` + `firebase_auth`) for phone verification
 - **HTTP Client**: Custom `ApiClient` class wrapping `package:http`
+- **Logging**: `AppLogger` facade over Talker; `/debug/logs` viewer (Settings → App Logs)
 - **Auth Flow**: Firebase ID token exchanged for app JWT → stored in Riverpod `tokenProvider` (StateProvider), sent as `Authorization: Bearer` header
-- **Services Layer**: 12 service classes wrapping `ApiClient` calls
-- **Screens**: 19 feature screens with premium glassmorphism design
+- **Services Layer**: 15 service classes wrapping `ApiClient` calls
+- **Screens**: 20+ feature screens with premium glassmorphism design
 
 ---
 
@@ -594,11 +595,13 @@ Returns 500 if shift is still assigned as default shift to any employee.
       "employee_id": "uuid", "name": "Rahul Sharma", "phone": "+919876543210",
       "designation": "Operator", "role": "employee", "is_active": true,
       "default_shift_id": "uuid", "shift_name": "Morning", "shift_start_time": "08:00",
-      "attendance_id": null, "status": null
+      "attendance_id": null, "status": null, "version": null
     }
   ]
 }
 ```
+When `attendance_id` is present, `version` carries the attendance row's
+optimistic-lock version (see `PUT /api/v1/attendance/{id}`).
 
 **Frontend**: `AttendanceService.roster()` → `rosterByDateProvider` → `AttendanceRosterPage` (replaces the prior client-side staff + attendance join that skipped employees without a loaded shift).
 
@@ -626,7 +629,15 @@ Returns 500 if shift is still assigned as default shift to any employee.
 
 Updates `shift_id`, `status`, `check_in_time`, `check_out_time`, `overtime_hours`, `overtime_rate_multiplier`, `units_produced`.
 
-**Frontend**: `AttendanceService.update()` → not yet wired.
+Optimistic locking: include the row's current `version` in the request body;
+the update succeeds only if the stored version matches. On a stale version the
+server returns **409** with `"Record was modified by another user. Please refresh and try again."`.
+
+```json
+{ "status": "present", "overtime_hours": "8.0", "shift_id": "uuid", "version": 3 }
+```
+
+**Frontend**: `AttendanceService.update()` → status toggles on `AttendanceRosterPage`; a 409 refreshes the roster and prompts a retry.
 
 ---
 
@@ -641,9 +652,10 @@ Updates `shift_id`, `status`, `check_in_time`, `check_out_time`, `overtime_hours
   ]
 }
 ```
-All-or-nothing: entire batch is rolled back if any record fails.
+All-or-nothing: entire batch is rolled back if any record fails. Idempotent
+(does not bump `version`).
 
-**Frontend**: `AttendanceService.bulkUpsert()` → not yet wired (future: "Mark All Present" button).
+**Frontend**: `AttendanceService.bulkUpsert()` → "Mark All Present" button on `AttendanceRosterPage`.
 
 ---
 
@@ -1118,6 +1130,80 @@ Atomic post-registration setup: factory profile, default shifts, OT settings, le
 
 ---
 
+### 18. Disputes (Auth + Tenant)
+
+Ledger disputes let an employee contest a jama/udhaar entry without mutating the
+ledger. `status` is `open` | `resolved` | `rejected`.
+
+| Method | Path | Handler | Description |
+|--------|------|---------|-------------|
+| `POST` | `/api/v1/disputes` | `disputeCtrl.Create` | Raise a dispute on a ledger entry |
+| `GET` | `/api/v1/disputes` | `disputeCtrl.List` | List disputes (default `open`; blocks "employee" role) |
+| `POST` | `/api/v1/disputes/resolve` | `disputeCtrl.Resolve` | Resolve an open dispute |
+| `POST` | `/api/v1/disputes/reject` | `disputeCtrl.Reject` | Reject an open dispute |
+
+---
+
+#### `POST /api/v1/disputes`
+
+**Request:**
+```json
+{ "ledger_id": "uuid", "employee_id": "uuid", "reason": "Advance not taken" }
+```
+**Required:** `ledger_id`, `employee_id`, `reason`. Returns **201** with the created dispute.
+
+**Frontend**: `DisputeService.create()` → "Raise Dispute" long-press action on a ledger entry row.
+
+---
+
+#### `GET /api/v1/disputes`
+
+**Query Params:** `status` (optional — `open`, `resolved`, `rejected`; default `open`). Blocks "employee" role (403).
+
+**Success:**
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "uuid", "tenant_id": "uuid", "ledger_id": "uuid",
+      "employee_id": "uuid", "raised_by": "uuid", "raised_by_name": "Rahul Sharma",
+      "reason": "Advance not taken", "status": "open",
+      "resolved_by": null, "resolution_note": null,
+      "created_at": "2026-10-24T10:30:00Z", "updated_at": "2026-10-24T10:30:00Z"
+    }
+  ]
+}
+```
+
+**Frontend**: `DisputeService.list()` → `DisputesListScreen` (Disputes tab on the shell).
+
+---
+
+#### `POST /api/v1/disputes/resolve`
+
+**Request:**
+```json
+{ "dispute_id": "uuid", "resolution_note": "Confirmed with employee" }
+```
+**Required:** `dispute_id`. Marks the dispute `resolved`.
+
+**Frontend**: `DisputeService.resolve()` → resolve dialog on `DisputesListScreen`.
+
+---
+
+#### `POST /api/v1/disputes/reject`
+
+**Request:**
+```json
+{ "dispute_id": "uuid", "resolution_note": "No proof of advance" }
+```
+**Required:** `dispute_id`. Marks the dispute `rejected`.
+
+**Frontend**: `DisputeService.reject()` → reject dialog on `DisputesListScreen`.
+
+---
+
 ## Frontend Service Layer Summary
 
 | Service File | Backend Group | Methods |
@@ -1136,6 +1222,7 @@ Atomic post-registration setup: factory profile, default shifts, OT settings, le
 | `settings_service.dart` | Settings | `getPayrollSettings()`, `upsertPayrollSettings()` |
 | `profile_service.dart` | Me | `getOverview()` → `/me/overview` |
 | `onboarding_service.dart` | Onboarding | `setup()` → `POST /onboarding/setup` |
+| `dispute_service.dart` | Disputes | `create()`, `list()`, `resolve()`, `reject()` → `/disputes` |
 
 ---
 
@@ -1158,7 +1245,7 @@ Atomic post-registration setup: factory profile, default shifts, OT settings, le
 | `/reports/employee-monthly` | *(placeholder)* | `GET /reports/employee-monthly` | 🚧 Route target |
 | `/reports/wage-bill-trends` | *(placeholder)* | `GET /reports/wage-bill-trends` | 🚧 Route target |
 | `/reports/defaulters` | `DefaultersScreen` | `GET /reports/defaulters` | ✅ Wired |
-| `/reports/payroll` | `PayrollPreviewScreen` | `POST /payroll/calculate` | 🚧 Mock data |
+| `/reports/payroll` | `PayrollPreviewScreen` | `POST /payroll/calculate`, `POST /payroll/lock` | ✅ Wired |
 | `/shifts` | `ShiftsManagementScreen` | `GET/POST/PUT/DELETE /shifts` | ✅ Wired |
 | `/holidays` | `HolidaysScreen` | `GET/POST/DELETE /holidays` | ✅ Wired |
 | `/advance-requests` | `AdvanceRequestsScreen` | `GET /advance-requests`, approve/deny | ✅ Wired |
@@ -1166,23 +1253,27 @@ Atomic post-registration setup: factory profile, default shifts, OT settings, le
 | `/payroll-settings` | `PayrollSettingsScreen` | `GET/PUT /settings/payroll` | ✅ Wired |
 | `/my-profile` | `MyProfileScreen` | `GET /me/overview` | ✅ Wired |
 | `/onboarding` | `OnboardingWizard` | `POST /onboarding/setup` (step 3) | ✅ Wired |
+| `/home` tab 5 | `DisputesListScreen` | `GET /disputes`, resolve/reject | ✅ Wired |
+| `/debug/logs` | `TalkerScreen` | — (offline log viewer) | ✅ Built |
 
 **Key:** ✅ = Fully wired with backend, 🚧 = Route exists but not yet connected to live data
 
 ---
 
-## Database Schema (20 Migrations)
+## Database Schema (22 Migrations)
 
-The database has 20 goose migrations creating:
-- `tenants` — factory accounts
-- `employees` — worker profiles with wage config
+The database has 22 goose migrations creating:
+- `tenants` — factory accounts (incl. `timezone`, default `Asia/Kolkata`)
+- `employees` — worker profiles with wage config + `version` (optimistic lock)
 - `shifts` — shift templates (start/end time, grace period, cross-midnight)
-- `attendance` — daily attendance records per employee
-- `ledger_entries` — jama/udhaar financial transactions
+- `attendance` — daily attendance records per employee + `version`
+- `ledger_entries` — jama/udhaar financial transactions + `version`
 - `advance_requests` — salary advance requests with approval workflow
 - `holidays` — tenant-specific holidays
 - `leave_policies` — paid/unpaid leave configuration
 - `sync_queue` — offline-sync event buffer
 - `tenant_config` — payroll settings (OT rules, wage basis, rounding, weekly offs)
+- `ledger_disputes` — ledger entry disputes (open/resolved/rejected)
+- `employee_documents` — KYC document records (aadhaar/pan/bank)
 
 ---

@@ -193,6 +193,7 @@ type RosterRow struct {
 	OvertimeHours     *float64   `json:"overtime_hours" db:"overtime_hours"`
 	IsLocked          *bool      `json:"is_locked" db:"is_locked"`
 	ComputedWage      *float64   `json:"computed_wage" db:"computed_wage"`
+	Version           *int32     `json:"version" db:"version"`
 }
 
 type LedgerSummaryRange struct {

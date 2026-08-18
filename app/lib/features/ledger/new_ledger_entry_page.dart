@@ -83,145 +83,24 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
     }
   }
 
-  Future<void> _showEmployeePicker(BuildContext context, ColorScheme cs) async {
-    final searchCtrl = TextEditingController();
-    await showModalBottomSheet(
+  Future<void> _showEmployeePicker(BuildContext context) async {
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: cs.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            final asyncData = ref.watch(employeeListProvider);
-            final query = searchCtrl.text.toLowerCase().trim();
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: TextField(
-                      controller: searchCtrl,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        hintText: 'Search employees...',
-                        prefixIcon: Icon(
-                          PhosphorIconsRegular.magnifyingGlass,
-                          color: cs.onSurfaceVariant,
-                        ),
-                        filled: true,
-                        fillColor: cs.surfaceContainerHighest.withValues(
-                          alpha: 0.3,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      onChanged: (_) => setSheetState(() {}),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: MediaQuery.of(ctx).size.height * 0.55,
-                    child: asyncData.when(
-                      loading: () =>
-                          const Center(child: CircularProgressIndicator()),
-                      error: (e, _) => Center(child: Text('$e')),
-                      data: (employees) {
-                        final filtered = query.isEmpty
-                            ? employees
-                            : employees
-                                  .where(
-                                    (e) => e.name.toLowerCase().contains(query),
-                                  )
-                                  .toList();
-                        if (filtered.isEmpty) {
-                          return Center(
-                            child: Text(
-                              'No employees found',
-                              style: TextStyle(color: cs.onSurfaceVariant),
-                            ),
-                          );
-                        }
-                        return ListView.builder(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 8,
-                          ),
-                          itemCount: filtered.length,
-                          itemBuilder: (_, i) {
-                            final emp = filtered[i];
-                            final isSelected = emp.id == _selectedEmployeeId;
-                            return ListTile(
-                              selected: isSelected,
-                              selectedTileColor: cs.primaryContainer.withValues(
-                                alpha: 0.3,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              leading: EmployeeAvatar(
-                                name: emp.name,
-                                photoUrl: emp.photoUrl,
-                                radius: 20,
-                                backgroundColor: cs.primaryContainer,
-                                textColor: cs.primary,
-                              ),
-                              title: Text(
-                                emp.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              subtitle: emp.designation != null
-                                  ? Text(emp.designation!)
-                                  : null,
-                              trailing: isSelected
-                                  ? Icon(
-                                      PhosphorIconsFill.checkCircle,
-                                      color: cs.primary,
-                                    )
-                                  : null,
-                              onTap: () {
-                                setState(() {
-                                  _selectedEmployeeId = emp.id;
-                                  _selectedEmployeeName = emp.name;
-                                });
-                                HapticFeedback.selectionClick();
-                                Navigator.pop(ctx);
-                              },
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                  SizedBox(height: MediaQuery.of(ctx).padding.bottom + 8),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      builder: (_) => _EmployeePickerSheet(
+        selectedEmployeeId: _selectedEmployeeId,
+        onSelected: (id, name) {
+          setState(() {
+            _selectedEmployeeId = id;
+            _selectedEmployeeName = name;
+          });
+        },
+      ),
     );
-    searchCtrl.dispose();
   }
 
   @override
@@ -390,7 +269,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                         },
                       ),
                       InkWell(
-                        onTap: () => _showEmployeePicker(context, cs),
+                        onTap: () => _showEmployeePicker(context),
                         borderRadius: BorderRadius.circular(16),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -644,6 +523,149 @@ class _PremiumDatePicker extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _EmployeePickerSheet extends ConsumerStatefulWidget {
+  final String? selectedEmployeeId;
+  final void Function(String id, String name) onSelected;
+
+  const _EmployeePickerSheet({
+    required this.selectedEmployeeId,
+    required this.onSelected,
+  });
+
+  @override
+  ConsumerState<_EmployeePickerSheet> createState() =>
+      _EmployeePickerSheetState();
+}
+
+class _EmployeePickerSheetState extends ConsumerState<_EmployeePickerSheet> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final asyncData = ref.watch(employeeListProvider);
+    final query = _query.toLowerCase().trim();
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: TextField(
+              controller: _searchCtrl,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Search employees...',
+                prefixIcon: Icon(
+                  PhosphorIconsRegular.magnifyingGlass,
+                  color: cs.onSurfaceVariant,
+                ),
+                filled: true,
+                fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              onChanged: (v) => setState(() => _query = v),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.55,
+            child: asyncData.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('$e')),
+              data: (employees) {
+                final filtered = query.isEmpty
+                    ? employees
+                    : employees
+                          .where((e) => e.name.toLowerCase().contains(query))
+                          .toList();
+                if (filtered.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No employees found',
+                      style: TextStyle(color: cs.onSurfaceVariant),
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 8,
+                  ),
+                  itemCount: filtered.length,
+                  itemBuilder: (_, i) {
+                    final emp = filtered[i];
+                    final isSelected = emp.id == widget.selectedEmployeeId;
+                    return ListTile(
+                      selected: isSelected,
+                      selectedTileColor: cs.primaryContainer.withValues(
+                        alpha: 0.3,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      leading: EmployeeAvatar(
+                        name: emp.name,
+                        photoUrl: emp.photoUrl,
+                        radius: 20,
+                        backgroundColor: cs.primaryContainer,
+                        textColor: cs.primary,
+                      ),
+                      title: Text(
+                        emp.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: emp.designation != null
+                          ? Text(emp.designation!)
+                          : null,
+                      trailing: isSelected
+                          ? Icon(
+                              PhosphorIconsFill.checkCircle,
+                              color: cs.primary,
+                            )
+                          : null,
+                      onTap: () {
+                        widget.onSelected(emp.id, emp.name);
+                        HapticFeedback.selectionClick();
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+        ],
       ),
     );
   }

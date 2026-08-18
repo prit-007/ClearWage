@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/providers/services.dart';
 import '../../data/models/report_models.dart';
@@ -35,7 +36,7 @@ class DefaultersScreen extends ConsumerWidget {
               elevation: 0,
               leading: IconButton(
                 icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => context.pop(),
               ),
               title: Text(
                 'Financial Risks',

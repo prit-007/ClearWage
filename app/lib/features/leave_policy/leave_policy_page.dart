@@ -32,14 +32,23 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
   final _unpaidCtrl = TextEditingController();
   bool _saving = false;
   bool _loaded = false;
+  bool _dirty = false;
 
   @override
   void initState() {
     super.initState();
+    _paidCtrl.addListener(_markDirty);
+    _unpaidCtrl.addListener(_markDirty);
+  }
+
+  void _markDirty() {
+    if (_loaded && !_saving) setState(() => _dirty = true);
   }
 
   @override
   void dispose() {
+    _paidCtrl.removeListener(_markDirty);
+    _unpaidCtrl.removeListener(_markDirty);
     _paidCtrl.dispose();
     _unpaidCtrl.dispose();
     super.dispose();
@@ -103,172 +112,200 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
     final tt = Theme.of(context).textTheme;
     ref.watch(leavePolicyProvider);
 
-    return Scaffold(
-      backgroundColor: cs.surfaceContainerLowest,
-      appBar: AppBar(
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final confirmed = await showConfirmDialog(
+          context,
+          title: 'Discard Changes',
+          message:
+              'You have unsaved changes to the leave policy. Discard them?',
+          confirmLabel: 'Discard',
+          icon: PhosphorIconsRegular.warningCircle,
+          isDestructive: true,
+        );
+        if (confirmed == true && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
         backgroundColor: cs.surfaceContainerLowest,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
-          onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          backgroundColor: cs.surfaceContainerLowest,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(
+            'Leave Policy',
+            style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          centerTitle: true,
         ),
-        title: Text(
-          'Leave Policy',
-          style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-        ),
-        centerTitle: true,
-      ),
-      body: _loaded
-          ? Stack(
-              children: [
-                ListView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
+        body: _loaded
+            ? SafeArea(
+                child: Stack(
                   children: [
-                    FluidSlideIn(
-                      delay: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(32),
-                        decoration: BoxDecoration(
-                          color: cs.primaryContainer.withValues(alpha: 0.4),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: cs.primary.withValues(alpha: 0.1),
+                    ListView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
+                      children: [
+                        FluidSlideIn(
+                          delay: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(32),
+                            decoration: BoxDecoration(
+                              color: cs.primaryContainer.withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: cs.primary.withValues(alpha: 0.1),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: cs.surface,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: cs.shadow.withValues(
+                                          alpha: 0.05,
+                                        ),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: PhosphorIcon(
+                                    PhosphorIconsDuotone.calendarCheck,
+                                    size: 40,
+                                    color: cs.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                Text(
+                                  'Annual Allowances',
+                                  style: tt.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Configure the standard leave limits given to all permanent staff.',
+                                  textAlign: TextAlign.center,
+                                  style: tt.bodyMedium?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        child: Column(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: cs.surface,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: cs.shadow.withValues(alpha: 0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: PhosphorIcon(
-                                PhosphorIconsDuotone.calendarCheck,
-                                size: 40,
-                                color: cs.primary,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            Text(
-                              'Annual Allowances',
-                              style: tt.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Configure the standard leave limits given to all permanent staff.',
-                              textAlign: TextAlign.center,
-                              style: tt.bodyMedium?.copyWith(
-                                color: cs.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 48),
+                        const SizedBox(height: 48),
 
-                    FluidSlideIn(
-                      delay: 100,
-                      child: Column(
-                        children: [
-                          PremiumMacroField(
-                            cs: cs,
-                            tt: tt,
-                            label: 'Paid Leave Quota',
-                            subtitle: 'Days per year',
-                            ctrl: _paidCtrl,
-                            icon: PhosphorIconsFill.sun,
-                            activeColor: const Color(0xFF10B981),
-                          ),
-                          if (_paidError != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8, left: 4),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    PhosphorIconsRegular.warningCircle,
-                                    size: 14,
-                                    color: cs.error,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _paidError!,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: cs.error,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
+                        FluidSlideIn(
+                          delay: 100,
+                          child: Column(
+                            children: [
+                              PremiumMacroField(
+                                cs: cs,
+                                tt: tt,
+                                label: 'Paid Leave Quota',
+                                subtitle: 'Days per year',
+                                ctrl: _paidCtrl,
+                                icon: PhosphorIconsFill.sun,
+                                activeColor: const Color(0xFF10B981),
                               ),
-                            ),
-                        ],
-                      ),
+                              if (_paidError != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 8,
+                                    left: 4,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        PhosphorIconsRegular.warningCircle,
+                                        size: 14,
+                                        color: cs.error,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        _paidError!,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: cs.error,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        FluidSlideIn(
+                          delay: 200,
+                          child: Column(
+                            children: [
+                              PremiumMacroField(
+                                cs: cs,
+                                tt: tt,
+                                label: 'Unpaid Allowances',
+                                subtitle: 'Days per year',
+                                ctrl: _unpaidCtrl,
+                                icon: PhosphorIconsFill.moon,
+                                activeColor: cs.primary,
+                              ),
+                              if (_unpaidError != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 8,
+                                    left: 4,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        PhosphorIconsRegular.warningCircle,
+                                        size: 14,
+                                        color: cs.error,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        _unpaidError!,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: cs.error,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    FluidSlideIn(
-                      delay: 200,
-                      child: Column(
-                        children: [
-                          PremiumMacroField(
-                            cs: cs,
-                            tt: tt,
-                            label: 'Unpaid Allowances',
-                            subtitle: 'Days per year',
-                            ctrl: _unpaidCtrl,
-                            icon: PhosphorIconsFill.moon,
-                            activeColor: cs.primary,
-                          ),
-                          if (_unpaidError != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8, left: 4),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    PhosphorIconsRegular.warningCircle,
-                                    size: 14,
-                                    color: cs.error,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _unpaidError!,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: cs.error,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
+
+                    BottomBlurBar(
+                      child: LoadingButton(
+                        loading: _saving,
+                        onPressed: _save,
+                        label: 'Update Policy',
                       ),
                     ),
                   ],
                 ),
-
-                BottomBlurBar(
-                  child: LoadingButton(
-                    loading: _saving,
-                    onPressed: _save,
-                    label: 'Update Policy',
-                  ),
-                ),
-              ],
-            )
-          : const Center(child: CircularProgressIndicator()),
+              )
+            : const Center(child: CircularProgressIndicator()),
+      ),
     );
   }
 }

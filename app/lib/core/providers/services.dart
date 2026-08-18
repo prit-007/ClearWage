@@ -15,6 +15,7 @@ import '../../data/services/settings_service.dart';
 import '../../data/services/profile_service.dart';
 import '../../data/services/document_service.dart';
 import '../../data/services/onboarding_service.dart';
+import '../../data/services/dispute_service.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
   final client = ref.watch(apiClientProvider);
@@ -32,6 +33,10 @@ final attendanceServiceProvider = Provider<AttendanceService>((ref) {
 
 final ledgerServiceProvider = Provider<LedgerService>((ref) {
   return LedgerService(ref.watch(apiClientProvider));
+});
+
+final disputeServiceProvider = Provider<DisputeService>((ref) {
+  return DisputeService(ref.watch(apiClientProvider));
 });
 
 final dashboardServiceProvider = Provider<DashboardService>((ref) {

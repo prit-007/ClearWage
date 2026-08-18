@@ -49,11 +49,30 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
 
   Future<void> _markRemainingPresent() async {
     if (_saving) return;
+    final rows = _cachedRows ?? [];
+    final unmarkedRows = rows.where((r) => !r.hasAttendance).toList();
+    if (unmarkedRows.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('All employees already marked')),
+        );
+      }
+      return;
+    }
+
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Mark All Present',
+      message:
+          'This will mark ${unmarkedRows.length} unmarked employees as present. Continue?',
+      confirmLabel: 'Mark',
+      icon: PhosphorIconsRegular.checks,
+    );
+    if (confirmed != true) return;
+
     setState(() => _saving = true);
     unawaited(HapticFeedback.heavyImpact());
-    final rows = _cachedRows ?? [];
     final date = _dateStr;
-    final unmarkedRows = rows.where((r) => !r.hasAttendance).toList();
     final noShift = unmarkedRows
         .where((r) => r.defaultShiftId == null || r.defaultShiftId!.isEmpty)
         .toList();
@@ -840,6 +859,18 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
 
   void _updateStatus(_AttStatus s) {
     if (_status == s || _saving) return;
+    if (widget.attendance.isLocked) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'This attendance record is locked and cannot be edited',
+            ),
+          ),
+        );
+      }
+      return;
+    }
     HapticFeedback.lightImpact();
     final previous = _status;
     setState(() {
@@ -868,6 +899,18 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
 
   void _changeShift(String? id) {
     if (id == null || id == _shiftId || _saving) return;
+    if (widget.attendance.isLocked) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'This attendance record is locked and cannot be edited',
+            ),
+          ),
+        );
+      }
+      return;
+    }
     HapticFeedback.selectionClick();
     final previous = _shiftId;
     setState(() {
@@ -928,11 +971,37 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      widget.employee.shiftName ?? 'No shift assigned',
-                      style: widget.tt.labelSmall?.copyWith(
-                        color: widget.cs.onSurfaceVariant,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          widget.employee.shiftName ?? 'No shift assigned',
+                          style: widget.tt.labelSmall?.copyWith(
+                            color: widget.cs.onSurfaceVariant,
+                          ),
+                        ),
+                        if (widget.attendance.isLocked) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: widget.cs.errorContainer,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'LOCKED',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                                color: widget.cs.onErrorContainer,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
@@ -999,35 +1068,38 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
             onChanged: _changeShift,
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TactileToggle(
-                  label: 'P',
-                  color: const Color(0xFF10B981),
-                  isSelected: _status == _AttStatus.present,
-                  onTap: () => _updateStatus(_AttStatus.present),
+          AbsorbPointer(
+            absorbing: widget.attendance.isLocked,
+            child: Row(
+              children: [
+                Expanded(
+                  child: TactileToggle(
+                    label: 'P',
+                    color: const Color(0xFF10B981),
+                    isSelected: _status == _AttStatus.present,
+                    onTap: () => _updateStatus(_AttStatus.present),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TactileToggle(
-                  label: 'A',
-                  color: const Color(0xFFEF4444),
-                  isSelected: _status == _AttStatus.absent,
-                  onTap: () => _updateStatus(_AttStatus.absent),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TactileToggle(
+                    label: 'A',
+                    color: const Color(0xFFEF4444),
+                    isSelected: _status == _AttStatus.absent,
+                    onTap: () => _updateStatus(_AttStatus.absent),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TactileToggle(
-                  label: 'HD',
-                  color: const Color(0xFFF59E0B),
-                  isSelected: _status == _AttStatus.halfDay,
-                  onTap: () => _updateStatus(_AttStatus.halfDay),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TactileToggle(
+                    label: 'HD',
+                    color: const Color(0xFFF59E0B),
+                    isSelected: _status == _AttStatus.halfDay,
+                    onTap: () => _updateStatus(_AttStatus.halfDay),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

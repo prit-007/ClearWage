@@ -101,6 +101,21 @@ func (mr *MockQuerierMockRecorder) CreateAttendance(ctx, arg any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAttendance", reflect.TypeOf((*MockQuerier)(nil).CreateAttendance), ctx, arg)
 }
 
+// CreateDispute mocks base method.
+func (m *MockQuerier) CreateDispute(ctx context.Context, arg repositories.CreateDisputeParams) (repositories.LedgerDispute, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateDispute", ctx, arg)
+	ret0, _ := ret[0].(repositories.LedgerDispute)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateDispute indicates an expected call of CreateDispute.
+func (mr *MockQuerierMockRecorder) CreateDispute(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDispute", reflect.TypeOf((*MockQuerier)(nil).CreateDispute), ctx, arg)
+}
+
 // CreateEmployee mocks base method.
 func (m *MockQuerier) CreateEmployee(ctx context.Context, arg repositories.CreateEmployeeParams) (repositories.Employee, error) {
 	m.ctrl.T.Helper()
@@ -667,6 +682,21 @@ func (mr *MockQuerierMockRecorder) ListAttendanceByEmployeeMonthExplicit(ctx, em
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAttendanceByEmployeeMonthExplicit", reflect.TypeOf((*MockQuerier)(nil).ListAttendanceByEmployeeMonthExplicit), ctx, employeeID, tenantID, startDate, endDate, limit, offset)
 }
 
+// ListDisputesByTenant mocks base method.
+func (m *MockQuerier) ListDisputesByTenant(ctx context.Context, arg repositories.ListDisputesByTenantParams) ([]repositories.ListDisputesByTenantRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListDisputesByTenant", ctx, arg)
+	ret0, _ := ret[0].([]repositories.ListDisputesByTenantRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListDisputesByTenant indicates an expected call of ListDisputesByTenant.
+func (mr *MockQuerierMockRecorder) ListDisputesByTenant(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDisputesByTenant", reflect.TypeOf((*MockQuerier)(nil).ListDisputesByTenant), ctx, arg)
+}
+
 // ListEmployeeBalances mocks base method.
 func (m *MockQuerier) ListEmployeeBalances(ctx context.Context, tenantID string) ([]repositories.EmployeeBalance, error) {
 	m.ctrl.T.Helper()
@@ -859,6 +889,36 @@ func (m *MockQuerier) LockAttendanceMonth(ctx context.Context, arg repositories.
 func (mr *MockQuerierMockRecorder) LockAttendanceMonth(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockAttendanceMonth", reflect.TypeOf((*MockQuerier)(nil).LockAttendanceMonth), ctx, arg)
+}
+
+// RejectDispute mocks base method.
+func (m *MockQuerier) RejectDispute(ctx context.Context, arg repositories.RejectDisputeParams) (repositories.LedgerDispute, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RejectDispute", ctx, arg)
+	ret0, _ := ret[0].(repositories.LedgerDispute)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RejectDispute indicates an expected call of RejectDispute.
+func (mr *MockQuerierMockRecorder) RejectDispute(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RejectDispute", reflect.TypeOf((*MockQuerier)(nil).RejectDispute), ctx, arg)
+}
+
+// ResolveDispute mocks base method.
+func (m *MockQuerier) ResolveDispute(ctx context.Context, arg repositories.ResolveDisputeParams) (repositories.LedgerDispute, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResolveDispute", ctx, arg)
+	ret0, _ := ret[0].(repositories.LedgerDispute)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResolveDispute indicates an expected call of ResolveDispute.
+func (mr *MockQuerierMockRecorder) ResolveDispute(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveDispute", reflect.TypeOf((*MockQuerier)(nil).ResolveDispute), ctx, arg)
 }
 
 // SoftDeleteEmployee mocks base method.

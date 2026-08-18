@@ -22,6 +22,9 @@ func TestOnboardingService_Setup(t *testing.T) {
 		UpdateTenantProfile(gomock.Any(), gomock.Any()).
 		Return(nil)
 	mockQuerier.EXPECT().
+		ListShiftsByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Shift{}, nil)
+	mockQuerier.EXPECT().
 		CreateShift(gomock.Any(), gomock.Any()).
 		Return(repositories.Shift{}, nil).
 		Times(2)
@@ -31,6 +34,9 @@ func TestOnboardingService_Setup(t *testing.T) {
 	mockQuerier.EXPECT().
 		UpsertLeavePolicy(gomock.Any(), gomock.Any()).
 		Return(repositories.LeavePolicy{}, nil)
+	mockQuerier.EXPECT().
+		ListHolidaysByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Holiday{}, nil)
 	mockQuerier.EXPECT().
 		CreateHoliday(gomock.Any(), gomock.Any()).
 		Return(repositories.Holiday{}, nil).
@@ -68,6 +74,9 @@ func TestOnboardingService_Setup_ShiftError(t *testing.T) {
 	svc := NewOnboardingService(mockQuerier)
 
 	mockQuerier.EXPECT().
+		ListShiftsByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Shift{}, nil)
+	mockQuerier.EXPECT().
 		CreateShift(gomock.Any(), gomock.Any()).
 		Return(repositories.Shift{}, errors.New("db error"))
 
@@ -88,6 +97,13 @@ func TestOnboardingService_Setup_Empty(t *testing.T) {
 
 	mockQuerier := mocks.NewMockQuerier(ctrl)
 	svc := NewOnboardingService(mockQuerier)
+
+	mockQuerier.EXPECT().
+		ListShiftsByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Shift{}, nil)
+	mockQuerier.EXPECT().
+		ListHolidaysByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Holiday{}, nil)
 
 	if err := svc.Setup(context.Background(), "t1", OnboardingSetupRequest{}); err != nil {
 		t.Fatalf("Setup with empty request should succeed, got: %v", err)

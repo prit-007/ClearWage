@@ -10,6 +10,7 @@ import '../dashboard/dashboard_page.dart';
 import '../ledger/ledger_list_page.dart';
 import '../reports/reports_hub_page.dart';
 import '../staff/staff_directory_page.dart';
+import '../disputes/disputes_list_page.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
@@ -38,6 +39,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             iconColor: Theme.of(context).colorScheme.error,
             onButtonPressed: () {
               ref.read(sessionExpiredProvider.notifier).state = false;
+              context.go('/login');
             },
           );
         });
@@ -50,6 +52,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       const AttendanceRosterPage(): 'attendance',
       if (isAdmin) const LedgerListScreen(): 'ledger',
       const ReportsHubScreen(): 'reports',
+      if (isAdmin) const DisputesListScreen(): 'disputes',
     };
 
     final pageWidgets = pages.keys.toList();
@@ -84,6 +87,12 @@ class _MainShellState extends ConsumerState<MainShell> {
         selectedIcon: Icon(Icons.analytics),
         label: 'Reports',
       ),
+      if (isAdmin)
+        const NavigationDestination(
+          icon: Icon(Icons.flag_outlined),
+          selectedIcon: Icon(Icons.flag),
+          label: 'Disputes',
+        ),
     ];
 
     return Scaffold(
@@ -116,6 +125,10 @@ class _MainShellState extends ConsumerState<MainShell> {
                 child: Text('Shift Timings'),
               ),
               const PopupMenuItem(value: '/holidays', child: Text('Holidays')),
+              const PopupMenuItem(
+                value: '/debug/logs',
+                child: Text('App Logs'),
+              ),
               if (isAdmin)
                 const PopupMenuItem(
                   value: '/advance-requests',

@@ -9,6 +9,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/pkg/cache"
 	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/vivek-app/vivek_app/utils"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -40,7 +41,8 @@ func NewDashboardService(querier repositories.Querier) *DashboardService {
 }
 
 func (s *DashboardService) GetDashboard(ctx context.Context, tenantID string) (DashboardData, error) {
-	today := time.Now().Format("2006-01-02")
+	tz := s.getTimezone(ctx, tenantID)
+	today := utils.TenantToday(tz)
 
 	// Check cache first.
 	cacheKey := fmt.Sprintf("dashboard:%s:%s", tenantID, today)
@@ -50,7 +52,7 @@ func (s *DashboardService) GetDashboard(ctx context.Context, tenantID string) (D
 
 	// Use singleflight to deduplicate concurrent requests for the same key.
 	v, err, _ := s.sf.Do(cacheKey, func() (interface{}, error) {
-		return s.fetchDashboard(ctx, tenantID, today)
+		return s.fetchDashboard(ctx, tenantID, today, tz)
 	})
 	if err != nil {
 		return DashboardData{}, err
@@ -61,9 +63,16 @@ func (s *DashboardService) GetDashboard(ctx context.Context, tenantID string) (D
 	return result, nil
 }
 
-func (s *DashboardService) fetchDashboard(ctx context.Context, tenantID, today string) (DashboardData, error) {
-	now := time.Now()
-	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
+func (s *DashboardService) getTimezone(ctx context.Context, tenantID string) string {
+	t, err := s.querier.FindTenantByID(ctx, tenantID)
+	if err != nil {
+		return utils.DefaultTimezone
+	}
+	return t.Timezone
+}
+
+func (s *DashboardService) fetchDashboard(ctx context.Context, tenantID, today, tz string) (DashboardData, error) {
+	monthStart := utils.TenantMonthStart(tz)
 
 	snapshot, err := s.querier.GetDashboardSnapshot(ctx, tenantID, today, monthStart)
 	if err != nil {

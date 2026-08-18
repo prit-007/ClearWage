@@ -1066,26 +1066,28 @@ class _LedgerEntryRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isJama ? 'Wage Added' : 'Advance Taken',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isJama ? 'Wage Added' : 'Advance Taken',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                formatDate(date),
-                style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 4),
+                Text(
+                  formatDate(date),
+                  style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const Spacer(),
           Text(
@@ -1188,12 +1190,15 @@ class _PayslipTab extends StatelessWidget {
                         color: cs.onSurfaceVariant,
                       ),
                     ),
-                    Text(
-                      '${monthNames[payslipMonth.month]} ${payslipMonth.year}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: cs.onSurface,
-                        fontSize: 16,
+                    Flexible(
+                      child: Text(
+                        '${monthNames[payslipMonth.month]} ${payslipMonth.year}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: cs.onSurface,
+                          fontSize: 16,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     IconButton(

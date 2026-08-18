@@ -62,6 +62,12 @@ func TestLoginWithFirebase_Success(t *testing.T) {
 		FindTenantByPhone(gomock.Any(), gomock.Any()).
 		Return(repositories.Tenant{ID: "t1", Name: "Test Corp", Phone: "+91-9876543210"}, nil)
 
+	mockQ.EXPECT().
+		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
+		Return([]repositories.Employee{
+			{ID: "e1", TenantID: "t1", Role: "owner", IsActive: true},
+		}, nil)
+
 	body, _ := json.Marshal(map[string]string{"id_token": "valid-id-token"})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/firebase-login", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")

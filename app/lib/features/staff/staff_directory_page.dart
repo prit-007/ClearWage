@@ -647,7 +647,7 @@ class _StaffDirectoryTile extends ConsumerWidget {
                         isDaily ? 'DAILY' : 'MONTHLY',
                         style: TextStyle(
                           color: typeColor,
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 0.5,
                         ),

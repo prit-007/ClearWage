@@ -57,6 +57,7 @@ type Attendance struct {
 	CreatedAt              time.Time       `json:"created_at"`
 	UpdatedAt              time.Time       `json:"updated_at"`
 	ComputedWage           sql.NullString  `json:"computed_wage"`
+	Version                int32           `json:"version"`
 }
 
 type Employee struct {
@@ -89,6 +90,7 @@ type Employee struct {
 	UpdatedAt             time.Time       `json:"updated_at"`
 	ManagerID             uuid.NullUUID   `json:"manager_id"`
 	DailyTargetUnits      sql.NullInt32   `json:"daily_target_units"`
+	Version               int32           `json:"version"`
 }
 
 type EmployeeDocument struct {
@@ -133,6 +135,21 @@ type Ledger struct {
 	CreatedAt          time.Time       `json:"created_at"`
 	UpdatedAt          time.Time       `json:"updated_at"`
 	LinkedPayrollMonth sql.NullString  `json:"linked_payroll_month"`
+	Version            int32           `json:"version"`
+}
+
+type LedgerDispute struct {
+	ID             uuid.UUID      `json:"id"`
+	TenantID       uuid.UUID      `json:"tenant_id"`
+	LedgerID       uuid.UUID      `json:"ledger_id"`
+	EmployeeID     uuid.UUID      `json:"employee_id"`
+	RaisedBy       uuid.UUID      `json:"raised_by"`
+	Reason         string         `json:"reason"`
+	Status         string         `json:"status"`
+	ResolvedBy     uuid.NullUUID  `json:"resolved_by"`
+	ResolutionNote sql.NullString `json:"resolution_note"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
 }
 
 type Shift struct {
@@ -168,6 +185,7 @@ type Tenant struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	Address   sql.NullString `json:"address"`
+	Timezone  string         `json:"timezone"`
 }
 
 type TenantConfig struct {

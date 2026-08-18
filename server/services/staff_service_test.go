@@ -167,6 +167,9 @@ func TestStaffService_GetOverview(t *testing.T) {
 	svc := NewStaffService(mockQuerier)
 
 	mockQuerier.EXPECT().
+		FindTenantByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Tenant{Timezone: "Asia/Kolkata"}, nil)
+	mockQuerier.EXPECT().
 		GetStaffProfile(gomock.Any(), gomock.Any()).
 		Return(repositories.StaffProfile{}, nil)
 	mockQuerier.EXPECT().

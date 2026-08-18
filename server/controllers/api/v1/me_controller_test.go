@@ -59,7 +59,7 @@ func TestMeOverview_Success(t *testing.T) {
 		Return([]repositories.EmployeeDocument{}, nil)
 	mockQuerier.EXPECT().
 		FindTenantByID(gomock.Any(), "t1").
-		Return(repositories.Tenant{Name: "Vivek Fabrics"}, nil)
+		Return(repositories.Tenant{Name: "Vivek Fabrics", Timezone: "Asia/Kolkata"}, nil).Times(2)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/me/overview", nil)
 	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "employee"))

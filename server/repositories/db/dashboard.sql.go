@@ -15,7 +15,7 @@ import (
 
 const getDashboardSnapshot = `-- name: GetDashboardSnapshot :one
 SELECT
-  (SELECT COUNT(*) FROM employees WHERE employees.tenant_id = $1 AND employees.is_active = true)::int AS total_staff,
+  (SELECT COUNT(*) FROM employees WHERE employees.tenant_id = $1 AND employees.is_active = true AND employees.default_shift_id IS NOT NULL)::int AS total_staff,
   (SELECT COUNT(*) FROM attendance WHERE attendance.tenant_id = $1 AND attendance.date = $2)::int AS attendance_count,
   (SELECT COUNT(*) FROM attendance WHERE attendance.tenant_id = $1 AND attendance.date = $2 AND attendance.status = 'present')::int AS present,
   (SELECT COUNT(*) FROM attendance WHERE attendance.tenant_id = $1 AND attendance.date = $2 AND attendance.status = 'absent')::int AS absent,

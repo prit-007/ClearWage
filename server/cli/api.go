@@ -160,6 +160,16 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Post("/{id}/settle", ledgerCtrl.SettleAccount)
 			})
 
+			disputeCtrl := ctrl.NewDisputeController(services.NewDisputeService(querier), logger, cfg)
+			r.Route("/api/v1/disputes", func(r chi.Router) {
+				r.Use(mw.AuthMiddleware(cfg))
+				r.Use(mw.TenantMiddleware())
+				r.Post("/", disputeCtrl.Create)
+				r.Get("/", disputeCtrl.List)
+				r.Post("/resolve", disputeCtrl.Resolve)
+				r.Post("/reject", disputeCtrl.Reject)
+			})
+
 			syncCtrl := ctrl.NewSyncQueueController(services.NewSyncQueueService(querier), logger, cfg)
 			r.Route("/api/v1/sync", func(r chi.Router) {
 				r.Use(mw.AuthMiddleware(cfg))

@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/vivek-app/vivek_app/config"
 	"github.com/vivek-app/vivek_app/middlewares"
+	"github.com/vivek-app/vivek_app/repositories"
 	"github.com/vivek-app/vivek_app/services"
 	"github.com/vivek-app/vivek_app/utils"
 )
@@ -112,6 +113,19 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !utils.ValidatePhone(req.Phone) {
+		utils.JSONFail(w, http.StatusBadRequest, "phone must contain only digits with optional leading +")
+		return
+	}
+
+	if req.WageAmount != "" {
+		amt, err := strconv.ParseFloat(req.WageAmount, 64)
+		if err != nil || !utils.ValidateAmountRange(amt) {
+			utils.JSONFail(w, http.StatusBadRequest, "wage_amount must be a positive number up to 100,000,000")
+			return
+		}
+	}
+
 	if req.Role != "" && req.Role != "employee" && req.Role != "manager" {
 		utils.JSONFail(w, http.StatusBadRequest, "role must be one of: employee, manager")
 		return
@@ -152,7 +166,7 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 func (ctrl *StaffController) List(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
+	if claims == nil || claims.Role == "employee" {
 		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
@@ -162,13 +176,17 @@ func (ctrl *StaffController) List(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	status := r.URL.Query().Get("status")
 
-	limit, _ := strconv.Atoi(limitStr)
-	if limit <= 0 || limit > 100000 {
-		limit = 20
+	limit := 20
+	if limitStr != "" {
+		if parsed, err := strconv.Atoi(limitStr); err == nil && parsed > 0 && parsed <= 100000 {
+			limit = parsed
+		}
 	}
-	offset, _ := strconv.Atoi(offsetStr)
-	if offset < 0 {
-		offset = 0
+	offset := 0
+	if offsetStr != "" {
+		if parsed, err := strconv.Atoi(offsetStr); err == nil && parsed >= 0 {
+			offset = parsed
+		}
 	}
 
 	employees, err := ctrl.staffService.ListEmployees(r.Context(), tenantID, int32(limit), int32(offset), query, status)
@@ -193,7 +211,11 @@ func (ctrl *StaffController) Get(w http.ResponseWriter, r *http.Request) {
 	employeeID := chi.URLParam(r, "id")
 
 	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" && claims.EmployeeID != employeeID {
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" && claims.EmployeeID != employeeID {
 		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
@@ -218,7 +240,11 @@ func (ctrl *StaffController) Profile(w http.ResponseWriter, r *http.Request) {
 	employeeID := chi.URLParam(r, "id")
 
 	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" && claims.EmployeeID != employeeID {
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" && claims.EmployeeID != employeeID {
 		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
@@ -277,8 +303,11 @@ func (ctrl *StaffController) AssignManager(w http.ResponseWriter, r *http.Reques
 	tenantID := middlewares.GetTenantID(r.Context())
 	employeeID := chi.URLParam(r, "id")
 	claims := middlewares.GetClaims(r.Context())
-
-	if claims != nil && claims.Role == "employee" {
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
 		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
@@ -319,8 +348,11 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	employeeID := chi.URLParam(r, "id")
 	claims := middlewares.GetClaims(r.Context())
-
-	if claims != nil && claims.Role == "employee" {
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
 		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
@@ -335,6 +367,24 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Phone != "" && !utils.ValidatePhone(req.Phone) {
+		utils.JSONFail(w, http.StatusBadRequest, "phone must contain only digits with optional leading +")
+		return
+	}
+
+	if req.WageType != "" && !utils.ValidateWageType(req.WageType) {
+		utils.JSONFail(w, http.StatusBadRequest, "wage_type must be one of: daily, monthly, hourly, piece_rate")
+		return
+	}
+
+	if req.WageAmount != "" {
+		amt, err := strconv.ParseFloat(req.WageAmount, 64)
+		if err != nil || !utils.ValidateAmountRange(amt) {
+			utils.JSONFail(w, http.StatusBadRequest, "wage_amount must be a positive number up to 100,000,000")
+			return
+		}
+	}
+
 	if req.Role != "" && req.Role != "employee" && req.Role != "manager" && req.Role != "owner" {
 		utils.JSONFail(w, http.StatusBadRequest, "role must be one of: employee, manager, owner")
 		return
@@ -346,6 +396,10 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 
 	employee, err := ctrl.staffService.UpdateEmployee(r.Context(), employeeID, tenantID, req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, req.Role, req.DailyTargetUnits, req.kyc())
 	if err != nil {
+		if err == repositories.ErrConcurrentModification {
+			utils.JSONFail(w, http.StatusConflict, "Record was modified by another user. Please refresh and try again.")
+			return
+		}
 		ctrl.logger.Error().Err(err).Msg("failed to update employee")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to update employee")
 		return

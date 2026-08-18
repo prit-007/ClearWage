@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'api_exceptions.dart';
@@ -9,6 +10,7 @@ class ApiClient {
   static const _timeout = Duration(seconds: 30);
   String? _token;
   Future<void> Function()? onUnauthorized;
+  Completer<void>? _refreshLock;
 
   ApiClient({required this.baseUrl, http.Client? client})
     : _client = client ?? http.Client();
@@ -73,7 +75,15 @@ class ApiClient {
         duration: sw.elapsed,
       );
       if (res.statusCode >= 200 && res.statusCode < 300) return res.bodyBytes;
-      final json = jsonDecode(res.body) as Map<String, dynamic>;
+      Map<String, dynamic> json;
+      try {
+        json = jsonDecode(res.body) as Map<String, dynamic>;
+      } on FormatException {
+        throw ApiException(
+          'Invalid response from server',
+          statusCode: res.statusCode,
+        );
+      }
       final msg = json['message'] as String? ?? 'Unknown error';
       throw ApiException(msg, statusCode: res.statusCode);
     } catch (e, st) {
@@ -98,7 +108,15 @@ class ApiClient {
         duration: sw.elapsed,
       );
       if (res.statusCode >= 200 && res.statusCode < 300) return res.bodyBytes;
-      final json = jsonDecode(res.body) as Map<String, dynamic>;
+      Map<String, dynamic> json;
+      try {
+        json = jsonDecode(res.body) as Map<String, dynamic>;
+      } on FormatException {
+        throw ApiException(
+          'Invalid response from server',
+          statusCode: res.statusCode,
+        );
+      }
       final msg = json['message'] as String? ?? 'Unknown error';
       throw ApiException(msg, statusCode: res.statusCode);
     } catch (e, st) {
@@ -140,7 +158,7 @@ class ApiClient {
         status: res.statusCode,
         duration: sw.elapsed,
       );
-      return _handle(res);
+      return await _handle(res);
     } catch (e, st) {
       sw.stop();
       AppLogger.error('POST $path (multipart) failed', e, st);
@@ -148,15 +166,36 @@ class ApiClient {
     }
   }
 
-  Map<String, dynamic> _handle(http.Response response) {
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
+  Future<Map<String, dynamic>> _handle(http.Response response) async {
+    Map<String, dynamic> json;
+    try {
+      json = jsonDecode(response.body) as Map<String, dynamic>;
+    } on FormatException {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return {};
+      }
+      throw ApiException(
+        'Invalid response from server',
+        statusCode: response.statusCode,
+      );
+    }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return json;
     }
     final msg = json['message'] as String? ?? 'Unknown error';
     if (response.statusCode == 401) {
       _token = null;
-      onUnauthorized?.call();
+      if (_refreshLock != null) {
+        await _refreshLock!.future;
+      } else {
+        _refreshLock = Completer<void>();
+        try {
+          await onUnauthorized?.call();
+        } finally {
+          _refreshLock!.complete();
+          _refreshLock = null;
+        }
+      }
       throw AuthException(msg);
     }
     throw ApiException(msg, statusCode: response.statusCode);
@@ -177,7 +216,7 @@ class ApiClient {
         status: res.statusCode,
         duration: sw.elapsed,
       );
-      return _handle(res);
+      return await _handle(res);
     } catch (e, st) {
       sw.stop();
       AppLogger.error('$method $path failed', e, st);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/providers/services.dart';
 import 'providers/ledger_providers.dart';
@@ -24,6 +25,11 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
   bool _saving = false;
   String? _selectedEmployeeId;
   String? _selectedEmployeeName;
+
+  bool get _hasUnsavedChanges =>
+      _selectedEmployeeId != null ||
+      _amountController.text.trim().isNotEmpty ||
+      _noteController.text.trim().isNotEmpty;
 
   @override
   void dispose() {
@@ -228,266 +234,285 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
         : const Color(0xFFEF4444);
     final surfaceColor = activeColor.withValues(alpha: 0.05);
 
-    return Scaffold(
-      backgroundColor: cs.surface,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(PhosphorIconsRegular.x, color: cs.onSurface),
-          onPressed: () {
-            HapticFeedback.selectionClick();
-            Navigator.pop(context);
-          },
+    return PopScope(
+      canPop: !_hasUnsavedChanges,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final confirmed = await showConfirmDialog(
+          context,
+          title: 'Discard Entry',
+          message: 'You have unsaved changes. Discard them?',
+          confirmLabel: 'Discard',
+          icon: PhosphorIconsRegular.warningCircle,
+          isDestructive: true,
+        );
+        if (confirmed == true && context.mounted) {
+          context.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: cs.surface,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(PhosphorIconsRegular.x, color: cs.onSurface),
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              context.pop();
+            },
+          ),
+          title: Text(
+            'New Entry',
+            style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          centerTitle: true,
         ),
-        title: Text(
-          'New Entry',
-          style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        centerTitle: true,
-      ),
-      body: AnimatedContainer(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.fastOutSlowIn,
-        color: surfaceColor,
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: cs.surfaceContainerHighest.withValues(
-                          alpha: 0.5,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _PremiumToggle(
-                              title: 'Give Advance',
-                              subtitle: 'Jama',
-                              isActive: _isJama,
-                              activeColor: const Color(0xFF10B981),
-                              icon: PhosphorIconsFill.arrowUpRight,
-                              onTap: () => _toggleType(true),
-                            ),
-                          ),
-                          Expanded(
-                            child: _PremiumToggle(
-                              title: 'Deduct',
-                              subtitle: 'Udhaar',
-                              isActive: !_isJama,
-                              activeColor: const Color(0xFFEF4444),
-                              icon: PhosphorIconsFill.arrowDownLeft,
-                              onTap: () => _toggleType(false),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 48),
-                    Center(
-                      child: Text(
-                        'Amount',
-                        style: tt.labelLarge?.copyWith(
-                          color: cs.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          '₹',
-                          style: tt.displayLarge?.copyWith(
-                            color: activeColor.withValues(alpha: 0.5),
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        IntrinsicWidth(
-                          child: TextField(
-                            controller: _amountController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d*\.?\d{0,2}$'),
-                              ),
-                            ],
-                            autofocus: true,
-                            textAlign: TextAlign.center,
-                            style: tt.displayLarge?.copyWith(
-                              color: activeColor,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -2.0,
-                            ),
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              filled: false,
-                              hintText: '0',
-                              hintStyle: TextStyle(color: Colors.black12),
-                            ),
-                            onChanged: (_) => HapticFeedback.selectionClick(),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 48),
-                    _PremiumDatePicker(
-                      cs: cs,
-                      date: _selectedDate,
-                      onTap: () async {
-                        unawaited(HapticFeedback.selectionClick());
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _selectedDate,
-                          firstDate: DateTime(2024),
-                          lastDate: DateTime.now(),
-                          builder: (context, child) => Theme(
-                            data: Theme.of(context).copyWith(
-                              colorScheme: cs.copyWith(primary: activeColor),
-                            ),
-                            child: child!,
-                          ),
-                        );
-                        if (picked != null) {
-                          setState(() => _selectedDate = picked);
-                        }
-                      },
-                    ),
-                    InkWell(
-                      onTap: () => _showEmployeePicker(context, cs),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
+        body: AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.fastOutSlowIn,
+          color: surfaceColor,
+          child: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: cs.surface,
+                          color: cs.surfaceContainerHighest.withValues(
+                            alpha: 0.5,
+                          ),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              PhosphorIconsRegular.identificationBadge,
-                              color: cs.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 16),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Employee',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: cs.onSurfaceVariant,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    _selectedEmployeeName ?? 'Select Employee',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      color: _selectedEmployeeName != null
-                                          ? cs.onSurface
-                                          : cs.onSurfaceVariant,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ],
+                              child: _PremiumToggle(
+                                title: 'Give Advance',
+                                subtitle: 'Jama',
+                                isActive: _isJama,
+                                activeColor: const Color(0xFF10B981),
+                                icon: PhosphorIconsFill.arrowUpRight,
+                                onTap: () => _toggleType(true),
                               ),
                             ),
-                            Icon(
-                              PhosphorIconsRegular.caretDown,
-                              color: cs.onSurfaceVariant,
-                              size: 16,
+                            Expanded(
+                              child: _PremiumToggle(
+                                title: 'Deduct',
+                                subtitle: 'Udhaar',
+                                isActive: !_isJama,
+                                activeColor: const Color(0xFFEF4444),
+                                icon: PhosphorIconsFill.arrowDownLeft,
+                                onTap: () => _toggleType(false),
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _noteController,
-                      style: tt.titleMedium,
-                      decoration: InputDecoration(
-                        labelText: 'Notes (Optional)',
-                        prefixIcon: Icon(
-                          PhosphorIconsRegular.textAa,
-                          color: cs.onSurfaceVariant,
-                        ),
-                        filled: true,
-                        fillColor: cs.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
+                      const SizedBox(height: 48),
+                      Center(
+                        child: Text(
+                          'Amount',
+                          style: tt.labelLarge?.copyWith(
+                            color: cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1.0,
+                          ),
                         ),
                       ),
-                      maxLines: 2,
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.fromLTRB(
-                  24,
-                  16,
-                  24,
-                  MediaQuery.of(context).padding.bottom + 16,
-                ),
-                decoration: BoxDecoration(
-                  color: cs.surface,
-                  boxShadow: [
-                    BoxShadow(
-                      color: cs.shadow.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -5),
-                    ),
-                  ],
-                ),
-                child: FilledButton(
-                  onPressed: _saving ? null : _save,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: activeColor,
-                    minimumSize: const Size.fromHeight(60),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _saving
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            '₹',
+                            style: tt.displayLarge?.copyWith(
+                              color: activeColor.withValues(alpha: 0.5),
+                              fontWeight: FontWeight.w400,
+                            ),
                           ),
-                        )
-                      : const Text(
-                          'Save Entry',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
+                          const SizedBox(width: 8),
+                          IntrinsicWidth(
+                            child: TextField(
+                              controller: _amountController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d*\.?\d{0,2}$'),
+                                ),
+                              ],
+                              autofocus: true,
+                              textAlign: TextAlign.center,
+                              style: tt.displayLarge?.copyWith(
+                                color: activeColor,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -2.0,
+                              ),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                filled: false,
+                                hintText: '0',
+                                hintStyle: TextStyle(color: Colors.black12),
+                              ),
+                              onChanged: (_) => HapticFeedback.selectionClick(),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 48),
+                      _PremiumDatePicker(
+                        cs: cs,
+                        date: _selectedDate,
+                        onTap: () async {
+                          unawaited(HapticFeedback.selectionClick());
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _selectedDate,
+                            firstDate: DateTime(2024),
+                            lastDate: DateTime.now(),
+                            builder: (context, child) => Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: cs.copyWith(primary: activeColor),
+                              ),
+                              child: child!,
+                            ),
+                          );
+                          if (picked != null) {
+                            setState(() => _selectedDate = picked);
+                          }
+                        },
+                      ),
+                      InkWell(
+                        onTap: () => _showEmployeePicker(context, cs),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            color: cs.surface,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                PhosphorIconsRegular.identificationBadge,
+                                color: cs.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Employee',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: cs.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _selectedEmployeeName ??
+                                          'Select Employee',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: _selectedEmployeeName != null
+                                            ? cs.onSurface
+                                            : cs.onSurfaceVariant,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                PhosphorIconsRegular.caretDown,
+                                color: cs.onSurfaceVariant,
+                                size: 16,
+                              ),
+                            ],
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _noteController,
+                        style: tt.titleMedium,
+                        decoration: InputDecoration(
+                          labelText: 'Notes (Optional)',
+                          prefixIcon: Icon(
+                            PhosphorIconsRegular.textAa,
+                            color: cs.onSurfaceVariant,
+                          ),
+                          filled: true,
+                          fillColor: cs.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        maxLines: 2,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                Container(
+                  padding: EdgeInsets.fromLTRB(
+                    24,
+                    16,
+                    24,
+                    MediaQuery.of(context).padding.bottom + 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    boxShadow: [
+                      BoxShadow(
+                        color: cs.shadow.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -5),
+                      ),
+                    ],
+                  ),
+                  child: FilledButton(
+                    onPressed: _saving ? null : _save,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: activeColor,
+                      minimumSize: const Size.fromHeight(60),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _saving
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Save Entry',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

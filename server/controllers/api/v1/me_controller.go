@@ -190,10 +190,17 @@ func (ctrl *MeController) Payslip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	safeFilename := filename
+	if safeFilename == "" {
+		safeFilename = "payslip.pdf"
+	}
+
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+	w.Header().Set("Content-Disposition", `attachment; filename="`+safeFilename+`"`)
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(pdfBytes)
+	if _, err := w.Write(pdfBytes); err != nil {
+		ctrl.logger.Error().Err(err).Msg("failed to write payslip PDF to response")
+	}
 }
 
 type meAdvanceRequest struct {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"firebase.google.com/go/v4/auth"
@@ -44,7 +45,7 @@ func (s *AuthService) TokenTTL() time.Duration {
 
 func (s *AuthService) tokenTTL() time.Duration {
 	if s.cfg.TokenTTL <= 0 {
-		return 720 * time.Hour
+		return 24 * time.Hour
 	}
 	return time.Duration(s.cfg.TokenTTL) * time.Hour
 }
@@ -88,6 +89,9 @@ func (s *AuthService) Register(ctx context.Context, params RegisterParams) (Veri
 		Role:       "owner",
 	})
 	if err != nil {
+		if delErr := s.queries.DeleteTenant(ctx, tenant.ID); delErr != nil {
+			log.Printf("failed to rollback orphaned tenant %s: %v", tenant.ID, delErr)
+		}
 		return VerifyResult{}, fmt.Errorf("failed to create owner: %w", err)
 	}
 	logActivity(ctx, s.queries, tenant.ID, emp.ID, "registered_owner", "employee", &emp.ID, nil)
@@ -123,11 +127,34 @@ func (s *AuthService) LoginWithFirebase(ctx context.Context, idToken string) (Ve
 	}
 
 	if tenant, tenErr := s.queries.FindTenantByPhone(ctx, phone); tenErr == nil {
-		jwtToken, tenTokErr := pkg.GenerateToken(s.cfg, tenant.ID, "", "owner", s.tokenTTL())
+		employees, listErr := s.queries.ListEmployeesByTenant(ctx, repositories.ListEmployeesByTenantParams{
+			TenantID: tenant.ID,
+			Limit:    50,
+			Offset:   0,
+		})
+		if listErr != nil || len(employees) == 0 {
+			return VerifyResult{}, errors.New("no employee records found for this tenant")
+		}
+
+		var matchEmp *repositories.Employee
+		for i, e := range employees {
+			if e.Phone == phone {
+				matchEmp = &employees[i]
+				break
+			}
+		}
+		if matchEmp == nil {
+			matchEmp = &employees[0]
+		}
+		if !matchEmp.IsActive {
+			return VerifyResult{}, errors.New("account is deactivated")
+		}
+
+		jwtToken, tenTokErr := pkg.GenerateToken(s.cfg, tenant.ID, matchEmp.ID, matchEmp.Role, s.tokenTTL())
 		if tenTokErr != nil {
 			return VerifyResult{}, fmt.Errorf("failed to generate token: %w", tenTokErr)
 		}
-		return VerifyResult{Token: jwtToken, TenantID: tenant.ID, EmployeeID: "", Role: "owner"}, nil
+		return VerifyResult{Token: jwtToken, TenantID: tenant.ID, EmployeeID: matchEmp.ID, Role: matchEmp.Role}, nil
 	} else if !errors.Is(tenErr, repositories.ErrNotFound) {
 		return VerifyResult{}, fmt.Errorf("database error looking up tenant: %w", tenErr)
 	}
@@ -136,5 +163,8 @@ func (s *AuthService) LoginWithFirebase(ctx context.Context, idToken string) (Ve
 }
 
 func (s *AuthService) DeleteAccount(ctx context.Context, tenantID string) error {
-	return s.queries.DeleteTenant(ctx, tenantID)
+	if err := s.queries.DeleteTenant(ctx, tenantID); err != nil {
+		return fmt.Errorf("failed to delete tenant: %w", err)
+	}
+	return nil
 }

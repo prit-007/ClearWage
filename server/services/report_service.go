@@ -9,6 +9,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/vivek-app/vivek_app/pkg/cache"
 	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/vivek-app/vivek_app/utils"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -109,9 +110,10 @@ func (s *ReportService) EmployeeMonthly(ctx context.Context, tenantID, employeeI
 }
 
 func (s *ReportService) WageBillTrends(ctx context.Context, tenantID string, months int) ([]WageBillTrend, error) {
-	now := time.Now()
-	startDate := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -(months - 1), 0)
-	endDate := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	tz := s.getTimezone(ctx, tenantID)
+	now := utils.TenantNow(tz)
+	startDate := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()).AddDate(0, -(months - 1), 0)
+	endDate := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location())
 
 	return s.querier.GetWageBillTrends(ctx, tenantID, startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
 }
@@ -163,8 +165,9 @@ func (s *ReportService) DefaultersList(ctx context.Context, tenantID string) ([]
 }
 
 func (s *ReportService) GetAttendanceTrends(ctx context.Context, tenantID string, days int) ([]AttendanceTrend, error) {
-	endDate := time.Now().Format("2006-01-02")
-	startDate := time.Now().AddDate(0, 0, -days).Format("2006-01-02")
+	tz := s.getTimezone(ctx, tenantID)
+	endDate := utils.TenantToday(tz)
+	startDate := utils.TenantNow(tz).AddDate(0, 0, -days).Format("2006-01-02")
 
 	records, err := s.querier.ListAttendanceByDateRange(ctx, repositories.ListAttendanceByDateRangeParams{
 		TenantID:  tenantID,
@@ -210,4 +213,12 @@ func (s *ReportService) GetAttendanceTrends(ctx context.Context, tenantID string
 	}
 
 	return result, nil
+}
+
+func (s *ReportService) getTimezone(ctx context.Context, tenantID string) string {
+	t, err := s.querier.FindTenantByID(ctx, tenantID)
+	if err != nil {
+		return utils.DefaultTimezone
+	}
+	return t.Timezone
 }

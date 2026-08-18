@@ -356,7 +356,7 @@ class _PremiumShiftCard extends StatelessWidget {
                               child: Text(
                                 'DEFAULT',
                                 style: TextStyle(
-                                  fontSize: 9,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w900,
                                   color: cs.onPrimaryContainer,
                                   letterSpacing: 0.5,

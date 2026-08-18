@@ -290,6 +290,7 @@ type UpdateAttendanceParams struct {
 	UnitsProduced          *int32     `json:"units_produced"`
 	EditedBy               *string    `json:"edited_by"`
 	ComputedWage           *float64   `json:"computed_wage"`
+	ExpectedVersion        int32      `json:"expected_version"`
 }
 
 type FindEmployeeByPhoneOnlyParams struct {
@@ -334,6 +335,7 @@ type UpdateEmployeeParams struct {
 	Role                  string   `json:"role"`
 	IsActive              bool     `json:"is_active"`
 	TenantID              string   `json:"tenant_id"`
+	ExpectedVersion       int32    `json:"expected_version"`
 }
 
 type UpdateEmployeeDefaultShiftParams struct {
@@ -397,11 +399,70 @@ type UpdateAdvanceRequestStatusParams struct {
 	DeniedBy   *string `json:"denied_by"`
 }
 
+type LedgerDispute struct {
+	ID             string  `json:"id"`
+	TenantID       string  `json:"tenant_id"`
+	LedgerID       string  `json:"ledger_id"`
+	EmployeeID     string  `json:"employee_id"`
+	RaisedBy       string  `json:"raised_by"`
+	Reason         string  `json:"reason"`
+	Status         string  `json:"status"`
+	ResolvedBy     *string `json:"resolved_by"`
+	ResolutionNote *string `json:"resolution_note"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+type CreateDisputeParams struct {
+	TenantID   string `json:"tenant_id"`
+	LedgerID   string `json:"ledger_id"`
+	EmployeeID string `json:"employee_id"`
+	RaisedBy   string `json:"raised_by"`
+	Reason     string `json:"reason"`
+}
+
+type ListDisputesByTenantParams struct {
+	TenantID string `json:"tenant_id"`
+	Status   string `json:"status"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+type ListDisputesByTenantRow struct {
+	ID             string    `json:"id"`
+	TenantID       string    `json:"tenant_id"`
+	LedgerID       string    `json:"ledger_id"`
+	EmployeeID     string    `json:"employee_id"`
+	RaisedBy       string    `json:"raised_by"`
+	Reason         string    `json:"reason"`
+	Status         string    `json:"status"`
+	ResolvedBy     *string   `json:"resolved_by"`
+	ResolutionNote *string   `json:"resolution_note"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+	RaisedByName   string    `json:"raised_by_name"`
+}
+
+type ResolveDisputeParams struct {
+	ID             string  `json:"id"`
+	ResolvedBy     string  `json:"resolved_by"`
+	ResolutionNote *string `json:"resolution_note"`
+	TenantID       string  `json:"tenant_id"`
+}
+
+type RejectDisputeParams struct {
+	ID             string  `json:"id"`
+	ResolvedBy     string  `json:"resolved_by"`
+	ResolutionNote *string `json:"resolution_note"`
+	TenantID       string  `json:"tenant_id"`
+}
+
 type Querier interface {
 	BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAttendanceParams) ([]Attendance, error)
 	CreateActivityLog(ctx context.Context, arg CreateActivityLogParams) (ActivityLog, error)
 	CreateAdvanceRequest(ctx context.Context, arg CreateAdvanceRequestParams) (AdvanceRequest, error)
 	CreateAttendance(ctx context.Context, arg CreateAttendanceParams) (Attendance, error)
+	CreateDispute(ctx context.Context, arg CreateDisputeParams) (LedgerDispute, error)
 	CreateEmployee(ctx context.Context, arg CreateEmployeeParams) (Employee, error)
 	CreateEmployeeDocument(ctx context.Context, arg CreateEmployeeDocumentParams) (EmployeeDocument, error)
 	CreateHoliday(ctx context.Context, arg CreateHolidayParams) (Holiday, error)
@@ -452,7 +513,10 @@ type Querier interface {
 	ListAttendanceByEmployeeMonthExplicit(ctx context.Context, employeeID, tenantID, startDate, endDate string, limit, offset int32) ([]Attendance, error)
 	ListLedgerByEmployeeMonthExplicit(ctx context.Context, employeeID, tenantID, startDate, endDate string, limit, offset int32) ([]Ledger, error)
 	ListShiftsByTenant(ctx context.Context, arg ListShiftsByTenantParams) ([]Shift, error)
+	ListDisputesByTenant(ctx context.Context, arg ListDisputesByTenantParams) ([]ListDisputesByTenantRow, error)
 	LockAttendanceMonth(ctx context.Context, arg LockAttendanceMonthParams) error
+	RejectDispute(ctx context.Context, arg RejectDisputeParams) (LedgerDispute, error)
+	ResolveDispute(ctx context.Context, arg ResolveDisputeParams) (LedgerDispute, error)
 	SoftDeleteEmployee(ctx context.Context, arg SoftDeleteEmployeeParams) error
 	UpdateAdvanceRequestStatus(ctx context.Context, arg UpdateAdvanceRequestStatusParams) (AdvanceRequest, error)
 	UpdateAttendance(ctx context.Context, arg UpdateAttendanceParams) (Attendance, error)

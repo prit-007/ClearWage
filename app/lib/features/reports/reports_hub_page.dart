@@ -51,10 +51,6 @@ class ReportsHubScreen extends ConsumerWidget {
               backgroundColor: cs.surface.withValues(alpha: 0.95),
               pinned: true,
               elevation: 0,
-              leading: IconButton(
-                icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
-                onPressed: () => Navigator.pop(context),
-              ),
               title: Text(
                 'Reports & Analytics',
                 style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
@@ -176,7 +172,7 @@ class _PremiumReportCard extends StatelessWidget {
                               child: Text(
                                 config.badge!,
                                 style: TextStyle(
-                                  fontSize: 9,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                   color: cs.primary,
                                 ),

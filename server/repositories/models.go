@@ -51,6 +51,7 @@ type Attendance struct {
 	EditedAt               *time.Time `json:"edited_at" db:"edited_at"`
 	EmployeeName           *string    `json:"employee_name" db:"employee_name"`
 	EmployeePhoto          *string    `json:"employee_photo" db:"employee_photo"`
+	Version                int32      `json:"version" db:"version"`
 	CreatedAt              time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt              time.Time  `json:"updated_at" db:"updated_at"`
 }
@@ -83,6 +84,7 @@ type Employee struct {
 	PermanentAddress      *string         `json:"permanent_address" db:"permanent_address"`
 	Role                  string          `json:"role" db:"role"`
 	IsActive              bool            `json:"is_active" db:"is_active"`
+	Version               int32           `json:"version" db:"version"`
 	CreatedAt             time.Time       `json:"created_at" db:"created_at"`
 	UpdatedAt             time.Time       `json:"updated_at" db:"updated_at"`
 }
@@ -129,6 +131,7 @@ type Ledger struct {
 	CreatedBy          string          `json:"created_by" db:"created_by"`
 	EmployeeName       *string         `json:"employee_name" db:"employee_name"`
 	EmployeePhoto      *string         `json:"employee_photo" db:"employee_photo"`
+	Version            int32           `json:"version" db:"version"`
 	CreatedAt          time.Time       `json:"created_at" db:"created_at"`
 	UpdatedAt          time.Time       `json:"updated_at" db:"updated_at"`
 }
@@ -164,6 +167,7 @@ type Tenant struct {
 	Name      string    `json:"name" db:"name"`
 	Phone     string    `json:"phone" db:"phone"`
 	Address   *string   `json:"address" db:"address"`
+	Timezone  string    `json:"timezone" db:"timezone"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }

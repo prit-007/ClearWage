@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,8 +6,10 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/ledger_model.dart';
 import '../../core/providers/services.dart';
+import '../../data/services/dispute_service.dart';
 import 'providers/ledger_providers.dart';
 import '../../core/helpers.dart';
+import '../disputes/raise_dispute_dialog.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
 
@@ -27,20 +30,20 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
   bool _hasMore = true;
   String? _error;
   bool _listenerRegistered = false;
+  late DateTime _startDate;
+  late DateTime _endDate;
 
-  String get _startDate {
-    final now = DateTime.now();
-    return '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
-  }
-
-  String get _endDate {
-    final now = DateTime.now();
-    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-  }
+  String get _startStr =>
+      '${_startDate.year}-${_startDate.month.toString().padLeft(2, '0')}-${_startDate.day.toString().padLeft(2, '0')}';
+  String get _endStr =>
+      '${_endDate.year}-${_endDate.month.toString().padLeft(2, '0')}-${_endDate.day.toString().padLeft(2, '0')}';
 
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    _startDate = DateTime(now.year, now.month, 1);
+    _endDate = now;
     _scrollCtrl.addListener(_onScroll);
     _fetch();
   }
@@ -71,17 +74,14 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
     try {
       final svc = ref.read(ledgerServiceProvider);
       final entries = await svc.listByTenant(
-        startDate: _startDate,
-        endDate: _endDate,
+        startDate: _startStr,
+        endDate: _endStr,
         limit: _pageSize,
         offset: 0,
       );
       LedgerSummary? summary;
       try {
-        summary = await svc.getSummary(
-          startDate: _startDate,
-          endDate: _endDate,
-        );
+        summary = await svc.getSummary(startDate: _startStr, endDate: _endStr);
       } catch (_) {
         summary = null;
       }
@@ -109,8 +109,8 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
     try {
       final svc = ref.read(ledgerServiceProvider);
       final entries = await svc.listByTenant(
-        startDate: _startDate,
-        endDate: _endDate,
+        startDate: _startStr,
+        endDate: _endStr,
         limit: _pageSize,
         offset: _entries.length,
       );
@@ -124,6 +124,29 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
     } catch (_) {
       if (mounted) setState(() => _loadingMore = false);
     }
+  }
+
+  Future<void> _pickDateRange() async {
+    final now = DateTime.now();
+    final start = await showDatePicker(
+      context: context,
+      initialDate: _startDate,
+      firstDate: DateTime(2024),
+      lastDate: now,
+    );
+    if (start == null || !mounted) return;
+    final end = await showDatePicker(
+      context: context,
+      initialDate: _endDate,
+      firstDate: start,
+      lastDate: now,
+    );
+    if (end == null || !mounted) return;
+    setState(() {
+      _startDate = start;
+      _endDate = end;
+    });
+    unawaited(_fetch());
   }
 
   @override
@@ -148,19 +171,58 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                 backgroundColor: cs.surface.withValues(alpha: 0.9),
                 pinned: true,
                 elevation: 0,
-                leading: IconButton(
-                  icon: Icon(
-                    PhosphorIconsRegular.arrowLeft,
-                    color: cs.onSurface,
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                ),
                 title: Text(
                   'Ledger Hub',
                   style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 centerTitle: true,
                 actions: const [],
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                  child: InkWell(
+                    onTap: _pickDateRange,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: cs.outlineVariant.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            PhosphorIconsFill.calendarBlank,
+                            color: cs.primary,
+                          ),
+                          const SizedBox(width: 12),
+                          Flexible(
+                            child: Text(
+                              '${formatDate(_startDate)} to ${formatDate(_endDate)}',
+                              style: tt.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            PhosphorIconsRegular.caretDown,
+                            color: cs.onSurfaceVariant,
+                            size: 18,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
               if (_loading)
                 const SliverFillRemaining(
@@ -265,6 +327,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                             cs: cs,
                             tt: tt,
                             entry: _entries[index],
+                            disputeService: ref.watch(disputeServiceProvider),
                           ),
                         ),
                       );
@@ -430,73 +493,109 @@ class _LedgerRow extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final LedgerEntry entry;
-  const _LedgerRow({required this.cs, required this.tt, required this.entry});
+  final DisputeService disputeService;
+  const _LedgerRow({
+    required this.cs,
+    required this.tt,
+    required this.entry,
+    required this.disputeService,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isJama = entry.isJama;
     final amtColor = isJama ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: EmployeeAvatar(
-          name: entry.employeeName,
-          photoUrl: entry.employeePhoto,
-          radius: 22,
-        ),
-        title: Text(
-          entry.employeeName,
-          style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        subtitle: Row(
-          children: [
-            Icon(
-              PhosphorIconsRegular.calendarBlank,
-              size: 12,
-              color: cs.onSurfaceVariant,
+    return GestureDetector(
+      onLongPress: () {
+        showModalBottomSheet(
+          context: context,
+          builder: (ctx) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.flag_outlined),
+                  title: const Text('Raise Dispute'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    showRaiseDisputeDialog(
+                      context,
+                      disputeService: disputeService,
+                      ledgerId: entry.id,
+                      employeeId: entry.employeeId,
+                    );
+                  },
+                ),
+              ],
             ),
-            const SizedBox(width: 4),
-            Text(
-              formatDate(entry.date),
-              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-            ),
-          ],
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
         ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '${isJama ? '+' : '-'}\u20B9${entry.amount.toStringAsFixed(0)}',
-              style: tt.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: amtColor,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: EmployeeAvatar(
+            name: entry.employeeName,
+            photoUrl: entry.employeePhoto,
+            radius: 22,
+          ),
+          title: Text(
+            entry.employeeName,
+            style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          subtitle: Row(
+            children: [
+              Icon(
+                PhosphorIconsRegular.calendarBlank,
+                size: 12,
+                color: cs.onSurfaceVariant,
               ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: amtColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(4),
+              const SizedBox(width: 4),
+              Text(
+                formatDate(entry.date),
+                style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
               ),
-              child: Text(
-                isJama ? 'Jama' : 'Udhaar',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+            ],
+          ),
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${isJama ? '+' : '-'}\u20B9${entry.amount.toStringAsFixed(0)}',
+                style: tt.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
                   color: amtColor,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: amtColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  isJama ? 'Jama' : 'Udhaar',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: amtColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

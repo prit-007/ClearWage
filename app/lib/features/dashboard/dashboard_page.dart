@@ -12,11 +12,36 @@ import 'providers/dashboard_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(dashboardDataProvider);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final asyncData = ref.watch(dashboardDataProvider);
@@ -579,7 +604,7 @@ class _ActivityTile extends StatelessWidget {
                     .replaceAll('_', ' ')
                     .toUpperCase(),
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 10,
                   fontWeight: FontWeight.w800,
                   color: color,
                 ),
@@ -658,7 +683,7 @@ class _AttendanceTrendChart extends ConsumerWidget {
                           child: Text(
                             day,
                             style: TextStyle(
-                              fontSize: 9,
+                              fontSize: 10,
                               color: cs.onSurfaceVariant,
                               fontWeight: FontWeight.w600,
                             ),

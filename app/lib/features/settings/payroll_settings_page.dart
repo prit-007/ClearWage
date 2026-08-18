@@ -32,6 +32,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
   String _otTrigger = 'after_shift_end';
   bool _loaded = false;
   bool _saving = false;
+  bool _dirty = false;
   List<int> _weeklyOffs = [0];
   bool _weekOffPaid = false;
   String? _loadError;
@@ -41,10 +42,20 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _thresholdCtrl.addListener(_markDirty);
+    _otMultiplierCtrl.addListener(_markDirty);
+    _roundingCtrl.addListener(_markDirty);
+  }
+
+  void _markDirty() {
+    if (_loaded && !_saving) setState(() => _dirty = true);
   }
 
   @override
   void dispose() {
+    _thresholdCtrl.removeListener(_markDirty);
+    _otMultiplierCtrl.removeListener(_markDirty);
+    _roundingCtrl.removeListener(_markDirty);
     _thresholdCtrl.dispose();
     _otMultiplierCtrl.dispose();
     _roundingCtrl.dispose();
@@ -69,6 +80,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
 
   bool _validate() {
     setState(() {
+      _dirty = true;
       _thresholdError = double.tryParse(_thresholdCtrl.text) == null
           ? 'Enter a valid number'
           : null;
@@ -133,483 +145,496 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
     final tt = Theme.of(context).textTheme;
     ref.watch(payrollSettingsProvider);
 
-    return Scaffold(
-      backgroundColor: cs.surfaceContainerLowest,
-      appBar: AppBar(
-        backgroundColor: cs.surfaceContainerLowest,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
-          onPressed: () => Navigator.pop(context),
+    final Widget bodyWidget;
+    if (!_loaded) {
+      bodyWidget = const Center(child: CircularProgressIndicator());
+    } else if (_loadError != null) {
+      bodyWidget = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                PhosphorIconsRegular.warningCircle,
+                size: 48,
+                color: cs.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Failed to load settings',
+                style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _loadError!,
+                style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                icon: const Icon(PhosphorIconsFill.arrowClockwise),
+                label: const Text('Retry'),
+                onPressed: () {
+                  setState(() {
+                    _loaded = false;
+                    _loadError = null;
+                  });
+                  ref.invalidate(payrollSettingsProvider);
+                },
+              ),
+            ],
+          ),
         ),
-        title: Text(
-          'Payroll Rules',
-          style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-        ),
-        centerTitle: true,
-      ),
-      body: _loaded
-          ? (_loadError != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            PhosphorIconsRegular.warningCircle,
-                            size: 48,
-                            color: cs.error,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Failed to load settings',
-                            style: tt.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _loadError!,
-                            style: tt.bodySmall?.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          FilledButton.icon(
-                            icon: const Icon(PhosphorIconsFill.arrowClockwise),
-                            label: const Text('Retry'),
-                            onPressed: () {
-                              setState(() {
-                                _loaded = false;
-                                _loadError = null;
-                              });
-                              ref.invalidate(payrollSettingsProvider);
-                            },
-                          ),
-                        ],
+      );
+    } else {
+      bodyWidget = SafeArea(
+        child: Stack(
+          children: [
+            ListView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 240),
+              children: [
+                FluidSlideIn(
+                  delay: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: cs.primaryContainer.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: cs.primary.withValues(alpha: 0.1),
                       ),
                     ),
-                  )
-                : Stack(
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: cs.surface,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: cs.shadow.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: PhosphorIcon(
+                            PhosphorIconsDuotone.calculator,
+                            size: 40,
+                            color: cs.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Global Configuration',
+                          style: tt.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Define factory-wide rules for overtime and calculation basis.',
+                          textAlign: TextAlign.center,
+                          style: tt.bodyMedium?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 48),
+
+                FluidSlideIn(
+                  delay: 100,
+                  child: Text(
+                    'OVERTIME SETTINGS',
+                    style: tt.labelSmall?.copyWith(
+                      color: cs.primary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FluidSlideIn(
+                  delay: 200,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ListView(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 240),
+                      Row(
                         children: [
-                          FluidSlideIn(
-                            delay: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(32),
-                              decoration: BoxDecoration(
-                                color: cs.primaryContainer.withValues(
-                                  alpha: 0.4,
-                                ),
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(
-                                  color: cs.primary.withValues(alpha: 0.1),
-                                ),
-                              ),
-                              child: Column(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: cs.surface,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: cs.shadow.withValues(
-                                            alpha: 0.05,
-                                          ),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: PhosphorIcon(
-                                      PhosphorIconsDuotone.calculator,
-                                      size: 40,
-                                      color: cs.primary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  Text(
-                                    'Global Configuration',
-                                    style: tt.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Define factory-wide rules for overtime and calculation basis.',
-                                    textAlign: TextAlign.center,
-                                    style: tt.bodyMedium?.copyWith(
-                                      color: cs.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          Expanded(
+                            child: _TriggerOption(
+                              label: 'After Shift End',
+                              icon: PhosphorIconsFill.clock,
+                              isSelected: _otTrigger == 'after_shift_end',
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  _otTrigger = 'after_shift_end';
+                                  _dirty = true;
+                                });
+                              },
                             ),
                           ),
-                          const SizedBox(height: 48),
-
-                          FluidSlideIn(
-                            delay: 100,
-                            child: Text(
-                              'OVERTIME SETTINGS',
-                              style: tt.labelSmall?.copyWith(
-                                color: cs.primary,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.0,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          FluidSlideIn(
-                            delay: 200,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _TriggerOption(
-                                        label: 'After Shift End',
-                                        icon: PhosphorIconsFill.clock,
-                                        isSelected:
-                                            _otTrigger == 'after_shift_end',
-                                        onTap: () {
-                                          HapticFeedback.selectionClick();
-                                          setState(
-                                            () =>
-                                                _otTrigger = 'after_shift_end',
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _TriggerOption(
-                                        label: 'After Daily Hours',
-                                        icon: PhosphorIconsFill.hourglass,
-                                        isSelected:
-                                            _otTrigger == 'after_daily_hours',
-                                        onTap: () {
-                                          HapticFeedback.selectionClick();
-                                          setState(
-                                            () => _otTrigger =
-                                                'after_daily_hours',
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                PremiumMacroField(
-                                  cs: cs,
-                                  tt: tt,
-                                  label: 'Threshold Hours',
-                                  subtitle: 'Hours per day',
-                                  ctrl: _thresholdCtrl,
-                                  icon: PhosphorIconsFill.clock,
-                                  activeColor: const Color(0xFF10B981),
-                                ),
-                                if (_thresholdError != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                      top: 8,
-                                      left: 4,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          PhosphorIconsRegular.warningCircle,
-                                          size: 14,
-                                          color: cs.error,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          _thresholdError!,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: cs.error,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          FluidSlideIn(
-                            delay: 300,
-                            child: Column(
-                              children: [
-                                PremiumMacroField(
-                                  cs: cs,
-                                  tt: tt,
-                                  label: 'OT Multiplier',
-                                  subtitle: 'e.g., 1.5x Hourly Rate',
-                                  ctrl: _otMultiplierCtrl,
-                                  icon: PhosphorIconsFill.trendUp,
-                                  activeColor: const Color(0xFFF59E0B),
-                                ),
-                                if (_otMultiplierError != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                      top: 8,
-                                      left: 4,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          PhosphorIconsRegular.warningCircle,
-                                          size: 14,
-                                          color: cs.error,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          _otMultiplierError!,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: cs.error,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 48),
-
-                          FluidSlideIn(
-                            delay: 400,
-                            child: Text(
-                              'PAYROLL BASIS',
-                              style: tt.labelSmall?.copyWith(
-                                color: cs.primary,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.0,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          FluidSlideIn(
-                            delay: 500,
-                            child: Row(
-                              children: [
-                                _BasisOptionCard(
-                                  cs: cs,
-                                  label: 'Calendar Days',
-                                  icon: PhosphorIconsFill.sun,
-                                  isSelected: _wageBasis == 'calendar',
-                                  onTap: () {
-                                    HapticFeedback.selectionClick();
-                                    setState(() => _wageBasis = 'calendar');
-                                  },
-                                ),
-                                const SizedBox(width: 12),
-                                _BasisOptionCard(
-                                  cs: cs,
-                                  label: 'Fixed 26 Days',
-                                  icon: PhosphorIconsFill.calendarBlank,
-                                  isSelected: _wageBasis == 'fixed_26',
-                                  onTap: () {
-                                    HapticFeedback.selectionClick();
-                                    setState(() => _wageBasis = 'fixed_26');
-                                  },
-                                ),
-                                const SizedBox(width: 12),
-                                _BasisOptionCard(
-                                  cs: cs,
-                                  label: 'Fixed 30 Days',
-                                  icon: PhosphorIconsFill.hourglass,
-                                  isSelected: _wageBasis == 'fixed_30',
-                                  onTap: () {
-                                    HapticFeedback.selectionClick();
-                                    setState(() => _wageBasis = 'fixed_30');
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          FluidSlideIn(
-                            delay: 600,
-                            child: Column(
-                              children: [
-                                PremiumMacroField(
-                                  cs: cs,
-                                  tt: tt,
-                                  label: 'Rounding Limit',
-                                  subtitle: 'Nearest Rupee Amount',
-                                  ctrl: _roundingCtrl,
-                                  icon: PhosphorIconsFill.coins,
-                                  activeColor: cs.primary,
-                                ),
-                                if (_roundingError != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                      top: 8,
-                                      left: 4,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          PhosphorIconsRegular.warningCircle,
-                                          size: 14,
-                                          color: cs.error,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          _roundingError!,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: cs.error,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 48),
-
-                          FluidSlideIn(
-                            delay: 700,
-                            child: Text(
-                              'WEEKLY OFFS',
-                              style: tt.labelSmall?.copyWith(
-                                color: cs.primary,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.0,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          FluidSlideIn(
-                            delay: 800,
-                            child: Container(
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: cs.surface,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: cs.outlineVariant.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Paid Week Offs',
-                                        style: tt.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      Switch(
-                                        value: _weekOffPaid,
-                                        onChanged: (v) =>
-                                            setState(() => _weekOffPaid = v),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Employees get paid for weekly off days',
-                                    style: tt.bodySmall?.copyWith(
-                                      color: cs.onSurfaceVariant,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: List.generate(7, (i) {
-                                      final selected = _weeklyOffs.contains(i);
-                                      return InkWell(
-                                        onTap: () {
-                                          HapticFeedback.selectionClick();
-                                          setState(() {
-                                            if (selected) {
-                                              _weeklyOffs.remove(i);
-                                            } else {
-                                              _weeklyOffs.add(i);
-                                            }
-                                          });
-                                        },
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: AnimatedContainer(
-                                          duration: const Duration(
-                                            milliseconds: 200,
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 10,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: selected
-                                                ? cs.primaryContainer
-                                                      .withValues(alpha: 0.4)
-                                                : cs.surfaceContainerHighest
-                                                      .withValues(alpha: 0.3),
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            border: Border.all(
-                                              color: selected
-                                                  ? cs.primary
-                                                  : cs.outlineVariant
-                                                        .withValues(alpha: 0.3),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            _dayNames[i],
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w700,
-                                              color: selected
-                                                  ? cs.primary
-                                                  : cs.onSurfaceVariant,
-                                              fontSize: 13,
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }),
-                                  ),
-                                ],
-                              ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _TriggerOption(
+                              label: 'After Daily Hours',
+                              icon: PhosphorIconsFill.hourglass,
+                              isSelected: _otTrigger == 'after_daily_hours',
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  _otTrigger = 'after_daily_hours';
+                                  _dirty = true;
+                                });
+                              },
                             ),
                           ),
                         ],
                       ),
-
-                      BottomBlurBar(
-                        child: LoadingButton(
-                          loading: _saving,
-                          onPressed: _save,
-                          label: 'Save Configuration',
+                      const SizedBox(height: 16),
+                      PremiumMacroField(
+                        cs: cs,
+                        tt: tt,
+                        label: 'Threshold Hours',
+                        subtitle: 'Hours per day',
+                        ctrl: _thresholdCtrl,
+                        icon: PhosphorIconsFill.clock,
+                        activeColor: const Color(0xFF10B981),
+                      ),
+                      if (_thresholdError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8, left: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                PhosphorIconsRegular.warningCircle,
+                                size: 14,
+                                color: cs.error,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _thresholdError!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: cs.error,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FluidSlideIn(
+                  delay: 300,
+                  child: Column(
+                    children: [
+                      PremiumMacroField(
+                        cs: cs,
+                        tt: tt,
+                        label: 'OT Multiplier',
+                        subtitle: 'e.g., 1.5x Hourly Rate',
+                        ctrl: _otMultiplierCtrl,
+                        icon: PhosphorIconsFill.trendUp,
+                        activeColor: const Color(0xFFF59E0B),
+                      ),
+                      if (_otMultiplierError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8, left: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                PhosphorIconsRegular.warningCircle,
+                                size: 14,
+                                color: cs.error,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _otMultiplierError!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: cs.error,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 48),
+
+                FluidSlideIn(
+                  delay: 400,
+                  child: Text(
+                    'PAYROLL BASIS',
+                    style: tt.labelSmall?.copyWith(
+                      color: cs.primary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FluidSlideIn(
+                  delay: 500,
+                  child: Row(
+                    children: [
+                      _BasisOptionCard(
+                        cs: cs,
+                        label: 'Calendar Days',
+                        icon: PhosphorIconsFill.sun,
+                        isSelected: _wageBasis == 'calendar',
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            _wageBasis = 'calendar';
+                            _dirty = true;
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      _BasisOptionCard(
+                        cs: cs,
+                        label: 'Fixed 26 Days',
+                        icon: PhosphorIconsFill.calendarBlank,
+                        isSelected: _wageBasis == 'fixed_26',
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            _wageBasis = 'fixed_26';
+                            _dirty = true;
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      _BasisOptionCard(
+                        cs: cs,
+                        label: 'Fixed 30 Days',
+                        icon: PhosphorIconsFill.hourglass,
+                        isSelected: _wageBasis == 'fixed_30',
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            _wageBasis = 'fixed_30';
+                            _dirty = true;
+                          });
+                        },
                       ),
                     ],
-                  ))
-          : const Center(child: CircularProgressIndicator()),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                FluidSlideIn(
+                  delay: 600,
+                  child: Column(
+                    children: [
+                      PremiumMacroField(
+                        cs: cs,
+                        tt: tt,
+                        label: 'Rounding Limit',
+                        subtitle: 'Nearest Rupee Amount',
+                        ctrl: _roundingCtrl,
+                        icon: PhosphorIconsFill.coins,
+                        activeColor: cs.primary,
+                      ),
+                      if (_roundingError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8, left: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                PhosphorIconsRegular.warningCircle,
+                                size: 14,
+                                color: cs.error,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _roundingError!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: cs.error,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 48),
+
+                FluidSlideIn(
+                  delay: 700,
+                  child: Text(
+                    'WEEKLY OFFS',
+                    style: tt.labelSmall?.copyWith(
+                      color: cs.primary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FluidSlideIn(
+                  delay: 800,
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: cs.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: cs.outlineVariant.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Paid Week Offs',
+                              style: tt.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Switch(
+                              value: _weekOffPaid,
+                              onChanged: (v) => setState(() {
+                                _weekOffPaid = v;
+                                _dirty = true;
+                              }),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Employees get paid for weekly off days',
+                          style: tt.bodySmall?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: List.generate(7, (i) {
+                            final selected = _weeklyOffs.contains(i);
+                            return InkWell(
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  _dirty = true;
+                                  if (selected) {
+                                    _weeklyOffs.remove(i);
+                                  } else {
+                                    _weeklyOffs.add(i);
+                                  }
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? cs.primaryContainer.withValues(
+                                          alpha: 0.4,
+                                        )
+                                      : cs.surfaceContainerHighest.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: selected
+                                        ? cs.primary
+                                        : cs.outlineVariant.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                  ),
+                                ),
+                                child: Text(
+                                  _dayNames[i],
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: selected
+                                        ? cs.primary
+                                        : cs.onSurfaceVariant,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            BottomBlurBar(
+              child: LoadingButton(
+                loading: _saving,
+                onPressed: _save,
+                label: 'Save Configuration',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final confirmed = await showConfirmDialog(
+          context,
+          title: 'Discard Changes',
+          message: 'You have unsaved payroll settings changes. Discard them?',
+          confirmLabel: 'Discard',
+          icon: PhosphorIconsRegular.warningCircle,
+          isDestructive: true,
+        );
+        if (confirmed == true && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: cs.surfaceContainerLowest,
+        appBar: AppBar(
+          backgroundColor: cs.surfaceContainerLowest,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(
+            'Payroll Rules',
+            style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          centerTitle: true,
+        ),
+        body: bodyWidget,
+      ),
     );
   }
 }

@@ -25,7 +25,7 @@ class AppUser {
     required this.role,
   });
 
-  bool get isAdmin => role != 'employee';
+  bool get isAdmin => role.isNotEmpty && role != 'employee';
 
   Map<String, dynamic> toJson() => {
     'token': token,

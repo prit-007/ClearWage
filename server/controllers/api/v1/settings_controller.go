@@ -83,6 +83,14 @@ func (c *SettingsController) UpsertPayrollSettings(w http.ResponseWriter, r *htt
 		utils.JSONFail(w, http.StatusBadRequest, "ot_rounding must be a non-negative integer")
 		return
 	}
+	if req.OTRounding != 0 && !utils.ValidateOTRounding(int(req.OTRounding)) {
+		utils.JSONFail(w, http.StatusBadRequest, "ot_rounding must be one of: 15, 30, or 60")
+		return
+	}
+	if req.OTThresholdHours < 0 || req.OTThresholdHours > 24 {
+		utils.JSONFail(w, http.StatusBadRequest, "ot_threshold_hours must be between 0 and 24")
+		return
+	}
 	if req.WageBasis != "calendar" && req.WageBasis != "fixed_26" && req.WageBasis != "fixed_30" {
 		utils.JSONFail(w, http.StatusBadRequest, "wage_basis must be calendar, fixed_26, or fixed_30")
 		return

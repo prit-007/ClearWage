@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/providers/services.dart';
 import '../dashboard/providers/dashboard_providers.dart';
@@ -57,11 +58,11 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
       );
       if (mounted) {
         final data = result.toJson();
+        _initializeControllers(data);
         setState(() {
           _data = data;
           _loading = false;
         });
-        _initializeControllers(data);
       }
     } catch (e, st) {
       AppLogger.error('Payroll: Failed to load data', e, st);
@@ -162,7 +163,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
     _rowControllers = List.generate(emps.length, (i) {
       final emp = emps[i] as Map<String, dynamic>;
       return TextEditingController(
-        text: safeToInt(emp['net_payable']).toString(),
+        text: safeToDouble(emp['net_payable']).toStringAsFixed(0),
       );
     });
   }
@@ -213,7 +214,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         title: Text(
           'Lock Payroll',
@@ -221,178 +222,186 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
         ),
         centerTitle: true,
       ),
-      body: Stack(
-        children: [
-          CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-                  child: InkWell(
-                    onTap: _pickDates,
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: cs.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: cs.outlineVariant.withValues(alpha: 0.3),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                    child: InkWell(
+                      onTap: _pickDates,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
                         ),
+                        decoration: BoxDecoration(
+                          color: cs.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: cs.outlineVariant.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              PhosphorIconsFill.calendarBlank,
+                              color: cs.primary,
+                            ),
+                            const SizedBox(width: 12),
+                            Flexible(
+                              child: Text(
+                                '${formatDate(_start)} to ${formatDate(_end)}',
+                                style: tt.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              PhosphorIconsRegular.caretDown,
+                              color: cs.onSurfaceVariant,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (_loading)
+                  const SliverFillRemaining(
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (_error != null)
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              PhosphorIconsFill.warningCircle,
+                              size: 48,
+                              color: cs.error,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Failed to load payroll',
+                              style: tt.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _error!,
+                              style: tt.bodySmall,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            FilledButton.icon(
+                              icon: const Icon(
+                                PhosphorIconsFill.arrowClockwise,
+                              ),
+                              label: const Text('Retry'),
+                              onPressed: _loadData,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                else ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                      child: _PayrollSummaryGlassCard(
+                        cs: cs,
+                        tt: tt,
+                        gross: _summaryGross(),
+                        udhaar: _summaryUdhaar(),
+                        net: safeToDouble(_data?['total_wage']),
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 8,
                       ),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(
-                            PhosphorIconsFill.calendarBlank,
-                            color: cs.primary,
-                          ),
-                          const SizedBox(width: 12),
-                          Flexible(
-                            child: Text(
-                              '${formatDate(_start)} to ${formatDate(_end)}',
-                              style: tt.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            PhosphorIconsRegular.caretDown,
-                            color: cs.onSurfaceVariant,
-                            size: 18,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              if (_loading)
-                const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (_error != null)
-                SliverFillRemaining(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            PhosphorIconsFill.warningCircle,
-                            size: 48,
-                            color: cs.error,
-                          ),
-                          const SizedBox(height: 16),
-                          Text('Failed to load payroll', style: tt.titleMedium),
-                          const SizedBox(height: 8),
                           Text(
-                            _error!,
-                            style: tt.bodySmall,
-                            textAlign: TextAlign.center,
+                            'Employee Breakdown',
+                            style: tt.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                            ),
                           ),
-                          const SizedBox(height: 16),
-                          FilledButton.icon(
-                            icon: const Icon(PhosphorIconsFill.arrowClockwise),
-                            label: const Text('Retry'),
-                            onPressed: _loadData,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: cs.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              monthLabel,
+                              style: tt.labelSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                )
-              else ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    child: _PayrollSummaryGlassCard(
-                      cs: cs,
-                      tt: tt,
-                      gross: _summaryGross(),
-                      udhaar: _summaryUdhaar(),
-                      net: safeToDouble(_data?['total_wage']),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final emps =
+                              (_data?['entries'] as List<dynamic>?) ?? [];
+                          final emp = emps[index] as Map<String, dynamic>;
+                          return _EditablePayrollRow(
+                            cs: cs,
+                            tt: tt,
+                            name: emp['name'] as String? ?? '',
+                            photoUrl: emp['photo_url'] as String?,
+                            gross: '₹${safeToInt(emp['gross_wages'])}',
+                            controller: _rowControllers[index],
+                          );
+                        },
+                        childCount:
+                            ((_data?['entries'] as List<dynamic>?) ?? [])
+                                .length,
+                      ),
                     ),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Employee Breakdown',
-                          style: tt.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cs.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            monthLabel,
-                            style: tt.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final emps =
-                            (_data?['entries'] as List<dynamic>?) ?? [];
-                        final emp = emps[index] as Map<String, dynamic>;
-                        return _EditablePayrollRow(
-                          cs: cs,
-                          tt: tt,
-                          name: emp['name'] as String? ?? '',
-                          photoUrl: emp['photo_url'] as String?,
-                          gross: '₹${safeToInt(emp['gross_wages'])}',
-                          controller: _rowControllers[index],
-                        );
-                      },
-                      childCount:
-                          ((_data?['entries'] as List<dynamic>?) ?? []).length,
-                    ),
-                  ),
-                ),
+                ],
               ],
-            ],
-          ),
-          BottomBlurBar(
-            child: LoadingButton(
-              loading: _locking,
-              onPressed: _lockPayroll,
-              label: 'Lock Payroll',
-              icon: PhosphorIconsBold.lockKey,
-              backgroundColor: const Color(0xFF10B981),
             ),
-          ),
-        ],
+            BottomBlurBar(
+              child: LoadingButton(
+                loading: _locking,
+                onPressed: _lockPayroll,
+                label: 'Lock Payroll',
+                icon: PhosphorIconsBold.lockKey,
+                backgroundColor: const Color(0xFF10B981),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -507,18 +516,18 @@ class _PayStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Flexible(
-          fit: FlexFit.loose,
-          child: Text(
-            value,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              color: color,
-              fontSize: 18,
-              letterSpacing: -0.5,
-            ),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            color: color,
+            fontSize: 18,
+            letterSpacing: -0.5,
           ),
         ),
         const SizedBox(height: 4),

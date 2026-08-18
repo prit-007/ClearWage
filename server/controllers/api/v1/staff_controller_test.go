@@ -483,6 +483,7 @@ func TestStaffList_Unauthorized(t *testing.T) {
 		Return(nil, errors.New("db error"))
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff?limit=20&offset=0", nil)
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "e1", "owner"))
 	rec := httptest.NewRecorder()
 
 	staffCtrl.List(rec, req)
@@ -504,6 +505,7 @@ func TestStaffGet_Unauthorized(t *testing.T) {
 	r.Get("/api/v1/staff/{id}", staffCtrl.Get)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff/00000000-0000-0000-0000-000000000002", nil)
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "e1", "owner"))
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
@@ -549,6 +551,7 @@ func TestStaffUpdate_Unauthorized(t *testing.T) {
 		"wage_amount": "500",
 	})
 	req := httptest.NewRequest(http.MethodPut, "/api/v1/staff/00000000-0000-0000-0000-000000000002", bytes.NewReader(body))
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "e1", "owner"))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -562,6 +565,9 @@ func TestStaffOverview_Success(t *testing.T) {
 	staffCtrl, mockQuerier, cleanup := setupStaffTest(t)
 	defer cleanup()
 
+	mockQuerier.EXPECT().
+		FindTenantByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Tenant{Timezone: "Asia/Kolkata"}, nil)
 	mockQuerier.EXPECT().
 		GetStaffProfile(gomock.Any(), gomock.Any()).
 		Return(repositories.StaffProfile{}, nil)
@@ -606,6 +612,9 @@ func TestStaffOverview_EmployeeCanViewSelf(t *testing.T) {
 	staffCtrl, mockQuerier, cleanup := setupStaffTest(t)
 	defer cleanup()
 
+	mockQuerier.EXPECT().
+		FindTenantByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Tenant{Timezone: "Asia/Kolkata"}, nil)
 	mockQuerier.EXPECT().
 		GetStaffProfile(gomock.Any(), gomock.Any()).
 		Return(repositories.StaffProfile{}, nil)

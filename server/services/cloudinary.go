@@ -15,6 +15,10 @@ import (
 	"time"
 )
 
+var cloudinaryHTTPClient = &http.Client{
+	Timeout: 30 * time.Second,
+}
+
 const cloudinaryBaseURL = "https://api.cloudinary.com/v1_1"
 
 type CloudinaryResult struct {
@@ -101,7 +105,7 @@ func UploadToCloudinary(ctx context.Context, cloudName, apiKey, apiSecret, folde
 	}
 	req.Header.Set("Content-Type", mp.FormDataContentType())
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := cloudinaryHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("cloudinary upload request: %w", err)
 	}
@@ -147,7 +151,7 @@ func DeleteFromCloudinary(ctx context.Context, cloudName, apiKey, apiSecret, pub
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := cloudinaryHTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("cloudinary destroy request: %w", err)
 	}

@@ -17,6 +17,9 @@ import (
 func parseLimitOffset(r *http.Request) (int32, int32, error) {
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
+	if limitStr == "" {
+		return 20, 0, nil
+	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
 		return 0, 0, fmt.Errorf("invalid limit parameter")
@@ -24,9 +27,12 @@ func parseLimitOffset(r *http.Request) (int32, int32, error) {
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil {
-		return 0, 0, fmt.Errorf("invalid offset parameter")
+	offset := 0
+	if offsetStr != "" {
+		offset, err = strconv.Atoi(offsetStr)
+		if err != nil {
+			return 0, 0, fmt.Errorf("invalid offset parameter")
+		}
 	}
 	if offset < 0 {
 		offset = 0
@@ -38,18 +44,21 @@ func parseAllLimitOffset(r *http.Request) (int32, int32, error) {
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
 	if limitStr == "" {
-		return 100000, 0, nil
+		return 100, 0, nil
 	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
 		return 0, 0, fmt.Errorf("invalid limit parameter")
 	}
-	if limit <= 0 || limit > 100000 {
-		limit = 100000
+	if limit <= 0 || limit > 100 {
+		limit = 100
 	}
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil {
-		return 0, 0, fmt.Errorf("invalid offset parameter")
+	offset := 0
+	if offsetStr != "" {
+		offset, err = strconv.Atoi(offsetStr)
+		if err != nil {
+			return 0, 0, fmt.Errorf("invalid offset parameter")
+		}
 	}
 	if offset < 0 {
 		offset = 0

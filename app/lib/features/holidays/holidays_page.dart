@@ -498,16 +498,18 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
                             : cs.onSurfaceVariant,
                       ),
                       const SizedBox(width: 16),
-                      Text(
-                        _selectedDate == null
-                            ? 'Select Date'
-                            : formatDate(_selectedDate!),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: _selectedDate == null
-                              ? cs.onSurfaceVariant
-                              : cs.onSurface,
-                          fontSize: 16,
+                      Expanded(
+                        child: Text(
+                          _selectedDate == null
+                              ? 'Select Date'
+                              : formatDate(_selectedDate!),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: _selectedDate == null
+                                ? cs.onSurfaceVariant
+                                : cs.onSurface,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ],
@@ -541,24 +543,26 @@ class _HolidayFormSheetState extends State<_HolidayFormSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Repeats Annually',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Repeats Annually',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Automatically mark this every year',
-                        style: TextStyle(
-                          color: cs.onSurfaceVariant,
-                          fontSize: 12,
+                        Text(
+                          'Automatically mark this every year',
+                          style: TextStyle(
+                            color: cs.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   Switch.adaptive(
                     value: _recurring,

@@ -8,6 +8,7 @@ import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/responsive.dart';
 import '../../core/currency_format.dart';
 
@@ -49,8 +50,9 @@ class DefaultersScreen extends ConsumerWidget {
               centerTitle: true,
             ),
             asyncValue.when(
-              loading: () => const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
+              loading: () => const SliverPadding(
+                padding: EdgeInsets.fromLTRB(24, 8, 24, 40),
+                sliver: ShimmerLoading(itemCount: 3, height: 140),
               ),
               error: (e, _) => SliverFillRemaining(
                 child: Center(

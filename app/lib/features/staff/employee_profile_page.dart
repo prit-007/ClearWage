@@ -21,6 +21,7 @@ import 'add_employee_page.dart';
 import '../../core/responsive.dart';
 import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/currency_format.dart';
 import 'dart:async';
 
@@ -217,7 +218,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
             onPressed: () => Navigator.pop(context),
           ),
         ),
-        body: const Center(child: CircularProgressIndicator()),
+        body: CustomScrollView(
+          physics: AppScrollPhysics.physics(),
+          slivers: [const ShimmerLoading(itemCount: 4, height: 100)],
+        ),
       );
     }
 
@@ -952,9 +956,9 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
     final tt = Theme.of(context).textTheme;
 
     if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: CircularProgressIndicator()),
+      return const CustomScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        slivers: [ShimmerLoading(itemCount: 4, height: 100)],
       );
     }
 

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../data/models/holiday_model.dart';
 import '../../core/providers/services.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/responsive.dart';
 
@@ -152,9 +153,7 @@ class _MyHolidaysPageState extends ConsumerState<MyHolidaysPage> {
                   ),
                 )
               else if (_loading && _items.isEmpty)
-                const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const ShimmerLoading(itemCount: 4, height: 96)
               else if (_items.isEmpty)
                 const SliverFillRemaining(
                   child: EmptyState(

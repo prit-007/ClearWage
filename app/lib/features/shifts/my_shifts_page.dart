@@ -6,6 +6,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../data/models/shift_model.dart';
 import '../../core/providers/services.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/helpers.dart';
 import '../../core/design_tokens.dart';
@@ -153,9 +154,7 @@ class _MyShiftsPageState extends ConsumerState<MyShiftsPage> {
                   ),
                 )
               else if (_loading && _items.isEmpty)
-                const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const ShimmerLoading(itemCount: 3, height: 120)
               else if (_items.isEmpty)
                 const SliverFillRemaining(
                   child: EmptyState(

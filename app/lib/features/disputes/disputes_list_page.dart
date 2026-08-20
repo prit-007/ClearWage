@@ -7,6 +7,7 @@ import '../../core/design_tokens.dart';
 import '../../core/providers/services.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../data/models/dispute_model.dart';
 
 final _disputesProvider = FutureProvider.autoDispose<List<Dispute>>((
@@ -93,7 +94,14 @@ class _DisputesListScreenState extends ConsumerState<DisputesListScreen>
                       ),
                     ),
                   ),
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.all(16),
+                  sliver: ShimmerLoading(itemCount: 4, height: 100),
+                ),
+              ],
+            ),
             error: (e, _) => Center(child: Text('Error: $e')),
           ),
           closedDisputes.when(
@@ -112,7 +120,14 @@ class _DisputesListScreenState extends ConsumerState<DisputesListScreen>
                       child: _DisputeCard(dispute: disputes[i], readOnly: true),
                     ),
                   ),
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.all(16),
+                  sliver: ShimmerLoading(itemCount: 4, height: 100),
+                ),
+              ],
+            ),
             error: (e, _) => Center(child: Text('Error: $e')),
           ),
         ],

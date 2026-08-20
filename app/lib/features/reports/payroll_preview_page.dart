@@ -12,6 +12,7 @@ import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/currency_format.dart';
 import 'dart:async';
@@ -278,8 +279,9 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                   ),
                 ),
                 if (_loading)
-                  const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
+                  const SliverPadding(
+                    padding: EdgeInsets.fromLTRB(24, 8, 24, 120),
+                    sliver: ShimmerLoading(itemCount: 5, height: 72),
                   )
                 else if (_error != null)
                   SliverFillRemaining(

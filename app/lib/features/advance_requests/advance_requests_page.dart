@@ -9,6 +9,7 @@ import '../ledger/providers/ledger_providers.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/helpers.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
@@ -166,8 +167,9 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
                 centerTitle: true,
               ),
               if (_loading)
-                const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
+                const SliverPadding(
+                  padding: EdgeInsets.fromLTRB(24, 8, 24, 40),
+                  sliver: ShimmerLoading(itemCount: 4, height: 100),
                 )
               else if (_error != null)
                 SliverFillRemaining(

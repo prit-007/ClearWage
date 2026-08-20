@@ -8,6 +8,7 @@ import '../../core/responsive.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/design_tokens.dart';
 import '../../data/models/attendance_model.dart';
 
@@ -154,9 +155,7 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
               ),
             ),
             if (_loading)
-              const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
-              )
+              const ShimmerLoading(itemCount: 6, height: 72)
             else if (_error != null)
               SliverFillRemaining(
                 child: Center(

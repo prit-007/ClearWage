@@ -7,6 +7,7 @@ import '../../core/providers/services.dart';
 import '../../core/responsive.dart';
 import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
 class BalanceSheetPage extends ConsumerStatefulWidget {
@@ -93,7 +94,14 @@ class _BalanceSheetPageState extends ConsumerState<BalanceSheetPage> {
             ),
             if (_loading)
               const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      sliver: ShimmerLoading(itemCount: 5, height: 72),
+                    ),
+                  ],
+                ),
               )
             else if (_error != null)
               SliverFillRemaining(

@@ -8,6 +8,7 @@ import '../../core/responsive.dart';
 import '../../core/helpers.dart';
 import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
 class MyLedgerPage extends ConsumerStatefulWidget {
@@ -158,7 +159,14 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
             ),
             if (_loading)
               const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      sliver: ShimmerLoading(itemCount: 5, height: 80),
+                    ),
+                  ],
+                ),
               )
             else if (_error != null)
               SliverFillRemaining(

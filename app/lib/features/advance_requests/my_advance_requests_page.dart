@@ -7,6 +7,7 @@ import '../../core/providers/services.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/design_tokens.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/responsive.dart';
 
 const int _pageSize = 20;
@@ -133,8 +134,9 @@ class _MyAdvanceRequestsPageState extends ConsumerState<MyAdvanceRequestsPage> {
                 centerTitle: true,
               ),
               if (_loading)
-                const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
+                const SliverPadding(
+                  padding: EdgeInsets.fromLTRB(24, 8, 24, 40),
+                  sliver: ShimmerLoading(itemCount: 4, height: 100),
                 )
               else if (_error != null)
                 SliverFillRemaining(

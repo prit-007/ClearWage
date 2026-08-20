@@ -18,6 +18,7 @@ import '../../core/widgets/employee_avatar.dart';
 import '../../core/responsive.dart';
 import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/currency_format.dart';
 import 'dart:async';
 
@@ -233,7 +234,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen>
       body: ref
           .watch(myProfileProvider)
           .when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => CustomScrollView(
+              physics: AppScrollPhysics.physics(),
+              slivers: [const ShimmerLoading(itemCount: 4, height: 100)],
+            ),
             error: (e, _) => Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -693,7 +697,10 @@ class _MyAttendanceTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final attendanceAsync = ref.watch(myAttendanceProvider);
     return attendanceAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const CustomScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        slivers: [ShimmerLoading(itemCount: 4, height: 100)],
+      ),
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -915,7 +922,10 @@ class _MyLedgerTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ledgerAsync = ref.watch(myLedgerProvider);
     return ledgerAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const CustomScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        slivers: [ShimmerLoading(itemCount: 2, height: 120)],
+      ),
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(32),

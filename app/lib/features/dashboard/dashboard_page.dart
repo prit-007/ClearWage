@@ -12,6 +12,7 @@ import '../../core/responsive.dart';
 import 'providers/dashboard_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/design_tokens.dart';
 import 'employee_dashboard.dart';
@@ -61,8 +62,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       backgroundColor: cs.surface,
       body: SafeArea(
         child: asyncData.when(
-          loading: () => Center(
-            child: CircularProgressIndicator(color: cs.primary, strokeWidth: 2),
+          loading: () => CustomScrollView(
+            physics: AppScrollPhysics.physics(),
+            slivers: [const ShimmerLoading(itemCount: 6, height: 120)],
           ),
           error: (e, _) => Center(
             child: Padding(

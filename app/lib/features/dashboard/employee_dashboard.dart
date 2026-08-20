@@ -8,6 +8,7 @@ import '../../core/providers/services.dart';
 import '../../core/responsive.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/design_tokens.dart';
 
 class EmployeeDashboard extends ConsumerStatefulWidget {
@@ -67,11 +68,9 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
       backgroundColor: cs.surface,
       body: SafeArea(
         child: _loading
-            ? Center(
-                child: CircularProgressIndicator(
-                  color: cs.primary,
-                  strokeWidth: 2,
-                ),
+            ? CustomScrollView(
+                physics: AppScrollPhysics.physics(),
+                slivers: [const ShimmerLoading(itemCount: 4, height: 140)],
               )
             : _error != null
             ? _buildError(cs, tt)

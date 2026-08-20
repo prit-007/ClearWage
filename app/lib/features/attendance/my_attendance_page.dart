@@ -6,7 +6,9 @@ import 'package:intl/intl.dart';
 import '../../core/providers/services.dart';
 import '../../core/responsive.dart';
 import '../../core/helpers.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/design_tokens.dart';
 import '../../data/models/attendance_model.dart';
 
 class MyAttendancePage extends ConsumerStatefulWidget {
@@ -100,7 +102,10 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
               collapsedHeight: 70,
               flexibleSpace: ClipRRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                  filter: ImageFilter.blur(
+                    sigmaX: AppBlur.sigma,
+                    sigmaY: AppBlur.sigma,
+                  ),
                   child: FlexibleSpaceBar(
                     titlePadding: const EdgeInsets.symmetric(
                       horizontal: 24,
@@ -176,41 +181,11 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
                 ),
               )
             else if (_records.isEmpty)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: cs.surfaceContainerHighest.withValues(
-                            alpha: 0.3,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: PhosphorIcon(
-                          PhosphorIconsRegular.calendarX,
-                          size: 56,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'No Records',
-                        style: tt.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'No attendance records for this month.',
-                        style: tt.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
+              const SliverFillRemaining(
+                child: EmptyState(
+                  icon: PhosphorIconsRegular.calendarBlank,
+                  title: 'No Records',
+                  subtitle: 'No attendance records for this month.',
                 ),
               )
             else
@@ -251,11 +226,11 @@ class _AttendanceRecordTile extends StatelessWidget {
   Color _statusColor() {
     switch (attendance.status) {
       case 'present':
-        return const Color(0xFF10B981);
+        return AppColors.success;
       case 'absent':
-        return const Color(0xFFEF4444);
+        return AppColors.danger;
       case 'half_day':
-        return const Color(0xFFF59E0B);
+        return AppColors.warning;
       default:
         return cs.onSurfaceVariant;
     }

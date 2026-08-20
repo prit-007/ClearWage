@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../data/models/shift_model.dart';
 import '../../core/providers/services.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../core/helpers.dart';
@@ -192,41 +193,11 @@ class _ShiftsManagementScreenState
                   child: Center(child: CircularProgressIndicator()),
                 )
               else if (_items.isEmpty)
-                SliverFillRemaining(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: cs.surfaceContainerHighest.withValues(
-                            alpha: 0.3,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          PhosphorIconsFill.clock,
-                          size: 56,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'No shifts configured',
-                        style: tt.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: cs.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Tap the + button to add your first shift.',
-                        style: tt.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                const SliverFillRemaining(
+                  child: EmptyState(
+                    icon: PhosphorIconsRegular.clock,
+                    title: 'No shifts configured',
+                    subtitle: 'Tap the + button to add your first shift.',
                   ),
                 )
               else ...[

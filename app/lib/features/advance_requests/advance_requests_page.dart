@@ -6,9 +6,11 @@ import '../../data/models/advance_request_model.dart';
 import '../../core/providers/services.dart';
 import '../dashboard/providers/dashboard_providers.dart';
 import '../ledger/providers/ledger_providers.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/helpers.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import 'dart:async';
 
@@ -199,33 +201,10 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
                   ),
                 )
               else if (_requests.isEmpty)
-                SliverFillRemaining(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: cs.surfaceContainerHighest.withValues(
-                            alpha: 0.3,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: PhosphorIcon(
-                          PhosphorIconsDuotone.wallet,
-                          size: 64,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'No pending requests',
-                        style: tt.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                const SliverFillRemaining(
+                  child: EmptyState(
+                    icon: PhosphorIconsRegular.handCoins,
+                    title: 'No pending requests',
                   ),
                 )
               else
@@ -284,6 +263,13 @@ class _AdvanceActionSheetContent extends ConsumerStatefulWidget {
 class _AdvanceActionSheetContentState
     extends ConsumerState<_AdvanceActionSheetContent> {
   bool _loading = false;
+  final _reasonCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _reasonCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _approve() async {
     final confirm = await showConfirmDialog(
@@ -325,7 +311,9 @@ class _AdvanceActionSheetContentState
     setState(() => _loading = true);
     try {
       unawaited(HapticFeedback.selectionClick());
-      await widget.ref.read(advanceRequestServiceProvider).deny(widget.req.id);
+      await widget.ref
+          .read(advanceRequestServiceProvider)
+          .deny(widget.req.id, reason: _reasonCtrl.text);
       widget.ref.invalidate(dashboardDataProvider);
       widget.ref.read(ledgerRefreshProvider.notifier).state++;
       if (mounted) Navigator.pop(context, 'denied');
@@ -383,6 +371,21 @@ class _AdvanceActionSheetContentState
           ),
         ),
         const SizedBox(height: 32),
+        TextField(
+          controller: _reasonCtrl,
+          decoration: InputDecoration(
+            hintText: 'Reason (optional)',
+            hintStyle: TextStyle(color: cs.onSurfaceVariant),
+            filled: true,
+            fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          maxLines: 2,
+        ),
+        const SizedBox(height: 24),
         if (_loading)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
@@ -399,12 +402,12 @@ class _AdvanceActionSheetContentState
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    side: const BorderSide(color: Color(0xFFEF4444)),
+                    side: const BorderSide(color: AppColors.danger),
                   ),
                   child: const Text(
                     'Deny',
                     style: TextStyle(
-                      color: Color(0xFFEF4444),
+                      color: AppColors.danger,
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
                     ),
@@ -417,7 +420,7 @@ class _AdvanceActionSheetContentState
                   onPressed: _approve,
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: const Color(0xFF10B981),
+                    backgroundColor: AppColors.success,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -452,10 +455,10 @@ class _AdvanceRequestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPending = request.isPending;
     final statusColor = isPending
-        ? const Color(0xFFF59E0B)
+        ? AppColors.warning
         : request.isApproved
-        ? const Color(0xFF10B981)
-        : const Color(0xFFEF4444);
+        ? AppColors.success
+        : AppColors.danger;
     final statusLabel = isPending
         ? 'Pending Action'
         : request.isApproved

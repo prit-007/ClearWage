@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/providers/services.dart';
 import '../../core/responsive.dart';
+import '../../core/design_tokens.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
 class BalanceSheetPage extends ConsumerStatefulWidget {
@@ -68,7 +70,10 @@ class _BalanceSheetPageState extends ConsumerState<BalanceSheetPage> {
               collapsedHeight: 70,
               flexibleSpace: ClipRRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                  filter: ImageFilter.blur(
+                    sigmaX: AppBlur.sigma,
+                    sigmaY: AppBlur.sigma,
+                  ),
                   child: FlexibleSpaceBar(
                     titlePadding: const EdgeInsets.symmetric(
                       horizontal: 24,
@@ -114,39 +119,11 @@ class _BalanceSheetPageState extends ConsumerState<BalanceSheetPage> {
                 ),
               )
             else if (_data.isEmpty)
-              SliverFillRemaining(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: cs.surfaceContainerHighest.withValues(
-                          alpha: 0.3,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: PhosphorIcon(
-                        PhosphorIconsDuotone.listDashes,
-                        size: 56,
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'No balance data',
-                      style: tt.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'No employee balances found.',
-                      style: tt.bodyMedium?.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+              const SliverFillRemaining(
+                child: EmptyState(
+                  icon: PhosphorIconsRegular.coins,
+                  title: 'No balance data',
+                  subtitle: 'No employee balances found.',
                 ),
               )
             else ...[
@@ -212,14 +189,14 @@ class _TotalOutstandingCard extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: AppBlur.sigma, sigmaY: AppBlur.sigma),
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+            color: AppColors.danger.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+              color: AppColors.danger.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -230,7 +207,7 @@ class _TotalOutstandingCard extends StatelessWidget {
                 children: [
                   const PhosphorIcon(
                     PhosphorIconsRegular.coins,
-                    color: Color(0xFFEF4444),
+                    color: AppColors.danger,
                     size: 28,
                   ),
                   const SizedBox(width: 12),
@@ -244,7 +221,7 @@ class _TotalOutstandingCard extends StatelessWidget {
               Text(
                 '-\u20B9${totalOutstanding.toStringAsFixed(0)}',
                 style: tt.displaySmall?.copyWith(
-                  color: const Color(0xFFEF4444),
+                  color: AppColors.danger,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -2.0,
                 ),
@@ -277,9 +254,9 @@ class _EmployeeBalanceRow extends StatelessWidget {
 
     final Color color;
     if (netBalance > 0) {
-      color = const Color(0xFF10B981);
+      color = AppColors.success;
     } else if (netBalance < 0) {
-      color = const Color(0xFFEF4444);
+      color = AppColors.danger;
     } else {
       color = cs.onSurfaceVariant;
     }

@@ -139,12 +139,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             _slideUpPage(state, const MyProfileScreen()),
       ),
       GoRoute(
-        path: '/new_ledger',
+        path: '/new-ledger',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const NewLedgerEntryScreen()),
       ),
       GoRoute(
-        path: '/add_employee',
+        path: '/add-employee',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const AddEmployeeScreen()),
       ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
@@ -99,7 +100,7 @@ class _ReportCard extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: AppBlur.sigma, sigmaY: AppBlur.sigma),
         child: Material(
           color: cs.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(24),

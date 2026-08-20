@@ -11,7 +11,9 @@ import '../../core/providers/app_providers.dart';
 import '../../core/responsive.dart';
 import 'providers/dashboard_providers.dart';
 import '../../core/helpers.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/design_tokens.dart';
 import 'employee_dashboard.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -177,7 +179,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   label: 'Outstanding (Udhaar)',
                                   value:
                                       '\u20B9${data.totalOutstanding.toStringAsFixed(0)}',
-                                  color: const Color(0xFFF59E0B),
+                                  color: AppColors.warning,
                                 ),
                                 _GlassStatCard(
                                   cs: cs,
@@ -185,7 +187,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   icon: PhosphorIconsDuotone.warningCircle,
                                   label: 'Defaulters',
                                   value: '${data.defaultersCount}',
-                                  color: const Color(0xFFEF4444),
+                                  color: AppColors.danger,
                                 ),
                               ],
                             ),
@@ -201,7 +203,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   icon: PhosphorIconsDuotone.checkCircle,
                                   label: 'Present Today',
                                   value: '${data.presentToday}',
-                                  color: const Color(0xFF10B981),
+                                  color: AppColors.success,
                                 ),
                                 _GlassStatCard(
                                   cs: cs,
@@ -238,7 +240,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             label: 'Add\nStaff',
                             onTap: () {
                               HapticFeedback.lightImpact();
-                              context.push('/add_employee');
+                              context.push('/add-employee');
                             },
                           ),
                         if (!isAdmin)
@@ -262,13 +264,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         ),
                         const SizedBox(height: 12),
                         if (data.recentActivity.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 32),
-                            child: Center(
-                              child: Text(
-                                'No activity recorded yet.',
-                                style: TextStyle(color: cs.onSurfaceVariant),
-                              ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 32),
+                            child: EmptyState(
+                              icon: PhosphorIconsRegular.clock,
+                              title: 'No activity recorded yet.',
                             ),
                           )
                         else
@@ -404,7 +404,7 @@ class _GlassStatCard extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: AppBlur.sigma, sigmaY: AppBlur.sigma),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -502,15 +502,15 @@ class _ActivityTile extends StatelessWidget {
     switch (activity.action) {
       case 'registered_owner':
       case 'created_employee':
-        return const Color(0xFF10B981);
+        return AppColors.success;
       case 'deleted_employee':
-        return const Color(0xFFEF4444);
+        return AppColors.danger;
       case 'updated_employee':
-        return const Color(0xFFF59E0B);
+        return AppColors.warning;
       case 'marked_attendance':
-        return const Color(0xFF3B82F6);
+        return AppColors.info;
       case 'updated_attendance':
-        return const Color(0xFF8B5CF6);
+        return AppColors.purple;
       case 'created_shift':
         return cs.primary;
       default:
@@ -713,7 +713,7 @@ class _AttendanceTrendChart extends ConsumerWidget {
                     barRods: [
                       BarChartRodData(
                         toY: present,
-                        color: const Color(0xFF10B981),
+                        color: AppColors.success,
                         width: 8,
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(4),
@@ -722,7 +722,7 @@ class _AttendanceTrendChart extends ConsumerWidget {
                       ),
                       BarChartRodData(
                         toY: absent,
-                        color: const Color(0xFFEF4444),
+                        color: AppColors.danger,
                         width: 8,
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(4),
@@ -739,9 +739,9 @@ class _AttendanceTrendChart extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _DotLegend(const Color(0xFF10B981), 'Present', cs),
+              _DotLegend(AppColors.success, 'Present', cs),
               const SizedBox(width: 24),
-              _DotLegend(const Color(0xFFEF4444), 'Absent', cs),
+              _DotLegend(AppColors.danger, 'Absent', cs),
             ],
           ),
         ],

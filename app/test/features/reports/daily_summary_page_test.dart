@@ -94,7 +94,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Wage Bill Today'), findsOneWidget);
-      expect(find.text('₹85001'), findsOneWidget);
+      expect(find.text('₹85,001'), findsOneWidget);
     });
 
     testWidgets('shows error state on fetch failure', (tester) async {

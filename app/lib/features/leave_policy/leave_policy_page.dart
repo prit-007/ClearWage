@@ -8,6 +8,7 @@ import '../../core/widgets/premium_macro_field.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import 'dart:async';
 
@@ -220,7 +221,7 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
                                 subtitle: 'Days per year',
                                 ctrl: _paidCtrl,
                                 icon: PhosphorIconsFill.sun,
-                                activeColor: const Color(0xFF10B981),
+                                activeColor: AppColors.success,
                               ),
                               if (_paidError != null)
                                 Padding(

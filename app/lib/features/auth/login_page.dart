@@ -347,6 +347,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             controller: _otpCtrl,
                             focusNode: _otpFocusNode,
                             length: 6,
+                            autofillHints: const [AutofillHints.oneTimeCode],
                             defaultPinTheme: defaultPinTheme,
                             focusedPinTheme: defaultPinTheme.copyWith(
                               decoration: defaultPinTheme.decoration?.copyWith(

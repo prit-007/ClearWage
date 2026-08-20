@@ -6,7 +6,10 @@ import '../../core/providers/services.dart';
 import '../../data/models/report_models.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
+import '../../core/design_tokens.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/responsive.dart';
+import '../../core/currency_format.dart';
 
 final defaultersProvider = FutureProvider.autoDispose<List<DefaulterItem>>((
   ref,
@@ -84,40 +87,12 @@ class DefaultersScreen extends ConsumerWidget {
                 ),
               ),
               data: (defaulters) => defaulters.isEmpty
-                  ? SliverFillRemaining(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: const Color(
-                                0xFF10B981,
-                              ).withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const PhosphorIcon(
-                              PhosphorIconsDuotone.shieldCheck,
-                              size: 64,
-                              color: Color(0xFF10B981),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Zero Defaulters',
-                            style: tt.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: cs.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
+                  ? const SliverFillRemaining(
+                      child: EmptyState(
+                        icon: PhosphorIconsRegular.shieldCheck,
+                        title: 'Zero Defaulters',
+                        subtitle:
                             'All employee advances are within safe limits.',
-                            style: tt.bodyMedium?.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
                       ),
                     )
                   : SliverPadding(
@@ -131,7 +106,7 @@ class DefaultersScreen extends ConsumerWidget {
                                 child: Text(
                                   '${defaulters.length} AT RISK',
                                   style: tt.labelSmall?.copyWith(
-                                    color: const Color(0xFFEF4444),
+                                    color: AppColors.danger,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: 1.0,
                                   ),
@@ -172,7 +147,7 @@ class _DefaulterCard extends StatelessWidget {
     final outstanding = data.outstandingBalance;
     final wage = data.monthlyWage;
     final photoUrl = data.photoUrl;
-    const dangerColor = Color(0xFFEF4444);
+    final dangerColor = AppColors.danger;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -217,7 +192,7 @@ class _DefaulterCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Fixed Wage: ₹${wage.toStringAsFixed(0)}',
+                        'Fixed Wage: ${AppCurrency.format(wage)}',
                         style: tt.bodySmall?.copyWith(
                           color: cs.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
@@ -226,7 +201,7 @@ class _DefaulterCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const PhosphorIcon(
+                PhosphorIcon(
                   PhosphorIconsDuotone.warningCircle,
                   color: dangerColor,
                   size: 28,
@@ -243,7 +218,7 @@ class _DefaulterCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'PENDING RECOVERY',
                     style: TextStyle(
                       fontSize: 10,
@@ -253,7 +228,7 @@ class _DefaulterCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '₹${outstanding.toStringAsFixed(0)}',
+                    AppCurrency.format(outstanding),
                     style: tt.titleLarge?.copyWith(
                       fontWeight: FontWeight.w900,
                       color: dangerColor,

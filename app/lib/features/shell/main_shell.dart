@@ -11,6 +11,7 @@ import '../attendance/attendance_roster_page.dart';
 import '../attendance/my_attendance_page.dart';
 import '../dashboard/dashboard_page.dart';
 import '../ledger/ledger_list_page.dart';
+import '../ledger/my_ledger_page.dart';
 import '../reports/reports_hub_page.dart';
 import '../staff/staff_directory_page.dart';
 
@@ -36,7 +37,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             context,
             title: 'Session Expired',
             message:
-                'Your session has expired. Please sign in again to continue.',
+                'Your session has expired. Any unsaved changes will be lost. Please sign in again to continue.',
             buttonLabel: 'Sign In',
             icon: PhosphorIconsRegular.warningCircle,
             iconColor: Theme.of(context).colorScheme.error,
@@ -59,6 +60,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       } else ...{
         const DashboardScreen(): 'home',
         const MyAttendancePage(): 'my-attendance',
+        const MyLedgerPage(): 'my-ledger',
       },
     };
 
@@ -99,6 +101,11 @@ class _MainShellState extends ConsumerState<MainShell> {
           icon: Icon(Icons.event_available_outlined),
           selectedIcon: Icon(Icons.event_available),
           label: 'My Attendance',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.account_balance_wallet_outlined),
+          selectedIcon: Icon(Icons.account_balance_wallet),
+          label: 'My Ledger',
         ),
       ],
     ];

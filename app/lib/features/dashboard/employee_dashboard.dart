@@ -8,6 +8,7 @@ import '../../core/providers/services.dart';
 import '../../core/responsive.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/design_tokens.dart';
 
 class EmployeeDashboard extends ConsumerStatefulWidget {
   const EmployeeDashboard({super.key});
@@ -257,14 +258,14 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: AppBlur.sigma, sigmaY: AppBlur.sigma),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFFF59E0B).withValues(alpha: 0.08),
+            color: AppColors.warning.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+              color: AppColors.warning.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -273,7 +274,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
             children: [
               const PhosphorIcon(
                 PhosphorIconsRegular.coins,
-                color: Color(0xFFF59E0B),
+                color: AppColors.warning,
                 size: 28,
               ),
               const SizedBox(height: 16),
@@ -540,7 +541,7 @@ class _GlassActionCard extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: AppBlur.sigma, sigmaY: AppBlur.sigma),
         child: Material(
           color: cs.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(20),

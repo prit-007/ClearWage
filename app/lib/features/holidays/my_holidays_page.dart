@@ -6,6 +6,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/holiday_model.dart';
 import '../../core/providers/services.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/responsive.dart';
 
@@ -155,24 +156,10 @@ class _MyHolidaysPageState extends ConsumerState<MyHolidaysPage> {
                   child: Center(child: CircularProgressIndicator()),
                 )
               else if (_items.isEmpty)
-                SliverFillRemaining(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      PhosphorIcon(
-                        PhosphorIconsDuotone.calendarStar,
-                        size: 72,
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'No holidays configured',
-                        style: tt.titleMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
+                const SliverFillRemaining(
+                  child: EmptyState(
+                    icon: PhosphorIconsRegular.calendarStar,
+                    title: 'No holidays configured',
                   ),
                 )
               else ...[

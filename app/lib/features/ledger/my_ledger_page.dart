@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../../core/providers/services.dart';
 import '../../core/responsive.dart';
 import '../../core/helpers.dart';
+import '../../core/design_tokens.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
 class MyLedgerPage extends ConsumerStatefulWidget {
@@ -103,7 +105,10 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
               collapsedHeight: 70,
               flexibleSpace: ClipRRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                  filter: ImageFilter.blur(
+                    sigmaX: AppBlur.sigma,
+                    sigmaY: AppBlur.sigma,
+                  ),
                   child: FlexibleSpaceBar(
                     titlePadding: const EdgeInsets.symmetric(
                       horizontal: 24,
@@ -194,39 +199,11 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
               if (entries.isEmpty)
-                SliverFillRemaining(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: cs.surfaceContainerHighest.withValues(
-                            alpha: 0.3,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: PhosphorIcon(
-                          PhosphorIconsDuotone.listDashes,
-                          size: 56,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'No entries',
-                        style: tt.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'No ledger entries for this month.',
-                        style: tt.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                const SliverFillRemaining(
+                  child: EmptyState(
+                    icon: PhosphorIconsRegular.listDashes,
+                    title: 'No entries',
+                    subtitle: 'No ledger entries for this month.',
                   ),
                 )
               else
@@ -264,14 +241,12 @@ class _BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPositive = balance >= 0;
-    final color = isPositive
-        ? const Color(0xFF10B981)
-        : const Color(0xFFEF4444);
+    final color = isPositive ? AppColors.success : AppColors.danger;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: AppBlur.sigma, sigmaY: AppBlur.sigma),
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -353,14 +328,12 @@ class _MonthlySummaryCard extends StatelessWidget {
     }
 
     final netPosition = wagesEarned - advancesTaken;
-    final netColor = netPosition >= 0
-        ? const Color(0xFF10B981)
-        : const Color(0xFFEF4444);
+    final netColor = netPosition >= 0 ? AppColors.success : AppColors.danger;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: AppBlur.sigma, sigmaY: AppBlur.sigma),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -388,13 +361,13 @@ class _MonthlySummaryCard extends StatelessWidget {
                     label: 'Wages Earned',
                     value: '\u20B9${wagesEarned.toStringAsFixed(0)}',
                     icon: PhosphorIconsFill.arrowUpRight,
-                    color: const Color(0xFF10B981),
+                    color: AppColors.success,
                   ),
                   _MonthlyStat(
                     label: 'Advances Taken',
                     value: '\u20B9${advancesTaken.toStringAsFixed(0)}',
                     icon: PhosphorIconsFill.arrowDownLeft,
-                    color: const Color(0xFFEF4444),
+                    color: AppColors.danger,
                   ),
                   _MonthlyStat(
                     label: 'Net Position',
@@ -477,7 +450,7 @@ class _LedgerEntryCard extends StatelessWidget {
     final date = entry['date'] as String? ?? '';
 
     final isJama = type == 'jama';
-    final color = isJama ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final color = isJama ? AppColors.success : AppColors.danger;
     final label = isJama ? 'Jama' : 'Udhaar';
 
     return Container(

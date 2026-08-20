@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../data/models/shift_model.dart';
 import '../../core/providers/services.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/helpers.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 
 const int _pageSize = 20;
@@ -155,41 +157,11 @@ class _MyShiftsPageState extends ConsumerState<MyShiftsPage> {
                   child: Center(child: CircularProgressIndicator()),
                 )
               else if (_items.isEmpty)
-                SliverFillRemaining(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: cs.surfaceContainerHighest.withValues(
-                            alpha: 0.3,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          PhosphorIconsFill.clock,
-                          size: 56,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'No shifts configured',
-                        style: tt.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: cs.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'No shift timings available.',
-                        style: tt.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                const SliverFillRemaining(
+                  child: EmptyState(
+                    icon: PhosphorIconsRegular.clock,
+                    title: 'No shifts configured',
+                    subtitle: 'No shift timings available.',
                   ),
                 )
               else ...[
@@ -320,9 +292,7 @@ class _ReadOnlyShiftCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF8B5CF6,
-                            ).withValues(alpha: 0.1),
+                            color: AppColors.purple.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
@@ -330,7 +300,7 @@ class _ReadOnlyShiftCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF8B5CF6),
+                              color: AppColors.purple,
                               letterSpacing: 0.5,
                             ),
                           ),

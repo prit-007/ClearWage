@@ -96,9 +96,9 @@ void main() {
       expect(find.text('Gross Pay'), findsOneWidget);
       expect(find.text('Udhaar Deducted'), findsOneWidget);
       expect(find.text('NET PAYABLE'), findsOneWidget);
-      expect(find.text('₹90000'), findsOneWidget);
-      expect(find.text('-₹10000'), findsOneWidget);
-      expect(find.text('₹80000'), findsOneWidget);
+      expect(find.text('₹90,000'), findsOneWidget);
+      expect(find.text('-₹10,000'), findsOneWidget);
+      expect(find.text('₹80,000'), findsOneWidget);
     });
 
     testWidgets('renders employee rows with editable net pay', (tester) async {
@@ -109,8 +109,8 @@ void main() {
       expect(find.text('Employee Breakdown'), findsOneWidget);
       expect(find.text('Rahul'), findsOneWidget);
       expect(find.text('Priya'), findsOneWidget);
-      expect(find.text('Gross: ₹50000'), findsOneWidget);
-      expect(find.text('Gross: ₹40000'), findsOneWidget);
+      expect(find.text('Gross: ₹50,000'), findsOneWidget);
+      expect(find.text('Gross: ₹40,000'), findsOneWidget);
       expect(find.text('Lock Payroll'), findsWidgets);
     });
 

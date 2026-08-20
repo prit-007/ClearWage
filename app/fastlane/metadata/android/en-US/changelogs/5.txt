@@ -1,0 +1,19 @@
+v0.7.0 - UI/UX Overhaul & Bug Fixes
+
+Fixed:
+- Hourly wage badge now shows correctly in Staff Directory
+- Route naming normalized to kebab-case
+- Employee Profile tab renamed from "Logs" to "Attendance"
+- Delete Account / Sign Out button prominence corrected
+- Duplicate phone error message now user-friendly
+
+Added:
+- Centralized design tokens (colors, radius, blur)
+- Shared EmptyState widget across all pages
+- Indian currency formatting (₹1,00,000)
+- OTP SMS auto-fill for faster login
+- Session expiry data-loss warning
+- Payroll override indicator
+- Advance deny reason capture
+- Employee My Ledger tab
+- Disputes page design upgrade

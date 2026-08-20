@@ -6,7 +6,9 @@ import '../../core/providers/services.dart';
 import '../../data/models/report_models.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/helpers.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
+import '../../core/currency_format.dart';
 
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
 
@@ -144,14 +146,14 @@ class DailySummaryScreen extends ConsumerWidget {
                               cs: cs,
                               label: 'Absent',
                               value: '$absent',
-                              color: const Color(0xFFEF4444),
+                              color: AppColors.danger,
                               icon: PhosphorIconsDuotone.xCircle,
                             ),
                             _StatTile(
                               cs: cs,
                               label: 'On Leave',
                               value: '$onLeave',
-                              color: const Color(0xFFF59E0B),
+                              color: AppColors.warning,
                               icon: PhosphorIconsDuotone.bed,
                             ),
                           ],
@@ -219,7 +221,7 @@ class DailySummaryScreen extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      '₹${wageBill.toStringAsFixed(0)}',
+                                      AppCurrency.format(wageBill),
                                       style: tt.headlineMedium?.copyWith(
                                         fontWeight: FontWeight.w900,
                                         color: cs.primary,

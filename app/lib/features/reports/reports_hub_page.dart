@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/helpers.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 
 class ReportsHubScreen extends ConsumerWidget {
@@ -116,7 +117,7 @@ class ReportsHubScreen extends ConsumerWidget {
         icon: PhosphorIconsFill.warningCircle,
         title: 'Defaulters',
         subtitle: 'Employees with outstanding > wage',
-        color: const Color(0xFFEF4444),
+        color: AppColors.danger,
         route: '/reports/defaulters',
       ),
       if (isAdmin)
@@ -124,7 +125,7 @@ class ReportsHubScreen extends ConsumerWidget {
           icon: PhosphorIconsFill.wallet,
           title: 'Payroll Summary',
           subtitle: 'Monthly payroll breakdown',
-          color: const Color(0xFF10B981),
+          color: AppColors.success,
           badge: 'Owner Access Only',
           route: '/reports/payroll',
         ),

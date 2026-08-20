@@ -17,6 +17,7 @@ import '../../core/api_exceptions.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../data/models/shift_model.dart';
 import '../../core/responsive.dart';
+import '../../core/design_tokens.dart';
 import 'dart:async';
 
 enum _AttStatus { present, absent, halfDay }
@@ -304,7 +305,10 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                 collapsedHeight: 70,
                 flexibleSpace: ClipRRect(
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                    filter: ImageFilter.blur(
+                      sigmaX: AppBlur.sigma,
+                      sigmaY: AppBlur.sigma,
+                    ),
                     child: FlexibleSpaceBar(
                       titlePadding: const EdgeInsets.symmetric(
                         horizontal: 24,
@@ -804,7 +808,7 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
               Expanded(
                 child: TactileToggle(
                   label: 'P',
-                  color: const Color(0xFF10B981),
+                  color: AppColors.success,
                   isSelected: _optimisticStatus == _AttStatus.present,
                   onTap: () => _mark(_AttStatus.present),
                 ),
@@ -813,7 +817,7 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
               Expanded(
                 child: TactileToggle(
                   label: 'A',
-                  color: const Color(0xFFEF4444),
+                  color: AppColors.danger,
                   isSelected: _optimisticStatus == _AttStatus.absent,
                   onTap: () => _mark(_AttStatus.absent),
                 ),
@@ -822,7 +826,7 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
               Expanded(
                 child: TactileToggle(
                   label: 'HD',
-                  color: const Color(0xFFF59E0B),
+                  color: AppColors.warning,
                   isSelected: _optimisticStatus == _AttStatus.halfDay,
                   onTap: () => _mark(_AttStatus.halfDay),
                 ),
@@ -1151,7 +1155,7 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                 Expanded(
                   child: TactileToggle(
                     label: 'P',
-                    color: const Color(0xFF10B981),
+                    color: AppColors.success,
                     isSelected: _status == _AttStatus.present,
                     onTap: () => _updateStatus(_AttStatus.present),
                   ),
@@ -1160,7 +1164,7 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                 Expanded(
                   child: TactileToggle(
                     label: 'A',
-                    color: const Color(0xFFEF4444),
+                    color: AppColors.danger,
                     isSelected: _status == _AttStatus.absent,
                     onTap: () => _updateStatus(_AttStatus.absent),
                   ),
@@ -1169,7 +1173,7 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                 Expanded(
                   child: TactileToggle(
                     label: 'HD',
-                    color: const Color(0xFFF59E0B),
+                    color: AppColors.warning,
                     isSelected: _status == _AttStatus.halfDay,
                     onTap: () => _updateStatus(_AttStatus.halfDay),
                   ),

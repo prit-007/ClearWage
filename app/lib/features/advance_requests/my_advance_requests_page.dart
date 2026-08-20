@@ -4,7 +4,9 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/advance_request_model.dart';
 import '../../core/providers/services.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 
 const int _pageSize = 20;
@@ -166,40 +168,11 @@ class _MyAdvanceRequestsPageState extends ConsumerState<MyAdvanceRequestsPage> {
                   ),
                 )
               else if (_requests.isEmpty)
-                SliverFillRemaining(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: cs.surfaceContainerHighest.withValues(
-                            alpha: 0.3,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: PhosphorIcon(
-                          PhosphorIconsDuotone.wallet,
-                          size: 64,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'No advance requests',
-                        style: tt.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Your advance requests will appear here.',
-                        style: tt.bodySmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                const SliverFillRemaining(
+                  child: EmptyState(
+                    icon: PhosphorIconsRegular.handCoins,
+                    title: 'No advance requests',
+                    subtitle: 'Your advance requests will appear here.',
                   ),
                 )
               else
@@ -251,10 +224,10 @@ class _AdvanceRequestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPending = request.isPending;
     final statusColor = isPending
-        ? const Color(0xFFF59E0B)
+        ? AppColors.warning
         : request.isApproved
-        ? const Color(0xFF10B981)
-        : const Color(0xFFEF4444);
+        ? AppColors.success
+        : AppColors.danger;
     final statusLabel = isPending
         ? 'Pending'
         : request.isApproved

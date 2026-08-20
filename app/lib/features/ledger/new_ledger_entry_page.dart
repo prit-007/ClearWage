@@ -8,6 +8,8 @@ import 'providers/ledger_providers.dart';
 import '../staff/providers/staff_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/employee_avatar.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import 'dart:async';
 
@@ -104,9 +106,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
-    final activeColor = _isJama
-        ? const Color(0xFF10B981)
-        : const Color(0xFFEF4444);
+    final activeColor = _isJama ? AppColors.success : AppColors.danger;
     final surfaceColor = activeColor.withValues(alpha: 0.05);
 
     return PopScope(
@@ -169,7 +169,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                                 title: 'Give Advance',
                                 subtitle: 'Jama',
                                 isActive: _isJama,
-                                activeColor: const Color(0xFF10B981),
+                                activeColor: AppColors.success,
                                 icon: PhosphorIconsFill.arrowUpRight,
                                 onTap: () => _toggleType(true),
                               ),
@@ -179,7 +179,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                                 title: 'Deduct',
                                 subtitle: 'Udhaar',
                                 isActive: !_isJama,
-                                activeColor: const Color(0xFFEF4444),
+                                activeColor: AppColors.danger,
                                 icon: PhosphorIconsFill.arrowDownLeft,
                                 onTap: () => _toggleType(false),
                               ),
@@ -605,10 +605,10 @@ class _EmployeePickerSheetState extends ConsumerState<_EmployeePickerSheet> {
                           .where((e) => e.name.toLowerCase().contains(query))
                           .toList();
                 if (filtered.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No employees found',
-                      style: TextStyle(color: cs.onSurfaceVariant),
+                  return const Center(
+                    child: EmptyState(
+                      icon: PhosphorIconsRegular.users,
+                      title: 'No employees found',
                     ),
                   );
                 }

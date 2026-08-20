@@ -10,8 +10,10 @@ import '../../data/services/dispute_service.dart';
 import 'providers/ledger_providers.dart';
 import '../../core/helpers.dart';
 import '../disputes/raise_dispute_dialog.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 
 const int _pageSize = 20;
@@ -286,43 +288,14 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                   ),
                 ),
                 if (_entries.isEmpty)
-                  SliverToBoxAdapter(
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(height: 48),
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer
-                                  .withValues(alpha: 0.3),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              PhosphorIconsFill.notebook,
-                              size: 48,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'No ledger entries yet',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 48),
+                      child: EmptyState(
+                        icon: PhosphorIconsRegular.listDashes,
+                        title: 'No ledger entries yet',
+                        subtitle:
                             'Entries will appear here once transactions are recorded.',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                          ),
-                        ],
                       ),
                     ),
                   )
@@ -360,7 +333,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'ledger_list_fab',
-        onPressed: () => context.push('/new_ledger'),
+        onPressed: () => context.push('/new-ledger'),
         backgroundColor: cs.primary,
         icon: Icon(PhosphorIconsBold.plus, color: cs.onPrimary),
         label: Text(
@@ -395,7 +368,10 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            filter: ImageFilter.blur(
+              sigmaX: AppBlur.sigma,
+              sigmaY: AppBlur.sigma,
+            ),
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -416,9 +392,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                   Text(
                     '${isPositive ? '+' : '-'}\u20B9${net.abs().toStringAsFixed(0)}',
                     style: tt.displayMedium?.copyWith(
-                      color: isPositive
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFEF4444),
+                      color: isPositive ? AppColors.success : AppColors.danger,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -1.5,
                     ),
@@ -430,13 +404,13 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                         label: 'Total Jama',
                         value: '\u20B9${jama.toStringAsFixed(0)}',
                         icon: PhosphorIconsFill.arrowUpRight,
-                        color: const Color(0xFF10B981),
+                        color: AppColors.success,
                       ),
                       _SummaryStat(
                         label: 'Total Udhaar',
                         value: '\u20B9${udhaar.toStringAsFixed(0)}',
                         icon: PhosphorIconsFill.arrowDownLeft,
-                        color: const Color(0xFFEF4444),
+                        color: AppColors.danger,
                       ),
                     ],
                   ),
@@ -509,7 +483,7 @@ class _LedgerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isJama = entry.isJama;
-    final amtColor = isJama ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final amtColor = isJama ? AppColors.success : AppColors.danger;
 
     return GestureDetector(
       onLongPress: () {

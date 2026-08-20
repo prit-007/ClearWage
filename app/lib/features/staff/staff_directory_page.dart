@@ -13,6 +13,8 @@ import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/logger.dart';
 import '../../core/responsive.dart';
+import '../../core/design_tokens.dart';
+import '../../core/widgets/empty_state.dart';
 
 const int _pageSize = 20;
 
@@ -217,7 +219,10 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
               collapsedHeight: 70,
               flexibleSpace: ClipRRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                  filter: ImageFilter.blur(
+                    sigmaX: AppBlur.sigma,
+                    sigmaY: AppBlur.sigma,
+                  ),
                   child: FlexibleSpaceBar(
                     titlePadding: const EdgeInsets.symmetric(
                       horizontal: 24,
@@ -319,8 +324,6 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
               if (_filtered.isEmpty)
                 SliverFillRemaining(
                   child: _EmptySearchState(
-                    cs: cs,
-                    tt: tt,
                     isSearching: _searchQuery.isNotEmpty,
                   ),
                 )
@@ -387,7 +390,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
               heroTag: 'staff_directory_fab',
               onPressed: () async {
                 unawaited(HapticFeedback.heavyImpact());
-                final result = await context.push<bool>('/add_employee');
+                final result = await context.push<bool>('/add-employee');
                 if (result == true && mounted) unawaited(_fetch());
               },
               backgroundColor: cs.primary,
@@ -555,9 +558,12 @@ class _StaffDirectoryTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDaily = employee.wageType == 'daily';
+    final isHourly = employee.wageType == 'hourly';
     final typeColor = isDaily
-        ? const Color(0xFF10B981)
-        : const Color(0xFF3B82F6);
+        ? AppColors.success
+        : isHourly
+        ? AppColors.purple
+        : AppColors.info;
     final wageText = employee.wageAmount > 0
         ? '\u20B9${employee.wageAmount.toStringAsFixed(0)}'
         : '—';
@@ -641,7 +647,11 @@ class _StaffDirectoryTile extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        isDaily ? 'DAILY' : 'MONTHLY',
+                        isDaily
+                            ? 'DAILY'
+                            : isHourly
+                            ? 'HOURLY'
+                            : 'MONTHLY',
                         style: TextStyle(
                           color: typeColor,
                           fontSize: 10,
@@ -662,54 +672,15 @@ class _StaffDirectoryTile extends ConsumerWidget {
 }
 
 class _EmptySearchState extends StatelessWidget {
-  final ColorScheme cs;
-  final TextTheme tt;
   final bool isSearching;
 
-  const _EmptySearchState({
-    required this.cs,
-    required this.tt,
-    required this.isSearching,
-  });
+  const _EmptySearchState({required this.isSearching});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-              shape: BoxShape.circle,
-            ),
-            child: PhosphorIcon(
-              isSearching
-                  ? PhosphorIconsDuotone.magnifyingGlass
-                  : PhosphorIconsDuotone.usersThree,
-              size: 56,
-              color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            isSearching ? 'No matches found' : 'No staff members yet',
-            style: tt.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: cs.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isSearching
-                ? 'Try checking for typos or use a different term.'
-                : 'Tap the + button to onboard your first employee.',
-            style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+    return EmptyState(
+      icon: PhosphorIconsRegular.users,
+      title: isSearching ? 'No matches found' : 'No staff members yet',
     );
   }
 }
@@ -834,7 +805,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: ['daily', 'monthly'].map((type) {
+              children: ['daily', 'monthly', 'hourly'].map((type) {
                 final selected = _wages.contains(type);
                 return FilterChip(
                   label: Text(

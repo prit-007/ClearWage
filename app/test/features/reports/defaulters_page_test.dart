@@ -75,8 +75,8 @@ void main() {
       expect(find.text('2 AT RISK'), findsOneWidget);
       expect(find.text('Rahul'), findsOneWidget);
       expect(find.text('Priya'), findsOneWidget);
-      expect(find.text('Fixed Wage: ₹18000'), findsOneWidget);
-      expect(find.text('Fixed Wage: ₹15000'), findsOneWidget);
+      expect(find.text('Fixed Wage: ₹18,000'), findsOneWidget);
+      expect(find.text('Fixed Wage: ₹15,000'), findsOneWidget);
     });
 
     testWidgets('shows error state on fetch failure', (tester) async {

@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-08-20
+
+### Fixed
+
+- Hourly wage badge in Staff Directory now shows "HOURLY" in purple instead of
+  incorrectly displaying "MONTHLY". Filter sheet also includes hourly option.
+- Route naming normalized to kebab-case: `/new_ledger` → `/new-ledger`,
+  `/add_employee` → `/add-employee`.
+- Employee Profile tab renamed from "Logs" to "Attendance" to match content.
+- Delete Account button demoted to outlined style; Sign Out promoted to solid
+  red FilledButton for correct destructive-action hierarchy.
+- Duplicate phone number during registration now shows a friendly error message
+  instead of a raw exception.
+
+### Added
+
+- `design_tokens.dart` — centralized design system: `AppRadius` (sm/md/lg),
+  `AppColors` (success/danger/warning/info/purple), `AppBlur` (sigma 15).
+- All color literals replaced with semantic tokens across 22 files.
+- All glassmorphism blur standardized to sigma 15 for consistent visual depth.
+- `empty_state.dart` — shared EmptyState widget replacing 32 ad-hoc empty
+  states across 17 pages for consistent empty-state UX.
+- `currency_format.dart` — Indian numeral grouping via `AppCurrency.format()`
+  (e.g., ₹1,00,000 instead of ₹100000).
+- OTP SMS auto-fill hints on Pinput and phone field for faster login.
+- Session expiry dialog now warns about unsaved changes before redirect.
+- Payroll Preview shows a pencil indicator on manually overridden net pay rows.
+- Advance deny action now captures an optional reason/note.
+- Employee nav now includes My Ledger tab (3 tabs: Home, My Attendance,
+  My Ledger) for quicker access to financial data.
+- Disputes page upgraded with FluidSlideIn animations, glassmorphism cards,
+  and semantic status badge colors.
+
+### Changed
+
+- `app.dart` theme card radius updated to 16px (was 12px) for consistency.
+- All currency displays use Indian grouping format (₹1,00,000).
+
 ## [0.6.0] - 2026-08-18
 
 ### Added

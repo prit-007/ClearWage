@@ -73,6 +73,34 @@ transitions play automatically on `context.pop()`.
 instead of silently overwriting. The Flutter roster surfaces each row's
 `version` and sends it on edit, refreshing on 409.
 
+## CSRF protection
+
+State-changing requests (POST/PUT/DELETE) are protected by the `CSRFProtection`
+middleware (`middlewares/csrf.go`). On GET/HEAD/OPTIONS, a random 32-byte hex
+token is set as the `csrf_token` cookie and echoed in the `X-CSRF-Token`
+response header. On state-changing methods, the header must match the cookie.
+Bearer-only requests (no auth cookie) skip CSRF. The middleware sits before
+`AuthMiddleware` in the chain.
+
+## Security headers
+
+All responses include `X-Content-Type-Options: nosniff`,
+`X-Frame-Options: DENY`, and `X-XSS-Protection: 1; mode=block` via a
+response-writer wrapper in `cli/api.go`.
+
+## Attendance locking
+
+`CreateAttendance`, `BulkUpsertAttendance`, and `UpdateAttendance` all check
+`is_locked` before writing. Locked months return HTTP 409
+(`ErrAttendanceLocked`). This replaces the previous behavior where only
+reads respected the lock.
+
+## Atomic settlement
+
+`SettleEmployeeAtomic` uses a single SQL CTE to compute the employee's
+balance and insert the settlement entry in one statement. This eliminates
+the TOCTOU race where two concurrent settlements could both succeed.
+
 ## Tenant timezone
 
 `tenants.timezone` (default `Asia/Kolkata`) drives server-side "now"/"today"
@@ -124,3 +152,4 @@ Notable decisions and their rationale live in `docs/adr/`:
 - [0009](adr/0009-optimistic-locking-version-columns.md) — optimistic locking
 - [0010](adr/0010-ledger-disputes.md) — ledger disputes
 - [0011](adr/0011-tenant-timezones.md) — tenant timezones
+- [0012](adr/0012-security-audit-fixes.md) — v0.8.0 security audit

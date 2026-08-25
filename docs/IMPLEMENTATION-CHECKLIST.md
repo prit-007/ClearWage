@@ -109,3 +109,63 @@ subsequent release cycles.
 - [x] `fastlane` changelog `changelogs/2.txt`.
 - [x] Docs updated (ARCHITECTURE, API, ADRs, READMEs).
 - [ ] Tag `v0.5.6` created at the CHANGELOG commit; pushed with the branch.
+
+## Phase 9 — v0.8.0 security audit (52-item fix)
+
+### CRITICAL fixes (server)
+
+- [x] #1: Attendance lock bypass — `is_locked` enforced in Create/BulkUpsert/Update
+- [x] #3: Advance approval — idempotent ledger creation guard
+- [x] #4: Settlement TOCTOU — `SettleEmployeeAtomic` (single SQL CTE)
+- [x] #5: wage_basis — payroll respects fixed_26/fixed_30/calendar (was always /30)
+- [x] #6: defaulters_count — dashboard populates from `ListEmployeeBalances`
+- [x] #7: Week-off pay off-by-one — `d.Before(end)` → `!d.After(end)`
+
+### HIGH fixes
+
+- [x] #8-9: Rate limiter — `RemoteAddr` (not spoofable), bounded 10K visitor map
+- [x] #10: Dispute Resolve/Reject RBAC — requires non-employee role
+- [x] #11: Nil-claims auth bypass — `RequireClaims`/`RequireNonEmployee` helpers
+- [x] #12: Onboarding `.then()` on failure — `.catchError` added
+- [x] #13: Debug logs route — owner-only redirect guard
+- [x] #14: Dashboard `total_staff` — removed `IS NOT NULL` filter on shift_id
+- [x] #15: Ledger UpdateEntry — optimistic locking via version column
+- [x] #17: CORS AllowCredentials — set to `true`
+
+### MEDIUM fixes
+
+- [x] #18-20: Flutter token refresh, LeavePolicyService, TokenStorage.clear()
+- [x] #21-22: PayrollEntry/Employee models parse all server fields
+- [x] #25-26: OT multiplier validation aligned (1.0-2.0)
+- [x] #27: AdvanceRequestService uses COUNT query
+- [x] #28: IsHoliday uses COUNT query
+- [x] #29: listAll capped to 10,000
+- [x] #30: Staff list limit capped at 100
+- [x] #31: CSRF protection middleware
+- [x] #32: Security headers (X-Content-Type-Options, X-Frame-Options)
+- [x] #33: JWT Issuer/Subject claims
+- [x] #34: RequireClaims/RequireNonEmployee helpers + all controllers
+- [x] #36: Advance request dialog amount validation
+- [x] #37: Payroll preview _pickDates log order
+- [x] #40: Create vs Update wage types aligned
+
+### LOW fixes
+
+- [x] #41: PaginatedList<T> helper extracted
+- [x] #43: ReportsHubScreen export stub removed
+- [x] #44: Role-based route guards in Flutter router
+- [x] #45: Deep link return-to-page after login
+- [x] #46: Roster cache invalidated on attendance write
+- [x] #47: log.Printf → zerolog in activity service
+- [x] #49: Global ErrorWidget.builder
+- [x] #50: _PremiumSearchBar listener removal fixed
+- [x] #51: Shift form validates start != end
+- [x] #52: Disputes list parallel fetch
+
+### Release
+
+- [x] `CHANGELOG.md` entry for `[0.8.0]`.
+- [x] `app/pubspec.yaml` bumped to `0.8.0+6`.
+- [x] `fastlane` changelog `changelogs/6.txt`.
+- [x] Docs updated (ARCHITECTURE, API, ADR 0012, IMPLEMENTATION-CHECKLIST).
+- [ ] Tag `v0.8.0` created at the CHANGELOG commit.

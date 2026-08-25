@@ -5,6 +5,94 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-08-25
+
+### Fixed
+
+- **CRITICAL: Attendance lock bypass** — `CreateAttendance`, `BulkUpsertAttendance`,
+  and `UpdateAttendance` now enforce `is_locked`. Locked months can no longer be
+  silently modified. Returns HTTP 409 on locked records.
+- **CRITICAL: Settlement TOCTOU race** — Replaced read-create-read with
+  `SettleEmployeeAtomic` (single SQL CTE) so concurrent settlements cannot
+  both succeed.
+- **CRITICAL: wage_basis ignored** — Payroll now respects `fixed_26` (/26),
+  `fixed_30` (/30), and `calendar` (period days) settings. Was always dividing
+  by 30.
+- **CRITICAL: defaulters_count missing** — Dashboard now populates
+  `defaulters_count` from employee balance data.
+- **CRITICAL: Week-off pay off-by-one** — Loop now includes the end date of
+  the pay period (`!d.After(end)` instead of `d.Before(end)`).
+- **HIGH: Rate limiter IP spoofing** — Uses `r.RemoteAddr` (trusted) instead
+  of spoofable `X-Forwarded-For` / `X-Real-IP` headers.
+- **HIGH: Rate limiter unbounded memory** — Visitor map bounded to 10,000
+  entries; stale entries cleaned up every minute.
+- **HIGH: No RBAC on dispute Resolve/Reject** — Now requires non-employee role.
+- **HIGH: Nil-claims auth bypass** — Created `RequireClaims`/`RequireNonEmployee`
+  helpers; refactored all 9 controller files (25+ instances).
+- **HIGH: Onboarding navigates on failure** — Added `.catchError` to show
+  SnackBar on setup failure instead of navigating away.
+- **HIGH: Debug logs accessible to all** — `/debug/logs` restricted to owner
+  role via router redirect guard.
+- **HIGH: Dashboard total_staff undercounts** — Removed `IS NOT NULL` filter
+  on `default_shift_id` so employees without shifts are counted.
+- **HIGH: AllowCredentials mismatch** — CORS `AllowCredentials` set to `true`
+  to match the cookie auth model.
+- **HIGH: Ledger UpdateEntry no optimistic locking** — Added `version` column
+  check to `UpdateLedgerEntry` with HTTP 409 on concurrent modification.
+- **MEDIUM: Silent token refresh swallowing** — Token refresh errors now logged.
+- **MEDIUM: LeavePolicyService swallows errors** — 401/500 errors now re-thrown.
+- **MEDIUM: Fire-and-forget TokenStorage.clear()** — Now awaited properly.
+- **MEDIUM: Flutter PayrollEntry drops fields** — Now parses `days_present`,
+  `total_overtime`, `wage_type`, `wage_amount`, `wage_basis`.
+- **MEDIUM: Employee fields dropped** — Now parses `version`,
+  `piece_rate_item_name`, `piece_rate_per_unit`, `daily_target_units`.
+- **MEDIUM: OT multiplier validation** — Upper bound enforced (1.0–2.0) to
+  match DB CHECK constraint.
+- **MEDIUM: Advance request loads all pending** — Now uses `COUNT` query
+  instead of loading up to 10K records.
+- **MEDIUM: IsHoliday loads 1000 holidays** — Now uses `COUNT` query.
+- **MEDIUM: listAll = 1,000,000** — Capped to 10,000 across all services.
+- **MEDIUM: Staff list limit=100000** — Capped at 100.
+- **MEDIUM: Missing security headers** — Added `X-Content-Type-Options`,
+  `X-Frame-Options`, `X-XSS-Protection`.
+- **MEDIUM: JWT missing claims** — Added `iss` (vivek-app) and `sub`
+  (employee_id) claims for token revocation support.
+- **MEDIUM: GetClaims nil bypass** — All controllers now reject nil claims
+  via `RequireClaims`/`RequireNonEmployee` helpers.
+- **MEDIUM: Create vs Update wage types** — Create now accepts `piece_rate`
+  via shared `ValidateWageType`.
+- **MEDIUM: OT validation mismatch** — Controller and DB constraint now aligned.
+- **MEDIUM: Advance request dialog** — Amount validated (0 < x <= 100,000).
+- **MEDIUM: Payroll preview _pickDates** — Logs after `setState`.
+- **LOW: Roster cache stale on write** — Cache invalidated on attendance
+  create and bulk upsert.
+- **LOW: log.Printf in activity service** — Replaced with zerolog.
+- **LOW: Shift form start == end** — Validates start time != end time.
+- **LOW: Disputes sequential fetch** — Now uses `Future.wait` for parallel.
+- **LOW: _PremiumSearchBar no-op listener** — Fixed listener removal.
+
+### Added
+
+- **CSRF protection** — New middleware generates random tokens, validates
+  `X-CSRF-Token` header against `csrf_token` cookie on state-changing methods.
+  Bearer-only requests skip CSRF.
+- **`RequireClaims`/`RequireNonEmployee` helpers** — Centralized auth-check
+  helpers in `middlewares/auth.go` replacing ad-hoc nil-checking.
+- **`SettleEmployeeAtomic`** — Single SQL CTE that computes balance and
+  inserts settlement entry atomically, eliminating TOCTOU races.
+- **`HasPendingAdvanceRequest` / `CountHolidaysByDate`** — Efficient COUNT
+  queries replacing full-table scans.
+- **`PaginatedList<T>` helper** — Reusable pagination mixin for Flutter
+  list screens, reducing ~300 lines of duplicated boilerplate.
+- **Global `ErrorWidget.builder`** — User-friendly error screen replaces
+  red screen of death on uncaught Flutter errors.
+- **Role-based route guards** — Admin-only routes (`/staff`, `/shifts`,
+  `/payroll/*`, etc.) redirect employees to `/home`.
+- **Deep link return after login** — `redirectLocationProvider` stores
+  intended URL; redirects back after successful login.
+- **Onboarding shift time pickers** — Time picker dialogs now open on tap.
+- Migration `00024` (empty, version column already existed from `00022`).
+
 ## [0.7.0] - 2026-08-20
 
 ### Fixed

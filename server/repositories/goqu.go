@@ -330,20 +330,22 @@ func (q *GoquQuerier) GetLedgerEntryByID(ctx context.Context, arg GetLedgerEntry
 func (q *GoquQuerier) UpdateLedgerEntry(ctx context.Context, arg UpdateLedgerEntryParams) (Ledger, error) {
 	var l Ledger
 	found, err := q.db.Update("ledger").Set(goqu.Record{
-		"date":        arg.Date,
-		"type":        arg.Type,
-		"amount":      arg.Amount,
-		"note":        arg.Note,
-		"updated_at":  goqu.L("now()"),
+		"date":       arg.Date,
+		"type":       arg.Type,
+		"amount":     arg.Amount,
+		"note":       arg.Note,
+		"version":    goqu.L("version + 1"),
+		"updated_at": goqu.L("now()"),
 	}).Where(
 		goqu.C("id").Eq(arg.ID),
 		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("version").Eq(arg.ExpectedVersion),
 	).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &l)
 	if err != nil {
 		return Ledger{}, err
 	}
 	if !found {
-		return Ledger{}, errors.New("ledger entry not found")
+		return Ledger{}, ErrConcurrentModification
 	}
 	return l, nil
 }

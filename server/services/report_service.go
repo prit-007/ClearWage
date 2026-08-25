@@ -13,7 +13,7 @@ import (
 	"golang.org/x/sync/singleflight"
 )
 
-const listAll int32 = 1000000
+const listAll int32 = 10000
 
 type ReportService struct {
 	querier repositories.Querier

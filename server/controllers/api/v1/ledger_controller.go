@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/vivek-app/vivek_app/config"
 	"github.com/vivek-app/vivek_app/middlewares"
+	"github.com/vivek-app/vivek_app/repositories"
 	"github.com/vivek-app/vivek_app/services"
 	"github.com/vivek-app/vivek_app/utils"
 )
@@ -32,6 +33,7 @@ type createLedgerRequest struct {
 	Type       string `json:"type"`
 	Amount     string `json:"amount"`
 	Note       string `json:"note"`
+	Version    *int32 `json:"version,omitempty"`
 }
 
 func (c *LedgerController) CreateEntry(w http.ResponseWriter, r *http.Request) {
@@ -90,9 +92,8 @@ func (c *LedgerController) ListByEmployee(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -132,9 +133,8 @@ func (c *LedgerController) GetBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -157,9 +157,8 @@ func (c *LedgerController) ListByTenant(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -197,9 +196,8 @@ func (c *LedgerController) GetTotalOutstanding(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -229,9 +227,8 @@ func (c *LedgerController) Summary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -312,9 +309,8 @@ func (c *LedgerController) BalanceSummary(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -368,8 +364,17 @@ func (c *LedgerController) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entry, err := c.ledgerService.UpdateEntry(r.Context(), entryID, tenantID, req.Date, req.Type, req.Amount, req.Note)
+	entry, err := c.ledgerService.UpdateEntry(r.Context(), entryID, tenantID, req.Date, req.Type, req.Amount, req.Note, func() int32 {
+		if req.Version != nil {
+			return *req.Version
+		}
+		return 0
+	}())
 	if err != nil {
+		if err == repositories.ErrConcurrentModification {
+			utils.JSONFail(w, http.StatusConflict, "Record was modified by another user. Please refresh and try again.")
+			return
+		}
 		c.logger.Error().Err(err).Msg("failed to update ledger entry")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to update entry")
 		return

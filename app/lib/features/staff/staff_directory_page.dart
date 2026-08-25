@@ -435,25 +435,29 @@ class _PremiumSearchBar extends StatefulWidget {
 class _PremiumSearchBarState extends State<_PremiumSearchBar> {
   bool _isFocused = false;
   bool _hasText = false;
+  late final VoidCallback _focusListener;
+  late final VoidCallback _controllerListener;
 
   @override
   void initState() {
     super.initState();
-    widget.focusNode.addListener(() {
+    _focusListener = () {
       setState(() => _isFocused = widget.focusNode.hasFocus);
-    });
-    widget.controller.addListener(() {
+    };
+    _controllerListener = () {
       final hasTextNow = widget.controller.text.isNotEmpty;
       if (_hasText != hasTextNow) {
         setState(() => _hasText = hasTextNow);
       }
-    });
+    };
+    widget.focusNode.addListener(_focusListener);
+    widget.controller.addListener(_controllerListener);
   }
 
   @override
   void dispose() {
-    widget.focusNode.removeListener(() {});
-    widget.controller.removeListener(() {});
+    widget.focusNode.removeListener(_focusListener);
+    widget.controller.removeListener(_controllerListener);
     super.dispose();
   }
 

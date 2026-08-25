@@ -72,6 +72,7 @@ func (s *AttendanceService) CreateAttendance(ctx context.Context, tenantID, empl
 	})
 	if err == nil {
 		logActivity(ctx, s.querier, tenantID, editedBy, "marked_attendance", "attendance", &att.ID, nil)
+		s.cache.Delete(fmt.Sprintf("roster:%s:%s", tenantID, date))
 	}
 	return att, err
 }
@@ -159,7 +160,7 @@ func (s *AttendanceService) BulkUpsert(ctx context.Context, tenantID, employeeID
 	if err != nil {
 		return nil, err
 	}
-	return s.querier.BulkUpsertAttendance(ctx, repositories.BulkUpsertAttendanceParams{
+	result, err := s.querier.BulkUpsertAttendance(ctx, repositories.BulkUpsertAttendanceParams{
 		TenantID:               tenantID,
 		EmployeeID:             employeeID,
 		Date:                   date,
@@ -169,6 +170,10 @@ func (s *AttendanceService) BulkUpsert(ctx context.Context, tenantID, employeeID
 		OvertimeRateMultiplier: otRate,
 		UnitsProduced:          unitsProduced,
 	})
+	if err == nil {
+		s.cache.Delete(fmt.Sprintf("roster:%s:%s", tenantID, date))
+	}
+	return result, err
 }
 
 func (s *AttendanceService) LockMonth(ctx context.Context, tenantID, startDate, endDate string) error {

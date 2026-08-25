@@ -55,3 +55,28 @@ func GetClaims(ctx context.Context) *pkg.Claims {
 	}
 	return claims
 }
+
+// RequireClaims returns claims or writes a 401 response and returns nil.
+// Use this in controllers that must have authenticated claims to proceed.
+func RequireClaims(w http.ResponseWriter, ctx context.Context) *pkg.Claims {
+	claims := GetClaims(ctx)
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return nil
+	}
+	return claims
+}
+
+// RequireNonEmployee returns claims or writes 401/403 and returns nil.
+// Rejects nil claims and employees (who lack admin permissions).
+func RequireNonEmployee(w http.ResponseWriter, ctx context.Context) *pkg.Claims {
+	claims := RequireClaims(w, ctx)
+	if claims == nil {
+		return nil
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return nil
+	}
+	return claims
+}

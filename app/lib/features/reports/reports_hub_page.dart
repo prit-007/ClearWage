@@ -5,99 +5,11 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/providers/app_providers.dart';
-import '../../core/helpers.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 
 class ReportsHubScreen extends ConsumerWidget {
   const ReportsHubScreen({super.key});
-
-  void _showExportDialog(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    String? selectedType;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          icon: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cs.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: PhosphorIcon(
-              PhosphorIconsDuotone.fileCsv,
-              size: 32,
-              color: cs.primary,
-            ),
-          ),
-          title: Text(
-            'Export CSV',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          content: RadioGroup<String>(
-            onChanged: (val) {
-              setDialogState(() => selectedType = val);
-            },
-            child: const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RadioListTile<String>(
-                  title: Text('Defaulters'),
-                  subtitle: Text('Employees with outstanding > wage'),
-                  value: 'defaulters',
-                ),
-                RadioListTile<String>(
-                  title: Text('Trends'),
-                  subtitle: Text('Wage bill & attendance trends'),
-                  value: 'trends',
-                ),
-              ],
-            ),
-          ),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            FilledButton(
-              onPressed: selectedType == null
-                  ? null
-                  : () {
-                      Navigator.pop(ctx);
-                      showSuccess(context, 'Export coming soon');
-                    },
-              style: FilledButton.styleFrom(
-                backgroundColor: cs.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Export',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -146,12 +58,6 @@ class ReportsHubScreen extends ConsumerWidget {
                 style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
               centerTitle: true,
-              actions: [
-                IconButton(
-                  icon: const PhosphorIcon(PhosphorIconsRegular.downloadSimple),
-                  onPressed: () => _showExportDialog(context, ref),
-                ),
-              ],
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),

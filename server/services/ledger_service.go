@@ -44,7 +44,7 @@ func (s *LedgerService) CreateEntry(ctx context.Context, tenantID, employeeID, d
 	})
 }
 
-func (s *LedgerService) UpdateEntry(ctx context.Context, id, tenantID, date, entryType, amount, note string) (repositories.Ledger, error) {
+func (s *LedgerService) UpdateEntry(ctx context.Context, id, tenantID, date, entryType, amount, note string, expectedVersion int32) (repositories.Ledger, error) {
 	amt, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
 		return repositories.Ledger{}, fmt.Errorf("invalid amount: %w", err)
@@ -60,12 +60,13 @@ func (s *LedgerService) UpdateEntry(ctx context.Context, id, tenantID, date, ent
 		n = &note
 	}
 	return s.querier.UpdateLedgerEntry(ctx, repositories.UpdateLedgerEntryParams{
-		ID:       id,
-		TenantID: tenantID,
-		Date:     date,
-		Type:     entryType,
-		Amount:   amt,
-		Note:     n,
+		ID:              id,
+		TenantID:        tenantID,
+		Date:            date,
+		Type:            entryType,
+		Amount:          amt,
+		Note:            n,
+		ExpectedVersion: expectedVersion,
 	})
 }
 

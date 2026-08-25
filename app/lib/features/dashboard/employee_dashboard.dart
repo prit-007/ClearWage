@@ -479,15 +479,30 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
             FilledButton(
               onPressed: submitting
                   ? null
-                  : () async {
-                      final amount = amountCtrl.text.trim();
-                      if (amount.isEmpty) return;
-                      setDialogState(() => submitting = true);
+                       : () async {
+                       final amountText = amountCtrl.text.trim();
+                       if (amountText.isEmpty) return;
+                       final amountValue = double.tryParse(amountText);
+                       if (amountValue == null ||
+                           amountValue <= 0 ||
+                           amountValue > 100000) {
+                         if (ctx.mounted) {
+                           ScaffoldMessenger.of(context).showSnackBar(
+                             const SnackBar(
+                               content: Text(
+                                 'Amount must be between ₹1 and ₹1,00,000',
+                               ),
+                             ),
+                           );
+                         }
+                         return;
+                       }
+                       setDialogState(() => submitting = true);
                       try {
                         await ref
                             .read(profileServiceProvider)
-                            .requestAdvance(
-                              amount: amount,
+                             .requestAdvance(
+                               amount: amountText,
                               note: noteCtrl.text.trim().isEmpty
                                   ? null
                                   : noteCtrl.text.trim(),

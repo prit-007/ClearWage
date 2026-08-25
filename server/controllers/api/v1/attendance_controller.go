@@ -484,9 +484,8 @@ func (c *AttendanceController) LockMonth(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 

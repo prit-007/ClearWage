@@ -93,13 +93,13 @@ class Employee {
     pieceRateItemName: json['piece_rate_item_name'] as String?,
     pieceRatePerUnit: json['piece_rate_per_unit'] != null
         ? (json['piece_rate_per_unit'] is num
-            ? (json['piece_rate_per_unit'] as num).toDouble()
-            : double.tryParse(json['piece_rate_per_unit'].toString()))
+              ? (json['piece_rate_per_unit'] as num).toDouble()
+              : double.tryParse(json['piece_rate_per_unit'].toString()))
         : null,
     dailyTargetUnits: json['daily_target_units'] != null
         ? (json['daily_target_units'] is int
-            ? json['daily_target_units'] as int
-            : int.tryParse(json['daily_target_units'].toString()))
+              ? json['daily_target_units'] as int
+              : int.tryParse(json['daily_target_units'].toString()))
         : null,
   );
 

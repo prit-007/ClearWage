@@ -208,12 +208,39 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (!loggedIn &&
           state.matchedLocation != '/login' &&
           state.matchedLocation != '/register') {
+        ref.read(redirectLocationProvider.notifier).state =
+            state.matchedLocation;
         return '/login';
       }
       if (loggedIn &&
           (state.matchedLocation == '/login' ||
               state.matchedLocation == '/register')) {
-        return '/home';
+        final redirect = ref.read(redirectLocationProvider);
+        ref.read(redirectLocationProvider.notifier).state = null;
+        return redirect ?? '/home';
+      }
+      if (loggedIn) {
+        final user = ref.read(userInfoProvider);
+        final isEmployee = user != null && user.role == 'employee';
+        if (isEmployee) {
+          final location = state.matchedLocation;
+          if (location.startsWith('/staff') ||
+              location.startsWith('/shifts') ||
+              location.startsWith('/payroll') ||
+              location.startsWith('/settings') ||
+              (location.startsWith('/reports') &&
+                  location != '/reports' &&
+                  location != '/my-reports') ||
+              location == '/advance-requests' ||
+              location == '/holidays' ||
+              location == '/leave-policy' ||
+              location == '/disputes' ||
+              location == '/add-employee' ||
+              location == '/new-ledger' ||
+              location == '/edit-ledger') {
+            return '/home';
+          }
+        }
       }
       return null;
     },

@@ -104,12 +104,13 @@ type CreateLedgerEntryParams struct {
 }
 
 type UpdateLedgerEntryParams struct {
-	ID       string  `json:"id"`
-	TenantID string  `json:"tenant_id"`
-	Date     string  `json:"date"`
-	Type     string  `json:"type"`
-	Amount   float64 `json:"amount"`
-	Note     *string `json:"note"`
+	ID              string  `json:"id"`
+	TenantID        string  `json:"tenant_id"`
+	Date            string  `json:"date"`
+	Type            string  `json:"type"`
+	Amount          float64 `json:"amount"`
+	Note            *string `json:"note"`
+	ExpectedVersion int32   `json:"expected_version"`
 }
 
 type DeleteLedgerEntryParams struct {

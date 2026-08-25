@@ -196,11 +196,11 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
       AppLogger.info('Payroll: End date cancelled');
       return;
     }
-    AppLogger.info('Payroll: Date range selected: $_startStr to $_endStr');
     setState(() {
       _start = start;
       _end = end;
     });
+    AppLogger.info('Payroll: Date range selected: $_startStr to $_endStr');
     unawaited(_loadData());
   }
 

@@ -2,10 +2,16 @@ package services
 
 import (
 	"context"
-	"log"
 
+	"github.com/rs/zerolog"
 	"github.com/vivek-app/vivek_app/repositories"
 )
+
+var activityLogger = zerolog.Nop()
+
+func SetActivityLogger(l zerolog.Logger) {
+	activityLogger = l
+}
 
 func logActivity(ctx context.Context, q repositories.Querier, tenantID, createdBy, action, entityType string, entityID *string, details *[]byte) {
 	var empID *string
@@ -22,6 +28,6 @@ func logActivity(ctx context.Context, q repositories.Querier, tenantID, createdB
 		CreatedBy:  createdBy,
 	})
 	if err != nil {
-		log.Printf("failed to log activity: %v", err)
+		activityLogger.Error().Err(err).Msg("failed to log activity")
 	}
 }

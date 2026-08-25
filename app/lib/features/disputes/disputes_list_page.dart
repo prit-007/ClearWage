@@ -21,8 +21,10 @@ final _closedDisputesProvider = FutureProvider.autoDispose<List<Dispute>>((
   ref,
 ) async {
   final service = ref.watch(disputeServiceProvider);
-  final resolved = await service.list(status: 'resolved');
-  final rejected = await service.list(status: 'rejected');
+  final [resolved, rejected] = await Future.wait([
+    service.list(status: 'resolved'),
+    service.list(status: 'rejected'),
+  ]);
   return [...resolved, ...rejected];
 });
 

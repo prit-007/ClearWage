@@ -7,6 +7,8 @@ import '../../data/models/auth_model.dart';
 
 final sessionExpiredProvider = StateProvider<bool>((ref) => false);
 
+final redirectLocationProvider = StateProvider<String?>((ref) => null);
+
 final apiClientProvider = Provider<ApiClient>((ref) {
   final url = ref.watch(serverUrlProvider);
   final client = ApiClient(baseUrl: url);
@@ -30,9 +32,9 @@ final apiClientProvider = Provider<ApiClient>((ref) {
           ref.read(tokenProvider.notifier).state = newToken;
           return;
         }
-        } catch (e) {
-          // Token refresh failed; treat as expired
-        }
+      } catch (e) {
+        // Token refresh failed; treat as expired
+      }
     }
     ref.read(tokenProvider.notifier).state = null;
     ref.read(userInfoProvider.notifier).state = null;

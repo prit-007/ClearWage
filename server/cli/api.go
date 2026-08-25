@@ -46,7 +46,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			goquDB := goqu.Dialect("postgres").DB(sqlDB)
 			dbQueries := sqldb.New(sqlDB)
-			querier := repositories.NewGoquQuerier(goquDB, dbQueries)
+			querier := repositories.NewGoquQuerierWithSQL(goquDB, sqlDB, dbQueries)
 
 			r := chi.NewRouter()
 

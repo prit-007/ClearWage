@@ -173,48 +173,5 @@ func (s *LedgerService) GetEmployeeBalanceSummary(ctx context.Context, tenantID 
 }
 
 func (s *LedgerService) SettleEmployee(ctx context.Context, employeeID, tenantID, date, createdBy string) (repositories.Ledger, error) {
-	balance, err := s.querier.GetBalanceByEmployee(ctx, repositories.GetBalanceByEmployeeParams{
-		EmployeeID: employeeID,
-		TenantID:   tenantID,
-	})
-	if err != nil {
-		return repositories.Ledger{}, fmt.Errorf("failed to read balance: %w", err)
-	}
-
-	if balance == 0 {
-		return repositories.Ledger{}, fmt.Errorf("balance is already zero")
-	}
-
-	var entryType string
-	var amt float64
-	if balance > 0 {
-		entryType = "udhaar"
-		amt = balance
-	} else {
-		entryType = "jama"
-		amt = -balance
-	}
-	note := "Full & final settlement"
-	entry, err := s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
-		TenantID:   tenantID,
-		EmployeeID: employeeID,
-		Date:       date,
-		Type:       entryType,
-		Amount:     amt,
-		Note:       &note,
-		CreatedBy:  createdBy,
-	})
-	if err != nil {
-		return repositories.Ledger{}, fmt.Errorf("failed to create settlement entry: %w", err)
-	}
-
-	newBalance, balErr := s.querier.GetBalanceByEmployee(ctx, repositories.GetBalanceByEmployeeParams{
-		EmployeeID: employeeID,
-		TenantID:   tenantID,
-	})
-	if balErr == nil && newBalance != 0 {
-		return repositories.Ledger{}, fmt.Errorf("concurrent modification detected: balance changed during settlement")
-	}
-
-	return entry, nil
+	return s.querier.SettleEmployeeAtomic(ctx, employeeID, tenantID, date, createdBy)
 }

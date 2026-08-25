@@ -965,6 +965,21 @@ func (mr *MockQuerierMockRecorder) ResolveDispute(ctx, arg any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveDispute", reflect.TypeOf((*MockQuerier)(nil).ResolveDispute), ctx, arg)
 }
 
+// SettleEmployeeAtomic mocks base method.
+func (m *MockQuerier) SettleEmployeeAtomic(ctx context.Context, employeeID, tenantID, date, createdBy string) (repositories.Ledger, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SettleEmployeeAtomic", ctx, employeeID, tenantID, date, createdBy)
+	ret0, _ := ret[0].(repositories.Ledger)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SettleEmployeeAtomic indicates an expected call of SettleEmployeeAtomic.
+func (mr *MockQuerierMockRecorder) SettleEmployeeAtomic(ctx, employeeID, tenantID, date, createdBy any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SettleEmployeeAtomic", reflect.TypeOf((*MockQuerier)(nil).SettleEmployeeAtomic), ctx, employeeID, tenantID, date, createdBy)
+}
+
 // SoftDeleteEmployee mocks base method.
 func (m *MockQuerier) SoftDeleteEmployee(ctx context.Context, arg repositories.SoftDeleteEmployeeParams) error {
 	m.ctrl.T.Helper()

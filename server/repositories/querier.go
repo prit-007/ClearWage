@@ -552,4 +552,5 @@ type Querier interface {
 	UpdateLedgerEntry(ctx context.Context, arg UpdateLedgerEntryParams) (Ledger, error)
 	DeleteLedgerEntry(ctx context.Context, arg DeleteLedgerEntryParams) error
 	GetLedgerEntryByID(ctx context.Context, arg GetLedgerEntryByIDParams) (Ledger, error)
+	SettleEmployeeAtomic(ctx context.Context, employeeID, tenantID, date, createdBy string) (Ledger, error)
 }

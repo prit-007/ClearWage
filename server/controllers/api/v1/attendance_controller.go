@@ -144,6 +144,10 @@ func (c *AttendanceController) Create(w http.ResponseWriter, r *http.Request) {
 		req.CheckInTime, req.CheckOutTime, otHours, otRate, req.UnitsProduced, claims.EmployeeID,
 	)
 	if err != nil {
+		if err == repositories.ErrAttendanceLocked {
+			utils.JSONFail(w, http.StatusConflict, "Attendance is locked for this period and cannot be modified")
+			return
+		}
 		c.logger.Error().Err(err).Msg("failed to create attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to create attendance")
 		return
@@ -352,6 +356,10 @@ func (c *AttendanceController) Update(w http.ResponseWriter, r *http.Request) {
 			utils.JSONFail(w, http.StatusConflict, "Record was modified by another user. Please refresh and try again.")
 			return
 		}
+		if err == repositories.ErrAttendanceLocked {
+			utils.JSONFail(w, http.StatusConflict, "Attendance is locked for this period and cannot be modified")
+			return
+		}
 		c.logger.Error().Err(err).Msg("failed to update attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to update attendance")
 		return
@@ -433,6 +441,10 @@ func (c *AttendanceController) BulkUpsert(w http.ResponseWriter, r *http.Request
 			otHours, otRate, rec.UnitsProduced,
 		)
 		if err != nil {
+			if err == repositories.ErrAttendanceLocked {
+				utils.JSONFail(w, http.StatusConflict, "Attendance is locked for one or more records and cannot be modified")
+				return
+			}
 			c.logger.Error().Err(err).Msg("failed to bulk upsert attendance")
 			utils.JSONError(w, http.StatusInternalServerError, "Failed to bulk upsert attendance")
 			return

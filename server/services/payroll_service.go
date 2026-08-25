@@ -140,7 +140,23 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 		case "daily":
 			dailyWageRate = emp.WageAmount.InexactFloat64()
 		case "monthly":
-			dailyWageRate = emp.WageAmount.InexactFloat64() / 30.0
+			switch tc.WageBasis {
+			case "fixed_26":
+				dailyWageRate = emp.WageAmount.InexactFloat64() / 26.0
+			case "calendar":
+				startParsed, pe := time.Parse("2006-01-02", startDate)
+				endParsed, ee := time.Parse("2006-01-02", endDate)
+				if pe == nil && ee == nil {
+					days := int(endParsed.Sub(startParsed).Hours()/24) + 1
+					if days > 0 {
+						dailyWageRate = emp.WageAmount.InexactFloat64() / float64(days)
+					}
+				} else {
+					dailyWageRate = emp.WageAmount.InexactFloat64() / 30.0
+				}
+			default: // fixed_30 or empty
+				dailyWageRate = emp.WageAmount.InexactFloat64() / 30.0
+			}
 		case "hourly":
 			dailyWageRate = emp.WageAmount.InexactFloat64() * 8.0
 		}
@@ -211,7 +227,7 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 			start, parseErr := time.Parse("2006-01-02", startDate)
 			end, endErr := time.Parse("2006-01-02", endDate)
 			if parseErr == nil && endErr == nil {
-				for d := start; d.Before(end); d = d.AddDate(0, 0, 1) {
+				for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
 					dateStr := d.Format("2006-01-02")
 					if !employeeDates[dateStr] && (isWeeklyOffDay(tc.WeeklyOffs, d.Weekday()) || holidayMap[dateStr]) {
 						dayWage := dailyWageRate

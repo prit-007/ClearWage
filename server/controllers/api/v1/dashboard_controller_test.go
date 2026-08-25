@@ -42,6 +42,9 @@ func TestDashboardGet_WithoutTrends(t *testing.T) {
 			WageBillMTD: decimal.NewFromInt(9000), TotalOutstanding: decimal.NewFromFloat(5000.0),
 		}, nil)
 	mockQuerier.EXPECT().
+		ListEmployeeBalances(gomock.Any(), "t1").
+		Return([]repositories.EmployeeBalance{}, nil)
+	mockQuerier.EXPECT().
 		ListActivityLogsByTenant(gomock.Any(), gomock.Any()).
 		Return([]repositories.ActivityLog{}, nil)
 
@@ -79,6 +82,9 @@ func TestDashboardGet_WithTrends(t *testing.T) {
 			Absent: 0, OnLeave: 0, DailyJamaTotal: decimal.NewFromFloat(450.0),
 			WageBillMTD: decimal.NewFromInt(9000), TotalOutstanding: decimal.NewFromFloat(5000.0),
 		}, nil)
+	mockQuerier.EXPECT().
+		ListEmployeeBalances(gomock.Any(), "t1").
+		Return([]repositories.EmployeeBalance{}, nil)
 	mockQuerier.EXPECT().
 		ListActivityLogsByTenant(gomock.Any(), gomock.Any()).
 		Return([]repositories.ActivityLog{}, nil)

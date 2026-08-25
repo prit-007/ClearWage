@@ -235,29 +235,60 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         ),
                         const SizedBox(height: 16),
                         if (isAdmin)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          Column(
                             children: [
-                              _QuickActionTile(
-                                cs: cs,
-                                tt: tt,
-                                icon: PhosphorIconsRegular.userPlus,
-                                label: 'Add\nStaff',
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  context.push('/add-employee');
-                                },
+                              ResponsiveStatRow(
+                                children: [
+                                  _QuickActionTile(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsRegular.userPlus,
+                                    label: 'Add\nStaff',
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      context.push('/add-employee');
+                                    },
+                                  ),
+                                  _QuickActionTile(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsRegular.calendarCheck,
+                                    label: 'Mark\nAttendance',
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      StatefulNavigationShell.of(
+                                        context,
+                                      ).goBranch(2);
+                                    },
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 32),
-                              _QuickActionTile(
-                                cs: cs,
-                                tt: tt,
-                                icon: PhosphorIconsRegular.dotsThreeCircle,
-                                label: 'More',
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  context.push('/more');
-                                },
+                              const SizedBox(height: 16),
+                              ResponsiveStatRow(
+                                children: [
+                                  _QuickActionTile(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsRegular.users,
+                                    label: 'Staff\nDirectory',
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      StatefulNavigationShell.of(
+                                        context,
+                                      ).goBranch(1);
+                                    },
+                                  ),
+                                  _QuickActionTile(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsRegular.dotsThreeCircle,
+                                    label: 'More',
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      context.push('/more');
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                           ),

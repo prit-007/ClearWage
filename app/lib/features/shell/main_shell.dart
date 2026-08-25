@@ -5,6 +5,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/helpers.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/providers/badge_providers.dart';
 import '../../core/responsive.dart';
 
 class MainShell extends ConsumerStatefulWidget {
@@ -20,6 +21,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final cs = Theme.of(context).colorScheme;
     final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
     final isWide = AppBreakpoints.isDesktop(context);
+    final disputesCount = ref.watch(openDisputesCountProvider).valueOrNull ?? 0;
 
     ref.listen<bool>(sessionExpiredProvider, (prev, next) {
       if (next && prev != true) {
@@ -58,9 +60,17 @@ class _MainShellState extends ConsumerState<MainShell> {
           selectedIcon: Icon(Icons.event_available),
           label: 'Attendance',
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.account_balance_wallet_outlined),
-          selectedIcon: Icon(Icons.account_balance_wallet),
+        NavigationDestination(
+          icon: Badge(
+            isLabelVisible: disputesCount > 0,
+            label: Text('$disputesCount'),
+            child: const Icon(Icons.account_balance_wallet_outlined),
+          ),
+          selectedIcon: Badge(
+            isLabelVisible: disputesCount > 0,
+            label: Text('$disputesCount'),
+            child: const Icon(Icons.account_balance_wallet),
+          ),
           label: 'Ledger',
         ),
         const NavigationDestination(

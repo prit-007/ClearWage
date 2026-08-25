@@ -307,7 +307,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
           label: 'My Attendance',
           onTap: () {
             HapticFeedback.lightImpact();
-            context.push('/my-attendance');
+            StatefulNavigationShell.of(context).goBranch(1);
           },
         ),
         _GlassActionCard(
@@ -360,7 +360,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                 label: 'My Ledger',
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  context.push('/my-ledger');
+                  StatefulNavigationShell.of(context).goBranch(3);
                 },
               ),
               _GlassActionCard(

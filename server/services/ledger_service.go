@@ -44,6 +44,45 @@ func (s *LedgerService) CreateEntry(ctx context.Context, tenantID, employeeID, d
 	})
 }
 
+func (s *LedgerService) UpdateEntry(ctx context.Context, id, tenantID, date, entryType, amount, note string) (repositories.Ledger, error) {
+	amt, err := strconv.ParseFloat(amount, 64)
+	if err != nil {
+		return repositories.Ledger{}, fmt.Errorf("invalid amount: %w", err)
+	}
+	if math.IsNaN(amt) || math.IsInf(amt, 0) {
+		return repositories.Ledger{}, fmt.Errorf("invalid amount: must be a finite number")
+	}
+	if amt <= 0 {
+		return repositories.Ledger{}, fmt.Errorf("amount must be positive")
+	}
+	var n *string
+	if note != "" {
+		n = &note
+	}
+	return s.querier.UpdateLedgerEntry(ctx, repositories.UpdateLedgerEntryParams{
+		ID:       id,
+		TenantID: tenantID,
+		Date:     date,
+		Type:     entryType,
+		Amount:   amt,
+		Note:     n,
+	})
+}
+
+func (s *LedgerService) DeleteEntry(ctx context.Context, id, tenantID string) error {
+	return s.querier.DeleteLedgerEntry(ctx, repositories.DeleteLedgerEntryParams{
+		ID:       id,
+		TenantID: tenantID,
+	})
+}
+
+func (s *LedgerService) GetEntryByID(ctx context.Context, id, tenantID string) (repositories.Ledger, error) {
+	return s.querier.GetLedgerEntryByID(ctx, repositories.GetLedgerEntryByIDParams{
+		ID:       id,
+		TenantID: tenantID,
+	})
+}
+
 func (s *LedgerService) ListByEmployeeMonth(ctx context.Context, employeeID, tenantID, startDate, endDate string, limit, offset int32) ([]repositories.Ledger, error) {
 	return s.querier.ListLedgerByEmployeeMonth(ctx, repositories.ListLedgerByEmployeeMonthParams{
 		EmployeeID: employeeID,

@@ -75,11 +75,15 @@ class AttendanceTrendItem {
   final String date;
   final int present;
   final int absent;
+  final int halfDay;
+  final int onLeave;
 
   AttendanceTrendItem({
     required this.date,
     required this.present,
     required this.absent,
+    this.halfDay = 0,
+    this.onLeave = 0,
   });
 
   factory AttendanceTrendItem.fromJson(Map<String, dynamic> json) =>
@@ -87,5 +91,7 @@ class AttendanceTrendItem {
         date: json['date'] as String? ?? '',
         present: safeToInt(json['present']),
         absent: safeToInt(json['absent']),
+        halfDay: safeToInt(json['half_day']),
+        onLeave: safeToInt(json['on_leave']),
       );
 }

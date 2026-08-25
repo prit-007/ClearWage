@@ -476,7 +476,7 @@ class _SummaryStat extends StatelessWidget {
   }
 }
 
-class _LedgerRow extends StatelessWidget {
+class _LedgerRow extends ConsumerWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final LedgerEntry entry;
@@ -489,7 +489,7 @@ class _LedgerRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isJama = entry.isJama;
     final amtColor = isJama ? AppColors.success : AppColors.danger;
 
@@ -573,22 +573,99 @@ class _LedgerRow extends StatelessWidget {
                 ],
               ),
               const SizedBox(width: 8),
-              InkWell(
-                onTap: () => showRaiseDisputeDialog(
-                  context,
-                  disputeService: disputeService,
-                  ledgerId: entry.id,
-                  employeeId: entry.employeeId,
+              PopupMenuButton<String>(
+                icon: Icon(
+                  PhosphorIconsRegular.dotsThreeVertical,
+                  size: 16,
+                  color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Icon(
-                    PhosphorIconsRegular.flag,
-                    size: 16,
-                    color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                onSelected: (value) async {
+                  if (value == 'dispute') {
+                    unawaited(
+                      showRaiseDisputeDialog(
+                        context,
+                        disputeService: disputeService,
+                        ledgerId: entry.id,
+                        employeeId: entry.employeeId,
+                      ),
+                    );
+                  } else if (value == 'edit') {
+                    unawaited(context.push('/edit-ledger', extra: entry));
+                  } else if (value == 'delete') {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete Entry'),
+                        content: Text(
+                          'Delete ₹${entry.amount.toStringAsFixed(0)} ${isJama ? 'Jama' : 'Udhaar'} entry for ${entry.employeeName}?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.danger,
+                            ),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) {
+                      try {
+                        await ref.read(ledgerServiceProvider).delete(entry.id);
+                        ref.read(ledgerRefreshProvider.notifier).state++;
+                      } catch (e) {
+                        if (context.mounted) showError(context, e);
+                      }
+                    }
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(PhosphorIconsRegular.pencil, size: 16),
+                        SizedBox(width: 8),
+                        Text('Edit'),
+                      ],
+                    ),
                   ),
-                ),
+                  const PopupMenuItem(
+                    value: 'dispute',
+                    child: Row(
+                      children: [
+                        Icon(PhosphorIconsRegular.flag, size: 16),
+                        SizedBox(width: 8),
+                        Text('Raise Dispute'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(
+                          PhosphorIconsRegular.trash,
+                          size: 16,
+                          color: AppColors.danger,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Delete',
+                          style: TextStyle(color: AppColors.danger),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

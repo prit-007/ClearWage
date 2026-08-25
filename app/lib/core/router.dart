@@ -18,6 +18,7 @@ import '../features/ledger/balance_sheet_page.dart';
 import '../features/ledger/ledger_list_page.dart';
 import '../features/ledger/my_ledger_page.dart';
 import '../features/ledger/new_ledger_entry_page.dart';
+import '../data/models/ledger_model.dart';
 import '../features/disputes/disputes_list_page.dart';
 import '../features/onboarding/onboarding_wizard.dart';
 import '../features/profile/my_profile_page.dart';
@@ -25,6 +26,7 @@ import '../features/reports/daily_summary_page.dart';
 import '../features/reports/defaulters_page.dart';
 import '../features/reports/my_reports_page.dart';
 import '../features/reports/payroll_preview_page.dart';
+import '../features/more/more_hub_page.dart';
 import '../features/reports/reports_hub_page.dart';
 import '../features/settings/payroll_settings_page.dart';
 import '../features/shell/main_shell.dart';
@@ -144,6 +146,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             _slideUpPage(state, const NewLedgerEntryScreen()),
       ),
       GoRoute(
+        path: '/edit-ledger',
+        pageBuilder: (context, state) {
+          final entry = state.extra as LedgerEntry?;
+          return _slideUpPage(state, NewLedgerEntryScreen(entry: entry));
+        },
+      ),
+      GoRoute(
         path: '/add-employee',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const AddEmployeeScreen()),
@@ -219,6 +228,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/reports',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const ReportsHubScreen()),
+      ),
+      GoRoute(
+        path: '/more',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const MoreHubPage()),
       ),
       GoRoute(
         path: '/my-reports',

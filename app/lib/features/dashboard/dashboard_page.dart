@@ -235,26 +235,58 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         ),
                         const SizedBox(height: 16),
                         if (isAdmin)
-                          _QuickActionTile(
-                            cs: cs,
-                            tt: tt,
-                            icon: PhosphorIconsRegular.userPlus,
-                            label: 'Add\nStaff',
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              context.push('/add-employee');
-                            },
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _QuickActionTile(
+                                cs: cs,
+                                tt: tt,
+                                icon: PhosphorIconsRegular.userPlus,
+                                label: 'Add\nStaff',
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  context.push('/add-employee');
+                                },
+                              ),
+                              const SizedBox(width: 32),
+                              _QuickActionTile(
+                                cs: cs,
+                                tt: tt,
+                                icon: PhosphorIconsRegular.dotsThreeCircle,
+                                label: 'More',
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  context.push('/more');
+                                },
+                              ),
+                            ],
                           ),
                         if (!isAdmin)
-                          _QuickActionTile(
-                            cs: cs,
-                            tt: tt,
-                            icon: PhosphorIconsRegular.userCircle,
-                            label: 'My\nProfile',
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              context.push('/my-profile');
-                            },
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _QuickActionTile(
+                                cs: cs,
+                                tt: tt,
+                                icon: PhosphorIconsRegular.userCircle,
+                                label: 'My\nProfile',
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  context.push('/my-profile');
+                                },
+                              ),
+                              const SizedBox(width: 32),
+                              _QuickActionTile(
+                                cs: cs,
+                                tt: tt,
+                                icon: PhosphorIconsRegular.dotsThreeCircle,
+                                label: 'More',
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  context.push('/more');
+                                },
+                              ),
+                            ],
                           ),
                         const SizedBox(height: 40),
                         Text(
@@ -626,7 +658,13 @@ class _AttendanceTrendChart extends ConsumerWidget {
     if (trends.isEmpty) return const SizedBox.shrink();
     final maxY = trends.fold<int>(
       0,
-      (m, t) => [m, t.present, t.absent].reduce((a, b) => a > b ? a : b),
+      (m, t) => [
+        m,
+        t.present,
+        t.absent,
+        t.halfDay,
+        t.onLeave,
+      ].reduce((a, b) => a > b ? a : b),
     );
     final chartMax = (maxY * 1.3)
         .ceilToDouble()
@@ -647,102 +685,132 @@ class _AttendanceTrendChart extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Daily present / absent breakdown',
+            'Daily attendance breakdown',
             style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            height: 200,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: chartMax,
-                barTouchData: BarTouchData(enabled: false),
-                titlesData: FlTitlesData(
-                  show: true,
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, _) {
-                        final i = value.toInt();
-                        if (i < 0 || i >= trends.length) {
-                          return const SizedBox.shrink();
-                        }
-                        final date = trends[i].date;
-                        final day = date.length >= 10
-                            ? date.substring(8, 10)
-                            : date;
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            day,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: cs.onSurfaceVariant,
-                              fontWeight: FontWeight.w600,
+          if (maxY == 0)
+            const EmptyState(
+              icon: PhosphorIconsRegular.chartBar,
+              title: 'No attendance data',
+              subtitle: 'No attendance has been recorded for this period.',
+            )
+          else
+            SizedBox(
+              height: 200,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: chartMax,
+                  barTouchData: BarTouchData(enabled: false),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, _) {
+                          final i = value.toInt();
+                          if (i < 0 || i >= trends.length) {
+                            return const SizedBox.shrink();
+                          }
+                          final date = trends[i].date;
+                          final day = date.length >= 10
+                              ? date.substring(8, 10)
+                              : date;
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              day,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      reservedSize: 20,
+                          );
+                        },
+                        reservedSize: 20,
+                      ),
+                    ),
+                    leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
-                  leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: chartMax / 4,
+                    getDrawingHorizontalLine: (v) => FlLine(
+                      color: cs.outlineVariant.withValues(alpha: 0.2),
+                      strokeWidth: 1,
+                    ),
                   ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: chartMax / 4,
-                  getDrawingHorizontalLine: (v) => FlLine(
-                    color: cs.outlineVariant.withValues(alpha: 0.2),
-                    strokeWidth: 1,
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                barGroups: List.generate(trends.length, (i) {
-                  final present = trends[i].present.toDouble();
-                  final absent = trends[i].absent.toDouble();
-                  return BarChartGroupData(
-                    x: i,
-                    barRods: [
-                      BarChartRodData(
-                        toY: present,
-                        color: AppColors.success,
-                        width: 8,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(4),
-                          topRight: Radius.circular(4),
+                  borderData: FlBorderData(show: false),
+                  barGroups: List.generate(trends.length, (i) {
+                    final present = trends[i].present.toDouble();
+                    final absent = trends[i].absent.toDouble();
+                    final halfDay = trends[i].halfDay.toDouble();
+                    final onLeave = trends[i].onLeave.toDouble();
+                    return BarChartGroupData(
+                      x: i,
+                      barRods: [
+                        BarChartRodData(
+                          toY: present,
+                          color: AppColors.success,
+                          width: 6,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(3),
+                            topRight: Radius.circular(3),
+                          ),
                         ),
-                      ),
-                      BarChartRodData(
-                        toY: absent,
-                        color: AppColors.danger,
-                        width: 8,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(4),
-                          topRight: Radius.circular(4),
+                        BarChartRodData(
+                          toY: halfDay,
+                          color: AppColors.warning,
+                          width: 6,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(3),
+                            topRight: Radius.circular(3),
+                          ),
                         ),
-                      ),
-                    ],
-                  );
-                }),
+                        BarChartRodData(
+                          toY: onLeave,
+                          color: AppColors.info,
+                          width: 6,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(3),
+                            topRight: Radius.circular(3),
+                          ),
+                        ),
+                        BarChartRodData(
+                          toY: absent,
+                          color: AppColors.danger,
+                          width: 6,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(3),
+                            topRight: Radius.circular(3),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                ),
               ),
             ),
-          ),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 16,
+            runSpacing: 8,
             children: [
               _DotLegend(AppColors.success, 'Present', cs),
-              const SizedBox(width: 24),
+              _DotLegend(AppColors.warning, 'Half Day', cs),
+              _DotLegend(AppColors.info, 'On Leave', cs),
               _DotLegend(AppColors.danger, 'Absent', cs),
             ],
           ),

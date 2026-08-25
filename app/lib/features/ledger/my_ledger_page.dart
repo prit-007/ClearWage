@@ -10,6 +10,7 @@ import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import 'providers/ledger_providers.dart';
 
 class MyLedgerPage extends ConsumerStatefulWidget {
   const MyLedgerPage({super.key});
@@ -22,6 +23,7 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
   Map<String, dynamic>? _ledgerData;
   bool _loading = true;
   String? _error;
+  bool _listenerRegistered = false;
 
   @override
   void initState() {
@@ -82,6 +84,10 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_listenerRegistered) {
+      _listenerRegistered = true;
+      ref.listen(ledgerRefreshProvider, (_, _) => _loadLedger());
+    }
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
@@ -93,142 +99,149 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
       body: SafeArea(
-        child: CustomScrollView(
-          physics: AppScrollPhysics.physics(),
-          slivers: [
-            SliverAppBar(
-              backgroundColor: cs.surfaceContainerLowest.withValues(
-                alpha: 0.85,
-              ),
-              pinned: true,
-              elevation: 0,
-              expandedHeight: 80,
-              collapsedHeight: 70,
-              flexibleSpace: ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaX: AppBlur.sigma,
-                    sigmaY: AppBlur.sigma,
+        child: RefreshIndicator(
+          onRefresh: _loadLedger,
+          child: CustomScrollView(
+            physics: AppScrollPhysics.physics(),
+            slivers: [
+              SliverAppBar(
+                backgroundColor: cs.surfaceContainerLowest.withValues(
+                  alpha: 0.85,
+                ),
+                pinned: true,
+                elevation: 0,
+                expandedHeight: 80,
+                collapsedHeight: 70,
+                flexibleSpace: ClipRRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(
+                      sigmaX: AppBlur.sigma,
+                      sigmaY: AppBlur.sigma,
+                    ),
+                    child: FlexibleSpaceBar(
+                      titlePadding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      centerTitle: true,
+                      title: Text(
+                        'My Ledger',
+                        style: tt.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
                   ),
-                  child: FlexibleSpaceBar(
-                    titlePadding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    centerTitle: true,
-                    title: Text(
-                      'My Ledger',
-                      style: tt.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ),
                 ),
               ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      onPressed: _prevMonth,
-                      icon: Icon(
-                        PhosphorIconsRegular.caretLeft,
-                        color: cs.primary,
-                      ),
-                    ),
-                    Text(
-                      DateFormat('MMMM yyyy').format(_selectedMonth),
-                      style: tt.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: _nextMonth,
-                      icon: Icon(
-                        PhosphorIconsRegular.caretRight,
-                        color: cs.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (_loading)
-              const SliverFillRemaining(
-                child: CustomScrollView(
-                  slivers: [
-                    SliverPadding(
-                      padding: EdgeInsets.symmetric(horizontal: 24),
-                      sliver: ShimmerLoading(itemCount: 5, height: 80),
-                    ),
-                  ],
-                ),
-              )
-            else if (_error != null)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      PhosphorIcon(
-                        PhosphorIconsRegular.warningCircle,
-                        size: 48,
-                        color: cs.error,
+                      IconButton(
+                        onPressed: _prevMonth,
+                        icon: Icon(
+                          PhosphorIconsRegular.caretLeft,
+                          color: cs.primary,
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      Text('Failed to load', style: tt.titleMedium),
-                      const SizedBox(height: 8),
                       Text(
-                        '$_error',
-                        style: tt.bodySmall,
-                        textAlign: TextAlign.center,
+                        DateFormat('MMMM yyyy').format(_selectedMonth),
+                        style: tt.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _nextMonth,
+                        icon: Icon(
+                          PhosphorIconsRegular.caretRight,
+                          color: cs.primary,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              )
-            else ...[
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: _BalanceCard(cs: cs, tt: tt, balance: balance),
-                ),
               ),
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: _MonthlySummaryCard(cs: cs, tt: tt, entries: entries),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
-              if (entries.isEmpty)
+              if (_loading)
                 const SliverFillRemaining(
-                  child: EmptyState(
-                    icon: PhosphorIconsRegular.listDashes,
-                    title: 'No entries',
-                    subtitle: 'No ledger entries for this month.',
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: EdgeInsets.symmetric(horizontal: 24),
+                        sliver: ShimmerLoading(itemCount: 5, height: 80),
+                      ),
+                    ],
                   ),
                 )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final entry = entries[index];
-                      return FluidSlideIn(
-                        delay: (index * 50).clamp(0, 400).toInt(),
-                        child: _LedgerEntryCard(cs: cs, tt: tt, entry: entry),
-                      );
-                    }, childCount: entries.length),
+              else if (_error != null)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        PhosphorIcon(
+                          PhosphorIconsRegular.warningCircle,
+                          size: 48,
+                          color: cs.error,
+                        ),
+                        const SizedBox(height: 16),
+                        Text('Failed to load', style: tt.titleMedium),
+                        const SizedBox(height: 8),
+                        Text(
+                          '$_error',
+                          style: tt.bodySmall,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: _BalanceCard(cs: cs, tt: tt, balance: balance),
                   ),
                 ),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: _MonthlySummaryCard(
+                      cs: cs,
+                      tt: tt,
+                      entries: entries,
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                if (entries.isEmpty)
+                  const SliverFillRemaining(
+                    child: EmptyState(
+                      icon: PhosphorIconsRegular.listDashes,
+                      title: 'No entries',
+                      subtitle: 'No ledger entries for this month.',
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final entry = entries[index];
+                        return FluidSlideIn(
+                          delay: (index * 50).clamp(0, 400).toInt(),
+                          child: _LedgerEntryCard(cs: cs, tt: tt, entry: entry),
+                        );
+                      }, childCount: entries.length),
+                    ),
+                  ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

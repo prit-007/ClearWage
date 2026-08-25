@@ -388,6 +388,16 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                   context.push('/my-shifts');
                 },
               ),
+              _GlassActionCard(
+                cs: cs,
+                tt: tt,
+                icon: PhosphorIconsDuotone.dotsThreeCircle,
+                label: 'More',
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  context.push('/more');
+                },
+              ),
             ],
           ),
         ],

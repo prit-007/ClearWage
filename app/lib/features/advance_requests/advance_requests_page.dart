@@ -119,11 +119,13 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
           child: SafeArea(
-            child: _AdvanceActionSheetContent(
-              cs: cs,
-              tt: tt,
-              req: req,
-              ref: ref,
+            child: SingleChildScrollView(
+              child: _AdvanceActionSheetContent(
+                cs: cs,
+                tt: tt,
+                req: req,
+                ref: ref,
+              ),
             ),
           ),
         );

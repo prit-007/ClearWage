@@ -427,137 +427,139 @@ class _ShiftFormModalState extends ConsumerState<_ShiftFormModal> {
           color: cs.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(child: sheetHandle(cs)),
-            const SizedBox(height: 24),
-            Text(
-              widget.shift != null ? 'Edit Shift' : 'Create New Shift',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ValidatedField(
-              controller: _nameCtrl,
-              label: 'Shift Name *',
-              prefixIcon: PhosphorIconsRegular.clock,
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Enter shift name' : null,
-            ),
-            ValidatedField(
-              controller: _startCtrl,
-              label: 'Start Time (HH:MM) *',
-              prefixIcon: PhosphorIconsRegular.sun,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Enter start time';
-                if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) {
-                  return 'Use HH:MM format';
-                }
-                return null;
-              },
-            ),
-            ValidatedField(
-              controller: _endCtrl,
-              label: 'End Time (HH:MM) *',
-              prefixIcon: PhosphorIconsRegular.moon,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Enter end time';
-                if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) {
-                  return 'Use HH:MM format';
-                }
-                return null;
-              },
-            ),
-            ValidatedField(
-              controller: _graceCtrl,
-              label: 'Grace Period min (Optional)',
-              prefixIcon: PhosphorIconsRegular.hourglass,
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return null;
-                final n = int.tryParse(v.trim());
-                if (n == null || n < 0) return 'Enter a valid number';
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _ModalSwitch(
-                  cs: cs,
-                  label: 'Crosses Midnight',
-                  value: _crossesMidnight,
-                  onChanged: (v) => setState(() => _crossesMidnight = v),
-                ),
-                const SizedBox(width: 16),
-                _ModalSwitch(
-                  cs: cs,
-                  label: 'Default Shift',
-                  value: _isDefault,
-                  onChanged: (v) => setState(() => _isDefault = v),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _saving
-                  ? null
-                  : () async {
-                      unawaited(HapticFeedback.mediumImpact());
-                      setState(() => _saving = true);
-                      try {
-                        final body = {
-                          'name': _nameCtrl.text.trim(),
-                          'start_time': _startCtrl.text.trim(),
-                          'end_time': _endCtrl.text.trim(),
-                          'grace_period_minutes':
-                              int.tryParse(_graceCtrl.text) ?? 15,
-                          'crosses_midnight': _crossesMidnight,
-                          'is_default': _isDefault,
-                        };
-                        if (widget.shift != null) {
-                          await ref
-                              .read(shiftServiceProvider)
-                              .update(widget.shift!.id, body);
-                        } else {
-                          await ref.read(shiftServiceProvider).create(body);
-                        }
-                        if (context.mounted) Navigator.pop(context, true);
-                      } catch (e) {
-                        if (context.mounted) {
-                          showError(context, e);
-                          setState(() => _saving = false);
-                        }
-                      }
-                    },
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(60),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: sheetHandle(cs)),
+              const SizedBox(height: 24),
+              Text(
+                widget.shift != null ? 'Edit Shift' : 'Create New Shift',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
                 ),
               ),
-              child: _saving
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+              const SizedBox(height: 24),
+              ValidatedField(
+                controller: _nameCtrl,
+                label: 'Shift Name *',
+                prefixIcon: PhosphorIconsRegular.clock,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Enter shift name' : null,
+              ),
+              ValidatedField(
+                controller: _startCtrl,
+                label: 'Start Time (HH:MM) *',
+                prefixIcon: PhosphorIconsRegular.sun,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Enter start time';
+                  if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) {
+                    return 'Use HH:MM format';
+                  }
+                  return null;
+                },
+              ),
+              ValidatedField(
+                controller: _endCtrl,
+                label: 'End Time (HH:MM) *',
+                prefixIcon: PhosphorIconsRegular.moon,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Enter end time';
+                  if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) {
+                    return 'Use HH:MM format';
+                  }
+                  return null;
+                },
+              ),
+              ValidatedField(
+                controller: _graceCtrl,
+                label: 'Grace Period min (Optional)',
+                prefixIcon: PhosphorIconsRegular.hourglass,
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null;
+                  final n = int.tryParse(v.trim());
+                  if (n == null || n < 0) return 'Enter a valid number';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _ModalSwitch(
+                    cs: cs,
+                    label: 'Crosses Midnight',
+                    value: _crossesMidnight,
+                    onChanged: (v) => setState(() => _crossesMidnight = v),
+                  ),
+                  const SizedBox(width: 16),
+                  _ModalSwitch(
+                    cs: cs,
+                    label: 'Default Shift',
+                    value: _isDefault,
+                    onChanged: (v) => setState(() => _isDefault = v),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: _saving
+                    ? null
+                    : () async {
+                        unawaited(HapticFeedback.mediumImpact());
+                        setState(() => _saving = true);
+                        try {
+                          final body = {
+                            'name': _nameCtrl.text.trim(),
+                            'start_time': _startCtrl.text.trim(),
+                            'end_time': _endCtrl.text.trim(),
+                            'grace_period_minutes':
+                                int.tryParse(_graceCtrl.text) ?? 15,
+                            'crosses_midnight': _crossesMidnight,
+                            'is_default': _isDefault,
+                          };
+                          if (widget.shift != null) {
+                            await ref
+                                .read(shiftServiceProvider)
+                                .update(widget.shift!.id, body);
+                          } else {
+                            await ref.read(shiftServiceProvider).create(body);
+                          }
+                          if (context.mounted) Navigator.pop(context, true);
+                        } catch (e) {
+                          if (context.mounted) {
+                            showError(context, e);
+                            setState(() => _saving = false);
+                          }
+                        }
+                      },
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(60),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: _saving
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Save Configuration',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
-                    )
-                  : const Text(
-                      'Save Configuration',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

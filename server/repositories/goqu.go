@@ -52,7 +52,7 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 
 func (q *GoquQuerier) CreateAttendance(ctx context.Context, arg CreateAttendanceParams) (Attendance, error) {
 	var a Attendance
-	found, err := q.db.Insert("attendance").Rows(goqu.Record{
+	row := goqu.Record{
 		"tenant_id":                arg.TenantID,
 		"employee_id":              arg.EmployeeID,
 		"date":                     arg.Date,
@@ -63,7 +63,20 @@ func (q *GoquQuerier) CreateAttendance(ctx context.Context, arg CreateAttendance
 		"overtime_hours":           arg.OvertimeHours,
 		"overtime_rate_multiplier": arg.OvertimeRateMultiplier,
 		"units_produced":           arg.UnitsProduced,
-	}).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &a)
+	}
+	excluded := func(col string) exp.Expression { return goqu.L("EXCLUDED." + col) }
+	found, err := q.db.Insert("attendance").Rows(row).
+		OnConflict(goqu.DoUpdate("(tenant_id, employee_id, date)", goqu.Record{
+			"shift_id":                 excluded("shift_id"),
+			"status":                   excluded("status"),
+			"check_in_time":            excluded("check_in_time"),
+			"check_out_time":           excluded("check_out_time"),
+			"overtime_hours":           excluded("overtime_hours"),
+			"overtime_rate_multiplier": excluded("overtime_rate_multiplier"),
+			"units_produced":           excluded("units_produced"),
+			"updated_at":               goqu.L("now()"),
+		})).
+		Returning(goqu.Star()).Executor().ScanStructContext(ctx, &a)
 	if err != nil {
 		return Attendance{}, err
 	}
@@ -219,6 +232,56 @@ func (q *GoquQuerier) CreateLedgerEntry(ctx context.Context, arg CreateLedgerEnt
 		return Ledger{}, errors.New("insert did not return a row")
 	}
 	return l, nil
+}
+
+func (q *GoquQuerier) GetLedgerEntryByID(ctx context.Context, arg GetLedgerEntryByIDParams) (Ledger, error) {
+	var l Ledger
+	found, err := q.db.From("ledger").Select(
+		goqu.C("id"), goqu.C("tenant_id"), goqu.C("employee_id"), goqu.C("date"),
+		goqu.C("type"), goqu.C("amount"), goqu.C("note"), goqu.C("created_by"),
+		goqu.C("version"), goqu.C("created_at"), goqu.C("updated_at"),
+		goqu.C("linked_payroll_month"),
+		goqu.COALESCE(goqu.C("employee_name"), "").As("employee_name"),
+	).Where(
+		goqu.C("id").Eq(arg.ID),
+		goqu.C("tenant_id").Eq(arg.TenantID),
+	).Executor().ScanStructContext(ctx, &l)
+	if err != nil {
+		return Ledger{}, err
+	}
+	if !found {
+		return Ledger{}, errors.New("ledger entry not found")
+	}
+	return l, nil
+}
+
+func (q *GoquQuerier) UpdateLedgerEntry(ctx context.Context, arg UpdateLedgerEntryParams) (Ledger, error) {
+	var l Ledger
+	found, err := q.db.Update("ledger").Set(goqu.Record{
+		"date":        arg.Date,
+		"type":        arg.Type,
+		"amount":      arg.Amount,
+		"note":        arg.Note,
+		"updated_at":  goqu.L("now()"),
+	}).Where(
+		goqu.C("id").Eq(arg.ID),
+		goqu.C("tenant_id").Eq(arg.TenantID),
+	).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &l)
+	if err != nil {
+		return Ledger{}, err
+	}
+	if !found {
+		return Ledger{}, errors.New("ledger entry not found")
+	}
+	return l, nil
+}
+
+func (q *GoquQuerier) DeleteLedgerEntry(ctx context.Context, arg DeleteLedgerEntryParams) error {
+	_, err := q.db.Delete("ledger").Where(
+		goqu.C("id").Eq(arg.ID),
+		goqu.C("tenant_id").Eq(arg.TenantID),
+	).Executor().ExecContext(ctx)
+	return err
 }
 
 func (q *GoquQuerier) CreateShift(ctx context.Context, arg CreateShiftParams) (Shift, error) {

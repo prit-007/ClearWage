@@ -78,8 +78,25 @@ class LedgerService {
   }
 
   Future<List<Map<String, dynamic>>> getBalanceSummary() async {
-    final res = await _client.get('/api/v1/ledger/balance-summary');
+    final now = DateTime.now();
+    final startDate =
+        '${now.year - 1}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final endDate =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final res = await _client.get(
+      '/api/v1/ledger/balance-summary',
+      query: {'start_date': startDate, 'end_date': endDate},
+    );
     final list = (res['data'] as List<dynamic>?) ?? [];
     return list.cast<Map<String, dynamic>>();
+  }
+
+  Future<LedgerEntry> update(String id, Map<String, dynamic> body) async {
+    final res = await _client.put('/api/v1/ledger/$id/entry', body: body);
+    return LedgerEntry.fromJson(res['data'] as Map<String, dynamic>? ?? {});
+  }
+
+  Future<void> delete(String id) async {
+    await _client.delete('/api/v1/ledger/$id/entry');
   }
 }

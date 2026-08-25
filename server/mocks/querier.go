@@ -249,6 +249,20 @@ func (mr *MockQuerierMockRecorder) DeleteHoliday(ctx, arg any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteHoliday", reflect.TypeOf((*MockQuerier)(nil).DeleteHoliday), ctx, arg)
 }
 
+// DeleteLedgerEntry mocks base method.
+func (m *MockQuerier) DeleteLedgerEntry(ctx context.Context, arg repositories.DeleteLedgerEntryParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteLedgerEntry", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteLedgerEntry indicates an expected call of DeleteLedgerEntry.
+func (mr *MockQuerierMockRecorder) DeleteLedgerEntry(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteLedgerEntry", reflect.TypeOf((*MockQuerier)(nil).DeleteLedgerEntry), ctx, arg)
+}
+
 // DeleteShift mocks base method.
 func (m *MockQuerier) DeleteShift(ctx context.Context, arg repositories.DeleteShiftParams) error {
 	m.ctrl.T.Helper()
@@ -442,21 +456,6 @@ func (mr *MockQuerierMockRecorder) GetDashboardSnapshot(ctx, tenantID, today, mo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDashboardSnapshot", reflect.TypeOf((*MockQuerier)(nil).GetDashboardSnapshot), ctx, tenantID, today, monthStart)
 }
 
-// GetEmployeeBalanceSummary mocks base method.
-func (m *MockQuerier) GetEmployeeBalanceSummary(ctx context.Context, tenantID string) ([]repositories.EmployeeBalanceSummary, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEmployeeBalanceSummary", ctx, tenantID)
-	ret0, _ := ret[0].([]repositories.EmployeeBalanceSummary)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetEmployeeBalanceSummary indicates an expected call of GetEmployeeBalanceSummary.
-func (mr *MockQuerierMockRecorder) GetEmployeeBalanceSummary(ctx, tenantID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeBalanceSummary", reflect.TypeOf((*MockQuerier)(nil).GetEmployeeBalanceSummary), ctx, tenantID)
-}
-
 // GetEmployeeAttendanceSummary mocks base method.
 func (m *MockQuerier) GetEmployeeAttendanceSummary(ctx context.Context, arg repositories.GetEmployeeAttendanceSummaryParams) (repositories.EmployeeAttendanceSummary, error) {
 	m.ctrl.T.Helper()
@@ -470,6 +469,21 @@ func (m *MockQuerier) GetEmployeeAttendanceSummary(ctx context.Context, arg repo
 func (mr *MockQuerierMockRecorder) GetEmployeeAttendanceSummary(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeAttendanceSummary", reflect.TypeOf((*MockQuerier)(nil).GetEmployeeAttendanceSummary), ctx, arg)
+}
+
+// GetEmployeeBalanceSummary mocks base method.
+func (m *MockQuerier) GetEmployeeBalanceSummary(ctx context.Context, tenantID string) ([]repositories.EmployeeBalanceSummary, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmployeeBalanceSummary", ctx, tenantID)
+	ret0, _ := ret[0].([]repositories.EmployeeBalanceSummary)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmployeeBalanceSummary indicates an expected call of GetEmployeeBalanceSummary.
+func (mr *MockQuerierMockRecorder) GetEmployeeBalanceSummary(ctx, tenantID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeBalanceSummary", reflect.TypeOf((*MockQuerier)(nil).GetEmployeeBalanceSummary), ctx, tenantID)
 }
 
 // GetEmployeeDocumentByType mocks base method.
@@ -515,6 +529,21 @@ func (m *MockQuerier) GetLeavePolicyByTenant(ctx context.Context, tenantID strin
 func (mr *MockQuerierMockRecorder) GetLeavePolicyByTenant(ctx, tenantID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLeavePolicyByTenant", reflect.TypeOf((*MockQuerier)(nil).GetLeavePolicyByTenant), ctx, tenantID)
+}
+
+// GetLedgerEntryByID mocks base method.
+func (m *MockQuerier) GetLedgerEntryByID(ctx context.Context, arg repositories.GetLedgerEntryByIDParams) (repositories.Ledger, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLedgerEntryByID", ctx, arg)
+	ret0, _ := ret[0].(repositories.Ledger)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLedgerEntryByID indicates an expected call of GetLedgerEntryByID.
+func (mr *MockQuerierMockRecorder) GetLedgerEntryByID(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLedgerEntryByID", reflect.TypeOf((*MockQuerier)(nil).GetLedgerEntryByID), ctx, arg)
 }
 
 // GetLedgerSummaryRange mocks base method.
@@ -1038,6 +1067,21 @@ func (m *MockQuerier) UpdateEmployeePhotoURL(ctx context.Context, arg repositori
 func (mr *MockQuerierMockRecorder) UpdateEmployeePhotoURL(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmployeePhotoURL", reflect.TypeOf((*MockQuerier)(nil).UpdateEmployeePhotoURL), ctx, arg)
+}
+
+// UpdateLedgerEntry mocks base method.
+func (m *MockQuerier) UpdateLedgerEntry(ctx context.Context, arg repositories.UpdateLedgerEntryParams) (repositories.Ledger, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLedgerEntry", ctx, arg)
+	ret0, _ := ret[0].(repositories.Ledger)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateLedgerEntry indicates an expected call of UpdateLedgerEntry.
+func (mr *MockQuerierMockRecorder) UpdateLedgerEntry(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLedgerEntry", reflect.TypeOf((*MockQuerier)(nil).UpdateLedgerEntry), ctx, arg)
 }
 
 // UpdateShift mocks base method.

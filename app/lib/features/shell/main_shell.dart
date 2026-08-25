@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +13,7 @@ import '../ledger/ledger_list_page.dart';
 import '../ledger/my_ledger_page.dart';
 import '../reports/reports_hub_page.dart';
 import '../staff/staff_directory_page.dart';
+import '../profile/profile_hub_page.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
@@ -60,7 +60,9 @@ class _MainShellState extends ConsumerState<MainShell> {
       } else ...{
         const DashboardScreen(): 'home',
         const MyAttendancePage(): 'my-attendance',
+        const ReportsHubScreen(): 'reports',
         const MyLedgerPage(): 'my-ledger',
+        const ProfileHubPage(): 'profile',
       },
     };
 
@@ -100,12 +102,22 @@ class _MainShellState extends ConsumerState<MainShell> {
         const NavigationDestination(
           icon: Icon(Icons.event_available_outlined),
           selectedIcon: Icon(Icons.event_available),
-          label: 'My Attendance',
+          label: 'Attendance',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.analytics_outlined),
+          selectedIcon: Icon(Icons.analytics),
+          label: 'Reports',
         ),
         const NavigationDestination(
           icon: Icon(Icons.account_balance_wallet_outlined),
           selectedIcon: Icon(Icons.account_balance_wallet),
-          label: 'My Ledger',
+          label: 'Ledger',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.person_outlined),
+          selectedIcon: Icon(Icons.person),
+          label: 'Profile',
         ),
       ],
     ];
@@ -133,71 +145,40 @@ class _MainShellState extends ConsumerState<MainShell> {
         actions: [
           IconButton(
             icon: PhosphorIcon(
-              PhosphorIconsRegular.userCircle,
-              color: cs.onSurfaceVariant,
-            ),
-            onPressed: () => context.push('/my-profile'),
-          ),
-          PopupMenuButton<String>(
-            icon: PhosphorIcon(
               PhosphorIconsRegular.gear,
               color: cs.onSurfaceVariant,
             ),
-            onSelected: (route) => context.push(route),
+            onPressed: () => context.push('/more'),
+          ),
+          PopupMenuButton<String>(
+            icon: PhosphorIcon(
+              PhosphorIconsRegular.userCircle,
+              color: cs.onSurfaceVariant,
+            ),
+            onSelected: (value) {
+              if (value == 'profile') {
+                context.push('/my-profile');
+              } else if (value == 'signout') {
+                ref.read(tokenProvider.notifier).state = null;
+                ref.read(userInfoProvider.notifier).state = null;
+                context.go('/login');
+              }
+            },
             itemBuilder: (_) => [
-              if (!isAdmin) ...[
-                const PopupMenuItem(
-                  value: '/my-profile',
-                  child: Text('My Profile'),
-                ),
-                const PopupMenuItem(
-                  value: '/my-shifts',
-                  child: Text('Shift Timings'),
-                ),
-                const PopupMenuItem(
-                  value: '/my-holidays',
-                  child: Text('Holidays'),
-                ),
-                const PopupMenuItem(
-                  value: '/my-advance-requests',
-                  child: Text('My Advance Requests'),
-                ),
-                const PopupMenuItem(
-                  value: '/my-reports',
-                  child: Text('My Reports'),
-                ),
-              ],
-              if (isAdmin) ...[
-                const PopupMenuItem(
-                  value: '/shifts',
-                  child: Text('Shift Timings'),
-                ),
-                const PopupMenuItem(
-                  value: '/holidays',
-                  child: Text('Holidays'),
-                ),
-                if (kDebugMode)
-                  const PopupMenuItem(
-                    value: '/debug/logs',
-                    child: Text('App Logs'),
+              const PopupMenuItem(value: 'profile', child: Text('My Profile')),
+              PopupMenuItem(
+                enabled: false,
+                child: Text(
+                  'v0.7.0',
+                  style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
-                const PopupMenuItem(
-                  value: '/advance-requests',
-                  child: Text('Advance Requests'),
                 ),
-                const PopupMenuItem(
-                  value: '/leave-policy',
-                  child: Text('Leave Policy'),
-                ),
-                const PopupMenuItem(
-                  value: '/payroll-settings',
-                  child: Text('Payroll Settings'),
-                ),
-                const PopupMenuItem(
-                  value: '/disputes',
-                  child: Text('Disputes'),
-                ),
-              ],
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(value: 'signout', child: Text('Sign Out')),
             ],
           ),
         ],

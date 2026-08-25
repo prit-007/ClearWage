@@ -103,6 +103,25 @@ type CreateLedgerEntryParams struct {
 	CreatedBy          string  `json:"created_by"`
 }
 
+type UpdateLedgerEntryParams struct {
+	ID       string  `json:"id"`
+	TenantID string  `json:"tenant_id"`
+	Date     string  `json:"date"`
+	Type     string  `json:"type"`
+	Amount   float64 `json:"amount"`
+	Note     *string `json:"note"`
+}
+
+type DeleteLedgerEntryParams struct {
+	ID       string `json:"id"`
+	TenantID string `json:"tenant_id"`
+}
+
+type GetLedgerEntryByIDParams struct {
+	ID       string `json:"id"`
+	TenantID string `json:"tenant_id"`
+}
+
 type CreateShiftParams struct {
 	TenantID           string `json:"tenant_id"`
 	Name               string `json:"name"`
@@ -530,4 +549,7 @@ type Querier interface {
 	UpdateTenantProfile(ctx context.Context, arg UpdateTenantProfileParams) error
 	UpsertLeavePolicy(ctx context.Context, arg UpsertLeavePolicyParams) (LeavePolicy, error)
 	UpsertTenantConfig(ctx context.Context, arg UpsertTenantConfigParams) (TenantConfig, error)
+	UpdateLedgerEntry(ctx context.Context, arg UpdateLedgerEntryParams) (Ledger, error)
+	DeleteLedgerEntry(ctx context.Context, arg DeleteLedgerEntryParams) error
+	GetLedgerEntryByID(ctx context.Context, arg GetLedgerEntryByIDParams) (Ledger, error)
 }

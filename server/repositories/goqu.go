@@ -120,6 +120,7 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 			); scanErr != nil {
 				return nil, scanErr
 			}
+			normalizeAttendanceDate(&a)
 			items = append(items, a)
 		}
 		return items, rows.Err()
@@ -137,7 +138,20 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 	}
 	err = q.db.Insert("attendance").Rows(row).
 		Returning(goqu.Star()).Executor().ScanStructsContext(ctx, &items)
+	for i := range items {
+		normalizeAttendanceDate(&items[i])
+	}
 	return items, err
+}
+
+// normalizeAttendanceDate truncates a scanned `date` column value to
+// YYYY-MM-DD. database/sql converts time.Time into string as RFC3339
+// ("2026-08-25T00:00:00Z"), which breaks YYYY-MM-DD bucketing in payroll
+// and trend aggregation.
+func normalizeAttendanceDate(a *Attendance) {
+	if len(a.Date) > 10 && a.Date[4] == '-' && a.Date[7] == '-' {
+		a.Date = a.Date[:10]
+	}
 }
 
 func (q *GoquQuerier) CreateAttendance(ctx context.Context, arg CreateAttendanceParams) (Attendance, error) {
@@ -184,6 +198,7 @@ func (q *GoquQuerier) CreateAttendance(ctx context.Context, arg CreateAttendance
 	if !found {
 		return Attendance{}, errors.New("insert did not return a row")
 	}
+	normalizeAttendanceDate(&a)
 	return a, nil
 }
 
@@ -710,6 +725,9 @@ func (q *GoquQuerier) ListAttendanceByDate(ctx context.Context, arg ListAttendan
 			emp.Col("photo_url").As("employee_photo"),
 		).
 		Order(att.Col("employee_id").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
+	for i := range items {
+		normalizeAttendanceDate(&items[i])
+	}
 	return items, err
 }
 
@@ -730,6 +748,9 @@ func (q *GoquQuerier) ListAttendanceByDateRange(ctx context.Context, arg ListAtt
 			emp.Col("photo_url").As("employee_photo"),
 		).
 		Order(att.Col("date").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
+	for i := range items {
+		normalizeAttendanceDate(&items[i])
+	}
 	return items, err
 }
 
@@ -751,6 +772,9 @@ func (q *GoquQuerier) ListAttendanceByEmployeeMonth(ctx context.Context, arg Lis
 			emp.Col("photo_url").As("employee_photo"),
 		).
 		Order(att.Col("date").Asc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
+	for i := range items {
+		normalizeAttendanceDate(&items[i])
+	}
 	return items, err
 }
 
@@ -1035,6 +1059,7 @@ func (q *GoquQuerier) UpdateAttendance(ctx context.Context, arg UpdateAttendance
 		}
 		return Attendance{}, ErrConcurrentModification
 	}
+	normalizeAttendanceDate(&a)
 	return a, nil
 }
 

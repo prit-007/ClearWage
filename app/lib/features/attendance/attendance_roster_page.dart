@@ -16,6 +16,7 @@ import '../../core/helpers.dart';
 import '../../core/api_exceptions.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../data/models/shift_model.dart';
+import '../../data/models/holiday_model.dart';
 import '../../core/responsive.dart';
 import '../../core/design_tokens.dart';
 import 'dart:async';
@@ -34,15 +35,31 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   bool _saving = false;
   List<Shift> _shifts = [];
   List<RosterRow>? _cachedRows;
+  List<Holiday> _holidays = [];
   String _searchQuery = '';
   final TextEditingController _searchCtrl = TextEditingController();
 
   String get _dateStr => DateFormat('yyyy-MM-dd').format(_selectedDate);
 
+  Holiday? get _selectedHoliday {
+    final sel = _dateStr;
+    final selMd = sel.substring(5);
+    for (final h in _holidays) {
+      if (h.date == sel) return h;
+      if (h.isRecurring &&
+          h.date.length >= 10 &&
+          h.date.substring(5) == selMd) {
+        return h;
+      }
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
     _loadShifts();
+    _loadHolidays();
   }
 
   @override
@@ -55,6 +72,13 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     try {
       final shifts = await ref.read(shiftServiceProvider).list();
       if (mounted) setState(() => _shifts = shifts);
+    } catch (_) {}
+  }
+
+  Future<void> _loadHolidays() async {
+    try {
+      final holidays = await ref.read(holidayServiceProvider).list(limit: 200);
+      if (mounted) setState(() => _holidays = holidays);
     } catch (_) {}
   }
 
@@ -434,6 +458,30 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                                       letterSpacing: -0.5,
                                     ),
                                   ),
+                                  if (_selectedHoliday != null) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const PhosphorIcon(
+                                          PhosphorIconsFill.confetti,
+                                          size: 14,
+                                          color: AppColors.warning,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Flexible(
+                                          child: Text(
+                                            'HOLIDAY \u00b7 ${_selectedHoliday!.name}',
+                                            overflow: TextOverflow.ellipsis,
+                                            style: tt.labelSmall?.copyWith(
+                                              color: AppColors.warning,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 0.8,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ],
                               ),
                             ],

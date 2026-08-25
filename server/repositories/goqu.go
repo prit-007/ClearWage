@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/doug-martin/goqu/v9"
@@ -14,17 +15,77 @@ import (
 
 var ErrNotFound = errors.New("not found")
 var ErrConcurrentModification = errors.New("concurrent modification detected, please retry")
+var ErrAttendanceLocked = errors.New("attendance is locked for this period")
 
 type GoquQuerier struct {
-	db   *goqu.Database
-	sqlc *db.Queries
+	db    *goqu.Database
+	sqlDB *sql.DB
+	sqlc  *db.Queries
 }
 
 func NewGoquQuerier(goquDB *goqu.Database, sqlc *db.Queries) *GoquQuerier {
 	return &GoquQuerier{db: goquDB, sqlc: sqlc}
 }
 
+func NewGoquQuerierWithSQL(goquDB *goqu.Database, sqlDB *sql.DB, sqlc *db.Queries) *GoquQuerier {
+	return &GoquQuerier{db: goquDB, sqlDB: sqlDB, sqlc: sqlc}
+}
+
+// sqlTxWrapper wraps *sql.Tx to satisfy goqu's SQLDatabase interface.
+// Begin/BeginTx panic because transactions cannot nest within goqu's model.
+type sqlTxWrapper struct{ tx *sql.Tx }
+
+func (w *sqlTxWrapper) Begin() (*sql.Tx, error) {
+	return nil, errors.New("nested transactions not supported")
+}
+
+func (w *sqlTxWrapper) BeginTx(_ context.Context, _ *sql.TxOptions) (*sql.Tx, error) {
+	return nil, errors.New("nested transactions not supported")
+}
+
+func (w *sqlTxWrapper) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	return w.tx.ExecContext(ctx, query, args...)
+}
+
+func (w *sqlTxWrapper) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
+	return w.tx.PrepareContext(ctx, query)
+}
+
+func (w *sqlTxWrapper) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	return w.tx.QueryContext(ctx, query, args...)
+}
+
+func (w *sqlTxWrapper) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	return w.tx.QueryRowContext(ctx, query, args...)
+}
+
+// BeginTx starts a database transaction and returns a GoquQuerier that operates within it.
+// The caller MUST call tx.Rollback on error or tx.Commit on success.
+func (q *GoquQuerier) BeginTx(ctx context.Context) (*GoquQuerier, *sql.Tx, error) {
+	if q.sqlDB == nil {
+		return nil, nil, errors.New("sql.DB not available for transactions")
+	}
+	tx, err := q.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	txGoqu := goqu.Dialect("postgres").DB(&sqlTxWrapper{tx: tx})
+	txSQLC := q.sqlc.WithTx(tx)
+	return &GoquQuerier{db: txGoqu, sqlDB: q.sqlDB, sqlc: txSQLC}, tx, nil
+}
+
 func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAttendanceParams) ([]Attendance, error) {
+	var locked bool
+	_, err := q.db.Select(goqu.C("is_locked")).From("attendance").Where(
+		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("employee_id").Eq(arg.EmployeeID),
+		goqu.C("date").Eq(arg.Date),
+		goqu.C("is_locked").Eq(true),
+	).Executor().ScanValContext(ctx, &locked)
+	if err == nil && locked {
+		return nil, ErrAttendanceLocked
+	}
+
 	row := goqu.Record{
 		"tenant_id":                arg.TenantID,
 		"employee_id":              arg.EmployeeID,
@@ -37,7 +98,7 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 	}
 	excluded := func(col string) exp.Expression { return goqu.L("EXCLUDED." + col) }
 	var items []Attendance
-	err := q.db.Insert("attendance").Rows(row).
+	err = q.db.Insert("attendance").Rows(row).
 		OnConflict(goqu.DoUpdate("(tenant_id, employee_id, date)", goqu.Record{
 			"shift_id":                 goqu.L("COALESCE(?, shift_id)", excluded("shift_id")),
 			"status":                   excluded("status"),
@@ -51,8 +112,19 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 }
 
 func (q *GoquQuerier) CreateAttendance(ctx context.Context, arg CreateAttendanceParams) (Attendance, error) {
+	var locked bool
+	_, err := q.db.Select(goqu.C("is_locked")).From("attendance").Where(
+		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("employee_id").Eq(arg.EmployeeID),
+		goqu.C("date").Eq(arg.Date),
+		goqu.C("is_locked").Eq(true),
+	).Executor().ScanValContext(ctx, &locked)
+	if err == nil && locked {
+		return Attendance{}, ErrAttendanceLocked
+	}
+
 	var a Attendance
-	found, err := q.db.Insert("attendance").Rows(goqu.Record{
+	row := goqu.Record{
 		"tenant_id":                arg.TenantID,
 		"employee_id":              arg.EmployeeID,
 		"date":                     arg.Date,
@@ -63,7 +135,20 @@ func (q *GoquQuerier) CreateAttendance(ctx context.Context, arg CreateAttendance
 		"overtime_hours":           arg.OvertimeHours,
 		"overtime_rate_multiplier": arg.OvertimeRateMultiplier,
 		"units_produced":           arg.UnitsProduced,
-	}).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &a)
+	}
+	excluded := func(col string) exp.Expression { return goqu.L("EXCLUDED." + col) }
+	found, err := q.db.Insert("attendance").Rows(row).
+		OnConflict(goqu.DoUpdate("(tenant_id, employee_id, date)", goqu.Record{
+			"shift_id":                 excluded("shift_id"),
+			"status":                   excluded("status"),
+			"check_in_time":            excluded("check_in_time"),
+			"check_out_time":           excluded("check_out_time"),
+			"overtime_hours":           excluded("overtime_hours"),
+			"overtime_rate_multiplier": excluded("overtime_rate_multiplier"),
+			"units_produced":           excluded("units_produced"),
+			"updated_at":               goqu.L("now()"),
+		})).
+		Returning(goqu.Star()).Executor().ScanStructContext(ctx, &a)
 	if err != nil {
 		return Attendance{}, err
 	}
@@ -219,6 +304,58 @@ func (q *GoquQuerier) CreateLedgerEntry(ctx context.Context, arg CreateLedgerEnt
 		return Ledger{}, errors.New("insert did not return a row")
 	}
 	return l, nil
+}
+
+func (q *GoquQuerier) GetLedgerEntryByID(ctx context.Context, arg GetLedgerEntryByIDParams) (Ledger, error) {
+	var l Ledger
+	found, err := q.db.From("ledger").Select(
+		goqu.C("id"), goqu.C("tenant_id"), goqu.C("employee_id"), goqu.C("date"),
+		goqu.C("type"), goqu.C("amount"), goqu.C("note"), goqu.C("created_by"),
+		goqu.C("version"), goqu.C("created_at"), goqu.C("updated_at"),
+		goqu.C("linked_payroll_month"),
+		goqu.COALESCE(goqu.C("employee_name"), "").As("employee_name"),
+	).Where(
+		goqu.C("id").Eq(arg.ID),
+		goqu.C("tenant_id").Eq(arg.TenantID),
+	).Executor().ScanStructContext(ctx, &l)
+	if err != nil {
+		return Ledger{}, err
+	}
+	if !found {
+		return Ledger{}, errors.New("ledger entry not found")
+	}
+	return l, nil
+}
+
+func (q *GoquQuerier) UpdateLedgerEntry(ctx context.Context, arg UpdateLedgerEntryParams) (Ledger, error) {
+	var l Ledger
+	found, err := q.db.Update("ledger").Set(goqu.Record{
+		"date":       arg.Date,
+		"type":       arg.Type,
+		"amount":     arg.Amount,
+		"note":       arg.Note,
+		"version":    goqu.L("version + 1"),
+		"updated_at": goqu.L("now()"),
+	}).Where(
+		goqu.C("id").Eq(arg.ID),
+		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("version").Eq(arg.ExpectedVersion),
+	).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &l)
+	if err != nil {
+		return Ledger{}, err
+	}
+	if !found {
+		return Ledger{}, ErrConcurrentModification
+	}
+	return l, nil
+}
+
+func (q *GoquQuerier) DeleteLedgerEntry(ctx context.Context, arg DeleteLedgerEntryParams) error {
+	_, err := q.db.Delete("ledger").Where(
+		goqu.C("id").Eq(arg.ID),
+		goqu.C("tenant_id").Eq(arg.TenantID),
+	).Executor().ExecContext(ctx)
+	return err
 }
 
 func (q *GoquQuerier) CreateShift(ctx context.Context, arg CreateShiftParams) (Shift, error) {
@@ -853,11 +990,20 @@ func (q *GoquQuerier) UpdateAttendance(ctx context.Context, arg UpdateAttendance
 		goqu.C("id").Eq(arg.ID),
 		goqu.C("tenant_id").Eq(arg.TenantID),
 		goqu.C("version").Eq(arg.ExpectedVersion),
+		goqu.C("is_locked").Eq(false),
 	).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &a)
 	if err != nil {
 		return Attendance{}, err
 	}
 	if !found {
+		var locked bool
+		_, lockErr := q.db.Select(goqu.C("is_locked")).From("attendance").Where(
+			goqu.C("id").Eq(arg.ID),
+			goqu.C("tenant_id").Eq(arg.TenantID),
+		).Executor().ScanValContext(ctx, &locked)
+		if lockErr == nil && locked {
+			return Attendance{}, ErrAttendanceLocked
+		}
 		return Attendance{}, ErrConcurrentModification
 	}
 	return a, nil
@@ -1193,6 +1339,62 @@ func (q *GoquQuerier) RejectDispute(ctx context.Context, arg RejectDisputeParams
 		CreatedAt:  d.CreatedAt,
 		UpdatedAt:  d.UpdatedAt,
 	}, nil
+}
+
+func (q *GoquQuerier) HasPendingAdvanceRequest(ctx context.Context, arg HasPendingAdvanceRequestParams) (bool, error) {
+	var count int64
+	_, err := q.db.From("advance_requests").Select(goqu.COUNT("*")).Where(
+		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("employee_id").Eq(arg.EmployeeID),
+		goqu.C("status").Eq("pending"),
+	).ScanValContext(ctx, &count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (q *GoquQuerier) CountHolidaysByDate(ctx context.Context, arg CountHolidaysByDateParams) (int64, error) {
+	var count int64
+	_, err := q.db.From("holidays").Select(goqu.COUNT("*")).Where(
+		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("date").Eq(arg.Date),
+	).ScanValContext(ctx, &count)
+	return count, err
+}
+
+func (q *GoquQuerier) SettleEmployeeAtomic(ctx context.Context, employeeID, tenantID, date, createdBy string) (Ledger, error) {
+	if q.sqlDB == nil {
+		return Ledger{}, errors.New("sql.DB not available for atomic settlement")
+	}
+	query := `
+		WITH balance AS (
+			SELECT COALESCE(SUM(CASE WHEN type = 'jama' THEN amount ELSE 0 END), 0)
+			     - COALESCE(SUM(CASE WHEN type = 'udhaar' THEN amount ELSE 0 END), 0) AS bal
+			FROM ledger
+			WHERE employee_id = $1 AND tenant_id = $2
+		),
+		ins AS (
+			INSERT INTO ledger (tenant_id, employee_id, date, type, amount, note, created_by)
+			SELECT $2, $1, $3,
+				CASE WHEN b.bal > 0 THEN 'udhaar' ELSE 'jama' END,
+				ABS(b.bal),
+				'Full & final settlement',
+				$4
+			FROM balance b
+			WHERE b.bal != 0
+			RETURNING id, tenant_id, employee_id, date, type, amount, note, created_by, created_at, updated_at
+		)
+		SELECT id, tenant_id, employee_id, date, type, amount, note, created_by, created_at, updated_at FROM ins
+	`
+	var l Ledger
+	err := q.sqlDB.QueryRowContext(ctx, query, employeeID, tenantID, date, createdBy).Scan(
+		&l.ID, &l.TenantID, &l.EmployeeID, &l.Date, &l.Type, &l.Amount, &l.Note, &l.CreatedBy, &l.CreatedAt, &l.UpdatedAt,
+	)
+	if err != nil {
+		return Ledger{}, fmt.Errorf("atomic settlement failed: %w", err)
+	}
+	return l, nil
 }
 
 var _ Querier = (*GoquQuerier)(nil)

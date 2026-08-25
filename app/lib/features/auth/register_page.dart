@@ -115,8 +115,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     } catch (e) {
       if (!mounted) return;
       unawaited(HapticFeedback.vibrate());
+      final msg = '$e'.toLowerCase();
+      String friendlyMessage;
+      if (msg.contains('already') ||
+          msg.contains('duplicate') ||
+          msg.contains('409')) {
+        friendlyMessage =
+            'This phone number is already registered. Try signing in instead.';
+      } else if (msg.contains('network') ||
+          msg.contains('connection') ||
+          msg.contains('timeout')) {
+        friendlyMessage = 'Cannot reach server. Check your connection.';
+      } else {
+        friendlyMessage = '$e';
+      }
       setState(() {
-        _error = e.toString();
+        _error = friendlyMessage;
         _loading = false;
       });
     }
@@ -381,6 +395,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                             controller: _otpCtrl,
                             focusNode: _otpFocusNode,
                             length: 6,
+                            autofillHints: const [AutofillHints.oneTimeCode],
                             defaultPinTheme: defaultPinTheme,
                             focusedPinTheme: defaultPinTheme.copyWith(
                               decoration: defaultPinTheme.decoration?.copyWith(

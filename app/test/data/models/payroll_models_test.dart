@@ -60,9 +60,14 @@ void main() {
           PayrollEntry(
             employeeId: 'emp-1',
             name: 'Test',
+            wageType: 'monthly',
+            wageAmount: 30000,
+            daysPresent: 26,
+            totalOvertime: 0,
             grossWages: 25000.00,
             netPayable: 22000.50,
             totalUdhaar: 3000.00,
+            wageBasis: 'fixed_30',
           ),
         ],
       );
@@ -83,9 +88,14 @@ void main() {
         'employee_id': 'emp-1',
         'name': 'John Doe',
         'photo_url': 'https://example.com/photo.jpg',
+        'wage_type': 'monthly',
+        'wage_amount': 30000,
+        'days_present': 26,
+        'total_overtime': 2.5,
         'gross_wages': 25000.75,
         'net_payable': 22000.50,
         'total_udhaar': 3000.25,
+        'wage_basis': 'fixed_30',
       };
 
       final entry = PayrollEntry.fromJson(json);
@@ -93,18 +103,28 @@ void main() {
       expect(entry.employeeId, 'emp-1');
       expect(entry.name, 'John Doe');
       expect(entry.photoUrl, 'https://example.com/photo.jpg');
+      expect(entry.wageType, 'monthly');
+      expect(entry.wageAmount, 30000);
+      expect(entry.daysPresent, 26);
+      expect(entry.totalOvertime, 2.5);
       expect(entry.grossWages, 25000.75);
       expect(entry.netPayable, 22000.50);
       expect(entry.totalUdhaar, 3000.25);
+      expect(entry.wageBasis, 'fixed_30');
     });
 
     test('fromJson handles null photoUrl', () {
       final json = {
         'employee_id': 'emp-2',
         'name': 'Jane',
+        'wage_type': 'monthly',
+        'wage_amount': 25000,
+        'days_present': 22,
+        'total_overtime': 0,
         'gross_wages': 20000,
         'net_payable': 18000,
         'total_udhaar': 2000,
+        'wage_basis': 'fixed_30',
       };
 
       final entry = PayrollEntry.fromJson(json);
@@ -115,9 +135,14 @@ void main() {
       final entry = PayrollEntry(
         employeeId: 'emp-3',
         name: 'Test',
+        wageType: 'monthly',
+        wageAmount: 30000,
+        daysPresent: 26,
+        totalOvertime: 0,
         grossWages: 25000.50,
         netPayable: 22000.25,
         totalUdhaar: 3000.75,
+        wageBasis: 'fixed_30',
       );
 
       final json = entry.toJson();

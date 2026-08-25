@@ -27,6 +27,38 @@ void main() {
         AppLogger.error('Flutter error', details.exception, details.stack);
       };
 
+      ErrorWidget.builder = (details) {
+        AppLogger.error(
+          'Flutter ErrorWidget',
+          details.exception,
+          details.stack,
+        );
+        return Material(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Something went wrong',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$details',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      };
+
       try {
         await Firebase.initializeApp();
       } catch (e) {

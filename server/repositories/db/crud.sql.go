@@ -434,7 +434,7 @@ const listLedgerByEmployeeMonthExplicit = `-- name: ListLedgerByEmployeeMonthExp
 SELECT
   l.id, l.tenant_id, l.employee_id, l.date, l.type,
   l.amount, l.note, l.linked_payroll_month, l.created_by,
-  l.created_at, l.updated_at,
+  l.created_at,
   emp.name AS employee_name,
   emp.photo_url AS employee_photo
 FROM ledger l
@@ -448,28 +448,27 @@ LIMIT $5 OFFSET $6
 `
 
 type ListLedgerByEmployeeMonthExplicitParams struct {
-	EmployeeID uuid.UUID `json:"employee_id"`
-	TenantID   uuid.UUID `json:"tenant_id"`
-	Date       time.Time `json:"date"`
-	Date_2     time.Time `json:"date_2"`
-	Limit      int32     `json:"limit"`
-	Offset     int32     `json:"offset"`
+	EmployeeID string `json:"employee_id"`
+	TenantID   string `json:"tenant_id"`
+	Date       string `json:"date"`
+	Date_2     string `json:"date_2"`
+	Limit      int32  `json:"limit"`
+	Offset     int32  `json:"offset"`
 }
 
 type ListLedgerByEmployeeMonthExplicitRow struct {
-	ID                 uuid.UUID       `json:"id"`
-	TenantID           uuid.UUID       `json:"tenant_id"`
-	EmployeeID         uuid.UUID       `json:"employee_id"`
-	Date               time.Time       `json:"date"`
-	Type               string          `json:"type"`
-	Amount             decimal.Decimal `json:"amount"`
-	Note               sql.NullString  `json:"note"`
-	LinkedPayrollMonth sql.NullString  `json:"linked_payroll_month"`
-	CreatedBy          uuid.UUID       `json:"created_by"`
-	CreatedAt          time.Time       `json:"created_at"`
-	UpdatedAt          time.Time       `json:"updated_at"`
-	EmployeeName       sql.NullString  `json:"employee_name"`
-	EmployeePhoto      sql.NullString  `json:"employee_photo"`
+	ID                 string         `json:"id"`
+	TenantID           string         `json:"tenant_id"`
+	EmployeeID         string         `json:"employee_id"`
+	Date               string         `json:"date"`
+	Type               string         `json:"type"`
+	Amount             float32        `json:"amount"`
+	Note               sql.NullString `json:"note"`
+	LinkedPayrollMonth sql.NullString `json:"linked_payroll_month"`
+	CreatedBy          sql.NullString `json:"created_by"`
+	CreatedAt          interface{}    `json:"created_at"`
+	EmployeeName       sql.NullString `json:"employee_name"`
+	EmployeePhoto      sql.NullString `json:"employee_photo"`
 }
 
 func (q *Queries) ListLedgerByEmployeeMonthExplicit(ctx context.Context, arg ListLedgerByEmployeeMonthExplicitParams) ([]ListLedgerByEmployeeMonthExplicitRow, error) {
@@ -499,7 +498,6 @@ func (q *Queries) ListLedgerByEmployeeMonthExplicit(ctx context.Context, arg Lis
 			&i.LinkedPayrollMonth,
 			&i.CreatedBy,
 			&i.CreatedAt,
-			&i.UpdatedAt,
 			&i.EmployeeName,
 			&i.EmployeePhoto,
 		); err != nil {
@@ -520,7 +518,7 @@ const listLedgerByTenantExplicit = `-- name: ListLedgerByTenantExplicit :many
 SELECT
   l.id, l.tenant_id, l.employee_id, l.date, l.type,
   l.amount, l.note, l.linked_payroll_month, l.created_by,
-  l.created_at, l.updated_at,
+  l.created_at,
   emp.name AS employee_name,
   emp.photo_url AS employee_photo
 FROM ledger l
@@ -533,27 +531,26 @@ LIMIT $4 OFFSET $5
 `
 
 type ListLedgerByTenantExplicitParams struct {
-	TenantID uuid.UUID `json:"tenant_id"`
-	Date     time.Time `json:"date"`
-	Date_2   time.Time `json:"date_2"`
-	Limit    int32     `json:"limit"`
-	Offset   int32     `json:"offset"`
+	TenantID string `json:"tenant_id"`
+	Date     string `json:"date"`
+	Date_2   string `json:"date_2"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
 }
 
 type ListLedgerByTenantExplicitRow struct {
-	ID                 uuid.UUID       `json:"id"`
-	TenantID           uuid.UUID       `json:"tenant_id"`
-	EmployeeID         uuid.UUID       `json:"employee_id"`
-	Date               time.Time       `json:"date"`
-	Type               string          `json:"type"`
-	Amount             decimal.Decimal `json:"amount"`
-	Note               sql.NullString  `json:"note"`
-	LinkedPayrollMonth sql.NullString  `json:"linked_payroll_month"`
-	CreatedBy          uuid.UUID       `json:"created_by"`
-	CreatedAt          time.Time       `json:"created_at"`
-	UpdatedAt          time.Time       `json:"updated_at"`
-	EmployeeName       sql.NullString  `json:"employee_name"`
-	EmployeePhoto      sql.NullString  `json:"employee_photo"`
+	ID                 string         `json:"id"`
+	TenantID           string         `json:"tenant_id"`
+	EmployeeID         string         `json:"employee_id"`
+	Date               string         `json:"date"`
+	Type               string         `json:"type"`
+	Amount             float32        `json:"amount"`
+	Note               sql.NullString `json:"note"`
+	LinkedPayrollMonth sql.NullString `json:"linked_payroll_month"`
+	CreatedBy          sql.NullString `json:"created_by"`
+	CreatedAt          interface{}    `json:"created_at"`
+	EmployeeName       sql.NullString `json:"employee_name"`
+	EmployeePhoto      sql.NullString `json:"employee_photo"`
 }
 
 func (q *Queries) ListLedgerByTenantExplicit(ctx context.Context, arg ListLedgerByTenantExplicitParams) ([]ListLedgerByTenantExplicitRow, error) {
@@ -582,7 +579,6 @@ func (q *Queries) ListLedgerByTenantExplicit(ctx context.Context, arg ListLedger
 			&i.LinkedPayrollMonth,
 			&i.CreatedBy,
 			&i.CreatedAt,
-			&i.UpdatedAt,
 			&i.EmployeeName,
 			&i.EmployeePhoto,
 		); err != nil {

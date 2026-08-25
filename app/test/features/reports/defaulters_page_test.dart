@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vivek_app/core/api_client.dart';
+import 'package:vivek_app/core/widgets/shimmer_loading.dart';
 import 'package:vivek_app/core/providers/services.dart';
 import 'package:vivek_app/data/models/report_models.dart';
 import 'package:vivek_app/data/services/report_service.dart';
@@ -45,7 +46,7 @@ void main() {
 
     testWidgets('shows loading indicator initially', (tester) async {
       await tester.pumpWidget(_buildApp(fakeService));
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(ShimmerLoading), findsOneWidget);
     });
 
     testWidgets('shows zero defaulters empty state', (tester) async {
@@ -75,8 +76,8 @@ void main() {
       expect(find.text('2 AT RISK'), findsOneWidget);
       expect(find.text('Rahul'), findsOneWidget);
       expect(find.text('Priya'), findsOneWidget);
-      expect(find.text('Fixed Wage: ₹18000'), findsOneWidget);
-      expect(find.text('Fixed Wage: ₹15000'), findsOneWidget);
+      expect(find.text('Fixed Wage: ₹18,000'), findsOneWidget);
+      expect(find.text('Fixed Wage: ₹15,000'), findsOneWidget);
     });
 
     testWidgets('shows error state on fetch failure', (tester) async {

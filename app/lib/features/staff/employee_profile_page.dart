@@ -19,6 +19,10 @@ import '../../core/logger.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import 'add_employee_page.dart';
 import '../../core/responsive.dart';
+import '../../core/design_tokens.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
+import '../../core/currency_format.dart';
 import 'dart:async';
 
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
@@ -214,7 +218,10 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
             onPressed: () => Navigator.pop(context),
           ),
         ),
-        body: const Center(child: CircularProgressIndicator()),
+        body: CustomScrollView(
+          physics: AppScrollPhysics.physics(),
+          slivers: [const ShimmerLoading(itemCount: 4, height: 100)],
+        ),
       );
     }
 
@@ -356,7 +363,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                       dividerColor: Colors.transparent,
                       tabs: const [
                         Tab(text: 'Profile'),
-                        Tab(text: 'Logs'),
+                        Tab(text: 'Attendance'),
                         Tab(text: 'Ledger'),
                       ],
                     ),
@@ -696,8 +703,15 @@ class _InfoTab extends StatelessWidget {
                 ? 'Daily Wage'
                 : wageType == 'monthly'
                 ? 'Monthly'
+                : wageType == 'hourly'
+                ? 'Hourly'
                 : wageType,
-            'Base Rate': '₹$wageAmount${wageType == 'daily' ? ' / day' : ''}',
+            'Base Rate':
+                '${AppCurrency.format(double.tryParse(wageAmount) ?? 0)}${wageType == 'daily'
+                    ? ' / day'
+                    : wageType == 'hourly'
+                    ? ' / hr'
+                    : ''}',
           },
         ),
         _EditorialInfoBlock(cs: cs, tt: tt, title: 'KYC & Identity', data: kyc),
@@ -942,9 +956,9 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
     final tt = Theme.of(context).textTheme;
 
     if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: CircularProgressIndicator()),
+      return const CustomScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        slivers: [ShimmerLoading(itemCount: 4, height: 100)],
       );
     }
 
@@ -1098,7 +1112,7 @@ class _DocumentCard extends StatelessWidget {
                 Text(
                   doc != null ? 'Uploaded & Verified' : 'Action Required',
                   style: tt.bodySmall?.copyWith(
-                    color: doc != null ? const Color(0xFF10B981) : cs.error,
+                    color: doc != null ? AppColors.success : cs.error,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1322,19 +1336,19 @@ class _AttendanceTab extends StatelessWidget {
               tt: tt,
               label: 'Present',
               value: '$present',
-              color: const Color(0xFF10B981),
+              color: AppColors.success,
             ),
             _AttMacroStat(
               tt: tt,
               label: 'Absent',
               value: '$absent',
-              color: const Color(0xFFEF4444),
+              color: AppColors.danger,
             ),
             _AttMacroStat(
               tt: tt,
               label: 'Half',
               value: '$halfDay',
-              color: const Color(0xFFF59E0B),
+              color: AppColors.warning,
             ),
           ],
         ),
@@ -1346,7 +1360,7 @@ class _AttendanceTab extends StatelessWidget {
           builder: (context, val, _) => LinearProgressIndicator(
             value: val.clamp(0.0, 1.0),
             backgroundColor: cs.surfaceContainerHighest,
-            color: const Color(0xFF10B981),
+            color: AppColors.success,
             minHeight: 12,
             borderRadius: BorderRadius.circular(6),
           ),
@@ -1362,21 +1376,9 @@ class _AttendanceTab extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         if (recent.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: Text(
-                'No attendance records for this month',
-                style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+          const EmptyState(
+            icon: PhosphorIconsRegular.calendarBlank,
+            title: 'No attendance records for this month',
           )
         else
           ...recent.map(
@@ -1444,23 +1446,15 @@ class _TimelineRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color, icon) = switch (status) {
-      'present' => (
-        'Present',
-        const Color(0xFF10B981),
-        PhosphorIconsBold.check,
-      ),
-      'half_day' => (
-        'Half Day',
-        const Color(0xFFF59E0B),
-        PhosphorIconsBold.minus,
-      ),
+      'present' => ('Present', AppColors.success, PhosphorIconsBold.check),
+      'half_day' => ('Half Day', AppColors.warning, PhosphorIconsBold.minus),
       'paid_leave' => (
         'Paid Leave',
-        const Color(0xFF3B82F6),
+        AppColors.info,
         PhosphorIconsBold.calendar,
       ),
       'week_off' => ('Week Off', cs.onSurfaceVariant, PhosphorIconsBold.moon),
-      _ => ('Absent', const Color(0xFFEF4444), PhosphorIconsBold.x),
+      _ => ('Absent', AppColors.danger, PhosphorIconsBold.x),
     };
 
     return Padding(
@@ -1508,7 +1502,7 @@ class _LedgerTab extends StatelessWidget {
     final list = ledgerList ?? [];
     final bal = balance ?? 0;
     final isNegative = bal < 0;
-    final balColor = isNegative ? const Color(0xFFEF4444) : cs.primary;
+    final balColor = isNegative ? AppColors.danger : cs.primary;
     final recent = list.take(5).toList();
 
     return ListView(
@@ -1525,7 +1519,7 @@ class _LedgerTab extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          '₹${bal.abs().toStringAsFixed(0)}',
+          AppCurrency.format(bal.abs()),
           style: tt.displayLarge?.copyWith(
             fontWeight: FontWeight.w900,
             color: balColor,
@@ -1551,21 +1545,9 @@ class _LedgerTab extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         if (recent.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: Text(
-                'No ledger entries this month',
-                style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+          const EmptyState(
+            icon: PhosphorIconsRegular.receipt,
+            title: 'No ledger entries this month',
           )
         else
           ...recent.map(
@@ -1596,7 +1578,7 @@ class _LedgerEntryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isJama ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final color = isJama ? AppColors.success : AppColors.danger;
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Row(
@@ -1639,7 +1621,7 @@ class _LedgerEntryRow extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            '${isJama ? '+' : '-'}\u20B9${amount.toStringAsFixed(0)}',
+            '${isJama ? '+' : '-'}${AppCurrency.format(amount)}',
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.w900,

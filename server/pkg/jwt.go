@@ -25,6 +25,8 @@ func GenerateToken(cfg config.AppConfig, tenantID, employeeID, role string, expi
 		EmployeeID: employeeID,
 		Role:       role,
 		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "vivek-app",
+			Subject:   employeeID,
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},

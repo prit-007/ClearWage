@@ -72,6 +72,7 @@ func (s *AttendanceService) CreateAttendance(ctx context.Context, tenantID, empl
 	})
 	if err == nil {
 		logActivity(ctx, s.querier, tenantID, editedBy, "marked_attendance", "attendance", &att.ID, nil)
+		s.cache.Delete(fmt.Sprintf("roster:%s:%s", tenantID, date))
 	}
 	return att, err
 }
@@ -159,7 +160,7 @@ func (s *AttendanceService) BulkUpsert(ctx context.Context, tenantID, employeeID
 	if err != nil {
 		return nil, err
 	}
-	return s.querier.BulkUpsertAttendance(ctx, repositories.BulkUpsertAttendanceParams{
+	result, err := s.querier.BulkUpsertAttendance(ctx, repositories.BulkUpsertAttendanceParams{
 		TenantID:               tenantID,
 		EmployeeID:             employeeID,
 		Date:                   date,
@@ -169,6 +170,10 @@ func (s *AttendanceService) BulkUpsert(ctx context.Context, tenantID, employeeID
 		OvertimeRateMultiplier: otRate,
 		UnitsProduced:          unitsProduced,
 	})
+	if err == nil {
+		s.cache.Delete(fmt.Sprintf("roster:%s:%s", tenantID, date))
+	}
+	return result, err
 }
 
 func (s *AttendanceService) LockMonth(ctx context.Context, tenantID, startDate, endDate string) error {
@@ -180,18 +185,15 @@ func (s *AttendanceService) LockMonth(ctx context.Context, tenantID, startDate, 
 }
 
 func (s *AttendanceService) IsHoliday(ctx context.Context, tenantID, date string) (bool, error) {
-	holidays, err := s.querier.ListHolidaysByTenant(ctx, repositories.ListHolidaysByTenantParams{
+	count, err := s.querier.CountHolidaysByDate(ctx, repositories.CountHolidaysByDateParams{
 		TenantID: tenantID,
-		Limit:    1000,
-		Offset:   0,
+		Date:     date,
 	})
 	if err != nil {
 		return false, err
 	}
-	for _, h := range holidays {
-		if h.Date == date {
-			return true, nil
-		}
+	if count > 0 {
+		return true, nil
 	}
 	tc, err := s.querier.GetTenantConfig(ctx, tenantID)
 	if err != nil {

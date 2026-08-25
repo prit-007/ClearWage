@@ -103,6 +103,26 @@ type CreateLedgerEntryParams struct {
 	CreatedBy          string  `json:"created_by"`
 }
 
+type UpdateLedgerEntryParams struct {
+	ID              string  `json:"id"`
+	TenantID        string  `json:"tenant_id"`
+	Date            string  `json:"date"`
+	Type            string  `json:"type"`
+	Amount          float64 `json:"amount"`
+	Note            *string `json:"note"`
+	ExpectedVersion int32   `json:"expected_version"`
+}
+
+type DeleteLedgerEntryParams struct {
+	ID       string `json:"id"`
+	TenantID string `json:"tenant_id"`
+}
+
+type GetLedgerEntryByIDParams struct {
+	ID       string `json:"id"`
+	TenantID string `json:"tenant_id"`
+}
+
 type CreateShiftParams struct {
 	TenantID           string `json:"tenant_id"`
 	Name               string `json:"name"`
@@ -457,6 +477,16 @@ type RejectDisputeParams struct {
 	TenantID       string  `json:"tenant_id"`
 }
 
+type CountHolidaysByDateParams struct {
+	TenantID string
+	Date     string
+}
+
+type HasPendingAdvanceRequestParams struct {
+	TenantID   string
+	EmployeeID string
+}
+
 type Querier interface {
 	BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAttendanceParams) ([]Attendance, error)
 	CreateActivityLog(ctx context.Context, arg CreateActivityLogParams) (ActivityLog, error)
@@ -492,6 +522,7 @@ type Querier interface {
 	GetTenantConfig(ctx context.Context, tenantID string) (TenantConfig, error)
 	GetTotalOutstanding(ctx context.Context, tenantID string) (float64, error)
 	GetDashboardSnapshot(ctx context.Context, tenantID, today, monthStart string) (DashboardSnapshot, error)
+	GetEmployeeBalanceSummary(ctx context.Context, tenantID string) ([]EmployeeBalanceSummary, error)
 	ListEmployeeBalances(ctx context.Context, tenantID string) ([]EmployeeBalance, error)
 	GetDailySummary(ctx context.Context, tenantID, date string) (DailySummary, error)
 	GetWageBillTrends(ctx context.Context, tenantID, startDate, endDate string) ([]WageBillTrend, error)
@@ -529,4 +560,10 @@ type Querier interface {
 	UpdateTenantProfile(ctx context.Context, arg UpdateTenantProfileParams) error
 	UpsertLeavePolicy(ctx context.Context, arg UpsertLeavePolicyParams) (LeavePolicy, error)
 	UpsertTenantConfig(ctx context.Context, arg UpsertTenantConfigParams) (TenantConfig, error)
+	UpdateLedgerEntry(ctx context.Context, arg UpdateLedgerEntryParams) (Ledger, error)
+	DeleteLedgerEntry(ctx context.Context, arg DeleteLedgerEntryParams) error
+	GetLedgerEntryByID(ctx context.Context, arg GetLedgerEntryByIDParams) (Ledger, error)
+	SettleEmployeeAtomic(ctx context.Context, employeeID, tenantID, date, createdBy string) (Ledger, error)
+	HasPendingAdvanceRequest(ctx context.Context, arg HasPendingAdvanceRequestParams) (bool, error)
+	CountHolidaysByDate(ctx context.Context, arg CountHolidaysByDateParams) (int64, error)
 }

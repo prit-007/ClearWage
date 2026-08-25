@@ -5,6 +5,90 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-08-20
+
+### Fixed
+
+- Hourly wage badge in Staff Directory now shows "HOURLY" in purple instead of
+  incorrectly displaying "MONTHLY". Filter sheet also includes hourly option.
+- Route naming normalized to kebab-case: `/new_ledger` → `/new-ledger`,
+  `/add_employee` → `/add-employee`.
+- Employee Profile tab renamed from "Logs" to "Attendance" to match content.
+- Delete Account button demoted to outlined style; Sign Out promoted to solid
+  red FilledButton for correct destructive-action hierarchy.
+- Duplicate phone number during registration now shows a friendly error message
+  instead of a raw exception.
+
+### Added
+
+- `design_tokens.dart` — centralized design system: `AppRadius` (sm/md/lg),
+  `AppColors` (success/danger/warning/info/purple), `AppBlur` (sigma 15).
+- All color literals replaced with semantic tokens across 22 files.
+- All glassmorphism blur standardized to sigma 15 for consistent visual depth.
+- `empty_state.dart` — shared EmptyState widget replacing 32 ad-hoc empty
+  states across 17 pages for consistent empty-state UX.
+- `currency_format.dart` — Indian numeral grouping via `AppCurrency.format()`
+  (e.g., ₹1,00,000 instead of ₹100000).
+- OTP SMS auto-fill hints on Pinput and phone field for faster login.
+- Session expiry dialog now warns about unsaved changes before redirect.
+- Payroll Preview shows a pencil indicator on manually overridden net pay rows.
+- Advance deny action now captures an optional reason/note.
+- Employee nav now includes My Ledger tab (3 tabs: Home, My Attendance,
+  My Ledger) for quicker access to financial data.
+- Disputes page upgraded with FluidSlideIn animations, glassmorphism cards,
+  and semantic status badge colors.
+
+### Changed
+
+- `app.dart` theme card radius updated to 16px (was 12px) for consistency.
+- All currency displays use Indian grouping format (₹1,00,000).
+
+## [0.6.0] - 2026-08-18
+
+### Added
+
+- Employee dashboard using `/me/overview` — employees no longer get 403 on Home.
+  Shows attendance summary, outstanding balance, and 7 quick-action cards:
+  My Attendance, My Payslip, Request Advance, My Ledger, My Advance Requests,
+  My Reports, Shift Timings.
+- Employee-facing pages: My Attendance (with month picker), My Advance Requests
+  (read-only status view), My Shifts (read-only), My Holidays (read-only),
+  My Reports, My Ledger (with monthly summary card).
+- Owner Balance Sheet (`/balance-sheet`) — per-employee balance breakdown with
+  color-coded amounts, drill-down to individual ledgers.
+- Employee monthly ledger summary — "Wages Earned", "Advances Taken", "Net
+  Position" card on My Ledger page.
+- Admin advance request creation removed — employees create their own requests
+  via the dashboard; admins only approve/deny.
+- CSV export button on Reports Hub (placeholder).
+- Employee settings menu: My Profile, Shift Timings, Holidays, My Advance
+  Requests, My Reports.
+- Server: `GET /api/v1/ledger/balance-summary` endpoint for per-employee balance
+  breakdown.
+- Server: Migration 00023 — ledger CHECK constraint now includes `wage` type,
+  performance indexes added.
+- 462 tests total (80+ new widget tests across 11 new test files).
+
+### Changed
+
+- Payroll finalization now writes `type='jama'` ledger entries (was `'wage'`),
+  so the balance equation `net = udhaar - jama` is complete. After payroll,
+  employee balance correctly reflects wages paid.
+- Dashboard `wage_bill_mtd` SQL now includes `wage` type entries — shows true
+  wage bill, not just advances given.
+- Advance approval auto-dates to today when date not provided.
+- Employee bottom nav: Home + My Attendance (2 tabs). Disputes removed from
+  bottom nav, moved to admin settings menu.
+- Roster OT entry: inline 76px TextField replaced with clock icon button that
+  opens a proper AlertDialog with TextField + Save.
+- Employee shifts and holidays pages are now read-only (no create/edit/delete).
+
+### Fixed
+
+- Employee Home tab no longer returns 403 (was calling admin-only dashboard
+  endpoint).
+- Ledger balance now correctly accounts for wages paid (was invisible before).
+
 ## [0.5.7] - 2026-08-18
 
 ### Added

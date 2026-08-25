@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../core/design_tokens.dart';
 import '../../core/providers/services.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../data/models/dispute_model.dart';
 
 final _disputesProvider = FutureProvider.autoDispose<List<Dispute>>((
@@ -16,8 +21,10 @@ final _closedDisputesProvider = FutureProvider.autoDispose<List<Dispute>>((
   ref,
 ) async {
   final service = ref.watch(disputeServiceProvider);
-  final resolved = await service.list(status: 'resolved');
-  final rejected = await service.list(status: 'rejected');
+  final [resolved, rejected] = await Future.wait([
+    service.list(status: 'resolved'),
+    service.list(status: 'rejected'),
+  ]);
   return [...resolved, ...rejected];
 });
 
@@ -69,31 +76,60 @@ class _DisputesListScreenState extends ConsumerState<DisputesListScreen>
         children: [
           openDisputes.when(
             data: (disputes) => disputes.isEmpty
-                ? const Center(child: Text('No open disputes'))
+                ? const Center(
+                    child: EmptyState(
+                      icon: PhosphorIconsRegular.warningCircle,
+                      title: 'No open disputes',
+                    ),
+                  )
                 : RefreshIndicator(
                     onRefresh: () async => ref.invalidate(_disputesProvider),
                     child: ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: disputes.length,
-                      itemBuilder: (ctx, i) => _DisputeCard(
-                        dispute: disputes[i],
-                        onAction: () => ref.invalidate(_disputesProvider),
+                      itemBuilder: (ctx, i) => FluidSlideIn(
+                        delay: i * 80,
+                        child: _DisputeCard(
+                          dispute: disputes[i],
+                          onAction: () => ref.invalidate(_disputesProvider),
+                        ),
                       ),
                     ),
                   ),
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.all(16),
+                  sliver: ShimmerLoading(itemCount: 4, height: 100),
+                ),
+              ],
+            ),
             error: (e, _) => Center(child: Text('Error: $e')),
           ),
           closedDisputes.when(
             data: (disputes) => disputes.isEmpty
-                ? const Center(child: Text('No closed disputes'))
+                ? const Center(
+                    child: EmptyState(
+                      icon: PhosphorIconsRegular.checkCircle,
+                      title: 'No closed disputes',
+                    ),
+                  )
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: disputes.length,
-                    itemBuilder: (ctx, i) =>
-                        _DisputeCard(dispute: disputes[i], readOnly: true),
+                    itemBuilder: (ctx, i) => FluidSlideIn(
+                      delay: i * 80,
+                      child: _DisputeCard(dispute: disputes[i], readOnly: true),
+                    ),
                   ),
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.all(16),
+                  sliver: ShimmerLoading(itemCount: 4, height: 100),
+                ),
+              ],
+            ),
             error: (e, _) => Center(child: Text('Error: $e')),
           ),
         ],
@@ -116,18 +152,25 @@ class _DisputeCard extends ConsumerWidget {
   Color _statusColor() {
     switch (dispute.status) {
       case 'resolved':
-        return Colors.green;
+        return AppColors.success;
       case 'rejected':
-        return Colors.red;
+        return AppColors.danger;
       default:
-        return Colors.orange;
+        return AppColors.warning;
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      color: AppColors.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.lgAll,
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

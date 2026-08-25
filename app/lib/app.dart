@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'core/design_tokens.dart';
 import 'core/router.dart';
 
 class FactoryWorkforceApp extends ConsumerWidget {
@@ -16,9 +17,9 @@ class FactoryWorkforceApp extends ConsumerWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E40AF),
-          surface: const Color(0xFFFBF9F8),
-          primary: const Color(0xFF1E40AF),
+          seedColor: AppColors.primary,
+          surface: AppColors.surface,
+          primary: AppColors.primary,
           secondaryContainer: const Color(0xFFD9E2FF),
           onSecondaryContainer: const Color(0xFF001945),
         ),
@@ -30,15 +31,13 @@ class FactoryWorkforceApp extends ConsumerWidget {
         ),
         cardTheme: CardThemeData(
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          color: const Color(0xFFF5F3F3),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+          color: AppColors.card,
         ),
         navigationBarTheme: NavigationBarThemeData(
           elevation: 0,
-          backgroundColor: const Color(0xFFFBF9F8),
-          indicatorColor: const Color(0xFF1E40AF).withValues(alpha: 0.12),
+          backgroundColor: AppColors.surface,
+          indicatorColor: AppColors.primary.withValues(alpha: 0.12),
         ),
       ),
       routerConfig: router,

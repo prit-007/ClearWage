@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../design_tokens.dart';
 
 class GlassStatCard extends StatelessWidget {
   final ColorScheme cs;
@@ -20,14 +21,12 @@ class GlassStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final trendColor = isPositive
-        ? const Color(0xFF10B981)
-        : const Color(0xFFEF4444);
+    final trendColor = isPositive ? AppColors.success : AppColors.danger;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: AppBlur.sigma, sigmaY: AppBlur.sigma),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(

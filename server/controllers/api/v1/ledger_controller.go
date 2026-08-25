@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/vivek-app/vivek_app/config"
 	"github.com/vivek-app/vivek_app/middlewares"
+	"github.com/vivek-app/vivek_app/repositories"
 	"github.com/vivek-app/vivek_app/services"
 	"github.com/vivek-app/vivek_app/utils"
 )
@@ -32,6 +33,7 @@ type createLedgerRequest struct {
 	Type       string `json:"type"`
 	Amount     string `json:"amount"`
 	Note       string `json:"note"`
+	Version    *int32 `json:"version,omitempty"`
 }
 
 func (c *LedgerController) CreateEntry(w http.ResponseWriter, r *http.Request) {
@@ -90,9 +92,8 @@ func (c *LedgerController) ListByEmployee(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -132,9 +133,8 @@ func (c *LedgerController) GetBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -157,9 +157,8 @@ func (c *LedgerController) ListByTenant(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -197,9 +196,8 @@ func (c *LedgerController) GetTotalOutstanding(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -229,9 +227,8 @@ func (c *LedgerController) Summary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -299,6 +296,147 @@ func (c *LedgerController) SettleAccount(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to settle account")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to settle account")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, entry)
+}
+
+func (c *LedgerController) BalanceSummary(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
+		return
+	}
+
+	summary, err := c.ledgerService.GetEmployeeBalanceSummary(r.Context(), tenantID)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to get balance summary")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to get balance summary")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, summary)
+}
+
+func (c *LedgerController) UpdateEntry(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	entryID := chi.URLParam(r, "id")
+	var req createLedgerRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	if req.Date == "" || req.Type == "" || req.Amount == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "date, type, and amount are required")
+		return
+	}
+
+	if !utils.ValidateDate(req.Date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	if req.Type != "jama" && req.Type != "udhaar" {
+		utils.JSONFail(w, http.StatusBadRequest, "type must be 'jama' or 'udhaar'")
+		return
+	}
+
+	entry, err := c.ledgerService.UpdateEntry(r.Context(), entryID, tenantID, req.Date, req.Type, req.Amount, req.Note, func() int32 {
+		if req.Version != nil {
+			return *req.Version
+		}
+		return 0
+	}())
+	if err != nil {
+		if err == repositories.ErrConcurrentModification {
+			utils.JSONFail(w, http.StatusConflict, "Record was modified by another user. Please refresh and try again.")
+			return
+		}
+		c.logger.Error().Err(err).Msg("failed to update ledger entry")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to update entry")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, entry)
+}
+
+func (c *LedgerController) DeleteEntry(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	entryID := chi.URLParam(r, "id")
+
+	err := c.ledgerService.DeleteEntry(r.Context(), entryID, tenantID)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to delete ledger entry")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to delete entry")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+func (c *LedgerController) GetEntry(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	entryID := chi.URLParam(r, "id")
+
+	entry, err := c.ledgerService.GetEntryByID(r.Context(), entryID, tenantID)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to get ledger entry")
+		utils.JSONError(w, http.StatusNotFound, "Entry not found")
 		return
 	}
 

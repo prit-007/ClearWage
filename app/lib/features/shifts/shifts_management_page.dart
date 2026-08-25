@@ -4,13 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../data/models/shift_model.dart';
 import '../../core/providers/services.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/validated_field.dart';
+import '../../core/widgets/paginated_list_mixin.dart';
 import '../../core/helpers.dart';
 import '../../core/responsive.dart';
 import 'dart:async';
-
-const int _pageSize = 20;
 
 class ShiftsManagementScreen extends ConsumerStatefulWidget {
   const ShiftsManagementScreen({super.key});
@@ -21,70 +22,23 @@ class ShiftsManagementScreen extends ConsumerStatefulWidget {
 
 class _ShiftsManagementScreenState
     extends ConsumerState<ShiftsManagementScreen> {
-  final ScrollController _scrollCtrl = ScrollController();
-  List<Shift> _items = [];
-  bool _loading = false;
-  bool _hasMore = true;
-  int _page = 0;
-  String? _error;
+  late final PaginatedList<Shift> _pagination = PaginatedList<Shift>(
+    setState: setState,
+    mounted: () => mounted,
+    fetchPage: (offset, limit) =>
+        ref.read(shiftServiceProvider).list(limit: limit, offset: offset),
+  );
 
   @override
   void initState() {
     super.initState();
-    _scrollCtrl.addListener(_onScroll);
-    _fetch();
+    _pagination.init();
   }
 
   @override
   void dispose() {
-    _scrollCtrl.removeListener(_onScroll);
-    _scrollCtrl.dispose();
+    _pagination.dispose();
     super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollCtrl.position.pixels >=
-            _scrollCtrl.position.maxScrollExtent - 200 &&
-        !_loading &&
-        _hasMore) {
-      _fetch();
-    }
-  }
-
-  Future<void> _fetch() async {
-    if (_loading || !_hasMore) return;
-    setState(() => _loading = true);
-    try {
-      final items = await ref
-          .read(shiftServiceProvider)
-          .list(limit: _pageSize, offset: _page * _pageSize);
-      if (mounted) {
-        setState(() {
-          _items.addAll(items);
-          _page++;
-          _hasMore = items.length >= _pageSize;
-          _loading = false;
-        });
-      }
-    } catch (err) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = err.toString();
-        });
-      }
-    }
-  }
-
-  Future<void> _onRefresh() async {
-    unawaited(HapticFeedback.mediumImpact());
-    setState(() {
-      _items = [];
-      _page = 0;
-      _hasMore = true;
-      _error = null;
-    });
-    await _fetch();
   }
 
   Future<void> _showShiftBottomSheet({Shift? shift}) async {
@@ -93,7 +47,7 @@ class _ShiftsManagementScreenState
       context: context,
       builder: (_) => _ShiftFormModal(shift: shift),
     );
-    if (result == true && mounted) unawaited(_onRefresh());
+    if (result == true && mounted) unawaited(_pagination.onRefresh());
   }
 
   Future<void> _deleteShift(String id) async {
@@ -109,7 +63,7 @@ class _ShiftsManagementScreenState
     unawaited(HapticFeedback.heavyImpact());
     try {
       await ref.read(shiftServiceProvider).delete(id);
-      if (mounted) unawaited(_onRefresh());
+      if (mounted) unawaited(_pagination.onRefresh());
     } catch (e) {
       if (mounted) showError(context, e);
     }
@@ -126,9 +80,9 @@ class _ShiftsManagementScreenState
         child: RefreshIndicator(
           color: cs.primary,
           backgroundColor: cs.surface,
-          onRefresh: _onRefresh,
+          onRefresh: _pagination.onRefresh,
           child: CustomScrollView(
-            controller: _scrollCtrl,
+            controller: _pagination.scrollCtrl,
             physics: AppScrollPhysics.physics(
               parent: const AlwaysScrollableScrollPhysics(),
             ),
@@ -156,7 +110,7 @@ class _ShiftsManagementScreenState
                   ),
                 ],
               ),
-              if (_error != null)
+              if (_pagination.paginationError != null)
                 SliverFillRemaining(
                   child: Center(
                     child: Column(
@@ -174,59 +128,27 @@ class _ShiftsManagementScreenState
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          _error!,
+                          _pagination.paginationError!,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 16),
                         FilledButton.icon(
                           icon: const Icon(PhosphorIconsFill.arrowClockwise),
                           label: const Text('Retry'),
-                          onPressed: _onRefresh,
+                          onPressed: _pagination.onRefresh,
                         ),
                       ],
                     ),
                   ),
                 )
-              else if (_loading && _items.isEmpty)
+              else if (_pagination.loading && _pagination.items.isEmpty)
+                const ShimmerLoading(itemCount: 3, height: 120)
+              else if (_pagination.items.isEmpty)
                 const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (_items.isEmpty)
-                SliverFillRemaining(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: cs.surfaceContainerHighest.withValues(
-                            alpha: 0.3,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          PhosphorIconsFill.clock,
-                          size: 56,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'No shifts configured',
-                        style: tt.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: cs.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Tap the + button to add your first shift.',
-                        style: tt.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                  child: EmptyState(
+                    icon: PhosphorIconsRegular.clock,
+                    title: 'No shifts configured',
+                    subtitle: 'Tap the + button to add your first shift.',
                   ),
                 )
               else ...[
@@ -234,7 +156,7 @@ class _ShiftsManagementScreenState
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
-                      final shift = _items[index];
+                      final shift = _pagination.items[index];
                       return FluidSlideIn(
                         delay: index * 100,
                         child: _PremiumShiftCard(
@@ -245,21 +167,10 @@ class _ShiftsManagementScreenState
                           onDelete: () => _deleteShift(shift.id),
                         ),
                       );
-                    }, childCount: _items.length),
+                    }, childCount: _pagination.items.length),
                   ),
                 ),
-                if (_loading)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: cs.primary,
-                        ),
-                      ),
-                    ),
-                  ),
+                SliverToBoxAdapter(child: _pagination.buildLoadMoreIndicator()),
               ],
             ],
           ),
@@ -457,137 +368,154 @@ class _ShiftFormModalState extends ConsumerState<_ShiftFormModal> {
           color: cs.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(child: sheetHandle(cs)),
-            const SizedBox(height: 24),
-            Text(
-              widget.shift != null ? 'Edit Shift' : 'Create New Shift',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ValidatedField(
-              controller: _nameCtrl,
-              label: 'Shift Name *',
-              prefixIcon: PhosphorIconsRegular.clock,
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Enter shift name' : null,
-            ),
-            ValidatedField(
-              controller: _startCtrl,
-              label: 'Start Time (HH:MM) *',
-              prefixIcon: PhosphorIconsRegular.sun,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Enter start time';
-                if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) {
-                  return 'Use HH:MM format';
-                }
-                return null;
-              },
-            ),
-            ValidatedField(
-              controller: _endCtrl,
-              label: 'End Time (HH:MM) *',
-              prefixIcon: PhosphorIconsRegular.moon,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Enter end time';
-                if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) {
-                  return 'Use HH:MM format';
-                }
-                return null;
-              },
-            ),
-            ValidatedField(
-              controller: _graceCtrl,
-              label: 'Grace Period min (Optional)',
-              prefixIcon: PhosphorIconsRegular.hourglass,
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return null;
-                final n = int.tryParse(v.trim());
-                if (n == null || n < 0) return 'Enter a valid number';
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _ModalSwitch(
-                  cs: cs,
-                  label: 'Crosses Midnight',
-                  value: _crossesMidnight,
-                  onChanged: (v) => setState(() => _crossesMidnight = v),
-                ),
-                const SizedBox(width: 16),
-                _ModalSwitch(
-                  cs: cs,
-                  label: 'Default Shift',
-                  value: _isDefault,
-                  onChanged: (v) => setState(() => _isDefault = v),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _saving
-                  ? null
-                  : () async {
-                      unawaited(HapticFeedback.mediumImpact());
-                      setState(() => _saving = true);
-                      try {
-                        final body = {
-                          'name': _nameCtrl.text.trim(),
-                          'start_time': _startCtrl.text.trim(),
-                          'end_time': _endCtrl.text.trim(),
-                          'grace_period_minutes':
-                              int.tryParse(_graceCtrl.text) ?? 15,
-                          'crosses_midnight': _crossesMidnight,
-                          'is_default': _isDefault,
-                        };
-                        if (widget.shift != null) {
-                          await ref
-                              .read(shiftServiceProvider)
-                              .update(widget.shift!.id, body);
-                        } else {
-                          await ref.read(shiftServiceProvider).create(body);
-                        }
-                        if (context.mounted) Navigator.pop(context, true);
-                      } catch (e) {
-                        if (context.mounted) {
-                          showError(context, e);
-                          setState(() => _saving = false);
-                        }
-                      }
-                    },
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(60),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: sheetHandle(cs)),
+              const SizedBox(height: 24),
+              Text(
+                widget.shift != null ? 'Edit Shift' : 'Create New Shift',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
                 ),
               ),
-              child: _saving
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+              const SizedBox(height: 24),
+              ValidatedField(
+                controller: _nameCtrl,
+                label: 'Shift Name *',
+                prefixIcon: PhosphorIconsRegular.clock,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Enter shift name' : null,
+              ),
+              ValidatedField(
+                controller: _startCtrl,
+                label: 'Start Time (HH:MM) *',
+                prefixIcon: PhosphorIconsRegular.sun,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Enter start time';
+                  if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) {
+                    return 'Use HH:MM format';
+                  }
+                  return null;
+                },
+              ),
+              ValidatedField(
+                controller: _endCtrl,
+                label: 'End Time (HH:MM) *',
+                prefixIcon: PhosphorIconsRegular.moon,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Enter end time';
+                  if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(v.trim())) {
+                    return 'Use HH:MM format';
+                  }
+                  return null;
+                },
+              ),
+              ValidatedField(
+                controller: _graceCtrl,
+                label: 'Grace Period min (Optional)',
+                prefixIcon: PhosphorIconsRegular.hourglass,
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null;
+                  final n = int.tryParse(v.trim());
+                  if (n == null || n < 0) return 'Enter a valid number';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _ModalSwitch(
+                    cs: cs,
+                    label: 'Crosses Midnight',
+                    value: _crossesMidnight,
+                    onChanged: (v) => setState(() => _crossesMidnight = v),
+                  ),
+                  const SizedBox(width: 16),
+                  _ModalSwitch(
+                    cs: cs,
+                    label: 'Default Shift',
+                    value: _isDefault,
+                    onChanged: (v) => setState(() => _isDefault = v),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: _saving
+                    ? null
+                    : () async {
+                        unawaited(HapticFeedback.mediumImpact());
+                        setState(() => _saving = true);
+                        try {
+                          final startTime = _startCtrl.text.trim();
+                          final endTime = _endCtrl.text.trim();
+                          if (startTime == endTime) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Start and end time cannot be the same',
+                                  ),
+                                ),
+                              );
+                              setState(() => _saving = false);
+                            }
+                            return;
+                          }
+                          final body = {
+                            'name': _nameCtrl.text.trim(),
+                            'start_time': startTime,
+                            'end_time': endTime,
+                            'grace_period_minutes':
+                                int.tryParse(_graceCtrl.text) ?? 15,
+                            'crosses_midnight': _crossesMidnight,
+                            'is_default': _isDefault,
+                          };
+                          if (widget.shift != null) {
+                            await ref
+                                .read(shiftServiceProvider)
+                                .update(widget.shift!.id, body);
+                          } else {
+                            await ref.read(shiftServiceProvider).create(body);
+                          }
+                          if (context.mounted) Navigator.pop(context, true);
+                        } catch (e) {
+                          if (context.mounted) {
+                            showError(context, e);
+                            setState(() => _saving = false);
+                          }
+                        }
+                      },
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(60),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: _saving
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Save Configuration',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
-                    )
-                  : const Text(
-                      'Save Configuration',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

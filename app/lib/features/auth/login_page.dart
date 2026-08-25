@@ -114,7 +114,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       unawaited(TokenStorage.saveUserInfo(userInfo));
       ref.read(userInfoProvider.notifier).state = userInfo;
       unawaited(HapticFeedback.heavyImpact());
-      if (mounted) context.go('/home');
+      final redirect = ref.read(redirectLocationProvider);
+      ref.read(redirectLocationProvider.notifier).state = null;
+      if (mounted) context.go(redirect ?? '/home');
     } catch (e) {
       if (!mounted) return;
       unawaited(HapticFeedback.vibrate());
@@ -347,6 +349,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             controller: _otpCtrl,
                             focusNode: _otpFocusNode,
                             length: 6,
+                            autofillHints: const [AutofillHints.oneTimeCode],
                             defaultPinTheme: defaultPinTheme,
                             focusedPinTheme: defaultPinTheme.copyWith(
                               decoration: defaultPinTheme.decoration?.copyWith(

@@ -8,10 +8,13 @@ import '../dashboard/providers/dashboard_providers.dart';
 import '../ledger/providers/ledger_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/logger.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/employee_avatar.dart';
+import '../../core/currency_format.dart';
 import 'dart:async';
 
 class PayrollPreviewScreen extends ConsumerStatefulWidget {
@@ -193,11 +196,11 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
       AppLogger.info('Payroll: End date cancelled');
       return;
     }
-    AppLogger.info('Payroll: Date range selected: $_startStr to $_endStr');
     setState(() {
       _start = start;
       _end = end;
     });
+    AppLogger.info('Payroll: Date range selected: $_startStr to $_endStr');
     unawaited(_loadData());
   }
 
@@ -276,8 +279,9 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                   ),
                 ),
                 if (_loading)
-                  const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
+                  const SliverPadding(
+                    padding: EdgeInsets.fromLTRB(24, 8, 24, 120),
+                    sliver: ShimmerLoading(itemCount: 5, height: 72),
                   )
                 else if (_error != null)
                   SliverFillRemaining(
@@ -379,8 +383,11 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                             tt: tt,
                             name: emp['name'] as String? ?? '',
                             photoUrl: emp['photo_url'] as String?,
-                            gross: '₹${safeToInt(emp['gross_wages'])}',
+                            gross: AppCurrency.format(
+                              safeToInt(emp['gross_wages']),
+                            ),
                             controller: _rowControllers[index],
+                            calculatedNet: safeToDouble(emp['net_payable']),
                           );
                         },
                         childCount:
@@ -398,7 +405,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                 onPressed: _lockPayroll,
                 label: 'Lock Payroll',
                 icon: PhosphorIconsBold.lockKey,
-                backgroundColor: const Color(0xFF10B981),
+                backgroundColor: AppColors.success,
               ),
             ),
           ],
@@ -445,14 +452,14 @@ class _PayrollSummaryGlassCard extends StatelessWidget {
                 _PayStat(
                   cs: cs,
                   label: 'Gross Pay',
-                  value: '₹${gross.toStringAsFixed(0)}',
+                  value: AppCurrency.format(gross),
                   color: cs.onSurface,
                 ),
                 _PayStat(
                   cs: cs,
                   label: 'Udhaar Deducted',
-                  value: '-₹${udhaar.toStringAsFixed(0)}',
-                  color: const Color(0xFFEF4444),
+                  value: '-${AppCurrency.format(udhaar)}',
+                  color: AppColors.danger,
                 ),
               ],
             ),
@@ -460,7 +467,7 @@ class _PayrollSummaryGlassCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withValues(alpha: 0.1),
+              color: AppColors.success.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.vertical(
                 bottom: Radius.circular(24),
               ),
@@ -471,7 +478,7 @@ class _PayrollSummaryGlassCard extends StatelessWidget {
                 Text(
                   'NET PAYABLE',
                   style: tt.labelMedium?.copyWith(
-                    color: const Color(0xFF10B981),
+                    color: AppColors.success,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.0,
                   ),
@@ -479,10 +486,10 @@ class _PayrollSummaryGlassCard extends StatelessWidget {
                 Flexible(
                   fit: FlexFit.loose,
                   child: Text(
-                    '₹${net.toStringAsFixed(0)}',
+                    AppCurrency.format(net),
                     overflow: TextOverflow.ellipsis,
                     style: tt.headlineMedium?.copyWith(
-                      color: const Color(0xFF10B981),
+                      color: AppColors.success,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -1.0,
                     ),
@@ -546,6 +553,7 @@ class _EditablePayrollRow extends StatefulWidget {
   final String name, gross;
   final String? photoUrl;
   final TextEditingController controller;
+  final double calculatedNet;
 
   const _EditablePayrollRow({
     required this.cs,
@@ -554,6 +562,7 @@ class _EditablePayrollRow extends StatefulWidget {
     required this.gross,
     this.photoUrl,
     required this.controller,
+    required this.calculatedNet,
   });
 
   @override
@@ -563,6 +572,7 @@ class _EditablePayrollRow extends StatefulWidget {
 class _EditablePayrollRowState extends State<_EditablePayrollRow> {
   final FocusNode _focus = FocusNode();
   bool _isFocused = false;
+  bool _isOverridden = false;
 
   @override
   void initState() {
@@ -571,10 +581,21 @@ class _EditablePayrollRowState extends State<_EditablePayrollRow> {
       setState(() => _isFocused = _focus.hasFocus);
       if (_isFocused) HapticFeedback.selectionClick();
     });
+    widget.controller.addListener(_checkOverride);
+    _checkOverride();
+  }
+
+  void _checkOverride() {
+    final current = double.tryParse(widget.controller.text.trim()) ?? 0;
+    final overridden = (current - widget.calculatedNet).abs() > 0.01;
+    if (overridden != _isOverridden) {
+      setState(() => _isOverridden = overridden);
+    }
   }
 
   @override
   void dispose() {
+    widget.controller.removeListener(_checkOverride);
     _focus.dispose();
     super.dispose();
   }
@@ -634,13 +655,25 @@ class _EditablePayrollRowState extends State<_EditablePayrollRow> {
                     : widget.cs.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: _isFocused
+                  color: _isOverridden
+                      ? widget.cs.tertiary
+                      : _isFocused
                       ? widget.cs.primary.withValues(alpha: 0.5)
                       : Colors.transparent,
+                  width: _isOverridden ? 1.5 : 1,
                 ),
               ),
               child: Row(
                 children: [
+                  if (_isOverridden)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 2),
+                      child: Icon(
+                        Icons.edit,
+                        size: 12,
+                        color: widget.cs.tertiary,
+                      ),
+                    ),
                   Text(
                     '₹',
                     style: TextStyle(

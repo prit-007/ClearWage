@@ -124,18 +124,18 @@ type LeavePolicy struct {
 }
 
 type Ledger struct {
-	ID                 uuid.UUID       `json:"id"`
-	TenantID           uuid.UUID       `json:"tenant_id"`
-	EmployeeID         uuid.UUID       `json:"employee_id"`
-	Date               time.Time       `json:"date"`
+	ID                 string          `json:"id"`
+	TenantID           string          `json:"tenant_id"`
+	EmployeeID         string          `json:"employee_id"`
+	Date               string          `json:"date"`
 	Type               string          `json:"type"`
-	Amount             decimal.Decimal `json:"amount"`
+	Amount             float32         `json:"amount"`
 	Note               sql.NullString  `json:"note"`
-	CreatedBy          uuid.UUID       `json:"created_by"`
-	CreatedAt          time.Time       `json:"created_at"`
-	UpdatedAt          time.Time       `json:"updated_at"`
+	CreatedBy          sql.NullString  `json:"created_by"`
 	LinkedPayrollMonth sql.NullString  `json:"linked_payroll_month"`
-	Version            int32           `json:"version"`
+	ComputedWage       sql.NullFloat64 `json:"computed_wage"`
+	CreatedAt          interface{}     `json:"created_at"`
+	UpdatedAt          interface{}     `json:"updated_at"`
 }
 
 type LedgerDispute struct {

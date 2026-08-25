@@ -81,16 +81,11 @@ func (c *ShiftController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	var createdBy string
-	if claims != nil {
-		createdBy = claims.EmployeeID
-	}
-
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
+	createdBy := claims.EmployeeID
 
 	shift, err := c.shiftService.CreateShift(r.Context(), tenantID, req.Name, req.StartTime, req.EndTime, req.CrossesMidnight, req.GraceMinutes, req.IsDefault, createdBy)
 	if err != nil {
@@ -171,9 +166,8 @@ func (c *ShiftController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -229,9 +223,8 @@ func (c *ShiftController) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -263,9 +256,8 @@ func (c *ShiftController) AssignDefaultShift(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 

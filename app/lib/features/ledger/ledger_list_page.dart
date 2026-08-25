@@ -10,8 +10,11 @@ import '../../data/services/dispute_service.dart';
 import 'providers/ledger_providers.dart';
 import '../../core/helpers.dart';
 import '../disputes/raise_dispute_dialog.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 
 const int _pageSize = 20;
@@ -177,7 +180,16 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                   style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 centerTitle: true,
-                actions: const [],
+                actions: [
+                  IconButton(
+                    onPressed: () => context.push('/balance-sheet'),
+                    icon: PhosphorIcon(
+                      PhosphorIconsRegular.users,
+                      color: cs.onSurface,
+                    ),
+                    tooltip: 'Balance Sheet',
+                  ),
+                ],
               ),
               SliverToBoxAdapter(
                 child: Padding(
@@ -227,7 +239,14 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
               ),
               if (_loading)
                 const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: EdgeInsets.symmetric(horizontal: 24),
+                        sliver: ShimmerLoading(itemCount: 5, height: 80),
+                      ),
+                    ],
+                  ),
                 )
               else if (_error != null)
                 SliverFillRemaining(
@@ -277,43 +296,14 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                   ),
                 ),
                 if (_entries.isEmpty)
-                  SliverToBoxAdapter(
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(height: 48),
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer
-                                  .withValues(alpha: 0.3),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              PhosphorIconsFill.notebook,
-                              size: 48,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'No ledger entries yet',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 48),
+                      child: EmptyState(
+                        icon: PhosphorIconsRegular.listDashes,
+                        title: 'No ledger entries yet',
+                        subtitle:
                             'Entries will appear here once transactions are recorded.',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                          ),
-                        ],
                       ),
                     ),
                   )
@@ -351,7 +341,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'ledger_list_fab',
-        onPressed: () => context.push('/new_ledger'),
+        onPressed: () => context.push('/new-ledger'),
         backgroundColor: cs.primary,
         icon: Icon(PhosphorIconsBold.plus, color: cs.onPrimary),
         label: Text(
@@ -386,7 +376,10 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            filter: ImageFilter.blur(
+              sigmaX: AppBlur.sigma,
+              sigmaY: AppBlur.sigma,
+            ),
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -407,9 +400,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                   Text(
                     '${isPositive ? '+' : '-'}\u20B9${net.abs().toStringAsFixed(0)}',
                     style: tt.displayMedium?.copyWith(
-                      color: isPositive
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFEF4444),
+                      color: isPositive ? AppColors.success : AppColors.danger,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -1.5,
                     ),
@@ -421,13 +412,13 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                         label: 'Total Jama',
                         value: '\u20B9${jama.toStringAsFixed(0)}',
                         icon: PhosphorIconsFill.arrowUpRight,
-                        color: const Color(0xFF10B981),
+                        color: AppColors.success,
                       ),
                       _SummaryStat(
                         label: 'Total Udhaar',
                         value: '\u20B9${udhaar.toStringAsFixed(0)}',
                         icon: PhosphorIconsFill.arrowDownLeft,
-                        color: const Color(0xFFEF4444),
+                        color: AppColors.danger,
                       ),
                     ],
                   ),
@@ -485,7 +476,7 @@ class _SummaryStat extends StatelessWidget {
   }
 }
 
-class _LedgerRow extends StatelessWidget {
+class _LedgerRow extends ConsumerWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final LedgerEntry entry;
@@ -498,9 +489,9 @@ class _LedgerRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isJama = entry.isJama;
-    final amtColor = isJama ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final amtColor = isJama ? AppColors.success : AppColors.danger;
 
     return GestureDetector(
       onLongPress: () {
@@ -582,22 +573,99 @@ class _LedgerRow extends StatelessWidget {
                 ],
               ),
               const SizedBox(width: 8),
-              InkWell(
-                onTap: () => showRaiseDisputeDialog(
-                  context,
-                  disputeService: disputeService,
-                  ledgerId: entry.id,
-                  employeeId: entry.employeeId,
+              PopupMenuButton<String>(
+                icon: Icon(
+                  PhosphorIconsRegular.dotsThreeVertical,
+                  size: 16,
+                  color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Icon(
-                    PhosphorIconsRegular.flag,
-                    size: 16,
-                    color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                onSelected: (value) async {
+                  if (value == 'dispute') {
+                    unawaited(
+                      showRaiseDisputeDialog(
+                        context,
+                        disputeService: disputeService,
+                        ledgerId: entry.id,
+                        employeeId: entry.employeeId,
+                      ),
+                    );
+                  } else if (value == 'edit') {
+                    unawaited(context.push('/edit-ledger', extra: entry));
+                  } else if (value == 'delete') {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete Entry'),
+                        content: Text(
+                          'Delete ₹${entry.amount.toStringAsFixed(0)} ${isJama ? 'Jama' : 'Udhaar'} entry for ${entry.employeeName}?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.danger,
+                            ),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) {
+                      try {
+                        await ref.read(ledgerServiceProvider).delete(entry.id);
+                        ref.read(ledgerRefreshProvider.notifier).state++;
+                      } catch (e) {
+                        if (context.mounted) showError(context, e);
+                      }
+                    }
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(PhosphorIconsRegular.pencil, size: 16),
+                        SizedBox(width: 8),
+                        Text('Edit'),
+                      ],
+                    ),
                   ),
-                ),
+                  const PopupMenuItem(
+                    value: 'dispute',
+                    child: Row(
+                      children: [
+                        Icon(PhosphorIconsRegular.flag, size: 16),
+                        SizedBox(width: 8),
+                        Text('Raise Dispute'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(
+                          PhosphorIconsRegular.trash,
+                          size: 16,
+                          color: AppColors.danger,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Delete',
+                          style: TextStyle(color: AppColors.danger),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

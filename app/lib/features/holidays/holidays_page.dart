@@ -6,12 +6,13 @@ import 'package:intl/intl.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../data/models/holiday_model.dart';
 import '../../core/providers/services.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../core/widgets/paginated_list_mixin.dart';
 import '../../core/helpers.dart';
 import '../../core/responsive.dart';
 import 'dart:async';
-
-const int _pageSize = 20;
 
 class HolidaysScreen extends ConsumerStatefulWidget {
   const HolidaysScreen({super.key});
@@ -20,70 +21,23 @@ class HolidaysScreen extends ConsumerStatefulWidget {
 }
 
 class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
-  final ScrollController _scrollCtrl = ScrollController();
-  List<Holiday> _items = [];
-  bool _loading = false;
-  bool _hasMore = true;
-  int _page = 0;
-  String? _error;
+  late final PaginatedList<Holiday> _pagination = PaginatedList<Holiday>(
+    setState: setState,
+    mounted: () => mounted,
+    fetchPage: (offset, limit) =>
+        ref.read(holidayServiceProvider).list(limit: limit, offset: offset),
+  );
 
   @override
   void initState() {
     super.initState();
-    _scrollCtrl.addListener(_onScroll);
-    _fetch();
+    _pagination.init();
   }
 
   @override
   void dispose() {
-    _scrollCtrl.removeListener(_onScroll);
-    _scrollCtrl.dispose();
+    _pagination.dispose();
     super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollCtrl.position.pixels >=
-            _scrollCtrl.position.maxScrollExtent - 200 &&
-        !_loading &&
-        _hasMore) {
-      _fetch();
-    }
-  }
-
-  Future<void> _fetch() async {
-    if (_loading || !_hasMore) return;
-    setState(() => _loading = true);
-    try {
-      final items = await ref
-          .read(holidayServiceProvider)
-          .list(limit: _pageSize, offset: _page * _pageSize);
-      if (mounted) {
-        setState(() {
-          _items.addAll(items);
-          _page++;
-          _hasMore = items.length >= _pageSize;
-          _loading = false;
-        });
-      }
-    } catch (err) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = err.toString();
-        });
-      }
-    }
-  }
-
-  Future<void> _onRefresh() async {
-    unawaited(HapticFeedback.mediumImpact());
-    setState(() {
-      _items = [];
-      _page = 0;
-      _hasMore = true;
-      _error = null;
-    });
-    await _fetch();
   }
 
   Future<void> _showHolidaySheet() async {
@@ -95,7 +49,7 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
     if (result != null) {
       try {
         await ref.read(holidayServiceProvider).create(result);
-        if (mounted) unawaited(_onRefresh());
+        if (mounted) unawaited(_pagination.onRefresh());
       } catch (e) {
         if (mounted) showError(context, e);
       }
@@ -115,7 +69,7 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
     unawaited(HapticFeedback.heavyImpact());
     try {
       await ref.read(holidayServiceProvider).delete(id);
-      if (mounted) unawaited(_onRefresh());
+      if (mounted) unawaited(_pagination.onRefresh());
     } catch (e) {
       if (mounted) showError(context, e);
     }
@@ -132,9 +86,9 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
         child: RefreshIndicator(
           color: cs.primary,
           backgroundColor: cs.surface,
-          onRefresh: _onRefresh,
+          onRefresh: _pagination.onRefresh,
           child: CustomScrollView(
-            controller: _scrollCtrl,
+            controller: _pagination.scrollCtrl,
             physics: AppScrollPhysics.physics(
               parent: const AlwaysScrollableScrollPhysics(),
             ),
@@ -163,7 +117,7 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
                   const SizedBox(width: 8),
                 ],
               ),
-              if (_error != null)
+              if (_pagination.paginationError != null)
                 SliverFillRemaining(
                   child: Center(
                     child: Column(
@@ -181,42 +135,26 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          _error!,
+                          _pagination.paginationError!,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 16),
                         FilledButton.icon(
                           icon: const Icon(PhosphorIconsFill.arrowClockwise),
                           label: const Text('Retry'),
-                          onPressed: _onRefresh,
+                          onPressed: _pagination.onRefresh,
                         ),
                       ],
                     ),
                   ),
                 )
-              else if (_loading && _items.isEmpty)
+              else if (_pagination.loading && _pagination.items.isEmpty)
+                const ShimmerLoading(itemCount: 4, height: 96)
+              else if (_pagination.items.isEmpty)
                 const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (_items.isEmpty)
-                SliverFillRemaining(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      PhosphorIcon(
-                        PhosphorIconsDuotone.calendarStar,
-                        size: 72,
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'No holidays configured',
-                        style: tt.titleMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
+                  child: EmptyState(
+                    icon: PhosphorIconsRegular.calendarStar,
+                    title: 'No holidays configured',
                   ),
                 )
               else ...[
@@ -224,7 +162,7 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
-                      final h = _items[index];
+                      final h = _pagination.items[index];
                       return FluidSlideIn(
                         delay: index * 80,
                         child: _PremiumHolidayCard(
@@ -234,21 +172,10 @@ class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
                           onDelete: () => _deleteHoliday(h.id),
                         ),
                       );
-                    }, childCount: _items.length),
+                    }, childCount: _pagination.items.length),
                   ),
                 ),
-                if (_loading)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: cs.primary,
-                        ),
-                      ),
-                    ),
-                  ),
+                SliverToBoxAdapter(child: _pagination.buildLoadMoreIndicator()),
               ],
             ],
           ),

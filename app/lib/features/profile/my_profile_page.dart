@@ -16,6 +16,10 @@ import '../../core/helpers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/responsive.dart';
+import '../../core/design_tokens.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
+import '../../core/currency_format.dart';
 import 'dart:async';
 
 final myProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>>((
@@ -230,7 +234,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen>
       body: ref
           .watch(myProfileProvider)
           .when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => CustomScrollView(
+              physics: AppScrollPhysics.physics(),
+              slivers: [const ShimmerLoading(itemCount: 4, height: 100)],
+            ),
             error: (e, _) => Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -288,7 +295,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen>
                     expandedHeight: 100,
                     flexibleSpace: ClipRRect(
                       child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                        filter: ImageFilter.blur(
+                          sigmaX: AppBlur.sigma,
+                          sigmaY: AppBlur.sigma,
+                        ),
                         child: FlexibleSpaceBar(
                           titlePadding: const EdgeInsets.symmetric(
                             horizontal: 24,
@@ -569,7 +579,7 @@ class _ProfileTab extends ConsumerWidget {
         const SizedBox(height: 32),
         FluidSlideIn(
           delay: 100,
-          child: OutlinedButton.icon(
+          child: FilledButton.icon(
             onPressed: () async {
               final confirmed = await showConfirmDialog(
                 context,
@@ -590,9 +600,9 @@ class _ProfileTab extends ConsumerWidget {
               'Sign Out',
               style: TextStyle(fontWeight: FontWeight.w800),
             ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: cs.error,
-              side: BorderSide(color: cs.error.withValues(alpha: 0.3)),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 18),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -604,13 +614,13 @@ class _ProfileTab extends ConsumerWidget {
           const SizedBox(height: 16),
           FluidSlideIn(
             delay: 150,
-            child: FilledButton.icon(
+            child: OutlinedButton.icon(
               onPressed: () async {
                 final confirmed = await showConfirmDialog(
                   context,
                   title: 'Delete Account',
                   message:
-                      'This will permanently delete your account and all associated data. This action cannot be undone.',
+                      'Are you sure you want to delete your account? This action cannot be undone.',
                   confirmLabel: 'Delete',
                   icon: PhosphorIconsRegular.warningCircle,
                   isDestructive: true,
@@ -630,10 +640,9 @@ class _ProfileTab extends ConsumerWidget {
                 'Delete Account',
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
-              style: FilledButton.styleFrom(
-                backgroundColor: cs.error.withValues(alpha: 0.1),
-                foregroundColor: cs.error,
-                elevation: 0,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.danger,
+                side: const BorderSide(color: AppColors.danger),
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -688,7 +697,10 @@ class _MyAttendanceTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final attendanceAsync = ref.watch(myAttendanceProvider);
     return attendanceAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const CustomScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        slivers: [ShimmerLoading(itemCount: 4, height: 100)],
+      ),
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -741,19 +753,19 @@ class _MyAttendanceTab extends ConsumerWidget {
                   _StatBadge(
                     label: 'Present',
                     value: '$present',
-                    color: const Color(0xFF10B981),
+                    color: AppColors.success,
                   ),
                   const SizedBox(width: 12),
                   _StatBadge(
                     label: 'Absent',
                     value: '$absent',
-                    color: const Color(0xFFEF4444),
+                    color: AppColors.danger,
                   ),
                   const SizedBox(width: 12),
                   _StatBadge(
                     label: 'Half Day',
                     value: '$halfDay',
-                    color: const Color(0xFFF59E0B),
+                    color: AppColors.warning,
                   ),
                 ],
               ),
@@ -788,12 +800,9 @@ class _MyAttendanceTab extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             if (list.isEmpty)
-              FluidSlideIn(
-                delay: 250,
-                child: Text(
-                  'No attendance records this month',
-                  style: TextStyle(color: cs.onSurfaceVariant),
-                ),
+              const EmptyState(
+                icon: PhosphorIconsRegular.calendarBlank,
+                title: 'No attendance records this month',
               )
             else
               for (int i = 0; i < list.take(20).length; i++)
@@ -808,10 +817,10 @@ class _MyAttendanceTab extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color:
                                 (list[i].status == 'present'
-                                        ? const Color(0xFF10B981)
+                                        ? AppColors.success
                                         : list[i].status == 'absent'
-                                        ? const Color(0xFFEF4444)
-                                        : const Color(0xFFF59E0B))
+                                        ? AppColors.danger
+                                        : AppColors.warning)
                                     .withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
@@ -823,10 +832,10 @@ class _MyAttendanceTab extends ConsumerWidget {
                                 : PhosphorIconsBold.minus,
                             size: 16,
                             color: list[i].status == 'present'
-                                ? const Color(0xFF10B981)
+                                ? AppColors.success
                                 : list[i].status == 'absent'
-                                ? const Color(0xFFEF4444)
-                                : const Color(0xFFF59E0B),
+                                ? AppColors.danger
+                                : AppColors.warning,
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -913,7 +922,10 @@ class _MyLedgerTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ledgerAsync = ref.watch(myLedgerProvider);
     return ledgerAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const CustomScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        slivers: [ShimmerLoading(itemCount: 2, height: 120)],
+      ),
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -987,7 +999,7 @@ class _MyLedgerTab extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '₹${balance.abs().toStringAsFixed(0)}',
+                      AppCurrency.format(balance.abs()),
                       style: tt.displayLarge?.copyWith(
                         fontWeight: FontWeight.w900,
                         color: cs.primary,
@@ -1012,12 +1024,9 @@ class _MyLedgerTab extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             if (entries.isEmpty)
-              FluidSlideIn(
-                delay: 150,
-                child: Text(
-                  'No ledger entries',
-                  style: TextStyle(color: cs.onSurfaceVariant),
-                ),
+              const EmptyState(
+                icon: PhosphorIconsRegular.receipt,
+                title: 'No ledger entries',
               )
             else
               for (int i = 0; i < entries.take(20).length; i++)
@@ -1045,7 +1054,7 @@ class _LedgerEntryRow extends StatelessWidget {
     final isJama = entry['type'] == 'jama';
     final amount = safeToDouble(entry['amount']);
     final date = entry['date'] as String? ?? '';
-    final color = isJama ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final color = isJama ? AppColors.success : AppColors.danger;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),

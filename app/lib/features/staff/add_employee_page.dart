@@ -14,6 +14,7 @@ import '../../core/app_config.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../core/helpers.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import 'dart:async';
 
@@ -580,6 +581,14 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                           isSelected: _wageType == 'monthly',
                           onTap: () => _updateWage('monthly'),
                         ),
+                        const SizedBox(width: 16),
+                        _TactileWageCard(
+                          cs: cs,
+                          label: 'Hourly',
+                          icon: PhosphorIconsFill.clock,
+                          isSelected: _wageType == 'hourly',
+                          onTap: () => _updateWage('hourly'),
+                        ),
                       ],
                     ),
                   ),
@@ -796,7 +805,10 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
               right: 0,
               child: ClipRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                  filter: ImageFilter.blur(
+                    sigmaX: AppBlur.sigma,
+                    sigmaY: AppBlur.sigma,
+                  ),
                   child: Container(
                     padding: EdgeInsets.fromLTRB(
                       24,

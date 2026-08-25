@@ -36,10 +36,12 @@ class AdvanceRequestService {
     );
   }
 
-  Future<void> deny(String id) async {
+  Future<void> deny(String id, {String? reason}) async {
     await _client.put(
       '/api/v1/advance-requests/$id/deny',
-      body: <String, dynamic>{},
+      body: <String, dynamic>{
+        if (reason != null && reason.isNotEmpty) 'reason': reason,
+      },
     );
   }
 }

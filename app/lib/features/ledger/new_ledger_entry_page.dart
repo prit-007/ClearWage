@@ -4,15 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/providers/services.dart';
+import '../../data/models/ledger_model.dart';
 import 'providers/ledger_providers.dart';
 import '../staff/providers/staff_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/employee_avatar.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import 'dart:async';
 
 class NewLedgerEntryScreen extends ConsumerStatefulWidget {
-  const NewLedgerEntryScreen({super.key});
+  final LedgerEntry? entry;
+  const NewLedgerEntryScreen({super.key, this.entry});
   @override
   ConsumerState<NewLedgerEntryScreen> createState() =>
       _NewLedgerEntryScreenState();
@@ -27,10 +31,28 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
   String? _selectedEmployeeId;
   String? _selectedEmployeeName;
 
+  bool get _isEditing => widget.entry != null;
+
   bool get _hasUnsavedChanges =>
       _selectedEmployeeId != null ||
       _amountController.text.trim().isNotEmpty ||
       _noteController.text.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.entry != null) {
+      final e = widget.entry!;
+      _isJama = e.isJama;
+      _amountController.text = e.amount.toStringAsFixed(2);
+      _noteController.text = e.note ?? '';
+      _selectedEmployeeId = e.employeeId;
+      _selectedEmployeeName = e.employeeName;
+      try {
+        _selectedDate = DateTime.parse(e.date);
+      } catch (_) {}
+    }
+  }
 
   @override
   void dispose() {
@@ -67,13 +89,18 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
     try {
       final dateStr =
           '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
-      await ref.read(ledgerServiceProvider).create({
+      final body = {
         'employee_id': _selectedEmployeeId!,
         'date': dateStr,
         'type': _isJama ? 'jama' : 'udhaar',
         'amount': amount.toStringAsFixed(2),
         'note': _noteController.text.trim(),
-      });
+      };
+      if (_isEditing) {
+        await ref.read(ledgerServiceProvider).update(widget.entry!.id, body);
+      } else {
+        await ref.read(ledgerServiceProvider).create(body);
+      }
       ref.read(ledgerRefreshProvider.notifier).state++;
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -104,9 +131,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
-    final activeColor = _isJama
-        ? const Color(0xFF10B981)
-        : const Color(0xFFEF4444);
+    final activeColor = _isJama ? AppColors.success : AppColors.danger;
     final surfaceColor = activeColor.withValues(alpha: 0.05);
 
     return PopScope(
@@ -138,7 +163,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
             },
           ),
           title: Text(
-            'New Entry',
+            _isEditing ? 'Edit Entry' : 'New Entry',
             style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           centerTitle: true,
@@ -169,7 +194,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                                 title: 'Give Advance',
                                 subtitle: 'Jama',
                                 isActive: _isJama,
-                                activeColor: const Color(0xFF10B981),
+                                activeColor: AppColors.success,
                                 icon: PhosphorIconsFill.arrowUpRight,
                                 onTap: () => _toggleType(true),
                               ),
@@ -179,7 +204,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                                 title: 'Deduct',
                                 subtitle: 'Udhaar',
                                 isActive: !_isJama,
-                                activeColor: const Color(0xFFEF4444),
+                                activeColor: AppColors.danger,
                                 icon: PhosphorIconsFill.arrowDownLeft,
                                 onTap: () => _toggleType(false),
                               ),
@@ -376,9 +401,9 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text(
-                            'Save Entry',
-                            style: TextStyle(
+                        : Text(
+                            _isEditing ? 'Update Entry' : 'Save Entry',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.5,
@@ -605,10 +630,10 @@ class _EmployeePickerSheetState extends ConsumerState<_EmployeePickerSheet> {
                           .where((e) => e.name.toLowerCase().contains(query))
                           .toList();
                 if (filtered.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No employees found',
-                      style: TextStyle(color: cs.onSurfaceVariant),
+                  return const Center(
+                    child: EmptyState(
+                      icon: PhosphorIconsRegular.users,
+                      title: 'No employees found',
                     ),
                   );
                 }

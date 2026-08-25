@@ -250,6 +250,16 @@ type EmployeeBalance struct {
 	Balance    decimal.Decimal
 }
 
+type EmployeeBalanceSummary struct {
+	EmployeeID       string          `json:"employee_id"`
+	EmployeeName     string          `json:"employee_name"`
+	Designation      string          `json:"designation,omitempty"`
+	TotalJama        decimal.Decimal `json:"total_jama"`
+	TotalUdhaar      decimal.Decimal `json:"total_udhaar"`
+	NetBalance       decimal.Decimal `json:"net_balance"`
+	LastActivityDate string          `json:"last_activity_date,omitempty"`
+}
+
 type DailySummary struct {
 	Date          string          `json:"date"`
 	TotalWorkers  int             `json:"total_workers"`

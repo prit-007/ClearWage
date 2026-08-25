@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
@@ -93,9 +94,8 @@ func (c *AdvanceRequestController) Create(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -133,9 +133,8 @@ func (c *AdvanceRequestController) List(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -184,8 +183,8 @@ func (c *AdvanceRequestController) Approve(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	if req.Date == "" {
-		utils.JSONFail(w, http.StatusBadRequest, "date is required")
-		return
+		now := time.Now()
+		req.Date = fmt.Sprintf("%d-%02d-%02d", now.Year(), now.Month(), now.Day())
 	}
 
 	if !utils.ValidateDate(req.Date) {

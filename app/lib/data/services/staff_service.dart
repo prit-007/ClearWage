@@ -6,11 +6,17 @@ class StaffService {
   final ApiClient _client;
   StaffService(this._client);
 
-  Future<List<Employee>> list({int? limit, int? offset, String? query}) async {
+  Future<List<Employee>> list({
+    int? limit,
+    int? offset,
+    String? query,
+    String? status,
+  }) async {
     final q = <String, String>{};
     if (limit != null) q['limit'] = limit.toString();
     if (offset != null) q['offset'] = offset.toString();
     if (query != null && query.isNotEmpty) q['q'] = query;
+    if (status != null) q['status'] = status;
     final res = await _client.get(
       '/api/v1/staff',
       query: q.isNotEmpty ? q : null,

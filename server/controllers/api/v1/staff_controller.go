@@ -98,8 +98,8 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.WageType != "daily" && req.WageType != "monthly" && req.WageType != "hourly" {
-		utils.JSONFail(w, http.StatusBadRequest, "wage_type must be one of: daily, monthly, hourly")
+	if !utils.ValidateWageType(req.WageType) {
+		utils.JSONFail(w, http.StatusBadRequest, "wage_type must be one of: daily, monthly, hourly, piece_rate")
 		return
 	}
 
@@ -182,7 +182,7 @@ func (ctrl *StaffController) List(w http.ResponseWriter, r *http.Request) {
 
 	limit := 20
 	if limitStr != "" {
-		if parsed, err := strconv.Atoi(limitStr); err == nil && parsed > 0 && parsed <= 100000 {
+		if parsed, err := strconv.Atoi(limitStr); err == nil && parsed > 0 && parsed <= 100 {
 			limit = parsed
 		}
 	}
@@ -280,7 +280,11 @@ func (ctrl *StaffController) Overview(w http.ResponseWriter, r *http.Request) {
 	employeeID := chi.URLParam(r, "id")
 
 	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" && claims.EmployeeID != employeeID {
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" && claims.EmployeeID != employeeID {
 		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}

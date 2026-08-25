@@ -46,18 +46,26 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			goquDB := goqu.Dialect("postgres").DB(sqlDB)
 			dbQueries := sqldb.New(sqlDB)
-			querier := repositories.NewGoquQuerier(goquDB, dbQueries)
+			querier := repositories.NewGoquQuerierWithSQL(goquDB, sqlDB, dbQueries)
 
 			r := chi.NewRouter()
 
-			r.Use(mw.RequestLogger(logger))
-			r.Use(middleware.Recoverer)
-			r.Use(mw.LimitBodySize(5 << 20))
+		r.Use(mw.RequestLogger(logger))
+		r.Use(middleware.Recoverer)
+		r.Use(mw.LimitBodySize(5 << 20))
+		r.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("X-Content-Type-Options", "nosniff")
+				w.Header().Set("X-Frame-Options", "DENY")
+				w.Header().Set("X-XSS-Protection", "1; mode=block")
+				next.ServeHTTP(w, r)
+			})
+		})
 			r.Use(cors.Handler(cors.Options{
 				AllowedOrigins:   []string{cfg.AllowedOrigin},
 				AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 				AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-				AllowCredentials: false,
+				AllowCredentials: true,
 				MaxAge:           300,
 			}))
 
@@ -87,8 +95,9 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
 			uploadCtrl := ctrl.NewUploadController(services.NewStaffService(querier), logger, cfg)
 			staffCtrl := ctrl.NewStaffController(services.NewStaffService(querier), logger, cfg)
-			r.Route("/api/v1/staff", func(r chi.Router) {
-				r.Use(mw.AuthMiddleware(cfg))
+		r.Route("/api/v1/staff", func(r chi.Router) {
+			r.Use(mw.CSRFProtection)
+			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Get("/", staffCtrl.List)
 				r.Post("/", staffCtrl.Create)
@@ -113,8 +122,9 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				services.NewAdvanceRequestService(querier),
 				logger, cfg,
 			)
-			r.Route("/api/v1/me", func(r chi.Router) {
-				r.Use(mw.AuthMiddleware(cfg))
+		r.Route("/api/v1/me", func(r chi.Router) {
+			r.Use(mw.CSRFProtection)
+			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Get("/", meCtrl.Profile)
 				r.Get("/overview", meCtrl.Overview)
@@ -124,8 +134,9 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Post("/advance-request", meCtrl.RequestAdvance)
 			})
 
-			r.Route("/api/v1/shifts", func(r chi.Router) {
-				r.Use(mw.AuthMiddleware(cfg))
+		r.Route("/api/v1/shifts", func(r chi.Router) {
+			r.Use(mw.CSRFProtection)
+			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Get("/", shiftCtrl.List)
 				r.Post("/", shiftCtrl.Create)
@@ -135,8 +146,9 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			})
 
 			attCtrl := ctrl.NewAttendanceController(services.NewAttendanceService(querier), logger, cfg)
-			r.Route("/api/v1/attendance", func(r chi.Router) {
-				r.Use(mw.AuthMiddleware(cfg))
+		r.Route("/api/v1/attendance", func(r chi.Router) {
+			r.Use(mw.CSRFProtection)
+			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Get("/", attCtrl.ListByDate)
 				r.Get("/roster", attCtrl.Roster)
@@ -148,21 +160,27 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			})
 
 			ledgerCtrl := ctrl.NewLedgerController(services.NewLedgerService(querier), logger, cfg)
-			r.Route("/api/v1/ledger", func(r chi.Router) {
-				r.Use(mw.AuthMiddleware(cfg))
+		r.Route("/api/v1/ledger", func(r chi.Router) {
+			r.Use(mw.CSRFProtection)
+			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/", ledgerCtrl.CreateEntry)
 				r.Get("/", ledgerCtrl.ListByTenant)
 				r.Get("/total-outstanding", ledgerCtrl.GetTotalOutstanding)
 				r.Get("/summary", ledgerCtrl.Summary)
+				r.Get("/balance-summary", ledgerCtrl.BalanceSummary)
 				r.Get("/{id}", ledgerCtrl.ListByEmployee)
+				r.Get("/{id}/entry", ledgerCtrl.GetEntry)
+				r.Put("/{id}/entry", ledgerCtrl.UpdateEntry)
+				r.Delete("/{id}/entry", ledgerCtrl.DeleteEntry)
 				r.Get("/{id}/balance", ledgerCtrl.GetBalance)
 				r.Post("/{id}/settle", ledgerCtrl.SettleAccount)
 			})
 
 			disputeCtrl := ctrl.NewDisputeController(services.NewDisputeService(querier), logger, cfg)
-			r.Route("/api/v1/disputes", func(r chi.Router) {
-				r.Use(mw.AuthMiddleware(cfg))
+		r.Route("/api/v1/disputes", func(r chi.Router) {
+			r.Use(mw.CSRFProtection)
+			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/", disputeCtrl.Create)
 				r.Get("/", disputeCtrl.List)
@@ -171,8 +189,9 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			})
 
 			syncCtrl := ctrl.NewSyncQueueController(services.NewSyncQueueService(querier), logger, cfg)
-			r.Route("/api/v1/sync", func(r chi.Router) {
-				r.Use(mw.AuthMiddleware(cfg))
+		r.Route("/api/v1/sync", func(r chi.Router) {
+			r.Use(mw.CSRFProtection)
+			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/", syncCtrl.CreateEvent)
 				r.Get("/pending", syncCtrl.ListPending)
@@ -180,8 +199,9 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			})
 
 			holidayCtrl := ctrl.NewHolidayController(services.NewHolidayService(querier), logger, cfg)
-			r.Route("/api/v1/holidays", func(r chi.Router) {
-				r.Use(mw.AuthMiddleware(cfg))
+		r.Route("/api/v1/holidays", func(r chi.Router) {
+			r.Use(mw.CSRFProtection)
+			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/", holidayCtrl.Create)
 				r.Get("/", holidayCtrl.List)
@@ -189,8 +209,9 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			})
 
 			leavePolicyCtrl := ctrl.NewLeavePolicyController(services.NewLeavePolicyService(querier), logger, cfg)
-			r.Route("/api/v1/leave-policies", func(r chi.Router) {
-				r.Use(mw.AuthMiddleware(cfg))
+		r.Route("/api/v1/leave-policies", func(r chi.Router) {
+			r.Use(mw.CSRFProtection)
+			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Put("/", leavePolicyCtrl.Upsert)
 				r.Get("/", leavePolicyCtrl.Get)
@@ -208,7 +229,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Get("/export", reportCtrl.ExportCSV)
 			})
 
-			r.With(mw.AuthMiddleware(cfg), mw.TenantMiddleware()).Delete("/api/v1/auth/account", authCtrl.DeleteAccount)
+			r.With(mw.CSRFProtection, mw.AuthMiddleware(cfg), mw.TenantMiddleware()).Delete("/api/v1/auth/account", authCtrl.DeleteAccount)
 
 			dashCtrl := ctrl.NewDashboardController(services.NewDashboardService(querier), services.NewReportService(querier), logger, cfg)
 			r.Route("/api/v1/dashboard", func(r chi.Router) {
@@ -218,8 +239,9 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			})
 
 			advReqCtrl := ctrl.NewAdvanceRequestController(services.NewAdvanceRequestService(querier), logger, cfg)
-			r.Route("/api/v1/advance-requests", func(r chi.Router) {
-				r.Use(mw.AuthMiddleware(cfg))
+		r.Route("/api/v1/advance-requests", func(r chi.Router) {
+			r.Use(mw.CSRFProtection)
+			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/", advReqCtrl.Create)
 				r.Get("/", advReqCtrl.List)
@@ -230,8 +252,9 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			r.With(mw.AuthMiddleware(cfg), mw.TenantMiddleware()).Get("/uploads/{file}", uploadCtrl.ServeFile)
 
 			payrollCtrl := ctrl.NewPayrollController(services.NewPayrollService(querier), logger, cfg)
-			r.Route("/api/v1/payroll", func(r chi.Router) {
-				r.Use(mw.AuthMiddleware(cfg))
+		r.Route("/api/v1/payroll", func(r chi.Router) {
+			r.Use(mw.CSRFProtection)
+			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/calculate", payrollCtrl.Calculate)
 				r.Post("/payslip", payrollCtrl.GeneratePayslip)
@@ -239,16 +262,18 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			})
 
 			settingsCtrl := ctrl.NewSettingsController(services.NewSettingsService(querier), logger, cfg)
-			r.Route("/api/v1/settings/payroll", func(r chi.Router) {
-				r.Use(mw.AuthMiddleware(cfg))
+		r.Route("/api/v1/settings/payroll", func(r chi.Router) {
+			r.Use(mw.CSRFProtection)
+			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Get("/", settingsCtrl.GetPayrollSettings)
 				r.Put("/", settingsCtrl.UpsertPayrollSettings)
 			})
 
 			onboardingCtrl := ctrl.NewOnboardingController(services.NewOnboardingService(querier), logger, cfg)
-			r.Route("/api/v1/onboarding", func(r chi.Router) {
-				r.Use(mw.AuthMiddleware(cfg))
+		r.Route("/api/v1/onboarding", func(r chi.Router) {
+			r.Use(mw.CSRFProtection)
+			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/setup", onboardingCtrl.Setup)
 			})

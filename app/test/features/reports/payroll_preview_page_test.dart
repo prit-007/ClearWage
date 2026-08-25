@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vivek_app/core/api_client.dart';
+import 'package:vivek_app/core/widgets/shimmer_loading.dart';
 import 'package:vivek_app/core/providers/services.dart';
 import 'package:vivek_app/data/models/payroll_models.dart';
 import 'package:vivek_app/data/services/payroll_service.dart';
@@ -58,16 +59,26 @@ PayrollResult _sampleResult() {
       PayrollEntry(
         employeeId: 'e1',
         name: 'Rahul',
+        wageType: 'monthly',
+        wageAmount: 50000,
+        daysPresent: 26,
+        totalOvertime: 0,
         grossWages: 50000,
         netPayable: 45000,
         totalUdhaar: 5000,
+        wageBasis: 'fixed_30',
       ),
       PayrollEntry(
         employeeId: 'e2',
         name: 'Priya',
+        wageType: 'monthly',
+        wageAmount: 40000,
+        daysPresent: 26,
+        totalOvertime: 0,
         grossWages: 40000,
         netPayable: 35000,
         totalUdhaar: 5000,
+        wageBasis: 'fixed_30',
       ),
     ],
   );
@@ -83,7 +94,7 @@ void main() {
 
     testWidgets('shows loading indicator initially', (tester) async {
       await tester.pumpWidget(_buildApp(fakeService));
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(ShimmerLoading), findsOneWidget);
     });
 
     testWidgets('renders summary card with gross, udhaar and net payable', (
@@ -96,9 +107,9 @@ void main() {
       expect(find.text('Gross Pay'), findsOneWidget);
       expect(find.text('Udhaar Deducted'), findsOneWidget);
       expect(find.text('NET PAYABLE'), findsOneWidget);
-      expect(find.text('₹90000'), findsOneWidget);
-      expect(find.text('-₹10000'), findsOneWidget);
-      expect(find.text('₹80000'), findsOneWidget);
+      expect(find.text('₹90,000'), findsOneWidget);
+      expect(find.text('-₹10,000'), findsOneWidget);
+      expect(find.text('₹80,000'), findsOneWidget);
     });
 
     testWidgets('renders employee rows with editable net pay', (tester) async {
@@ -109,8 +120,8 @@ void main() {
       expect(find.text('Employee Breakdown'), findsOneWidget);
       expect(find.text('Rahul'), findsOneWidget);
       expect(find.text('Priya'), findsOneWidget);
-      expect(find.text('Gross: ₹50000'), findsOneWidget);
-      expect(find.text('Gross: ₹40000'), findsOneWidget);
+      expect(find.text('Gross: ₹50,000'), findsOneWidget);
+      expect(find.text('Gross: ₹40,000'), findsOneWidget);
       expect(find.text('Lock Payroll'), findsWidgets);
     });
 

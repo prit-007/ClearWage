@@ -4,24 +4,34 @@ import 'package:go_router/go_router.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 import '../features/advance_requests/advance_requests_page.dart';
+import '../features/advance_requests/my_advance_requests_page.dart';
 import '../features/attendance/attendance_roster_page.dart';
+import '../features/attendance/my_attendance_page.dart';
 import '../features/auth/auth_gate.dart';
 import '../features/auth/login_page.dart';
 import '../features/auth/register_page.dart';
 import '../features/dashboard/dashboard_page.dart';
 import '../features/holidays/holidays_page.dart';
+import '../features/holidays/my_holidays_page.dart';
 import '../features/leave_policy/leave_policy_page.dart';
+import '../features/ledger/balance_sheet_page.dart';
 import '../features/ledger/ledger_list_page.dart';
+import '../features/ledger/my_ledger_page.dart';
 import '../features/ledger/new_ledger_entry_page.dart';
+import '../data/models/ledger_model.dart';
 import '../features/disputes/disputes_list_page.dart';
 import '../features/onboarding/onboarding_wizard.dart';
 import '../features/profile/my_profile_page.dart';
+import '../features/profile/profile_hub_page.dart';
 import '../features/reports/daily_summary_page.dart';
 import '../features/reports/defaulters_page.dart';
+import '../features/reports/my_reports_page.dart';
 import '../features/reports/payroll_preview_page.dart';
+import '../features/more/more_hub_page.dart';
 import '../features/reports/reports_hub_page.dart';
 import '../features/settings/payroll_settings_page.dart';
 import '../features/shell/main_shell.dart';
+import '../features/shifts/my_shifts_page.dart';
 import '../features/shifts/shifts_management_page.dart';
 import '../features/staff/add_employee_page.dart';
 import '../features/staff/employee_profile_page.dart';
@@ -74,10 +84,114 @@ Page<void> _fadePage(GoRouterState state, Widget child) {
   );
 }
 
+List<StatefulShellBranch> _adminBranches() {
+  return [
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/home',
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: DashboardScreen()),
+        ),
+      ],
+    ),
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/staff',
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: StaffDirectoryScreen()),
+        ),
+      ],
+    ),
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/attendance',
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: AttendanceRosterPage()),
+        ),
+      ],
+    ),
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/ledger',
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: LedgerListScreen()),
+        ),
+      ],
+    ),
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/reports',
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: ReportsHubScreen()),
+        ),
+      ],
+    ),
+  ];
+}
+
+List<StatefulShellBranch> _employeeBranches() {
+  return [
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/home',
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: DashboardScreen()),
+        ),
+      ],
+    ),
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/my-attendance',
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: MyAttendancePage()),
+        ),
+      ],
+    ),
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/reports',
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: ReportsHubScreen()),
+        ),
+      ],
+    ),
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/my-ledger',
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: MyLedgerPage()),
+        ),
+      ],
+    ),
+    StatefulShellBranch(
+      routes: [
+        GoRoute(
+          path: '/profile',
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: ProfileHubPage()),
+        ),
+      ],
+    ),
+  ];
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.listen(tokenProvider, (_, _) => refresh.value++);
   ref.listen(initialTokenProvider, (_, _) => refresh.value++);
+  ref.listen(userInfoProvider, (_, _) => refresh.value++);
+
+  final user = ref.watch(userInfoProvider);
+  final isAdmin = user?.isAdmin ?? false;
 
   return GoRouter(
     refreshListenable: refresh,
@@ -94,12 +208,39 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (!loggedIn &&
           state.matchedLocation != '/login' &&
           state.matchedLocation != '/register') {
+        ref.read(redirectLocationProvider.notifier).state =
+            state.matchedLocation;
         return '/login';
       }
       if (loggedIn &&
           (state.matchedLocation == '/login' ||
               state.matchedLocation == '/register')) {
-        return '/home';
+        final redirect = ref.read(redirectLocationProvider);
+        ref.read(redirectLocationProvider.notifier).state = null;
+        return redirect ?? '/home';
+      }
+      if (loggedIn) {
+        final user = ref.read(userInfoProvider);
+        final isEmployee = user != null && user.role == 'employee';
+        if (isEmployee) {
+          final location = state.matchedLocation;
+          if (location.startsWith('/staff') ||
+              location.startsWith('/shifts') ||
+              location.startsWith('/payroll') ||
+              location.startsWith('/settings') ||
+              (location.startsWith('/reports') &&
+                  location != '/reports' &&
+                  location != '/my-reports') ||
+              location == '/advance-requests' ||
+              location == '/holidays' ||
+              location == '/leave-policy' ||
+              location == '/disputes' ||
+              location == '/add-employee' ||
+              location == '/new-ledger' ||
+              location == '/edit-ledger') {
+            return '/home';
+          }
+        }
       }
       return null;
     },
@@ -117,9 +258,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) =>
             _fadePage(state, const RegisterScreen()),
       ),
-      GoRoute(
-        path: '/home',
-        pageBuilder: (context, state) => _fadePage(state, const MainShell()),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            MainShell(navigationShell: navigationShell),
+        branches: isAdmin ? _adminBranches() : _employeeBranches(),
       ),
       GoRoute(
         path: '/onboarding',
@@ -132,12 +274,19 @@ final routerProvider = Provider<GoRouter>((ref) {
             _slideUpPage(state, const MyProfileScreen()),
       ),
       GoRoute(
-        path: '/new_ledger',
+        path: '/new-ledger',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const NewLedgerEntryScreen()),
       ),
       GoRoute(
-        path: '/add_employee',
+        path: '/edit-ledger',
+        pageBuilder: (context, state) {
+          final entry = state.extra as LedgerEntry?;
+          return _slideUpPage(state, NewLedgerEntryScreen(entry: entry));
+        },
+      ),
+      GoRoute(
+        path: '/add-employee',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const AddEmployeeScreen()),
       ),
@@ -154,14 +303,29 @@ final routerProvider = Provider<GoRouter>((ref) {
             _slideUpPage(state, const ShiftsManagementScreen()),
       ),
       GoRoute(
+        path: '/my-shifts',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const MyShiftsPage()),
+      ),
+      GoRoute(
         path: '/holidays',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const HolidaysScreen()),
       ),
       GoRoute(
+        path: '/my-holidays',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const MyHolidaysPage()),
+      ),
+      GoRoute(
         path: '/advance-requests',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const AdvanceRequestsScreen()),
+      ),
+      GoRoute(
+        path: '/my-advance-requests',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const MyAdvanceRequestsPage()),
       ),
       GoRoute(
         path: '/leave-policy',
@@ -189,29 +353,19 @@ final routerProvider = Provider<GoRouter>((ref) {
             _slideUpPage(state, const DefaultersScreen()),
       ),
       GoRoute(
-        path: '/reports',
+        path: '/more',
         pageBuilder: (context, state) =>
-            _slideUpPage(state, const ReportsHubScreen()),
+            _slideUpPage(state, const MoreHubPage()),
       ),
       GoRoute(
-        path: '/staff',
+        path: '/my-reports',
         pageBuilder: (context, state) =>
-            _slideUpPage(state, const StaffDirectoryScreen()),
+            _slideUpPage(state, const MyReportsPage()),
       ),
       GoRoute(
-        path: '/attendance',
+        path: '/balance-sheet',
         pageBuilder: (context, state) =>
-            _slideUpPage(state, const AttendanceRosterPage()),
-      ),
-      GoRoute(
-        path: '/dashboard',
-        pageBuilder: (context, state) =>
-            _slideUpPage(state, const DashboardScreen()),
-      ),
-      GoRoute(
-        path: '/ledger',
-        pageBuilder: (context, state) =>
-            _slideUpPage(state, const LedgerListScreen()),
+            _slideUpPage(state, const BalanceSheetPage()),
       ),
       GoRoute(
         path: '/disputes',
@@ -220,6 +374,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/debug/logs',
+        redirect: (context, state) {
+          final info = ref.read(userInfoProvider);
+          if (info == null || info.role != 'owner') return '/home';
+          return null;
+        },
         pageBuilder: (context, state) => _slideUpPage(
           state,
           TalkerScreen(

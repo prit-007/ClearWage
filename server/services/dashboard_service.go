@@ -23,6 +23,7 @@ type DashboardData struct {
 	DailyJamaTotal       decimal.Decimal            `json:"daily_jama_total"`
 	WageBillMTD          decimal.Decimal            `json:"wage_bill_mtd"`
 	TotalOutstanding     decimal.Decimal            `json:"total_outstanding"`
+	DefaultersCount      int                        `json:"defaulters_count"`
 	RecentActivity       []repositories.ActivityLog `json:"recent_activity"`
 	Trends               []AttendanceTrend          `json:"trends,omitempty"`
 }
@@ -88,6 +89,16 @@ func (s *DashboardService) fetchDashboard(ctx context.Context, tenantID, today, 
 		return DashboardData{}, err
 	}
 
+	balances, balErr := s.querier.ListEmployeeBalances(ctx, tenantID)
+	defaultersCount := 0
+	if balErr == nil {
+		for _, b := range balances {
+			if !b.Balance.Equal(decimal.Zero) {
+				defaultersCount++
+			}
+		}
+	}
+
 	idleStaff := snapshot.TotalStaff - snapshot.AttendanceCount
 	absent := snapshot.Absent + idleStaff
 
@@ -106,6 +117,7 @@ func (s *DashboardService) fetchDashboard(ctx context.Context, tenantID, today, 
 		DailyJamaTotal:       snapshot.DailyJamaTotal,
 		WageBillMTD:          snapshot.WageBillMTD,
 		TotalOutstanding:     snapshot.TotalOutstanding,
+		DefaultersCount:      defaultersCount,
 		RecentActivity:       activity,
 	}, nil
 }

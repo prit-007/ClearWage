@@ -133,6 +133,7 @@ class _FirebasePhoneFieldState extends State<FirebasePhoneField> {
                         focusNode: _focusNode,
                         keyboardType: TextInputType.phone,
                         enabled: widget.enabled,
+                        autofillHints: const [AutofillHints.telephoneNumber],
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(10),

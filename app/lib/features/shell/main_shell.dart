@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,28 +5,23 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/helpers.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/providers/badge_providers.dart';
 import '../../core/responsive.dart';
-import '../attendance/attendance_roster_page.dart';
-import '../dashboard/dashboard_page.dart';
-import '../ledger/ledger_list_page.dart';
-import '../reports/reports_hub_page.dart';
-import '../staff/staff_directory_page.dart';
-import '../disputes/disputes_list_page.dart';
 
 class MainShell extends ConsumerStatefulWidget {
-  const MainShell({super.key});
+  final StatefulNavigationShell navigationShell;
+  const MainShell({super.key, required this.navigationShell});
   @override
   ConsumerState<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends ConsumerState<MainShell> {
-  String _selectedPageId = 'home';
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
     final isWide = AppBreakpoints.isDesktop(context);
+    final disputesCount = ref.watch(openDisputesCountProvider).valueOrNull ?? 0;
 
     ref.listen<bool>(sessionExpiredProvider, (prev, next) {
       if (next && prev != true) {
@@ -36,7 +30,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             context,
             title: 'Session Expired',
             message:
-                'Your session has expired. Please sign in again to continue.',
+                'Your session has expired. Any unsaved changes will be lost. Please sign in again to continue.',
             buttonLabel: 'Sign In',
             icon: PhosphorIconsRegular.warningCircle,
             iconColor: Theme.of(context).colorScheme.error,
@@ -49,57 +43,66 @@ class _MainShellState extends ConsumerState<MainShell> {
       }
     });
 
-    final pages = <Widget, String>{
-      const DashboardScreen(): 'home',
-      if (isAdmin) const StaffDirectoryScreen(): 'staff',
-      if (isAdmin) const AttendanceRosterPage(): 'attendance',
-      if (isAdmin) const LedgerListScreen(): 'ledger',
-      if (isAdmin) const ReportsHubScreen(): 'reports',
-      if (isAdmin) const DisputesListScreen(): 'disputes',
-    };
-
-    final pageWidgets = pages.keys.toList();
-    final pageIds = pages.values.toList();
-    final selectedIdx = pageIds.indexOf(_selectedPageId);
-    final effectiveIdx = selectedIdx >= 0 ? selectedIdx : 0;
-
     final navItems = <NavigationDestination>[
       const NavigationDestination(
         icon: Icon(Icons.home_outlined),
         selectedIcon: Icon(Icons.home),
         label: 'Home',
       ),
-      if (isAdmin)
+      if (isAdmin) ...[
         const NavigationDestination(
           icon: Icon(Icons.groups_outlined),
           selectedIcon: Icon(Icons.groups),
           label: 'Staff',
         ),
-      if (isAdmin)
         const NavigationDestination(
           icon: Icon(Icons.event_available_outlined),
           selectedIcon: Icon(Icons.event_available),
           label: 'Attendance',
         ),
-      if (isAdmin)
-        const NavigationDestination(
-          icon: Icon(Icons.account_balance_wallet_outlined),
-          selectedIcon: Icon(Icons.account_balance_wallet),
+        NavigationDestination(
+          icon: Badge(
+            isLabelVisible: disputesCount > 0,
+            label: Text('$disputesCount'),
+            child: const Icon(Icons.account_balance_wallet_outlined),
+          ),
+          selectedIcon: Badge(
+            isLabelVisible: disputesCount > 0,
+            label: Text('$disputesCount'),
+            child: const Icon(Icons.account_balance_wallet),
+          ),
           label: 'Ledger',
         ),
-      if (isAdmin)
         const NavigationDestination(
           icon: Icon(Icons.analytics_outlined),
           selectedIcon: Icon(Icons.analytics),
           label: 'Reports',
         ),
-      if (isAdmin)
+      ] else ...[
         const NavigationDestination(
-          icon: Icon(Icons.flag_outlined),
-          selectedIcon: Icon(Icons.flag),
-          label: 'Disputes',
+          icon: Icon(Icons.event_available_outlined),
+          selectedIcon: Icon(Icons.event_available),
+          label: 'Attendance',
         ),
+        const NavigationDestination(
+          icon: Icon(Icons.analytics_outlined),
+          selectedIcon: Icon(Icons.analytics),
+          label: 'Reports',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.account_balance_wallet_outlined),
+          selectedIcon: Icon(Icons.account_balance_wallet),
+          label: 'Ledger',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.person_outlined),
+          selectedIcon: Icon(Icons.person),
+          label: 'Profile',
+        ),
+      ],
     ];
+
+    final effectiveIdx = widget.navigationShell.currentIndex;
 
     final railDestinations = navItems
         .map(
@@ -124,43 +127,40 @@ class _MainShellState extends ConsumerState<MainShell> {
         actions: [
           IconButton(
             icon: PhosphorIcon(
-              PhosphorIconsRegular.userCircle,
-              color: cs.onSurfaceVariant,
-            ),
-            onPressed: () => context.push('/my-profile'),
-          ),
-          PopupMenuButton<String>(
-            icon: PhosphorIcon(
               PhosphorIconsRegular.gear,
               color: cs.onSurfaceVariant,
             ),
-            onSelected: (route) => context.push(route),
+            onPressed: () => context.push('/more'),
+          ),
+          PopupMenuButton<String>(
+            icon: PhosphorIcon(
+              PhosphorIconsRegular.userCircle,
+              color: cs.onSurfaceVariant,
+            ),
+            onSelected: (value) {
+              if (value == 'profile') {
+                context.push('/my-profile');
+              } else if (value == 'signout') {
+                ref.read(tokenProvider.notifier).state = null;
+                ref.read(userInfoProvider.notifier).state = null;
+                context.go('/login');
+              }
+            },
             itemBuilder: (_) => [
-              const PopupMenuItem(
-                value: '/shifts',
-                child: Text('Shift Timings'),
+              const PopupMenuItem(value: 'profile', child: Text('My Profile')),
+              PopupMenuItem(
+                enabled: false,
+                child: Text(
+                  'v0.7.0',
+                  style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-              const PopupMenuItem(value: '/holidays', child: Text('Holidays')),
-              if (kDebugMode)
-                const PopupMenuItem(
-                  value: '/debug/logs',
-                  child: Text('App Logs'),
-                ),
-              if (isAdmin)
-                const PopupMenuItem(
-                  value: '/advance-requests',
-                  child: Text('Advance Requests'),
-                ),
-              if (isAdmin)
-                const PopupMenuItem(
-                  value: '/leave-policy',
-                  child: Text('Leave Policy'),
-                ),
-              if (isAdmin)
-                const PopupMenuItem(
-                  value: '/payroll-settings',
-                  child: Text('Payroll Settings'),
-                ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(value: 'signout', child: Text('Sign Out')),
             ],
           ),
         ],
@@ -171,9 +171,10 @@ class _MainShellState extends ConsumerState<MainShell> {
                 NavigationRail(
                   selectedIndex: effectiveIdx,
                   onDestinationSelected: (i) {
-                    if (i < pageIds.length) {
-                      setState(() => _selectedPageId = pageIds[i]);
-                    }
+                    widget.navigationShell.goBranch(
+                      i,
+                      initialLocation: i == widget.navigationShell.currentIndex,
+                    );
                   },
                   labelType: NavigationRailLabelType.all,
                   backgroundColor: cs.surface,
@@ -196,23 +197,19 @@ class _MainShellState extends ConsumerState<MainShell> {
                   thickness: 1,
                   color: cs.outlineVariant.withValues(alpha: 0.3),
                 ),
-                Expanded(
-                  child: IndexedStack(
-                    index: effectiveIdx,
-                    children: pageWidgets,
-                  ),
-                ),
+                Expanded(child: widget.navigationShell),
               ],
             )
-          : IndexedStack(index: effectiveIdx, children: pageWidgets),
+          : widget.navigationShell,
       bottomNavigationBar: isWide
           ? null
           : NavigationBar(
               selectedIndex: effectiveIdx,
               onDestinationSelected: (i) {
-                if (i < pageIds.length) {
-                  setState(() => _selectedPageId = pageIds[i]);
-                }
+                widget.navigationShell.goBranch(
+                  i,
+                  initialLocation: i == widget.navigationShell.currentIndex,
+                );
               },
               destinations: navItems,
             ),

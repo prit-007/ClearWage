@@ -104,9 +104,19 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
       setState(() => _currentStep++);
     } else {
       HapticFeedback.heavyImpact();
-      _setupFactory().then((_) {
-        if (mounted) context.go('/home');
-      });
+      _setupFactory()
+          .then((_) {
+            if (mounted) context.go('/home');
+          })
+          .catchError((_) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Setup failed. Please try again.'),
+                ),
+              );
+            }
+          });
     }
   }
 
@@ -461,13 +471,40 @@ class _StepProfile extends StatelessWidget {
   }
 }
 
-class _StepShifts extends StatelessWidget {
+class _StepShifts extends StatefulWidget {
   final ColorScheme cs;
   final TextTheme tt;
   const _StepShifts({required this.cs, required this.tt});
 
   @override
+  State<_StepShifts> createState() => _StepShiftsState();
+}
+
+class _StepShiftsState extends State<_StepShifts> {
+  TimeOfDay _generalStart = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay _generalEnd = const TimeOfDay(hour: 17, minute: 0);
+  TimeOfDay _nightStart = const TimeOfDay(hour: 22, minute: 0);
+  TimeOfDay _nightEnd = const TimeOfDay(hour: 6, minute: 0);
+
+  String _formatTime(TimeOfDay t) {
+    final hour = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
+    final minute = t.minute.toString().padLeft(2, '0');
+    final period = t.period == DayPeriod.am ? 'AM' : 'PM';
+    return '$hour:$minute $period';
+  }
+
+  Future<void> _pickTime({
+    required TimeOfDay initial,
+    required ValueChanged<TimeOfDay> onPicked,
+  }) async {
+    final picked = await showTimePicker(context: context, initialTime: initial);
+    if (picked != null) onPicked(picked);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final cs = widget.cs;
+    final tt = widget.tt;
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       children: [
@@ -487,17 +524,33 @@ class _StepShifts extends StatelessWidget {
         _ShiftInputCard(
           cs: cs,
           label: 'General Shift',
-          start: '08:00 AM',
-          end: '05:00 PM',
+          start: _formatTime(_generalStart),
+          end: _formatTime(_generalEnd),
           icon: PhosphorIconsDuotone.sun,
+          onStartTap: () => _pickTime(
+            initial: _generalStart,
+            onPicked: (t) => setState(() => _generalStart = t),
+          ),
+          onEndTap: () => _pickTime(
+            initial: _generalEnd,
+            onPicked: (t) => setState(() => _generalEnd = t),
+          ),
         ),
         const SizedBox(height: 16),
         _ShiftInputCard(
           cs: cs,
           label: 'Night Shift',
-          start: '10:00 PM',
-          end: '06:00 AM',
+          start: _formatTime(_nightStart),
+          end: _formatTime(_nightEnd),
           icon: PhosphorIconsDuotone.moonStars,
+          onStartTap: () => _pickTime(
+            initial: _nightStart,
+            onPicked: (t) => setState(() => _nightStart = t),
+          ),
+          onEndTap: () => _pickTime(
+            initial: _nightEnd,
+            onPicked: (t) => setState(() => _nightEnd = t),
+          ),
         ),
       ],
     );
@@ -508,6 +561,8 @@ class _ShiftInputCard extends StatelessWidget {
   final ColorScheme cs;
   final String label, start, end;
   final dynamic icon;
+  final VoidCallback? onStartTap;
+  final VoidCallback? onEndTap;
 
   const _ShiftInputCard({
     required this.cs,
@@ -515,6 +570,8 @@ class _ShiftInputCard extends StatelessWidget {
     required this.start,
     required this.end,
     required this.icon,
+    this.onStartTap,
+    this.onEndTap,
   });
 
   @override
@@ -548,11 +605,17 @@ class _ShiftInputCard extends StatelessWidget {
                   cs: cs,
                   label: 'Start Time',
                   time: start,
+                  onTap: onStartTap,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _PremiumTimePicker(cs: cs, label: 'End Time', time: end),
+                child: _PremiumTimePicker(
+                  cs: cs,
+                  label: 'End Time',
+                  time: end,
+                  onTap: onEndTap,
+                ),
               ),
             ],
           ),
@@ -565,16 +628,21 @@ class _ShiftInputCard extends StatelessWidget {
 class _PremiumTimePicker extends StatelessWidget {
   final ColorScheme cs;
   final String label, time;
+  final VoidCallback? onTap;
   const _PremiumTimePicker({
     required this.cs,
     required this.label,
     required this.time,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => HapticFeedback.selectionClick(),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap?.call();
+      },
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

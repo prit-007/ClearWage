@@ -13,12 +13,11 @@ import '../../core/currency_format.dart';
 
 final _profileOverviewProvider =
     FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
-  final res = await ref.watch(profileServiceProvider).getOverview();
-  return res;
-});
+      final res = await ref.watch(profileServiceProvider).getOverview();
+      return res;
+    });
 
-final _ledgerBalanceProvider =
-    FutureProvider.autoDispose<double>((ref) async {
+final _ledgerBalanceProvider = FutureProvider.autoDispose<double>((ref) async {
   final balance = await ref.watch(ledgerServiceProvider).getBalance('me');
   return balance;
 });

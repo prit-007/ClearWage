@@ -6,24 +6,15 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/helpers.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/responsive.dart';
-import '../attendance/attendance_roster_page.dart';
-import '../attendance/my_attendance_page.dart';
-import '../dashboard/dashboard_page.dart';
-import '../ledger/ledger_list_page.dart';
-import '../ledger/my_ledger_page.dart';
-import '../reports/reports_hub_page.dart';
-import '../staff/staff_directory_page.dart';
-import '../profile/profile_hub_page.dart';
 
 class MainShell extends ConsumerStatefulWidget {
-  const MainShell({super.key});
+  final StatefulNavigationShell navigationShell;
+  const MainShell({super.key, required this.navigationShell});
   @override
   ConsumerState<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends ConsumerState<MainShell> {
-  String _selectedPageId = 'home';
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -49,27 +40,6 @@ class _MainShellState extends ConsumerState<MainShell> {
         });
       }
     });
-
-    final pages = <Widget, String>{
-      if (isAdmin) ...{
-        const DashboardScreen(): 'home',
-        const StaffDirectoryScreen(): 'staff',
-        const AttendanceRosterPage(): 'attendance',
-        const LedgerListScreen(): 'ledger',
-        const ReportsHubScreen(): 'reports',
-      } else ...{
-        const DashboardScreen(): 'home',
-        const MyAttendancePage(): 'my-attendance',
-        const ReportsHubScreen(): 'reports',
-        const MyLedgerPage(): 'my-ledger',
-        const ProfileHubPage(): 'profile',
-      },
-    };
-
-    final pageWidgets = pages.keys.toList();
-    final pageIds = pages.values.toList();
-    final selectedIdx = pageIds.indexOf(_selectedPageId);
-    final effectiveIdx = selectedIdx >= 0 ? selectedIdx : 0;
 
     final navItems = <NavigationDestination>[
       const NavigationDestination(
@@ -121,6 +91,8 @@ class _MainShellState extends ConsumerState<MainShell> {
         ),
       ],
     ];
+
+    final effectiveIdx = widget.navigationShell.currentIndex;
 
     final railDestinations = navItems
         .map(
@@ -189,9 +161,10 @@ class _MainShellState extends ConsumerState<MainShell> {
                 NavigationRail(
                   selectedIndex: effectiveIdx,
                   onDestinationSelected: (i) {
-                    if (i < pageIds.length) {
-                      setState(() => _selectedPageId = pageIds[i]);
-                    }
+                    widget.navigationShell.goBranch(
+                      i,
+                      initialLocation: i == widget.navigationShell.currentIndex,
+                    );
                   },
                   labelType: NavigationRailLabelType.all,
                   backgroundColor: cs.surface,
@@ -214,23 +187,19 @@ class _MainShellState extends ConsumerState<MainShell> {
                   thickness: 1,
                   color: cs.outlineVariant.withValues(alpha: 0.3),
                 ),
-                Expanded(
-                  child: IndexedStack(
-                    index: effectiveIdx,
-                    children: pageWidgets,
-                  ),
-                ),
+                Expanded(child: widget.navigationShell),
               ],
             )
-          : IndexedStack(index: effectiveIdx, children: pageWidgets),
+          : widget.navigationShell,
       bottomNavigationBar: isWide
           ? null
           : NavigationBar(
               selectedIndex: effectiveIdx,
               onDestinationSelected: (i) {
-                if (i < pageIds.length) {
-                  setState(() => _selectedPageId = pageIds[i]);
-                }
+                widget.navigationShell.goBranch(
+                  i,
+                  initialLocation: i == widget.navigationShell.currentIndex,
+                );
               },
               destinations: navItems,
             ),

@@ -75,7 +75,7 @@ class PaginatedList<T> {
         !loadingMore &&
         !loading &&
         hasMore) {
-      _loadMore();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadMore());
     }
   }
 

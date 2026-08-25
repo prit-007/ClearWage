@@ -51,7 +51,7 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
             _scrollCtrl.position.maxScrollExtent - 200 &&
         !_loadingMore &&
         _hasMore) {
-      _loadMore();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadMore());
     }
   }
 

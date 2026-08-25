@@ -19,7 +19,7 @@ type Querier interface {
 	ListAttendanceByDateRangeExplicit(ctx context.Context, arg ListAttendanceByDateRangeExplicitParams) ([]ListAttendanceByDateRangeExplicitRow, error)
 	ListAttendanceByEmployeeMonthExplicit(ctx context.Context, arg ListAttendanceByEmployeeMonthExplicitParams) ([]ListAttendanceByEmployeeMonthExplicitRow, error)
 	ListDisputesByTenant(ctx context.Context, arg ListDisputesByTenantParams) ([]ListDisputesByTenantRow, error)
-	ListEmployeeBalances(ctx context.Context, tenantID string) ([]ListEmployeeBalancesRow, error)
+	ListEmployeeBalances(ctx context.Context, tenantID uuid.UUID) ([]ListEmployeeBalancesRow, error)
 	ListEmployeesByTenantExplicit(ctx context.Context, arg ListEmployeesByTenantExplicitParams) ([]ListEmployeesByTenantExplicitRow, error)
 	ListLedgerByEmployeeMonthExplicit(ctx context.Context, arg ListLedgerByEmployeeMonthExplicitParams) ([]ListLedgerByEmployeeMonthExplicitRow, error)
 	ListLedgerByTenantExplicit(ctx context.Context, arg ListLedgerByTenantExplicitParams) ([]ListLedgerByTenantExplicitRow, error)

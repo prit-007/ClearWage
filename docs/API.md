@@ -86,6 +86,8 @@ LoginScreen
   "tenant_id":   "uuid",   // The tenant (factory) the user belongs to
   "employee_id": "uuid",   // The employee record ID (empty for tenant owners)
   "role":        "owner" | "manager" | "employee",
+  "iss":         "vivek-app",   // Issuer — enables token revocation
+  "sub":         "uuid",        // Subject — the employee_id
   "exp":         int64,    // Unix timestamp — token expires in TOKEN_TTL hours
   "iat":         int64     // Unix timestamp — issued at
 }
@@ -94,18 +96,34 @@ LoginScreen
 ### Middleware Chain
 
 ```
-Request ──► RequestLogger ──► Recoverer ──► CORS ──► RouteHandler
-                                                       │
-                                            AuthMiddleware (if protected):
-                                              1. Read "Authorization: Bearer <token>"
-                                              2. Fallback: Read "auth_token" cookie
-                                              3. Validate HS256 JWT signature
-                                              4. Put Claims into context
-                                                      │
-                                            TenantMiddleware (if protected):
-                                              1. Extract tenant_id from Claims
-                                              2. Put tenant_id into context
+Request ──► RequestLogger ──► Recoverer ──► BodyLimiter ──► SecurityHeaders
+    ──► CSRFProtection ──► CORS ──► RouteHandler
+                                          │
+                               AuthMiddleware (if protected):
+                                 1. Read "Authorization: Bearer <token>"
+                                 2. Fallback: Read "auth_token" cookie
+                                 3. Validate HS256 JWT signature
+                                 4. Put Claims into context
+                                         │
+                               TenantMiddleware (if protected):
+                                 1. Extract tenant_id from Claims
+                                 2. Put tenant_id into context
 ```
+
+### Security Headers
+
+All responses include:
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `X-XSS-Protection: 1; mode=block`
+
+### CSRF Protection
+
+State-changing requests (POST/PUT/DELETE) require a valid CSRF token:
+1. Server sets `csrf_token` cookie on GET/HEAD/OPTIONS with a random 32-byte hex token
+2. Token is echoed in `X-CSRF-Token` response header
+3. Client must send `X-CSRF-Token` header matching the cookie on state-changing requests
+4. Bearer-only requests (no auth cookie) skip CSRF validation
 
 ### Frontend Auth Flow
 

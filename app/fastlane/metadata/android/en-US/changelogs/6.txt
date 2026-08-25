@@ -1,0 +1,33 @@
+v0.8.0 — Security & reliability audit (52 fixes)
+
+CRITICAL:
+- Attendance lock bypass fixed (is_locked enforced)
+- Settlement TOCTOU race eliminated (atomic CTE)
+- wage_basis now respected (fixed_26/fixed_30/calendar)
+- defaulters_count populated in dashboard
+- Week-off pay off-by-one corrected
+
+HIGH:
+- Rate limiter: uses trusted RemoteAddr, bounded to 10K entries
+- RBAC: dispute resolve/reject requires non-employee role
+- Nil-claims auth bypass eliminated across all controllers
+- Debug logs restricted to owner role
+- Dashboard total_staff counts all active employees
+- Ledger UpdateEntry uses optimistic locking (version)
+- CORS AllowCredentials matches cookie auth model
+- Security headers (X-Content-Type-Options, X-Frame-Options)
+
+MEDIUM:
+- JWT includes Issuer/Subject claims
+- OT multiplier validation aligned with DB constraint (1.0-2.0)
+- Query limits capped (10K instead of 1M, staff list at 100)
+- CSRF protection middleware
+- Flutter models parse all server fields (PayrollEntry, Employee)
+- Advance request and holiday queries use COUNT instead of loading all
+
+LOW:
+- Roster cache invalidated on attendance write
+- Role-based route guards in Flutter
+- Deep link return after login
+- Pagination boilerplate extracted
+- Global ErrorWidget boundary

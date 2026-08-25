@@ -96,7 +96,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			uploadCtrl := ctrl.NewUploadController(services.NewStaffService(querier), logger, cfg)
 			staffCtrl := ctrl.NewStaffController(services.NewStaffService(querier), logger, cfg)
 		r.Route("/api/v1/staff", func(r chi.Router) {
-			r.Use(mw.CSRFProtection)
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Get("/", staffCtrl.List)
@@ -123,7 +122,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				logger, cfg,
 			)
 		r.Route("/api/v1/me", func(r chi.Router) {
-			r.Use(mw.CSRFProtection)
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Get("/", meCtrl.Profile)
@@ -135,7 +133,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			})
 
 		r.Route("/api/v1/shifts", func(r chi.Router) {
-			r.Use(mw.CSRFProtection)
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Get("/", shiftCtrl.List)
@@ -147,7 +144,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			attCtrl := ctrl.NewAttendanceController(services.NewAttendanceService(querier), logger, cfg)
 		r.Route("/api/v1/attendance", func(r chi.Router) {
-			r.Use(mw.CSRFProtection)
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Get("/", attCtrl.ListByDate)
@@ -161,7 +157,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			ledgerCtrl := ctrl.NewLedgerController(services.NewLedgerService(querier), logger, cfg)
 		r.Route("/api/v1/ledger", func(r chi.Router) {
-			r.Use(mw.CSRFProtection)
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/", ledgerCtrl.CreateEntry)
@@ -179,7 +174,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			disputeCtrl := ctrl.NewDisputeController(services.NewDisputeService(querier), logger, cfg)
 		r.Route("/api/v1/disputes", func(r chi.Router) {
-			r.Use(mw.CSRFProtection)
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/", disputeCtrl.Create)
@@ -190,7 +184,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			syncCtrl := ctrl.NewSyncQueueController(services.NewSyncQueueService(querier), logger, cfg)
 		r.Route("/api/v1/sync", func(r chi.Router) {
-			r.Use(mw.CSRFProtection)
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/", syncCtrl.CreateEvent)
@@ -200,7 +193,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			holidayCtrl := ctrl.NewHolidayController(services.NewHolidayService(querier), logger, cfg)
 		r.Route("/api/v1/holidays", func(r chi.Router) {
-			r.Use(mw.CSRFProtection)
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/", holidayCtrl.Create)
@@ -210,7 +202,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			leavePolicyCtrl := ctrl.NewLeavePolicyController(services.NewLeavePolicyService(querier), logger, cfg)
 		r.Route("/api/v1/leave-policies", func(r chi.Router) {
-			r.Use(mw.CSRFProtection)
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Put("/", leavePolicyCtrl.Upsert)
@@ -229,7 +220,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Get("/export", reportCtrl.ExportCSV)
 			})
 
-			r.With(mw.CSRFProtection, mw.AuthMiddleware(cfg), mw.TenantMiddleware()).Delete("/api/v1/auth/account", authCtrl.DeleteAccount)
+			r.With(mw.AuthMiddleware(cfg), mw.TenantMiddleware()).Delete("/api/v1/auth/account", authCtrl.DeleteAccount)
 
 			dashCtrl := ctrl.NewDashboardController(services.NewDashboardService(querier), services.NewReportService(querier), logger, cfg)
 			r.Route("/api/v1/dashboard", func(r chi.Router) {
@@ -240,7 +231,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			advReqCtrl := ctrl.NewAdvanceRequestController(services.NewAdvanceRequestService(querier), logger, cfg)
 		r.Route("/api/v1/advance-requests", func(r chi.Router) {
-			r.Use(mw.CSRFProtection)
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/", advReqCtrl.Create)
@@ -253,7 +243,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			payrollCtrl := ctrl.NewPayrollController(services.NewPayrollService(querier), logger, cfg)
 		r.Route("/api/v1/payroll", func(r chi.Router) {
-			r.Use(mw.CSRFProtection)
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/calculate", payrollCtrl.Calculate)
@@ -263,7 +252,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			settingsCtrl := ctrl.NewSettingsController(services.NewSettingsService(querier), logger, cfg)
 		r.Route("/api/v1/settings/payroll", func(r chi.Router) {
-			r.Use(mw.CSRFProtection)
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Get("/", settingsCtrl.GetPayrollSettings)
@@ -272,7 +260,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			onboardingCtrl := ctrl.NewOnboardingController(services.NewOnboardingService(querier), logger, cfg)
 		r.Route("/api/v1/onboarding", func(r chi.Router) {
-			r.Use(mw.CSRFProtection)
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
 				r.Post("/setup", onboardingCtrl.Setup)

@@ -74,7 +74,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
         !_loadingMore &&
         !_loading &&
         _hasMore) {
-      _loadMore();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadMore());
     }
   }
 

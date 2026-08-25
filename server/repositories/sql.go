@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/shopspring/decimal"
 
 	"github.com/vivek-app/vivek_app/repositories/db"
 )
@@ -23,11 +22,15 @@ func (q *GoquQuerier) GetDashboardSnapshot(ctx context.Context, tenantID, today,
 	if err != nil {
 		return DashboardSnapshot{}, err
 	}
+	ms, err := time.Parse("2006-01-02", monthStart)
+	if err != nil {
+		return DashboardSnapshot{}, err
+	}
 
 	row, err := q.sqlc.GetDashboardSnapshot(ctx, db.GetDashboardSnapshotParams{
 		TenantID:   tid,
 		Today:      td,
-		MonthStart: monthStart,
+		MonthStart: ms,
 	})
 	if err != nil {
 		return DashboardSnapshot{}, err
@@ -48,7 +51,11 @@ func (q *GoquQuerier) GetDashboardSnapshot(ctx context.Context, tenantID, today,
 // ListEmployeeBalances returns each employee's net ledger balance in one
 // grouped query, replacing the per-employee N+1 loop.
 func (q *GoquQuerier) ListEmployeeBalances(ctx context.Context, tenantID string) ([]EmployeeBalance, error) {
-	rows, err := q.sqlc.ListEmployeeBalances(ctx, tenantID)
+	tid, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.sqlc.ListEmployeeBalances(ctx, tid)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +63,7 @@ func (q *GoquQuerier) ListEmployeeBalances(ctx context.Context, tenantID string)
 	balances := make([]EmployeeBalance, 0, len(rows))
 	for _, r := range rows {
 		balances = append(balances, EmployeeBalance{
-			EmployeeID: r.EmployeeID,
+			EmployeeID: r.EmployeeID.String(),
 			Balance:    r.Balance,
 		})
 	}
@@ -366,10 +373,22 @@ func (q *GoquQuerier) ListAttendanceByDateRangeExplicit(ctx context.Context, ten
 }
 
 func (q *GoquQuerier) ListLedgerByTenantExplicit(ctx context.Context, tenantID, startDate, endDate string, limit, offset int32) ([]Ledger, error) {
+	tid, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	sd, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		return nil, err
+	}
+	ed, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		return nil, err
+	}
 	rows, err := q.sqlc.ListLedgerByTenantExplicit(ctx, db.ListLedgerByTenantExplicitParams{
-		TenantID: tenantID,
-		Date:     startDate,
-		Date_2:   endDate,
+		TenantID: tid,
+		Date:     sd,
+		Date_2:   ed,
 		Limit:    limit,
 		Offset:   offset,
 	})
@@ -379,21 +398,16 @@ func (q *GoquQuerier) ListLedgerByTenantExplicit(ctx context.Context, tenantID, 
 
 	result := make([]Ledger, 0, len(rows))
 	for _, r := range rows {
-		amt := decimal.NewFromFloat(float64(r.Amount))
-		var createdBy string
-		if r.CreatedBy.Valid {
-			createdBy = r.CreatedBy.String
-		}
 		result = append(result, Ledger{
-			ID:                 r.ID,
-			TenantID:           r.TenantID,
-			EmployeeID:         r.EmployeeID,
-			Date:               r.Date,
+			ID:                 r.ID.String(),
+			TenantID:           r.TenantID.String(),
+			EmployeeID:         r.EmployeeID.String(),
+			Date:               r.Date.Format("2006-01-02"),
 			Type:               r.Type,
-			Amount:             amt,
+			Amount:             r.Amount,
 			Note:               nullStringPtr(r.Note),
 			LinkedPayrollMonth: nullStringPtr(r.LinkedPayrollMonth),
-			CreatedBy:          createdBy,
+			CreatedBy:          r.CreatedBy.String(),
 			EmployeeName:       nullStringPtr(r.EmployeeName),
 			EmployeePhoto:      nullStringPtr(r.EmployeePhoto),
 		})
@@ -455,11 +469,27 @@ func (q *GoquQuerier) ListAttendanceByEmployeeMonthExplicit(ctx context.Context,
 }
 
 func (q *GoquQuerier) ListLedgerByEmployeeMonthExplicit(ctx context.Context, employeeID, tenantID, startDate, endDate string, limit, offset int32) ([]Ledger, error) {
+	eid, err := uuid.Parse(employeeID)
+	if err != nil {
+		return nil, err
+	}
+	tid, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	sd, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		return nil, err
+	}
+	ed, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		return nil, err
+	}
 	rows, err := q.sqlc.ListLedgerByEmployeeMonthExplicit(ctx, db.ListLedgerByEmployeeMonthExplicitParams{
-		EmployeeID: employeeID,
-		TenantID:   tenantID,
-		Date:       startDate,
-		Date_2:     endDate,
+		EmployeeID: eid,
+		TenantID:   tid,
+		Date:       sd,
+		Date_2:     ed,
 		Limit:      limit,
 		Offset:     offset,
 	})
@@ -469,21 +499,16 @@ func (q *GoquQuerier) ListLedgerByEmployeeMonthExplicit(ctx context.Context, emp
 
 	result := make([]Ledger, 0, len(rows))
 	for _, r := range rows {
-		amt := decimal.NewFromFloat(float64(r.Amount))
-		var createdBy string
-		if r.CreatedBy.Valid {
-			createdBy = r.CreatedBy.String
-		}
 		result = append(result, Ledger{
-			ID:                 r.ID,
-			TenantID:           r.TenantID,
-			EmployeeID:         r.EmployeeID,
-			Date:               r.Date,
+			ID:                 r.ID.String(),
+			TenantID:           r.TenantID.String(),
+			EmployeeID:         r.EmployeeID.String(),
+			Date:               r.Date.Format("2006-01-02"),
 			Type:               r.Type,
-			Amount:             amt,
+			Amount:             r.Amount,
 			Note:               nullStringPtr(r.Note),
 			LinkedPayrollMonth: nullStringPtr(r.LinkedPayrollMonth),
-			CreatedBy:          createdBy,
+			CreatedBy:          r.CreatedBy.String(),
 			EmployeeName:       nullStringPtr(r.EmployeeName),
 			EmployeePhoto:      nullStringPtr(r.EmployeePhoto),
 		})

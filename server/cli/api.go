@@ -50,14 +50,22 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			r := chi.NewRouter()
 
-			r.Use(mw.RequestLogger(logger))
-			r.Use(middleware.Recoverer)
-			r.Use(mw.LimitBodySize(5 << 20))
+		r.Use(mw.RequestLogger(logger))
+		r.Use(middleware.Recoverer)
+		r.Use(mw.LimitBodySize(5 << 20))
+		r.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("X-Content-Type-Options", "nosniff")
+				w.Header().Set("X-Frame-Options", "DENY")
+				w.Header().Set("X-XSS-Protection", "1; mode=block")
+				next.ServeHTTP(w, r)
+			})
+		})
 			r.Use(cors.Handler(cors.Options{
 				AllowedOrigins:   []string{cfg.AllowedOrigin},
 				AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 				AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-				AllowCredentials: false,
+				AllowCredentials: true,
 				MaxAge:           300,
 			}))
 

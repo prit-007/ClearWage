@@ -171,7 +171,11 @@ func (c *AttendanceController) ListByDate(w http.ResponseWriter, r *http.Request
 	}
 
 	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
 		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
@@ -221,7 +225,11 @@ func (c *AttendanceController) Roster(w http.ResponseWriter, r *http.Request) {
 	}
 
 	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
 		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
@@ -264,7 +272,11 @@ func (c *AttendanceController) ListByEmployee(w http.ResponseWriter, r *http.Req
 	}
 
 	claims := middlewares.GetClaims(r.Context())
-	if claims != nil && claims.Role == "employee" {
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
 		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}

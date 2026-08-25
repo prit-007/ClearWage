@@ -476,6 +476,16 @@ type RejectDisputeParams struct {
 	TenantID       string  `json:"tenant_id"`
 }
 
+type CountHolidaysByDateParams struct {
+	TenantID string
+	Date     string
+}
+
+type HasPendingAdvanceRequestParams struct {
+	TenantID   string
+	EmployeeID string
+}
+
 type Querier interface {
 	BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAttendanceParams) ([]Attendance, error)
 	CreateActivityLog(ctx context.Context, arg CreateActivityLogParams) (ActivityLog, error)
@@ -553,4 +563,6 @@ type Querier interface {
 	DeleteLedgerEntry(ctx context.Context, arg DeleteLedgerEntryParams) error
 	GetLedgerEntryByID(ctx context.Context, arg GetLedgerEntryByIDParams) (Ledger, error)
 	SettleEmployeeAtomic(ctx context.Context, employeeID, tenantID, date, createdBy string) (Ledger, error)
+	HasPendingAdvanceRequest(ctx context.Context, arg HasPendingAdvanceRequestParams) (bool, error)
+	CountHolidaysByDate(ctx context.Context, arg CountHolidaysByDateParams) (int64, error)
 }

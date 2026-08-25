@@ -25,34 +25,54 @@ class PayrollEntry {
   final String employeeId;
   final String name;
   final String? photoUrl;
+  final String wageType;
+  final double wageAmount;
+  final int daysPresent;
+  final double totalOvertime;
   final double grossWages;
   final double netPayable;
   final double totalUdhaar;
+  final String wageBasis;
 
   PayrollEntry({
     required this.employeeId,
     required this.name,
     this.photoUrl,
+    required this.wageType,
+    required this.wageAmount,
+    required this.daysPresent,
+    required this.totalOvertime,
     required this.grossWages,
     required this.netPayable,
     required this.totalUdhaar,
+    required this.wageBasis,
   });
 
   factory PayrollEntry.fromJson(Map<String, dynamic> json) => PayrollEntry(
     employeeId: json['employee_id'] as String? ?? '',
     name: json['name'] as String? ?? '',
     photoUrl: json['photo_url'] as String?,
+    wageType: json['wage_type'] as String? ?? '',
+    wageAmount: safeToDouble(json['wage_amount']),
+    daysPresent: safeToInt(json['days_present']),
+    totalOvertime: safeToDouble(json['total_overtime']),
     grossWages: safeToDouble(json['gross_wages']),
     netPayable: safeToDouble(json['net_payable']),
     totalUdhaar: safeToDouble(json['total_udhaar']),
+    wageBasis: json['wage_basis'] as String? ?? '',
   );
 
   Map<String, dynamic> toJson() => {
     'employee_id': employeeId,
     'name': name,
+    'wage_type': wageType,
+    'wage_amount': wageAmount,
+    'days_present': daysPresent,
+    'total_overtime': totalOvertime,
     'gross_wages': grossWages,
     'net_payable': netPayable,
     'total_udhaar': totalUdhaar,
+    'wage_basis': wageBasis,
   };
 }
 

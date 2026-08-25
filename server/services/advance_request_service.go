@@ -16,19 +16,15 @@ func NewAdvanceRequestService(querier repositories.Querier) *AdvanceRequestServi
 }
 
 func (s *AdvanceRequestService) CreateRequest(ctx context.Context, tenantID, employeeID string, amount float64, note string) (repositories.AdvanceRequest, error) {
-	pending, err := s.querier.ListAdvanceRequestsByTenant(ctx, repositories.ListAdvanceRequestsByTenantParams{
-		TenantID: tenantID,
-		Status:   "pending",
-		Limit:    10000,
-		Offset:   0,
+	hasPending, err := s.querier.HasPendingAdvanceRequest(ctx, repositories.HasPendingAdvanceRequestParams{
+		TenantID:   tenantID,
+		EmployeeID: employeeID,
 	})
 	if err != nil {
 		return repositories.AdvanceRequest{}, err
 	}
-	for _, req := range pending {
-		if req.EmployeeID == employeeID {
-			return repositories.AdvanceRequest{}, fmt.Errorf("employee already has a pending advance request")
-		}
+	if hasPending {
+		return repositories.AdvanceRequest{}, fmt.Errorf("employee already has a pending advance request")
 	}
 
 	var n *string

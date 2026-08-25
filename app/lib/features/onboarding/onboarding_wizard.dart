@@ -104,9 +104,19 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
       setState(() => _currentStep++);
     } else {
       HapticFeedback.heavyImpact();
-      _setupFactory().then((_) {
-        if (mounted) context.go('/home');
-      });
+      _setupFactory()
+          .then((_) {
+            if (mounted) context.go('/home');
+          })
+          .catchError((_) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Setup failed. Please try again.'),
+                ),
+              );
+            }
+          });
     }
   }
 

@@ -4,7 +4,6 @@ import '../api_client.dart';
 import '../app_config.dart';
 import '../token_storage.dart';
 import '../../data/models/auth_model.dart';
-import 'dart:async';
 
 final sessionExpiredProvider = StateProvider<bool>((ref) => false);
 
@@ -31,12 +30,14 @@ final apiClientProvider = Provider<ApiClient>((ref) {
           ref.read(tokenProvider.notifier).state = newToken;
           return;
         }
-      } catch (_) {}
+        } catch (e) {
+          // Token refresh failed; treat as expired
+        }
     }
     ref.read(tokenProvider.notifier).state = null;
     ref.read(userInfoProvider.notifier).state = null;
     ref.read(sessionExpiredProvider.notifier).state = true;
-    unawaited(TokenStorage.clear());
+    await TokenStorage.clear();
   };
   return client;
 });

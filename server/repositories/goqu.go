@@ -1339,6 +1339,28 @@ func (q *GoquQuerier) RejectDispute(ctx context.Context, arg RejectDisputeParams
 	}, nil
 }
 
+func (q *GoquQuerier) HasPendingAdvanceRequest(ctx context.Context, arg HasPendingAdvanceRequestParams) (bool, error) {
+	var count int64
+	_, err := q.db.From("advance_requests").Select(goqu.COUNT("*")).Where(
+		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("employee_id").Eq(arg.EmployeeID),
+		goqu.C("status").Eq("pending"),
+	).ScanValContext(ctx, &count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (q *GoquQuerier) CountHolidaysByDate(ctx context.Context, arg CountHolidaysByDateParams) (int64, error) {
+	var count int64
+	_, err := q.db.From("holidays").Select(goqu.COUNT("*")).Where(
+		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("date").Eq(arg.Date),
+	).ScanValContext(ctx, &count)
+	return count, err
+}
+
 func (q *GoquQuerier) SettleEmployeeAtomic(ctx context.Context, employeeID, tenantID, date, createdBy string) (Ledger, error) {
 	if q.sqlDB == nil {
 		return Ledger{}, errors.New("sql.DB not available for atomic settlement")

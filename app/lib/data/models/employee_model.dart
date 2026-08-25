@@ -26,6 +26,10 @@ class Employee {
   final String? healthNotes;
   final String? currentAddress;
   final String? permanentAddress;
+  final int version;
+  final String? pieceRateItemName;
+  final double? pieceRatePerUnit;
+  final int? dailyTargetUnits;
 
   Employee({
     required this.id,
@@ -53,6 +57,10 @@ class Employee {
     this.healthNotes,
     this.currentAddress,
     this.permanentAddress,
+    this.version = 0,
+    this.pieceRateItemName,
+    this.pieceRatePerUnit,
+    this.dailyTargetUnits,
   });
 
   factory Employee.fromJson(Map<String, dynamic> json) => Employee(
@@ -81,6 +89,18 @@ class Employee {
     healthNotes: json['health_notes'] as String?,
     currentAddress: json['current_address'] as String?,
     permanentAddress: json['permanent_address'] as String?,
+    version: safeToInt(json['version']),
+    pieceRateItemName: json['piece_rate_item_name'] as String?,
+    pieceRatePerUnit: json['piece_rate_per_unit'] != null
+        ? (json['piece_rate_per_unit'] is num
+            ? (json['piece_rate_per_unit'] as num).toDouble()
+            : double.tryParse(json['piece_rate_per_unit'].toString()))
+        : null,
+    dailyTargetUnits: json['daily_target_units'] != null
+        ? (json['daily_target_units'] is int
+            ? json['daily_target_units'] as int
+            : int.tryParse(json['daily_target_units'].toString()))
+        : null,
   );
 
   Map<String, dynamic> toJson() => {
@@ -109,5 +129,9 @@ class Employee {
     'health_notes': healthNotes,
     'current_address': currentAddress,
     'permanent_address': permanentAddress,
+    'version': version,
+    'piece_rate_item_name': pieceRateItemName,
+    'piece_rate_per_unit': pieceRatePerUnit,
+    'daily_target_units': dailyTargetUnits,
   };
 }

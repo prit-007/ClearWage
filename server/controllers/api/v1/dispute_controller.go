@@ -91,6 +91,10 @@ func (c *DisputeController) Resolve(w http.ResponseWriter, r *http.Request) {
 		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
 
 	var req struct {
 		DisputeID       string `json:"dispute_id"`
@@ -124,6 +128,10 @@ func (c *DisputeController) Reject(w http.ResponseWriter, r *http.Request) {
 	claims := middlewares.GetClaims(r.Context())
 	if tenantID == "" || claims == nil {
 		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 

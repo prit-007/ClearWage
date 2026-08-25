@@ -35,8 +35,8 @@ func TestAttendanceCreate_Success(t *testing.T) {
 
 	now := time.Now()
 	mockQuerier.EXPECT().
-		ListHolidaysByTenant(gomock.Any(), gomock.Any()).
-		Return([]repositories.Holiday{}, nil)
+		CountHolidaysByDate(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
 	mockQuerier.EXPECT().
 		GetTenantConfig(gomock.Any(), gomock.Any()).
 		Return(repositories.TenantConfig{WeeklyOffs: "0"}, nil)
@@ -269,8 +269,8 @@ func TestAttendanceBulkUpsert_Success(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
-		ListHolidaysByTenant(gomock.Any(), gomock.Any()).
-		Return([]repositories.Holiday{}, nil)
+		CountHolidaysByDate(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
 	mockQuerier.EXPECT().
 		GetTenantConfig(gomock.Any(), gomock.Any()).
 		Return(repositories.TenantConfig{WeeklyOffs: "0"}, nil)
@@ -333,8 +333,8 @@ func TestAttendanceBulkUpsert_DBError(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
-		ListHolidaysByTenant(gomock.Any(), gomock.Any()).
-		Return([]repositories.Holiday{}, nil)
+		CountHolidaysByDate(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
 	mockQuerier.EXPECT().
 		GetTenantConfig(gomock.Any(), gomock.Any()).
 		Return(repositories.TenantConfig{WeeklyOffs: "0"}, nil)
@@ -445,8 +445,8 @@ func TestAttendanceCreate_DBError(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
-		ListHolidaysByTenant(gomock.Any(), gomock.Any()).
-		Return([]repositories.Holiday{}, nil)
+		CountHolidaysByDate(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
 	mockQuerier.EXPECT().
 		GetTenantConfig(gomock.Any(), gomock.Any()).
 		Return(repositories.TenantConfig{WeeklyOffs: "0"}, nil)

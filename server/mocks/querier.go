@@ -56,6 +56,21 @@ func (mr *MockQuerierMockRecorder) BulkUpsertAttendance(ctx, arg any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BulkUpsertAttendance", reflect.TypeOf((*MockQuerier)(nil).BulkUpsertAttendance), ctx, arg)
 }
 
+// CountHolidaysByDate mocks base method.
+func (m *MockQuerier) CountHolidaysByDate(ctx context.Context, arg repositories.CountHolidaysByDateParams) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountHolidaysByDate", ctx, arg)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountHolidaysByDate indicates an expected call of CountHolidaysByDate.
+func (mr *MockQuerierMockRecorder) CountHolidaysByDate(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountHolidaysByDate", reflect.TypeOf((*MockQuerier)(nil).CountHolidaysByDate), ctx, arg)
+}
+
 // CreateActivityLog mocks base method.
 func (m *MockQuerier) CreateActivityLog(ctx context.Context, arg repositories.CreateActivityLogParams) (repositories.ActivityLog, error) {
 	m.ctrl.T.Helper()
@@ -619,6 +634,21 @@ func (m *MockQuerier) GetWageBillTrends(ctx context.Context, tenantID, startDate
 func (mr *MockQuerierMockRecorder) GetWageBillTrends(ctx, tenantID, startDate, endDate any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWageBillTrends", reflect.TypeOf((*MockQuerier)(nil).GetWageBillTrends), ctx, tenantID, startDate, endDate)
+}
+
+// HasPendingAdvanceRequest mocks base method.
+func (m *MockQuerier) HasPendingAdvanceRequest(ctx context.Context, arg repositories.HasPendingAdvanceRequestParams) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasPendingAdvanceRequest", ctx, arg)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasPendingAdvanceRequest indicates an expected call of HasPendingAdvanceRequest.
+func (mr *MockQuerierMockRecorder) HasPendingAdvanceRequest(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasPendingAdvanceRequest", reflect.TypeOf((*MockQuerier)(nil).HasPendingAdvanceRequest), ctx, arg)
 }
 
 // ListActivityLogsByTenant mocks base method.

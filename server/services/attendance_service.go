@@ -180,18 +180,15 @@ func (s *AttendanceService) LockMonth(ctx context.Context, tenantID, startDate, 
 }
 
 func (s *AttendanceService) IsHoliday(ctx context.Context, tenantID, date string) (bool, error) {
-	holidays, err := s.querier.ListHolidaysByTenant(ctx, repositories.ListHolidaysByTenantParams{
+	count, err := s.querier.CountHolidaysByDate(ctx, repositories.CountHolidaysByDateParams{
 		TenantID: tenantID,
-		Limit:    1000,
-		Offset:   0,
+		Date:     date,
 	})
 	if err != nil {
 		return false, err
 	}
-	for _, h := range holidays {
-		if h.Date == date {
-			return true, nil
-		}
+	if count > 0 {
+		return true, nil
 	}
 	tc, err := s.querier.GetTenantConfig(ctx, tenantID)
 	if err != nil {

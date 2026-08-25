@@ -9,7 +9,10 @@ class LeavePolicyService {
     try {
       final res = await _client.get('/api/v1/leave-policies');
       return LeavePolicy.fromJson(res['data'] as Map<String, dynamic>? ?? {});
-    } catch (_) {
+    } on Exception catch (e) {
+      if (e.toString().contains('401') || e.toString().contains('500')) {
+        rethrow;
+      }
       return null;
     }
   }

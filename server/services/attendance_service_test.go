@@ -292,6 +292,60 @@ func TestAttendanceService_LockMonth_DBError(t *testing.T) {
 	}
 }
 
+func TestAttendanceService_IsHoliday_WeeklyOff(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewAttendanceService(mockQuerier)
+
+	// 2025-01-05 is a Sunday (weekday 0)
+	// No holiday record exists, but tenant config has weekly_offs = "0" (Sunday)
+	mockQuerier.EXPECT().
+		CountHolidaysByDate(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
+	mockQuerier.EXPECT().
+		GetTenantConfig(gomock.Any(), "t1").
+		Return(repositories.TenantConfig{
+			WeeklyOffs: "0",
+		}, nil)
+
+	isHoliday, err := svc.IsHoliday(context.Background(), "t1", "2025-01-05")
+	if err != nil {
+		t.Fatalf("IsHoliday failed: %v", err)
+	}
+	if !isHoliday {
+		t.Error("expected Sunday to be detected as weekly off holiday")
+	}
+}
+
+func TestAttendanceService_IsHoliday_NotOff(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewAttendanceService(mockQuerier)
+
+	// 2025-01-06 is a Monday (weekday 1)
+	// No holiday record, tenant config has weekly_offs = "0" (Sunday only)
+	mockQuerier.EXPECT().
+		CountHolidaysByDate(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
+	mockQuerier.EXPECT().
+		GetTenantConfig(gomock.Any(), "t1").
+		Return(repositories.TenantConfig{
+			WeeklyOffs: "0",
+		}, nil)
+
+	isHoliday, err := svc.IsHoliday(context.Background(), "t1", "2025-01-06")
+	if err != nil {
+		t.Fatalf("IsHoliday failed: %v", err)
+	}
+	if isHoliday {
+		t.Error("expected Monday NOT to be a holiday when weekly offs are Sundays only")
+	}
+}
+
 func TestAttendanceService_RosterByDate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

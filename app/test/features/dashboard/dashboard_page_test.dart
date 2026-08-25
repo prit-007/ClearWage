@@ -238,11 +238,55 @@ void main() {
 
       final scrollable = find.byType(Scrollable);
       await tester.scrollUntilVisible(
-        find.text('Attendance Trends (14 days)'),
+        find.textContaining('Attendance Trends'),
         500,
         scrollable: scrollable,
       );
-      expect(find.text('Attendance Trends (14 days)'), findsOneWidget);
+      expect(find.textContaining('Attendance Trends'), findsOneWidget);
+    });
+
+    testWidgets('trends chart shows dynamic day count and avg pill', (
+      tester,
+    ) async {
+      fakeService.setData(
+        _makeData(
+          defaultersCount: 0,
+          totalOutstanding: 0,
+          wageBillMtd: 0,
+          trends: [
+            AttendanceTrendItem(date: '2026-08-10', present: 8, absent: 2),
+            AttendanceTrendItem(date: '2026-08-11', present: 7, absent: 3),
+            AttendanceTrendItem(date: '2026-08-12', present: 9, absent: 1),
+            AttendanceTrendItem(date: '2026-08-13', present: 6, absent: 4),
+          ],
+        ),
+      );
+      await tester.pumpWidget(_buildApp(fakeService));
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.textContaining('Attendance Trends'),
+        500,
+        scrollable: find.byType(Scrollable),
+      );
+      expect(find.text('Attendance Trends (4 days)'), findsOneWidget);
+      // Avg = (8+7+9+6)/4 = 7.5
+      expect(find.textContaining('7.5 avg/day'), findsOneWidget);
+    });
+
+    testWidgets('hides chart section when no trend data', (tester) async {
+      fakeService.setData(
+        _makeData(
+          defaultersCount: 0,
+          totalOutstanding: 0,
+          wageBillMtd: 0,
+          trends: [],
+        ),
+      );
+      await tester.pumpWidget(_buildApp(fakeService));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Attendance Trends'), findsNothing);
     });
   });
 }

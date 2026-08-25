@@ -707,17 +707,58 @@ class _AttendanceTrendChart extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Attendance Trends (14 days)',
-            style: tt.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Daily attendance breakdown',
-            style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Attendance Trends (${trends.length} days)',
+                      style: tt.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Daily attendance breakdown',
+                      style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const PhosphorIcon(
+                      PhosphorIconsFill.trendUp,
+                      size: 16,
+                      color: AppColors.success,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${(trends.fold<int>(0, (s, t) => s + t.present) / trends.length).toStringAsFixed(1)} avg/day',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.success,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
           if (maxY == 0)
@@ -728,43 +769,109 @@ class _AttendanceTrendChart extends ConsumerWidget {
             )
           else
             SizedBox(
-              height: 200,
+              height: 220,
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
                   maxY: chartMax,
-                  barTouchData: BarTouchData(enabled: false),
+                  barTouchData: BarTouchData(
+                    enabled: true,
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: (_) =>
+                          cs.inverseSurface.withValues(alpha: 0.95),
+                      tooltipRoundedRadius: 10,
+                      getTooltipItem: (group, _, rod, rodIndex) {
+                        final t = trends[group.x];
+                        final names = ['P', 'HD', 'L', 'A'];
+                        final values = [
+                          t.present,
+                          t.halfDay,
+                          t.onLeave,
+                          t.absent,
+                        ];
+                        return BarTooltipItem(
+                          _shortDate(t.date),
+                          const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12,
+                            color: Colors.white,
+                          ),
+                          children: [
+                            TextSpan(
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                color: Colors.white70,
+                              ),
+                              children: [
+                                for (var i = 0; i < values.length; i++)
+                                  if (values[i] > 0)
+                                    TextSpan(
+                                      text: '\n${names[i]} ${values[i]}',
+                                    ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
                   titlesData: FlTitlesData(
                     show: true,
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        interval: 1,
                         getTitlesWidget: (value, _) {
                           final i = value.toInt();
                           if (i < 0 || i >= trends.length) {
                             return const SizedBox.shrink();
                           }
+                          // Thin labels when cramped: every 2nd/3rd bar.
+                          final step = trends.length > 10
+                              ? 3
+                              : trends.length > 6
+                              ? 2
+                              : 1;
+                          if (i % step != 0 && i != trends.length - 1) {
+                            return const SizedBox.shrink();
+                          }
                           final date = trends[i].date;
-                          final day = date.length >= 10
-                              ? date.substring(8, 10)
-                              : date;
                           return Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
-                              day,
+                              _shortDate(date),
                               style: TextStyle(
                                 fontSize: 10,
-                                color: cs.onSurfaceVariant,
-                                fontWeight: FontWeight.w600,
+                                color: i == trends.length - 1
+                                    ? cs.primary
+                                    : cs.onSurfaceVariant,
+                                fontWeight: i == trends.length - 1
+                                    ? FontWeight.w900
+                                    : FontWeight.w600,
                               ),
                             ),
                           );
                         },
-                        reservedSize: 20,
+                        reservedSize: 22,
                       ),
                     ),
-                    leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 24,
+                        interval: chartMax / 4,
+                        getTitlesWidget: (value, _) => Text(
+                          value == value.roundToDouble()
+                              ? value.toInt().toString()
+                              : '',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
                     topTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
@@ -793,38 +900,43 @@ class _AttendanceTrendChart extends ConsumerWidget {
                       barRods: [
                         BarChartRodData(
                           toY: present,
-                          color: AppColors.success,
-                          width: 6,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(3),
-                            topRight: Radius.circular(3),
+                          width: 7,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
                           ),
+                          gradient: present > 0
+                              ? LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  colors: [
+                                    AppColors.success.withValues(alpha: 0.55),
+                                    AppColors.success,
+                                  ],
+                                )
+                              : null,
                         ),
                         BarChartRodData(
                           toY: halfDay,
                           color: AppColors.warning,
-                          width: 6,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(3),
-                            topRight: Radius.circular(3),
+                          width: 7,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
                           ),
                         ),
                         BarChartRodData(
                           toY: onLeave,
                           color: AppColors.info,
-                          width: 6,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(3),
-                            topRight: Radius.circular(3),
+                          width: 7,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
                           ),
                         ),
                         BarChartRodData(
                           toY: absent,
                           color: AppColors.danger,
-                          width: 6,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(3),
-                            topRight: Radius.circular(3),
+                          width: 7,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
                           ),
                         ),
                       ],
@@ -849,6 +961,14 @@ class _AttendanceTrendChart extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _shortDate(String date) {
+  if (date.length < 10) return date;
+  final d = DateTime.tryParse(date);
+  if (d == null) return date.substring(8, 10);
+  const wd = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  return '${wd[d.weekday % 7]} ${d.day}';
 }
 
 class _DotLegend extends StatelessWidget {

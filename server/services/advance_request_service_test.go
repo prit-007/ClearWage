@@ -87,6 +87,77 @@ func setupLedgerTest(t *testing.T) (*LedgerService, *mocks.MockQuerier, func()) 
 	return svc, mockQuerier, ctrl.Finish
 }
 
+func TestAdvanceRequestService_CreateRequest_DuplicatePending(t *testing.T) {
+	svc, mockQ, cleanup := setupAdvanceRequestTest(t)
+	defer cleanup()
+
+	mockQ.EXPECT().
+		HasPendingAdvanceRequest(gomock.Any(), gomock.Any()).
+		Return(true, nil)
+
+	_, err := svc.CreateRequest(
+		context.Background(), "t1", "e1", 5000, "Need advance",
+	)
+	if err == nil {
+		t.Fatal("expected error for duplicate pending request, got nil")
+	}
+}
+
+func TestAdvanceRequestService_CreateRequest_Success(t *testing.T) {
+	svc, mockQ, cleanup := setupAdvanceRequestTest(t)
+	defer cleanup()
+
+	mockQ.EXPECT().
+		HasPendingAdvanceRequest(gomock.Any(), gomock.Any()).
+		Return(false, nil)
+
+	mockQ.EXPECT().
+		CreateAdvanceRequest(gomock.Any(), gomock.Any()).
+		Return(repositories.AdvanceRequest{
+			ID:         "adv2",
+			EmployeeID: "e1",
+			Amount:     decimal.NewFromFloat(5000),
+			Status:     "pending",
+		}, nil)
+
+	req, err := svc.CreateRequest(
+		context.Background(), "t1", "e1", 5000, "Need advance",
+	)
+	if err != nil {
+		t.Fatalf("CreateRequest failed: %v", err)
+	}
+	if req.Status != "pending" {
+		t.Errorf("expected pending, got %s", req.Status)
+	}
+	if !req.Amount.Equal(decimal.NewFromFloat(5000)) {
+		t.Errorf("expected amount 5000, got %v", req.Amount)
+	}
+}
+
+func TestAdvanceRequestService_DenyRequest(t *testing.T) {
+	svc, mockQ, cleanup := setupAdvanceRequestTest(t)
+	defer cleanup()
+
+	mockQ.EXPECT().
+		UpdateAdvanceRequestStatus(gomock.Any(), gomock.Any()).
+		Return(repositories.AdvanceRequest{
+			ID:         "adv3",
+			EmployeeID: "e1",
+			Amount:     decimal.NewFromFloat(3000),
+			Status:     "denied",
+		}, nil)
+
+	req, err := svc.DenyRequest(
+		context.Background(), "adv3", "t1", "admin1",
+	)
+	if err != nil {
+		t.Fatalf("DenyRequest failed: %v", err)
+	}
+	if req.Status != "denied" {
+		t.Errorf("expected denied, got %s", req.Status)
+	}
+}
+
 func TestLedgerService_SettleEmployee_PositiveBalance(t *testing.T) {
 	svc, mockQ, cleanup := setupLedgerTest(t)
 	defer cleanup()

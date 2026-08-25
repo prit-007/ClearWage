@@ -34,6 +34,8 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   bool _saving = false;
   List<Shift> _shifts = [];
   List<RosterRow>? _cachedRows;
+  String _searchQuery = '';
+  final TextEditingController _searchCtrl = TextEditingController();
 
   String get _dateStr => DateFormat('yyyy-MM-dd').format(_selectedDate);
 
@@ -41,6 +43,12 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   void initState() {
     super.initState();
     _loadShifts();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadShifts() async {
@@ -202,6 +210,15 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   Widget _buildRosterBody({required ColorScheme cs, required TextTheme tt}) {
     final rows = _cachedRows ?? <RosterRow>[];
     final merged = rows.map((r) => _rosterRowToMerged(r, _dateStr)).toList();
+    final filtered = _searchQuery.isEmpty
+        ? merged
+        : merged
+              .where(
+                (r) => r.employee.name.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ),
+              )
+              .toList();
 
     if (merged.isEmpty) {
       return SliverFillRemaining(
@@ -241,7 +258,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 140),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate((context, index) {
-          final row = merged[index];
+          final row = filtered[index];
           return FluidSlideIn(
             delay: (index * 50).clamp(0, 400).toInt(),
             child: row.attendance != null
@@ -267,7 +284,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                     ),
                   ),
           );
-        }, childCount: merged.length),
+        }, childCount: filtered.length),
       ),
     );
   }
@@ -427,6 +444,47 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                             color: cs.primary,
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    decoration: InputDecoration(
+                      hintText: 'Search employees...',
+                      prefixIcon: const PhosphorIcon(
+                        PhosphorIconsRegular.magnifyingGlass,
+                        size: 20,
+                      ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const PhosphorIcon(
+                                PhosphorIconsRegular.x,
+                                size: 16,
+                              ),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: cs.surfaceContainerHighest.withValues(
+                        alpha: 0.3,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
                       ),
                     ),
                   ),
@@ -768,6 +826,38 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
                   ),
                 ),
               ),
+              if (_otCtrl.text.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: widget.cs.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      PhosphorIcon(
+                        PhosphorIconsFill.clock,
+                        size: 12,
+                        color: widget.cs.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'OT: ${_otCtrl.text}h',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: widget.cs.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 16),
@@ -994,6 +1084,12 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
               _otCtrl.text = ctrl.text;
               if (mounted) setState(() {});
               Navigator.pop(ctx);
+              widget.onUpdate?.call(
+                widget.attendance,
+                _status,
+                double.tryParse(ctrl.text) ?? 0,
+                _shiftId,
+              );
             },
             style: FilledButton.styleFrom(
               backgroundColor: widget.cs.primary,
@@ -1140,6 +1236,42 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
               ),
             ],
           ),
+          if (widget.attendance.overtimeHours > 0) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: widget.cs.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      PhosphorIcon(
+                        PhosphorIconsFill.clock,
+                        size: 12,
+                        color: widget.cs.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'OT: ${widget.attendance.overtimeHours.toStringAsFixed(1)}h',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: widget.cs.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
           _ShiftDropdown(
             cs: widget.cs,

@@ -192,6 +192,139 @@ func TestLedgerService_GetSummary(t *testing.T) {
 	}
 }
 
+func TestLedgerService_UpdateEntry_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewLedgerService(mockQuerier)
+
+	mockQuerier.EXPECT().
+		UpdateLedgerEntry(gomock.Any(), gomock.Any()).
+		Return(repositories.Ledger{
+			ID:      "l1",
+			Type:    "jama",
+			Amount:  decimal.NewFromFloat(750),
+			Version: 2,
+		}, nil)
+
+	entry, err := svc.UpdateEntry(
+		context.Background(),
+		"l1",
+		"t1",
+		"2025-01-20",
+		"jama",
+		"750.00",
+		"Updated amount",
+		1,
+	)
+	if err != nil {
+		t.Fatalf("UpdateEntry failed: %v", err)
+	}
+	if entry.Type != "jama" {
+		t.Errorf("expected jama, got %s", entry.Type)
+	}
+	if !entry.Amount.Equal(decimal.NewFromFloat(750)) {
+		t.Errorf("expected amount 750, got %v", entry.Amount)
+	}
+	if entry.Version != 2 {
+		t.Errorf("expected version 2, got %d", entry.Version)
+	}
+}
+
+func TestLedgerService_UpdateEntry_InvalidAmount_Zero(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewLedgerService(mockQuerier)
+
+	_, err := svc.UpdateEntry(
+		context.Background(),
+		"l1",
+		"t1",
+		"2025-01-20",
+		"jama",
+		"0",
+		"",
+		1,
+	)
+	if err == nil {
+		t.Fatal("expected error for zero amount, got nil")
+	}
+}
+
+func TestLedgerService_UpdateEntry_InvalidAmount_Negative(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewLedgerService(mockQuerier)
+
+	_, err := svc.UpdateEntry(
+		context.Background(),
+		"l1",
+		"t1",
+		"2025-01-20",
+		"jama",
+		"-100",
+		"",
+		1,
+	)
+	if err == nil {
+		t.Fatal("expected error for negative amount, got nil")
+	}
+}
+
+func TestLedgerService_UpdateEntry_InvalidAmount_NaN(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewLedgerService(mockQuerier)
+
+	_, err := svc.UpdateEntry(
+		context.Background(),
+		"l1",
+		"t1",
+		"2025-01-20",
+		"jama",
+		"not-a-number",
+		"",
+		1,
+	)
+	if err == nil {
+		t.Fatal("expected error for non-numeric amount, got nil")
+	}
+}
+
+func TestLedgerService_UpdateEntry_InvalidType(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockQuerier := mocks.NewMockQuerier(ctrl)
+	svc := NewLedgerService(mockQuerier)
+
+	// Invalid type passed through to DB; DB rejects it
+	mockQuerier.EXPECT().
+		UpdateLedgerEntry(gomock.Any(), gomock.Any()).
+		Return(repositories.Ledger{}, errors.New("invalid ledger type"))
+
+	_, err := svc.UpdateEntry(
+		context.Background(),
+		"l1",
+		"t1",
+		"2025-01-20",
+		"bogus_type",
+		"500.00",
+		"",
+		1,
+	)
+	if err == nil {
+		t.Fatal("expected error for invalid ledger type, got nil")
+	}
+}
+
 func TestLedgerService_GetSummary_RangeError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

@@ -86,6 +86,45 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 		return nil, ErrAttendanceLocked
 	}
 
+	query := `
+		INSERT INTO attendance (tenant_id, employee_id, date, shift_id, status, overtime_hours, overtime_rate_multiplier, units_produced)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		ON CONFLICT (tenant_id, employee_id, date) DO UPDATE SET
+			shift_id = COALESCE(EXCLUDED.shift_id, attendance.shift_id),
+			status = EXCLUDED.status,
+			overtime_hours = EXCLUDED.overtime_hours,
+			overtime_rate_multiplier = EXCLUDED.overtime_rate_multiplier,
+			units_produced = EXCLUDED.units_produced,
+			updated_at = now()
+		RETURNING id, tenant_id, employee_id, date, shift_id, status, check_in_time, check_out_time,
+			overtime_hours, overtime_rate_multiplier, units_produced, computed_wage, is_locked,
+			edited_by, edited_at, created_at, updated_at, version
+	`
+	var items []Attendance
+	if q.sqlDB != nil {
+		rows, queryErr := q.sqlDB.QueryContext(ctx, query,
+			arg.TenantID, arg.EmployeeID, arg.Date, arg.ShiftID,
+			arg.Status, arg.OvertimeHours, arg.OvertimeRateMultiplier, arg.UnitsProduced,
+		)
+		if queryErr != nil {
+			return nil, queryErr
+		}
+		defer func() { _ = rows.Close() }()
+		for rows.Next() {
+			var a Attendance
+			if scanErr := rows.Scan(
+				&a.ID, &a.TenantID, &a.EmployeeID, &a.Date, &a.ShiftID, &a.Status,
+				&a.CheckInTime, &a.CheckOutTime, &a.OvertimeHours, &a.OvertimeRateMultiplier,
+				&a.UnitsProduced, &a.ComputedWage, &a.IsLocked, &a.EditedBy, &a.EditedAt,
+				&a.CreatedAt, &a.UpdatedAt, &a.Version,
+			); scanErr != nil {
+				return nil, scanErr
+			}
+			items = append(items, a)
+		}
+		return items, rows.Err()
+	}
+
 	row := goqu.Record{
 		"tenant_id":                arg.TenantID,
 		"employee_id":              arg.EmployeeID,
@@ -96,17 +135,7 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 		"overtime_rate_multiplier": arg.OvertimeRateMultiplier,
 		"units_produced":           arg.UnitsProduced,
 	}
-	excluded := func(col string) exp.Expression { return goqu.L("EXCLUDED." + col) }
-	var items []Attendance
 	err = q.db.Insert("attendance").Rows(row).
-		OnConflict(goqu.DoUpdate("(tenant_id, employee_id, date)", goqu.Record{
-			"shift_id":                 goqu.L("COALESCE(?, shift_id)", excluded("shift_id")),
-			"status":                   excluded("status"),
-			"overtime_hours":           excluded("overtime_hours"),
-			"overtime_rate_multiplier": excluded("overtime_rate_multiplier"),
-			"units_produced":           excluded("units_produced"),
-			"updated_at":               goqu.L("now()"),
-		})).
 		Returning(goqu.Star()).Executor().ScanStructsContext(ctx, &items)
 	return items, err
 }

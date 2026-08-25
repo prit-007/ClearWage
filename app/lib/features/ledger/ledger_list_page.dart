@@ -64,7 +64,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
             _scrollCtrl.position.maxScrollExtent - 200 &&
         !_loadingMore &&
         _hasMore) {
-      _loadMore();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadMore());
     }
   }
 

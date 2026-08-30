@@ -41,13 +41,14 @@ import 'logger.dart';
 import 'providers/app_providers.dart';
 import 'responsive.dart';
 
-const _transitionDuration = Duration(milliseconds: 300);
+const _transitionDuration = Duration(milliseconds: 280);
+const _fastTransition = Duration(milliseconds: 200);
 
 Page<void> _slideUpPage(GoRouterState state, Widget child) {
   return CustomTransitionPage<void>(
     key: state.pageKey,
     transitionDuration: _transitionDuration,
-    reverseTransitionDuration: _transitionDuration,
+    reverseTransitionDuration: _fastTransition,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curved = CurvedAnimation(
         parent: animation,
@@ -57,15 +58,13 @@ Page<void> _slideUpPage(GoRouterState state, Widget child) {
       if (AppBreakpoints.isDesktop(context)) {
         return FadeTransition(opacity: curved, child: child);
       }
+      final slideTween = Tween<Offset>(
+        begin: const Offset(0, 0.06),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
       return FadeTransition(
         opacity: curved,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.08),
-            end: Offset.zero,
-          ).animate(curved),
-          child: child,
-        ),
+        child: SlideTransition(position: slideTween, child: child),
       );
     },
     child: child,
@@ -76,10 +75,13 @@ Page<void> _fadePage(GoRouterState state, Widget child) {
   return CustomTransitionPage<void>(
     key: state.pageKey,
     opaque: false,
-    transitionDuration: _transitionDuration,
-    reverseTransitionDuration: _transitionDuration,
+    transitionDuration: _fastTransition,
+    reverseTransitionDuration: _fastTransition,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      return FadeTransition(opacity: animation, child: child);
+      return FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        child: child,
+      );
     },
     child: child,
   );

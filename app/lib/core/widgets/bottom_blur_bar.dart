@@ -8,25 +8,21 @@ class BottomBlurBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
     return Positioned(
       bottom: 0,
       left: 0,
       right: 0,
-      child: ClipRRect(
+      child: ClipRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            padding: EdgeInsets.fromLTRB(
-              24,
-              16,
-              24,
-              MediaQuery.of(context).padding.bottom + 16,
-            ),
+            padding: EdgeInsets.fromLTRB(24, 16, 24, bottomPadding + 16),
             decoration: BoxDecoration(
-              color: cs.surface.withValues(alpha: 0.8),
+              color: cs.surface.withValues(alpha: 0.85),
               border: Border(
                 top: BorderSide(
-                  color: cs.outlineVariant.withValues(alpha: 0.3),
+                  color: cs.outlineVariant.withValues(alpha: 0.2),
                 ),
               ),
             ),

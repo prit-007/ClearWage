@@ -331,7 +331,8 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
                       final letter = grouped.keys.elementAt(index);
                       final staffList = grouped[letter]!;
                       return Column(

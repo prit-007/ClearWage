@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -466,39 +465,42 @@ class _GlassStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: AppBlur.sigma, sigmaY: AppBlur.sigma),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              PhosphorIcon(icon, color: color, size: 28),
-              const SizedBox(height: 16),
-              Text(
-                label,
-                style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant),
+    return RepaintBoundary(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            PhosphorIcon(icon, color: color, size: 28),
+            const SizedBox(height: 16),
+            Text(
+              label,
+              style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: tt.headlineSmall?.copyWith(
+                color: cs.onSurface,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1.0,
               ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: tt.headlineSmall?.copyWith(
-                  color: cs.onSurface,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -1.0,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );

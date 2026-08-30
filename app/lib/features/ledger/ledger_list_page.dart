@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
@@ -369,57 +368,57 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       child: FluidSlideIn(
         delay: 0,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(
-              sigmaX: AppBlur.sigma,
-              sigmaY: AppBlur.sigma,
+        child: RepaintBoundary(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: cs.primaryContainer.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: cs.primary.withValues(alpha: 0.1)),
+              boxShadow: [
+                BoxShadow(
+                  color: cs.primary.withValues(alpha: 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: cs.primaryContainer.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: cs.primary.withValues(alpha: 0.1)),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'Net Balance (MTD)',
-                    style: tt.labelMedium?.copyWith(
-                      color: cs.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
+            child: Column(
+              children: [
+                Text(
+                  'Net Balance (MTD)',
+                  style: tt.labelMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${isPositive ? '+' : '-'}\u20B9${net.abs().toStringAsFixed(0)}',
+                  style: tt.displayMedium?.copyWith(
+                    color: isPositive ? AppColors.success : AppColors.danger,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ResponsiveStatRow(
+                  children: [
+                    _SummaryStat(
+                      label: 'Total Jama',
+                      value: '\u20B9${jama.toStringAsFixed(0)}',
+                      icon: PhosphorIconsFill.arrowUpRight,
+                      color: AppColors.success,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${isPositive ? '+' : '-'}\u20B9${net.abs().toStringAsFixed(0)}',
-                    style: tt.displayMedium?.copyWith(
-                      color: isPositive ? AppColors.success : AppColors.danger,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -1.5,
+                    _SummaryStat(
+                      label: 'Total Udhaar',
+                      value: '\u20B9${udhaar.toStringAsFixed(0)}',
+                      icon: PhosphorIconsFill.arrowDownLeft,
+                      color: AppColors.danger,
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  ResponsiveStatRow(
-                    children: [
-                      _SummaryStat(
-                        label: 'Total Jama',
-                        value: '\u20B9${jama.toStringAsFixed(0)}',
-                        icon: PhosphorIconsFill.arrowUpRight,
-                        color: AppColors.success,
-                      ),
-                      _SummaryStat(
-                        label: 'Total Udhaar',
-                        value: '\u20B9${udhaar.toStringAsFixed(0)}',
-                        icon: PhosphorIconsFill.arrowDownLeft,
-                        color: AppColors.danger,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),

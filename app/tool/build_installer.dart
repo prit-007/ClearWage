@@ -21,7 +21,7 @@ const _appId = '{{a3f1c8d2-7b4e-4e9a-b5c6-1d2e3f4a5b6c}}';
 const _releaseDir = 'build/windows/x64/runner/Release';
 const _exeName = 'clearwage.exe';
 const _iconPath = 'windows/runner/resources/app_icon.ico';
-const _licensePath = 'LICENSE';
+const _licensePath = '../LICENSE';
 const _outputDir = 'build/installers';
 
 void main(List<String> args) {

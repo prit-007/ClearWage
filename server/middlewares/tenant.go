@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/vivek-app/vivek_app/utils"
+	"github.com/clearwage/clearwage/utils"
 )
 
 // TenantKey is the context key used to store the tenant ID in the request context.

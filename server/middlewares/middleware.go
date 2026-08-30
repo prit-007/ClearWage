@@ -2,7 +2,7 @@ package middlewares
 
 import (
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
+	"github.com/clearwage/clearwage/config"
 )
 
 type Middleware struct {

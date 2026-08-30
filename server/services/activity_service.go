@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 
-	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/clearwage/clearwage/repositories"
 )
 
 type ActivityService struct {

@@ -9,7 +9,7 @@ import (
 	_ "github.com/doug-martin/goqu/v9/dialect/postgres"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/google/uuid"
-	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/clearwage/clearwage/repositories"
 )
 
 // TestAttendanceTrendsDateFormat is the regression test for the dashboard

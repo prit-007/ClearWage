@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Vivek App API",
-    "description": "Backend API for Vivek App \u2014 workforce management: staff, attendance, shifts, ledger, payroll, and more.",
+    "title": "ClearWage API",
+    "description": "Backend API for ClearWage \u2014 workforce management: staff, attendance, shifts, ledger, payroll, and more.",
     "version": "1.0.0",
     "contact": {}
   },

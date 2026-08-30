@@ -1,11 +1,11 @@
 {
-    "name": "Factory Workforce",
-    "short_name": "Factory Workforce",
+    "name": "ClearWage",
+    "short_name": "ClearWage",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Factory workforce management app for tracking attendance, payroll, and staff.",
+    "description": "ClearWage management app for tracking attendance, payroll, and staff.",
     "orientation": "any",
     "prefer_related_applications": false,
     "icons": [

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vivek_app/core/api_client.dart';
-import 'package:vivek_app/core/providers/services.dart';
-import 'package:vivek_app/data/models/payroll_models.dart';
-import 'package:vivek_app/data/services/settings_service.dart';
-import 'package:vivek_app/features/settings/payroll_settings_page.dart';
+import 'package:clearwage/core/api_client.dart';
+import 'package:clearwage/core/providers/services.dart';
+import 'package:clearwage/data/models/payroll_models.dart';
+import 'package:clearwage/data/services/settings_service.dart';
+import 'package:clearwage/features/settings/payroll_settings_page.dart';
 
 class _NoOpApiClient extends ApiClient {
   _NoOpApiClient() : super(baseUrl: 'http://localhost');

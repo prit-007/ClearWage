@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vivek_app/data/models/leave_policy_model.dart';
+import 'package:clearwage/data/models/leave_policy_model.dart';
 
 void main() {
   group('LeavePolicy', () {

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vivek_app/data/models/ledger_model.dart';
+import 'package:clearwage/data/models/ledger_model.dart';
 
 void main() {
   group('LedgerEntry', () {

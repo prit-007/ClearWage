@@ -36,10 +36,18 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   List<Shift> _shifts = [];
   List<RosterRow>? _cachedRows;
   List<Holiday> _holidays = [];
+  List<int> _weeklyOffs = [];
   String _searchQuery = '';
   final TextEditingController _searchCtrl = TextEditingController();
 
   String get _dateStr => DateFormat('yyyy-MM-dd').format(_selectedDate);
+
+  bool get _isWeeklyOff {
+    if (_weeklyOffs.isEmpty) return false;
+    return _weeklyOffs.contains(_selectedDate.weekday % 7);
+  }
+
+  bool get _isHoliday => _selectedHoliday != null || _isWeeklyOff;
 
   Holiday? get _selectedHoliday {
     final sel = _dateStr;
@@ -60,6 +68,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     super.initState();
     _loadShifts();
     _loadHolidays();
+    _loadWeeklyOffs();
   }
 
   @override
@@ -79,6 +88,15 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     try {
       final holidays = await ref.read(holidayServiceProvider).list(limit: 200);
       if (mounted) setState(() => _holidays = holidays);
+    } catch (_) {}
+  }
+
+  Future<void> _loadWeeklyOffs() async {
+    try {
+      final settings = await ref
+          .read(settingsServiceProvider)
+          .getPayrollSettings();
+      if (mounted) setState(() => _weeklyOffs = settings.weeklyOffs);
     } catch (_) {}
   }
 
@@ -234,7 +252,10 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   Widget _buildRosterBody({required ColorScheme cs, required TextTheme tt}) {
     final rows = _cachedRows ?? <RosterRow>[];
     final merged = rows.map((r) => _rosterRowToMerged(r, _dateStr)).toList();
-    final filtered = _searchQuery.isEmpty
+    final isHoliday = _isHoliday;
+    final filtered = isHoliday
+        ? merged.where((r) => r.attendance != null).toList()
+        : _searchQuery.isEmpty
         ? merged
         : merged
               .where(
@@ -292,8 +313,15 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                     employee: row.employee,
                     attendance: row.attendance!,
                     shifts: _shifts,
-                    onUpdate: (att, status, ot, shiftId) =>
-                        _updateAttendance(att, status, ot, shiftId: shiftId),
+                    readonly: isHoliday,
+                    onUpdate: isHoliday
+                        ? null
+                        : (att, status, ot, shiftId) => _updateAttendance(
+                            att,
+                            status,
+                            ot,
+                            shiftId: shiftId,
+                          ),
                   )
                 : _UnmarkedEmployeeCard(
                     cs: cs,
@@ -498,6 +526,75 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                 ),
               ),
 
+              if (_isHoliday)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.warning.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          PhosphorIcon(
+                            _isWeeklyOff
+                                ? PhosphorIconsFill.calendarX
+                                : PhosphorIconsFill.confetti,
+                            size: 20,
+                            color: AppColors.warning,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _isWeeklyOff ? 'Weekly Off' : 'Holiday',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13,
+                                    color: AppColors.warning,
+                                  ),
+                                ),
+                                if (_selectedHoliday != null) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _selectedHoliday!.name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
+                                      color: cs.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Attendance cannot be marked on this day.',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: cs.onSurfaceVariant.withValues(
+                                      alpha: 0.8,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
@@ -587,7 +684,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       ),
 
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: isAdmin
+      floatingActionButton: (isAdmin && !_isHoliday)
           ? Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
               child: FilledButton.icon(
@@ -988,6 +1085,7 @@ class _PremiumAttendanceCard extends StatefulWidget {
   final Employee employee;
   final Attendance attendance;
   final List<Shift> shifts;
+  final bool readonly;
   final Future<void> Function(
     Attendance att,
     _AttStatus newStatus,
@@ -1002,6 +1100,7 @@ class _PremiumAttendanceCard extends StatefulWidget {
     required this.employee,
     required this.attendance,
     required this.shifts,
+    this.readonly = false,
     this.onUpdate,
   });
 
@@ -1049,7 +1148,7 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
   }
 
   void _updateStatus(_AttStatus s) {
-    if (_status == s || _saving) return;
+    if (_status == s || _saving || widget.readonly) return;
     if (widget.attendance.isLocked) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1269,7 +1368,7 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                 shape: const CircleBorder(),
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
-                  onTap: _showOtDialog,
+                  onTap: widget.readonly ? null : _showOtDialog,
                   child: Padding(
                     padding: const EdgeInsets.all(11),
                     child: PhosphorIcon(
@@ -1329,7 +1428,7 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
           ),
           const SizedBox(height: 16),
           AbsorbPointer(
-            absorbing: widget.attendance.isLocked,
+            absorbing: widget.attendance.isLocked || widget.readonly,
             child: Row(
               children: [
                 Expanded(

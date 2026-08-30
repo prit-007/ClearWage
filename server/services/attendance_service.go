@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/vivek-app/vivek_app/pkg/cache"
-	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/clearwage/clearwage/pkg/cache"
+	"github.com/clearwage/clearwage/repositories"
 	"golang.org/x/sync/singleflight"
 )
 

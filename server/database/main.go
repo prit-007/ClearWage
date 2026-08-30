@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 
-	"github.com/vivek-app/vivek_app/config"
+	"github.com/clearwage/clearwage/config"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 

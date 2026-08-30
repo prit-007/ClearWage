@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vivek_app/data/models/report_models.dart';
+import 'package:clearwage/data/models/report_models.dart';
 
 void main() {
   group('DailySummaryData', () {

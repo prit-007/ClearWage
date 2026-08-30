@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"firebase.google.com/go/v4/auth"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/mocks"
-	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/mocks"
+	"github.com/clearwage/clearwage/repositories"
 	"go.uber.org/mock/gomock"
 )
 

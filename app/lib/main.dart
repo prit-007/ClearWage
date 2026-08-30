@@ -9,6 +9,7 @@ import 'package:firebase_core/firebase_core.dart';
 
 import 'app.dart';
 import 'core/logger.dart';
+import 'firebase_options.dart';
 
 void main() {
   runZonedGuarded(
@@ -60,12 +61,14 @@ void main() {
       };
 
       try {
-        await Firebase.initializeApp();
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
       } catch (e) {
         AppLogger.error('Firebase initialization failed', e);
       }
 
-      runApp(const ProviderScope(child: FactoryWorkforceApp()));
+      runApp(const ProviderScope(child: ClearWageApp()));
     },
     (error, stackTrace) {
       AppLogger.error('Uncaught zone error', error, stackTrace);

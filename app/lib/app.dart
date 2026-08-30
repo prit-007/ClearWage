@@ -5,14 +5,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'core/design_tokens.dart';
 import 'core/router.dart';
 
-class FactoryWorkforceApp extends ConsumerWidget {
-  const FactoryWorkforceApp({super.key});
+class ClearWageApp extends ConsumerWidget {
+  const ClearWageApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: 'Factory Workforce',
+      title: 'ClearWage',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

@@ -28,8 +28,8 @@ import '../features/reports/defaulters_page.dart';
 import '../features/reports/my_reports_page.dart';
 import '../features/reports/payroll_preview_page.dart';
 import '../features/more/more_hub_page.dart';
-import '../features/reports/reports_hub_page.dart';
 import '../features/settings/payroll_settings_page.dart';
+import '../features/settings/settings_about_page.dart';
 import '../features/shell/main_shell.dart';
 import '../features/shifts/my_shifts_page.dart';
 import '../features/shifts/shifts_management_page.dart';
@@ -125,9 +125,9 @@ List<StatefulShellBranch> _adminBranches() {
     StatefulShellBranch(
       routes: [
         GoRoute(
-          path: '/reports',
+          path: '/more',
           pageBuilder: (context, state) =>
-              const NoTransitionPage(child: ReportsHubScreen()),
+              const NoTransitionPage(child: MoreHubPage()),
         ),
       ],
     ),
@@ -157,9 +157,9 @@ List<StatefulShellBranch> _employeeBranches() {
     StatefulShellBranch(
       routes: [
         GoRoute(
-          path: '/reports',
+          path: '/more',
           pageBuilder: (context, state) =>
-              const NoTransitionPage(child: ReportsHubScreen()),
+              const NoTransitionPage(child: MoreHubPage()),
         ),
       ],
     ),
@@ -227,7 +227,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (location.startsWith('/staff') ||
               location.startsWith('/shifts') ||
               location.startsWith('/payroll') ||
-              location.startsWith('/settings') ||
+              (location.startsWith('/settings') &&
+                  location != '/settings/about') ||
               (location.startsWith('/reports') &&
                   location != '/reports' &&
                   location != '/my-reports') ||
@@ -336,6 +337,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/payroll-settings',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const PayrollSettingsScreen()),
+      ),
+      GoRoute(
+        path: '/settings/about',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const SettingsAboutPage()),
       ),
       GoRoute(
         path: '/reports/payroll',

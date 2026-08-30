@@ -19,12 +19,12 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
-	"github.com/vivek-app/vivek_app/config"
-	ctrl "github.com/vivek-app/vivek_app/controllers/api/v1"
-	mw "github.com/vivek-app/vivek_app/middlewares"
-	"github.com/vivek-app/vivek_app/repositories"
-	sqldb "github.com/vivek-app/vivek_app/repositories/db"
-	"github.com/vivek-app/vivek_app/services"
+	"github.com/clearwage/clearwage/config"
+	ctrl "github.com/clearwage/clearwage/controllers/api/v1"
+	mw "github.com/clearwage/clearwage/middlewares"
+	"github.com/clearwage/clearwage/repositories"
+	sqldb "github.com/clearwage/clearwage/repositories/db"
+	"github.com/clearwage/clearwage/services"
 )
 
 func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Command {

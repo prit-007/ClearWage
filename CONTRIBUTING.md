@@ -1,4 +1,4 @@
-# Contributing to Factory Workforce
+# Contributing to ClearWage
 
 Thanks for contributing! Please read this before opening a PR.
 

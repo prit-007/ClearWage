@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vivek_app/core/api_client.dart';
-import 'package:vivek_app/core/api_exceptions.dart';
-import 'package:vivek_app/data/services/auth_service.dart';
+import 'package:clearwage/core/api_client.dart';
+import 'package:clearwage/core/api_exceptions.dart';
+import 'package:clearwage/data/services/auth_service.dart';
 
 class _FakeApiClient extends ApiClient {
   final Map<String, dynamic> _response;

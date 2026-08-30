@@ -1,4 +1,4 @@
-module github.com/vivek-app/vivek_app
+module github.com/clearwage/clearwage
 
 go 1.26.5
 

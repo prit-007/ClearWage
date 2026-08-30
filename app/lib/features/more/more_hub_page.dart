@@ -88,15 +88,16 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
         child: CustomScrollView(
           physics: AppScrollPhysics.physics(),
           slivers: [
-            SliverAppBar(
-              backgroundColor: cs.surface.withValues(alpha: 0.95),
-              pinned: true,
-              elevation: 0,
-              title: Text(
-                'More',
-                style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+              sliver: SliverToBoxAdapter(
+                child: Text(
+                  'More',
+                  style: tt.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
-              centerTitle: true,
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
@@ -195,6 +196,30 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
   List<_HubSection> _buildItems(bool isAdmin) {
     final sections = <_HubSection>[
       _HubSection(
+        label: 'Reports',
+        items: [
+          const _HubItem(
+            icon: PhosphorIconsFill.chartLineUp,
+            title: 'Daily Summary',
+            route: '/reports/daily-summary',
+            color: AppColors.info,
+          ),
+          const _HubItem(
+            icon: PhosphorIconsFill.warningCircle,
+            title: 'Defaulters',
+            route: '/reports/defaulters',
+            color: AppColors.danger,
+          ),
+          if (isAdmin)
+            const _HubItem(
+              icon: PhosphorIconsFill.wallet,
+              title: 'Payroll Summary',
+              route: '/reports/payroll',
+              color: AppColors.success,
+            ),
+        ],
+      ),
+      _HubSection(
         label: 'Workforce',
         items: [
           _HubItem(
@@ -265,6 +290,20 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
         ),
       );
     }
+
+    sections.add(
+      const _HubSection(
+        label: 'App',
+        items: [
+          _HubItem(
+            icon: PhosphorIconsFill.info,
+            title: 'About',
+            route: '/settings/about',
+            color: AppColors.info,
+          ),
+        ],
+      ),
+    );
 
     return sections.where((s) => s.items.isNotEmpty).toList();
   }

@@ -27,7 +27,7 @@ Adopt conventions that satisfy all three without special-casing:
 - **F-Droid specifics** (in `docs/` + AGENTS.md): metadata YAML is LF-only
   (never re-save in a CRLF editor; do NOT add a repo-wide `.gitattributes`
   `text eol=lf` — it dirties fdroiddata's CRLF files), `AutoName` matches the
-  manifest `android:label` byte-for-byte (currently `Factory Workforce`),
+  manifest `android:label` byte-for-byte (currently `ClearWage`),
   `UpdateCheckData` uses the 4-part form
   `pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+`, and `dependenciesInfo`
   is disabled (ADR 0005).

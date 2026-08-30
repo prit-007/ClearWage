@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/clearwage/clearwage/repositories"
 )
 
 var activityLogger = zerolog.Nop()

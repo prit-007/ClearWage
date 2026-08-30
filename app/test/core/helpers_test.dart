@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vivek_app/core/api_exceptions.dart';
-import 'package:vivek_app/core/helpers.dart';
+import 'package:clearwage/core/api_exceptions.dart';
+import 'package:clearwage/core/helpers.dart';
 
 void main() {
   group('asMapList', () {

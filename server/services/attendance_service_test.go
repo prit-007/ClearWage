@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vivek-app/vivek_app/mocks"
-	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/clearwage/clearwage/mocks"
+	"github.com/clearwage/clearwage/repositories"
 	"go.uber.org/mock/gomock"
 )
 

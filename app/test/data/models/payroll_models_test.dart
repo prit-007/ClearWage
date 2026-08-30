@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vivek_app/data/models/payroll_models.dart';
+import 'package:clearwage/data/models/payroll_models.dart';
 
 void main() {
   group('PayrollResult', () {

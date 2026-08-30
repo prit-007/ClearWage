@@ -1,4 +1,4 @@
-package com.vivek.vivek_app
+package com.devparadise.clearwage
 
 import io.flutter.embedding.android.FlutterActivity
 

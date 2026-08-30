@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/clearwage/clearwage/repositories"
 )
 
 type DisputeService struct {

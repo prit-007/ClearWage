@@ -1,4 +1,4 @@
-Factory Workforce is a multi-tenant workforce management platform built for factory-floor realities. Owners and supervisors get full control: staff directory, daily attendance rosters, shift timings, holidays, leave policies, a Jama/Udhaar ledger, payroll previews and defaulters reports. Employees get a read-only view of their attendance, payslips and advance requests.
+ClearWage is a multi-tenant workforce management platform built for factory-floor realities. Owners and supervisors get full control: staff directory, daily attendance rosters, shift timings, holidays, leave policies, a Jama/Udhaar ledger, payroll previews and defaulters reports. Employees get a read-only view of their attendance, payslips and advance requests.
 
 Key features:
 - Daily attendance roster with one-tap Mark All Present

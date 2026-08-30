@@ -42,34 +42,32 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyCymHKOsfxac45SPAoAqDKjHlotOsIvkP8',
-    appId: '1:482473409370:web:7e03c21bf947e69d2a9163',
+    appId: '1:482473409370:web:03627d898eca429f2a9163',
     messagingSenderId: '482473409370',
     projectId: 'workforce-9b7de',
     authDomain: 'workforce-9b7de.firebaseapp.com',
     storageBucket: 'workforce-9b7de.firebasestorage.app',
-    measurementId: 'G-4N3ESQLVRW',
+    measurementId: 'G-ZZ06N2CK1W',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCo3vZ6idJqOIdXEegX0NcIZ7M5umAA9T0',
-    appId: '1:482473409370:android:d2290c3acab1e7732a9163',
+    appId: '1:482473409370:android:35b07fb3713e72762a9163',
     messagingSenderId: '482473409370',
     projectId: 'workforce-9b7de',
     storageBucket: 'workforce-9b7de.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBQJuBUF1cOLN7v0KnMcUZyVT_GBUaTagU',
-    appId: '1:482473409370:ios:7d9b61c686b184172a9163',
+    appId: '1:482473409370:ios:1037cd13de37e1ff2a9163',
     messagingSenderId: '482473409370',
     projectId: 'workforce-9b7de',
     storageBucket: 'workforce-9b7de.firebasestorage.app',
     iosBundleId: 'com.devparadise.clearwage',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyBQJuBUF1cOLN7v0KnMcUZyVT_GBUaTagU',
-    appId: '1:482473409370:ios:7d9b61c686b184172a9163',
+    appId: '1:482473409370:ios:1037cd13de37e1ff2a9163',
     messagingSenderId: '482473409370',
     projectId: 'workforce-9b7de',
     storageBucket: 'workforce-9b7de.firebasestorage.app',
@@ -78,11 +76,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyCymHKOsfxac45SPAoAqDKjHlotOsIvkP8',
-    appId: '1:482473409370:web:18b0dd19da357b152a9163',
+    appId: '1:482473409370:web:5375b045e66efb852a9163',
     messagingSenderId: '482473409370',
     projectId: 'workforce-9b7de',
     authDomain: 'workforce-9b7de.firebaseapp.com',
     storageBucket: 'workforce-9b7de.firebasestorage.app',
-    measurementId: 'G-7L4ZK2DJW4',
+    measurementId: 'G-70MCY2W0Q6',
   );
 }

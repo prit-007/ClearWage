@@ -177,10 +177,21 @@ jobs:
     needs: flutter-analyze-and-test
     runs-on: macos-latest
     timeout-minutes: 60
+    env:
+      HAS_IOS_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
       - name: Flutter prep
         uses: ./.github/actions/flutter-prep
+
+      - name: Write GoogleService-Info.plist from CI secrets
+        if: ${{ env.HAS_IOS_PLIST == 'true' }}
+        shell: bash
+        working-directory: app
+        env:
+          GS_PLIST_B64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
+        run: |
+          printenv GS_PLIST_B64 | base64 -d > ios/Runner/GoogleService-Info.plist
 
       - name: Extract App Version
         working-directory: app
@@ -265,10 +276,21 @@ jobs:
     needs: flutter-analyze-and-test
     runs-on: macos-latest
     timeout-minutes: 60
+    env:
+      HAS_MACOS_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
       - name: Flutter prep
         uses: ./.github/actions/flutter-prep
+
+      - name: Write GoogleService-Info.plist from CI secrets
+        if: ${{ env.HAS_MACOS_PLIST == 'true' }}
+        shell: bash
+        working-directory: app
+        env:
+          GS_PLIST_B64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
+        run: |
+          printenv GS_PLIST_B64 | base64 -d > macos/Runner/GoogleService-Info.plist
 
       - name: Extract App Version
         working-directory: app

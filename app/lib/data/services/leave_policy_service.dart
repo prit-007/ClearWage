@@ -1,4 +1,5 @@
 import '../../core/api_client.dart';
+import '../../core/api_exceptions.dart';
 import '../models/leave_policy_model.dart';
 
 class LeavePolicyService {
@@ -9,8 +10,9 @@ class LeavePolicyService {
     try {
       final res = await _client.get('/api/v1/leave-policies');
       return LeavePolicy.fromJson(res['data'] as Map<String, dynamic>? ?? {});
-    } on Exception catch (e) {
-      if (e.toString().contains('401') || e.toString().contains('500')) {
+    } on ApiException catch (e) {
+      if (e is AuthException ||
+          (e.statusCode != null && e.statusCode! >= 500)) {
         rethrow;
       }
       return null;

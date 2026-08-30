@@ -187,7 +187,7 @@ void main() {
       expect(settings.otTrigger, 'after_daily_hours');
       expect(settings.wageBasis, 'monthly');
       expect(settings.weekOffPaid, true);
-      expect(settings.weeklyOffs, [1]);
+      expect(settings.weeklyOffs, isEmpty);
     });
 
     test('fromJson handles ot_rounding as int', () {
@@ -203,7 +203,7 @@ void main() {
 
       final settings = PayrollSettings.fromJson(json);
       expect(settings.otRounding, 30);
-      expect(settings.weeklyOffs, [1]);
+      expect(settings.weeklyOffs, isEmpty);
     });
 
     test('fromJson handles weekly_offs as list', () {

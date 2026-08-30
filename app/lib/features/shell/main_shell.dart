@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
+import '../../core/app_info.dart';
 import '../../core/helpers.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/providers/badge_providers.dart';
@@ -22,6 +23,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
     final isWide = AppBreakpoints.isDesktop(context);
     final disputesCount = ref.watch(openDisputesCountProvider).valueOrNull ?? 0;
+    final appVersion = ref.watch(appInfoProvider).valueOrNull;
 
     ref.listen<bool>(sessionExpiredProvider, (prev, next) {
       if (next && prev != true) {
@@ -144,7 +146,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               PopupMenuItem(
                 enabled: false,
                 child: Text(
-                  'v0.7.0',
+                  'v${appVersion?.version ?? '0.0.0'}',
                   style: TextStyle(
                     color: cs.onSurfaceVariant,
                     fontSize: 12,

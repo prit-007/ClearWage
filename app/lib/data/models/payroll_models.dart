@@ -121,10 +121,10 @@ class PayrollSettings {
   };
 
   static List<int> _parseWeeklyOffs(dynamic value) {
-    if (value == null) return [1];
+    if (value == null) return [];
     if (value is List) return value.map((e) => safeToInt(e)).toList();
     final s = value.toString().trim();
-    if (s.isEmpty) return [1];
+    if (s.isEmpty) return [];
     return s
         .split(',')
         .map((e) => safeToInt(e.trim()))

@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.4] - 2026-08-30
+
+### Fixed
+
+- **Attendance `toJson` type mismatch**: `overtime_hours` now sent as string
+  (server expects string, not number). Added `version` field for optimistic
+  locking on updates.
+- **Dispute service invalid Dart syntax**: `?resolutionNote` inline syntax
+  replaced with proper conditional map building.
+- **Attendance `fromJson` dangerous default**: Status default changed from
+  `'present'` to `'absent'` — missing status no longer inflates attendance.
+- **Ledger `getBalanceSummary` ignored params**: Removed unused `start_date`/`end_date`
+  query params that the server endpoint ignores.
+- **Version string hardcoded**: Popup menu now reads version from `appInfoProvider`
+  instead of hardcoded `v0.7.0`.
+- **TextEditingController leaks**: Controllers now disposed after dialogs close
+  in dispute and advance-request dialogs.
+- **`_listenerRegistered` anti-pattern**: Removed unnecessary boolean flag guard
+  on `ref.listen` in ledger pages.
+- **Edit employee navigation**: Edit button now uses `context.push` (go_router)
+  instead of `Navigator.push` with `MaterialPageRoute`.
+- **Employee dashboard "More" button**: Now uses `goBranch` (shell tab) instead
+  of `context.push('/more')` which stacked on top of the shell.
+- **PayrollSettings `weeklyOffs` default**: No longer defaults to Monday (`[1]`)
+  when server returns null/empty — defaults to empty list.
+- **LeavePolicyService fragile error handling**: Replaced string-based exception
+  inspection (`toString().contains('401')`) with typed `ApiException`/`AuthException`
+  catching.
+- **PayrollService sensitive data logging**: Removed per-employee wage logging
+  that leaked financial data in production logs.
+
+### Removed
+
+- Unused `ApiResponse<T>` model and its test file.
+
 ## [0.8.3] - 2026-08-30
 
 ### Changed

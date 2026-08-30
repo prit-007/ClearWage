@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/api_client.dart';
+import 'package:clearwage/core/api_exceptions.dart';
 import 'package:clearwage/data/services/leave_policy_service.dart';
 
 class _FakeApiClient extends ApiClient {
@@ -71,13 +72,22 @@ void main() {
       expect(policy!.paidLeaveDaysPerYear, 0);
     });
 
-    test('returns null on error', () async {
-      final client = _FakeApiClient.error(Exception('Network'));
+    test('returns null on non-auth error', () async {
+      final client = _FakeApiClient.error(
+        ApiException('Not found', statusCode: 404),
+      );
       final svc = LeavePolicyService(client);
 
       final policy = await svc.get();
 
       expect(policy, isNull);
+    });
+
+    test('rethrows auth errors', () async {
+      final client = _FakeApiClient.error(AuthException('Unauthorized'));
+      final svc = LeavePolicyService(client);
+
+      expect(() => svc.get(), throwsA(isA<AuthException>()));
     });
   });
 

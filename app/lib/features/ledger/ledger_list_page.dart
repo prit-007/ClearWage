@@ -33,7 +33,6 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
   bool _loadingMore = false;
   bool _hasMore = true;
   String? _error;
-  bool _listenerRegistered = false;
   late DateTime _startDate;
   late DateTime _endDate;
 
@@ -155,10 +154,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_listenerRegistered) {
-      _listenerRegistered = true;
-      ref.listen(ledgerRefreshProvider, (_, _) => _fetch());
-    }
+    ref.listen(ledgerRefreshProvider, (_, _) => _fetch());
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 

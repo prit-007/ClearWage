@@ -23,7 +23,6 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
   Map<String, dynamic>? _ledgerData;
   bool _loading = true;
   String? _error;
-  bool _listenerRegistered = false;
 
   @override
   void initState() {
@@ -84,10 +83,7 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_listenerRegistered) {
-      _listenerRegistered = true;
-      ref.listen(ledgerRefreshProvider, (_, _) => _loadLedger());
-    }
+    ref.listen(ledgerRefreshProvider, (_, _) => _loadLedger());
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 

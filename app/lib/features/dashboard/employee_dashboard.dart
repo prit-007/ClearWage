@@ -395,7 +395,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                 label: 'More',
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  context.push('/more');
+                  StatefulNavigationShell.of(context).goBranch(2);
                 },
               ),
             ],
@@ -542,6 +542,8 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
         ),
       ),
     );
+    amountCtrl.dispose();
+    noteCtrl.dispose();
   }
 }
 

@@ -78,15 +78,7 @@ class LedgerService {
   }
 
   Future<List<Map<String, dynamic>>> getBalanceSummary() async {
-    final now = DateTime.now();
-    final startDate =
-        '${now.year - 1}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final endDate =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final res = await _client.get(
-      '/api/v1/ledger/balance-summary',
-      query: {'start_date': startDate, 'end_date': endDate},
-    );
+    final res = await _client.get('/api/v1/ledger/balance-summary');
     final list = (res['data'] as List<dynamic>?) ?? [];
     return list.cast<Map<String, dynamic>>();
   }

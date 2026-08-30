@@ -11,21 +11,34 @@ import (
 )
 
 type Querier interface {
+	CountUnreadNotifications(ctx context.Context, arg CountUnreadNotificationsParams) (int32, error)
 	CreateDispute(ctx context.Context, arg CreateDisputeParams) (LedgerDispute, error)
+	CreateNotification(ctx context.Context, arg CreateNotificationParams) error
+	DeleteFCMTokenByToken(ctx context.Context, token string) error
+	DeleteFCMTokensByEmployee(ctx context.Context, arg DeleteFCMTokensByEmployeeParams) error
+	DeleteOldNotifications(ctx context.Context) error
 	GetDailySummary(ctx context.Context, arg GetDailySummaryParams) (GetDailySummaryRow, error)
 	GetDashboardSnapshot(ctx context.Context, arg GetDashboardSnapshotParams) (GetDashboardSnapshotRow, error)
 	GetEmployeeBalanceSummary(ctx context.Context, tenantID uuid.UUID) ([]GetEmployeeBalanceSummaryRow, error)
 	GetWageBillTrends(ctx context.Context, arg GetWageBillTrendsParams) ([]GetWageBillTrendsRow, error)
+	ListAllFCMTokensByTenant(ctx context.Context, tenantID uuid.UUID) ([]FcmToken, error)
 	ListAttendanceByDateRangeExplicit(ctx context.Context, arg ListAttendanceByDateRangeExplicitParams) ([]ListAttendanceByDateRangeExplicitRow, error)
 	ListAttendanceByEmployeeMonthExplicit(ctx context.Context, arg ListAttendanceByEmployeeMonthExplicitParams) ([]ListAttendanceByEmployeeMonthExplicitRow, error)
 	ListDisputesByTenant(ctx context.Context, arg ListDisputesByTenantParams) ([]ListDisputesByTenantRow, error)
 	ListEmployeeBalances(ctx context.Context, tenantID uuid.UUID) ([]ListEmployeeBalancesRow, error)
 	ListEmployeesByTenantExplicit(ctx context.Context, arg ListEmployeesByTenantExplicitParams) ([]ListEmployeesByTenantExplicitRow, error)
+	ListEmployeesByTenantForNotify(ctx context.Context, tenantID uuid.UUID) ([]uuid.UUID, error)
+	ListFCMTokensByEmployee(ctx context.Context, employeeID uuid.UUID) ([]FcmToken, error)
 	ListLedgerByEmployeeMonthExplicit(ctx context.Context, arg ListLedgerByEmployeeMonthExplicitParams) ([]ListLedgerByEmployeeMonthExplicitRow, error)
 	ListLedgerByTenantExplicit(ctx context.Context, arg ListLedgerByTenantExplicitParams) ([]ListLedgerByTenantExplicitRow, error)
+	ListNotificationsByEmployee(ctx context.Context, arg ListNotificationsByEmployeeParams) ([]Notification, error)
 	ListRosterByDate(ctx context.Context, arg ListRosterByDateParams) ([]ListRosterByDateRow, error)
+	ListSupervisorsByTenant(ctx context.Context, tenantID uuid.UUID) ([]uuid.UUID, error)
+	MarkAllNotificationsRead(ctx context.Context, arg MarkAllNotificationsReadParams) error
+	MarkNotificationRead(ctx context.Context, arg MarkNotificationReadParams) error
 	RejectDispute(ctx context.Context, arg RejectDisputeParams) (LedgerDispute, error)
 	ResolveDispute(ctx context.Context, arg ResolveDisputeParams) (LedgerDispute, error)
+	UpsertFCMToken(ctx context.Context, arg UpsertFCMTokenParams) error
 }
 
 var _ Querier = (*Queries)(nil)

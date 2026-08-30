@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +11,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'app.dart';
 import 'core/logger.dart';
 import 'firebase_options.dart';
+
+@pragma('vm:entry-point')
+Future<void> _onBackgroundMessage(RemoteMessage message) async {
+  debugPrint('Background message: ${message.messageId}');
+}
 
 void main() {
   runZonedGuarded(
@@ -67,6 +73,9 @@ void main() {
       } catch (e) {
         AppLogger.error('Firebase initialization failed', e);
       }
+
+      // Register FCM background handler
+      FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
 
       runApp(const ProviderScope(child: ClearWageApp()));
     },

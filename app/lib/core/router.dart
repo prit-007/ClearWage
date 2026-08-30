@@ -20,6 +20,7 @@ import '../features/ledger/my_ledger_page.dart';
 import '../features/ledger/new_ledger_entry_page.dart';
 import '../data/models/ledger_model.dart';
 import '../features/disputes/disputes_list_page.dart';
+import '../features/notifications/notifications_page.dart';
 import '../features/onboarding/onboarding_wizard.dart';
 import '../features/profile/my_profile_page.dart';
 import '../features/profile/profile_hub_page.dart';
@@ -377,6 +378,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/disputes',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const DisputesListScreen()),
+      ),
+      GoRoute(
+        path: '/notifications',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const NotificationsPage()),
       ),
       GoRoute(
         path: '/debug/logs',

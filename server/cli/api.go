@@ -82,15 +82,26 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				http.ServeFile(w, r, "./docs/swagger.json")
 			})
 
-			authCtrl, err := ctrl.NewAuthController(querier, logger, cfg)
-			if err != nil {
-				return err
-			}
-			r.Route("/api/v1/auth", func(r chi.Router) {
-				r.Use(mw.RateLimit(10, time.Minute))
-				r.Post("/firebase-login", authCtrl.LoginWithFirebase)
-				r.Post("/register", authCtrl.Register)
-			})
+		authCtrl, err := ctrl.NewAuthController(querier, logger, cfg)
+		if err != nil {
+			return err
+		}
+		r.Route("/api/v1/auth", func(r chi.Router) {
+			r.Use(mw.RateLimit(10, time.Minute))
+			r.Post("/firebase-login", authCtrl.LoginWithFirebase)
+			r.Post("/register", authCtrl.Register)
+		})
+
+		// Notification infrastructure
+		fcmSvc, err := services.NewFCMService(cfg, logger)
+		if err != nil {
+			logger.Warn().Err(err).Msg("FCM service init failed — push notifications disabled")
+		}
+		notifSvc := services.NewNotificationService(dbQueries, fcmSvc, logger)
+		triggers := services.NewNotificationTriggers(notifSvc)
+		_ = triggers // used by other services below
+
+		notifCtrl := ctrl.NewNotificationController(notifSvc, logger, cfg)
 
 			shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
 			uploadCtrl := ctrl.NewUploadController(services.NewStaffService(querier), logger, cfg)
@@ -113,24 +124,26 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Put("/{id}/default-shift", shiftCtrl.AssignDefaultShift)
 			})
 
-			meCtrl := ctrl.NewMeController(
-				services.NewStaffService(querier),
-				services.NewAttendanceService(querier),
-				services.NewLedgerService(querier),
-				services.NewPayrollService(querier),
-				services.NewAdvanceRequestService(querier),
-				logger, cfg,
-			)
-		r.Route("/api/v1/me", func(r chi.Router) {
-			r.Use(mw.AuthMiddleware(cfg))
-				r.Use(mw.TenantMiddleware())
-				r.Get("/", meCtrl.Profile)
-				r.Get("/overview", meCtrl.Overview)
-				r.Get("/attendance", meCtrl.Attendance)
-				r.Get("/ledger", meCtrl.Ledger)
-				r.Get("/payslip", meCtrl.Payslip)
-				r.Post("/advance-request", meCtrl.RequestAdvance)
-			})
+		meCtrl := ctrl.NewMeController(
+			services.NewStaffService(querier),
+			services.NewAttendanceService(querier),
+			services.NewLedgerService(querier),
+			services.NewPayrollService(querier),
+			services.NewAdvanceRequestService(querier),
+			logger, cfg,
+		)
+	r.Route("/api/v1/me", func(r chi.Router) {
+		r.Use(mw.AuthMiddleware(cfg))
+			r.Use(mw.TenantMiddleware())
+			r.Get("/", meCtrl.Profile)
+			r.Get("/overview", meCtrl.Overview)
+			r.Get("/attendance", meCtrl.Attendance)
+			r.Get("/ledger", meCtrl.Ledger)
+			r.Get("/payslip", meCtrl.Payslip)
+			r.Post("/advance-request", meCtrl.RequestAdvance)
+			r.Post("/fcm-token", notifCtrl.RegisterToken)
+			r.Delete("/fcm-token", notifCtrl.RemoveToken)
+		})
 
 		r.Route("/api/v1/shifts", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
@@ -261,9 +274,18 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			onboardingCtrl := ctrl.NewOnboardingController(services.NewOnboardingService(querier), logger, cfg)
 		r.Route("/api/v1/onboarding", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
-				r.Use(mw.TenantMiddleware())
-				r.Post("/setup", onboardingCtrl.Setup)
-			})
+			r.Use(mw.TenantMiddleware())
+			r.Post("/setup", onboardingCtrl.Setup)
+		})
+
+		r.Route("/api/v1/notifications", func(r chi.Router) {
+			r.Use(mw.AuthMiddleware(cfg))
+			r.Use(mw.TenantMiddleware())
+			r.Get("/", notifCtrl.List)
+			r.Get("/unread-count", notifCtrl.UnreadCount)
+			r.Put("/{id}/read", notifCtrl.MarkRead)
+			r.Put("/read-all", notifCtrl.MarkAllRead)
+		})
 
 			srv := &http.Server{
 				Addr:              cfg.Port,

@@ -63,6 +63,12 @@ share/save logs. Tests inject their own Talker via `AppLogger.init(talker:)`.
 4. `POST /api/v1/auth/firebase-login` (or `/register`) → app JWT
 5. JWT in `tokenProvider`, sent as `Authorization: Bearer`
 
+> **Windows Desktop (Work-in-Progress):** Firebase Phone Auth requires
+> reCAPTCHA verification which is not supported on Windows desktop native
+> builds. Phone authentication currently works on Android, iOS, and Web only.
+> Windows desktop support is planned for a future release — see
+> `docs/KNOWN-ISSUES.md` for details.
+
 ## Firebase setup
 
 1. Create a Firebase project with Phone Auth enabled

@@ -181,7 +181,7 @@ func (q *GoquQuerier) CreateAttendance(ctx context.Context, arg CreateAttendance
 	}
 	excluded := func(col string) exp.Expression { return goqu.L("EXCLUDED." + col) }
 	found, err := q.db.Insert("attendance").Rows(row).
-		OnConflict(goqu.DoUpdate("(tenant_id, employee_id, date)", goqu.Record{
+		OnConflict(goqu.DoUpdate("tenant_id, employee_id, date", goqu.Record{
 			"shift_id":                 excluded("shift_id"),
 			"status":                   excluded("status"),
 			"check_in_time":            excluded("check_in_time"),

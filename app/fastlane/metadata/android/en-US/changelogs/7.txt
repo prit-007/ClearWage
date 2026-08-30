@@ -1,0 +1,12 @@
+v0.8.2 — Multi-platform CI & Firebase config
+
+Added:
+- Firebase multi-platform config (Android, iOS, macOS, Windows, web)
+- Windows Inno Setup installer builder
+- Full platform CI builds (Android, iOS, Windows, macOS, Linux)
+- Linux CI dependencies (ninja-build, libgtk-3-dev)
+
+Changed:
+- Platform binary names → factory_workforce
+- main.dart uses DefaultFirebaseOptions.currentPlatform
+- Widget smoke test fixed

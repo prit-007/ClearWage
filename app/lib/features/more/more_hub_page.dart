@@ -291,6 +291,20 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
       );
     }
 
+    sections.add(
+      const _HubSection(
+        label: 'App',
+        items: [
+          _HubItem(
+            icon: PhosphorIconsFill.info,
+            title: 'About',
+            route: '/settings/about',
+            color: AppColors.info,
+          ),
+        ],
+      ),
+    );
+
     return sections.where((s) => s.items.isNotEmpty).toList();
   }
 }

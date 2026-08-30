@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/api_client.dart';
 import 'package:clearwage/core/api_exceptions.dart';
 import 'package:clearwage/data/services/auth_service.dart';
+import 'package:clearwage/data/services/notification_api_service.dart';
 
 class _MockApiClient extends ApiClient {
   Map<String, dynamic>? _response;
@@ -33,10 +34,17 @@ class _MockApiClient extends ApiClient {
   }
 }
 
+class _MockNotificationService extends NotificationApiService {
+  _MockNotificationService() : super(_MockApiClient());
+}
+
 void main() {
   const testPhone = '9426284943';
   const testOTP = '123456';
   const testIdToken = 'fake-firebase-id-token';
+
+  AuthService makeSvc(_MockApiClient client) =>
+      AuthService(client, _MockNotificationService());
 
   group('AuthService', () {
     group('signInWithFirebase', () {
@@ -51,7 +59,7 @@ void main() {
             'employee_id': 'e1',
           },
         });
-        final svc = AuthService(client);
+        final svc = makeSvc(client);
 
         final token = await svc.signInWithFirebase(testIdToken);
 
@@ -69,7 +77,7 @@ void main() {
           'status': 'success',
           'data': {'access_token': 'jwt-token'},
         });
-        final svc = AuthService(client);
+        final svc = makeSvc(client);
 
         await svc.signInWithFirebase(testIdToken);
 
@@ -79,7 +87,7 @@ void main() {
       test('throws ApiException on failure status', () async {
         final client = _MockApiClient();
         client.setResponse({'status': 'fail', 'message': 'Invalid token'});
-        final svc = AuthService(client);
+        final svc = makeSvc(client);
 
         expect(
           () => svc.signInWithFirebase(testIdToken),
@@ -90,7 +98,7 @@ void main() {
       test('throws on network error', () async {
         final client = _MockApiClient();
         client.setError(Exception('Network error'));
-        final svc = AuthService(client);
+        final svc = makeSvc(client);
 
         expect(
           () => svc.signInWithFirebase(testIdToken),
@@ -111,7 +119,7 @@ void main() {
             'employee_id': 'e2',
           },
         });
-        final svc = AuthService(client);
+        final svc = makeSvc(client);
 
         final token = await svc.register(
           name: 'Test User',
@@ -134,7 +142,7 @@ void main() {
       test('clears token on client', () async {
         final client = _MockApiClient();
         client.setToken('some-token');
-        final svc = AuthService(client);
+        final svc = makeSvc(client);
 
         await svc.logout();
 
@@ -146,7 +154,7 @@ void main() {
       test('sends DELETE to correct endpoint', () async {
         final client = _MockApiClient();
         client.setResponse({'status': 'success'});
-        final svc = AuthService(client);
+        final svc = makeSvc(client);
 
         await svc.deleteAccount();
 
@@ -156,7 +164,7 @@ void main() {
       test('throws on failure', () async {
         final client = _MockApiClient();
         client.setResponse({'status': 'fail', 'message': 'Cannot delete'});
-        final svc = AuthService(client);
+        final svc = makeSvc(client);
 
         expect(() => svc.deleteAccount(), throwsA(isA<ApiException>()));
       });
@@ -164,14 +172,12 @@ void main() {
 
     group('phone number validation', () {
       test('test phone number has correct format', () {
-        // Indian mobile numbers are 10 digits starting with 6-9
         expect(testPhone.length, 10);
         expect(int.tryParse(testPhone), isNotNull);
         expect(testPhone.startsWith('9'), true);
       });
 
       test('test OTP has correct format', () {
-        // Firebase test OTP is 6 digits
         expect(testOTP.length, 6);
         expect(int.tryParse(testOTP), isNotNull);
       });

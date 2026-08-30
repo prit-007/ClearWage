@@ -63,7 +63,7 @@ class Attendance {
     'status': status,
     'check_in_time': checkInTime,
     'check_out_time': checkOutTime,
-    'overtime_hours': overtimeHours.toString(),
+    'overtime_hours': overtimeHours,
     'version': version,
   };
 }

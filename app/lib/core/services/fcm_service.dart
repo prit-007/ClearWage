@@ -6,16 +6,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../features/notifications/providers/notification_providers.dart';
+import '../providers/services.dart';
+import '../router.dart';
 
 const _channelId = 'clearwage_notifications';
 const _channelName = 'ClearWage Notifications';
-
-@pragma('vm:entry-point')
-Future<void> onBackgroundMessage(RemoteMessage message) async {
-  debugPrint('Background message: ${message.messageId}');
-}
 
 class FcmService {
   final FlutterLocalNotificationsPlugin _localNotifications =
@@ -139,8 +136,35 @@ class FcmService {
 
   void _handleNotificationTap(WidgetRef ref, Map<String, dynamic> data) {
     final entityType = data['entity_type'] as String?;
-    // Navigation will be handled by looking at the entity type
-    debugPrint('Notification tap entity: $entityType');
+    final entityId = data['entity_id'] as String?;
+    final navigatorKey = ref.read(routerProvider).routerDelegate.navigatorKey;
+    final context = navigatorKey.currentContext;
+    if (context == null || entityType == null) return;
+
+    switch (entityType) {
+      case 'attendance':
+        context.go('/my-attendance');
+      case 'ledger':
+        context.go('/my-ledger');
+      case 'dispute':
+        context.go('/disputes');
+      case 'advance_request':
+        context.go('/my-advance-requests');
+      case 'holiday':
+        context.go('/my-holidays');
+      case 'shift':
+        context.go('/my-shifts');
+      case 'notification':
+        context.go('/notifications');
+      case 'staff':
+        if (entityId != null) {
+          context.push('/employee/$entityId');
+        } else {
+          context.go('/staff');
+        }
+      default:
+        context.go('/home');
+    }
   }
 }
 

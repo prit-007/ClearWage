@@ -370,7 +370,7 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(req.Phone) < 10 || len(req.Phone) > 20 {
+	if req.Phone != "" && (len(req.Phone) < 10 || len(req.Phone) > 20) {
 		utils.JSONFail(w, http.StatusBadRequest, "phone must be between 10 and 20 characters")
 		return
 	}

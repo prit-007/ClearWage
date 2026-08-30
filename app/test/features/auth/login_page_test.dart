@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/api_client.dart';
 import 'package:clearwage/core/providers/services.dart';
 import 'package:clearwage/data/services/auth_service.dart';
+import 'package:clearwage/data/services/notification_api_service.dart';
 import 'package:clearwage/features/auth/login_page.dart';
 
 class _NoOpApiClient extends ApiClient {
@@ -11,7 +12,8 @@ class _NoOpApiClient extends ApiClient {
 }
 
 class FakeAuthService extends AuthService {
-  FakeAuthService() : super(_NoOpApiClient());
+  FakeAuthService()
+    : super(_NoOpApiClient(), NotificationApiService(_NoOpApiClient()));
 }
 
 Widget _buildApp() {

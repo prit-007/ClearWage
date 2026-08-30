@@ -16,11 +16,13 @@ import '../../data/services/profile_service.dart';
 import '../../data/services/document_service.dart';
 import '../../data/services/onboarding_service.dart';
 import '../../data/services/dispute_service.dart';
+import '../../data/services/notification_api_service.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
   final client = ref.watch(apiClientProvider);
   ref.watch(tokenProvider);
-  return AuthService(client);
+  final notifSvc = ref.watch(notificationApiServiceProvider);
+  return AuthService(client, notifSvc);
 });
 
 final staffServiceProvider = Provider<StaffService>((ref) {
@@ -81,4 +83,8 @@ final documentServiceProvider = Provider<DocumentService>((ref) {
 
 final onboardingServiceProvider = Provider<OnboardingService>((ref) {
   return OnboardingService(ref.watch(apiClientProvider));
+});
+
+final notificationApiServiceProvider = Provider<NotificationApiService>((ref) {
+  return NotificationApiService(ref.watch(apiClientProvider));
 });

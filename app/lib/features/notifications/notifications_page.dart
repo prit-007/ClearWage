@@ -5,6 +5,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/design_tokens.dart';
 import '../../core/helpers.dart';
+import '../../core/providers/services.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../data/models/notification_model.dart';
@@ -39,8 +40,10 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
             onPressed: () async {
               try {
                 await ref.read(notificationApiServiceProvider).markAllRead();
-                ref.invalidate(unreadCountProvider);
-                ref.invalidate(notificationListProvider);
+                if (context.mounted) {
+                  ref.invalidate(unreadCountProvider);
+                  ref.invalidate(notificationListProvider);
+                }
               } catch (e) {
                 if (context.mounted) showError(context, e);
               }

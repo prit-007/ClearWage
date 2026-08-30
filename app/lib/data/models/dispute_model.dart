@@ -39,4 +39,10 @@ class Dispute {
   bool get isOpen => status == 'open';
   bool get isResolved => status == 'resolved';
   bool get isRejected => status == 'rejected';
+
+  Map<String, dynamic> toJson() => {
+    'ledger_id': ledgerId,
+    'employee_id': employeeId,
+    'reason': reason,
+  };
 }

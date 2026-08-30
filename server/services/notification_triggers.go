@@ -7,12 +7,17 @@ import (
 
 // NotificationTriggers provides convenience methods for triggering notifications
 // from other services. All methods are non-blocking (fire-and-forget goroutines).
+// All methods are nil-safe: calling them on a nil receiver is a no-op.
 type NotificationTriggers struct {
 	notifSvc *NotificationService
 }
 
 func NewNotificationTriggers(notifSvc *NotificationService) *NotificationTriggers {
 	return &NotificationTriggers{notifSvc: notifSvc}
+}
+
+func (t *NotificationTriggers) enabled() bool {
+	return t != nil && t.notifSvc != nil
 }
 
 func formatDate(dateStr string) string {
@@ -22,8 +27,10 @@ func formatDate(dateStr string) string {
 	return dateStr
 }
 
-// NotifyAttendanceMarked sends a notification to an employee when their attendance is marked.
 func (t *NotificationTriggers) NotifyAttendanceMarked(ctx context.Context, tenantID, employeeID, date, status string) {
+	if !t.enabled() {
+		return
+	}
 	go t.notifSvc.CreateAndPush(ctx, tenantID, employeeID, NotificationOpts{
 		Type:       "attendance",
 		Title:      "Attendance Marked",
@@ -32,8 +39,10 @@ func (t *NotificationTriggers) NotifyAttendanceMarked(ctx context.Context, tenan
 	})
 }
 
-// NotifyAttendanceBulk sends notifications to multiple employees about attendance update.
 func (t *NotificationTriggers) NotifyAttendanceBulk(ctx context.Context, tenantID string, employeeIDs []string, date string) {
+	if !t.enabled() {
+		return
+	}
 	go func() {
 		for _, empID := range employeeIDs {
 			t.notifSvc.CreateAndPush(ctx, tenantID, empID, NotificationOpts{
@@ -46,8 +55,10 @@ func (t *NotificationTriggers) NotifyAttendanceBulk(ctx context.Context, tenantI
 	}()
 }
 
-// NotifyMonthLocked notifies all employees that a month has been locked.
 func (t *NotificationTriggers) NotifyMonthLocked(ctx context.Context, tenantID, startDate, endDate string) {
+	if !t.enabled() {
+		return
+	}
 	go t.notifSvc.NotifyAllEmployees(ctx, tenantID, NotificationOpts{
 		Type:  "system",
 		Title: "Month Locked",
@@ -55,8 +66,10 @@ func (t *NotificationTriggers) NotifyMonthLocked(ctx context.Context, tenantID, 
 	})
 }
 
-// NotifyAdvanceRequested notifies supervisors/owners about a new advance request.
 func (t *NotificationTriggers) NotifyAdvanceRequested(ctx context.Context, tenantID, employeeID, employeeName string, amount float64) {
+	if !t.enabled() {
+		return
+	}
 	go t.notifSvc.NotifySupervisors(ctx, tenantID, NotificationOpts{
 		Type:       "advance",
 		Title:      "Advance Request",
@@ -65,8 +78,10 @@ func (t *NotificationTriggers) NotifyAdvanceRequested(ctx context.Context, tenan
 	})
 }
 
-// NotifyAdvanceApproved notifies an employee that their advance was approved.
 func (t *NotificationTriggers) NotifyAdvanceApproved(ctx context.Context, tenantID, employeeID string, amount float64) {
+	if !t.enabled() {
+		return
+	}
 	go t.notifSvc.CreateAndPush(ctx, tenantID, employeeID, NotificationOpts{
 		Type:       "advance",
 		Title:      "Advance Approved",
@@ -75,8 +90,10 @@ func (t *NotificationTriggers) NotifyAdvanceApproved(ctx context.Context, tenant
 	})
 }
 
-// NotifyAdvanceDenied notifies an employee that their advance was denied.
 func (t *NotificationTriggers) NotifyAdvanceDenied(ctx context.Context, tenantID, employeeID string, amount float64) {
+	if !t.enabled() {
+		return
+	}
 	go t.notifSvc.CreateAndPush(ctx, tenantID, employeeID, NotificationOpts{
 		Type:       "advance",
 		Title:      "Advance Denied",
@@ -85,8 +102,10 @@ func (t *NotificationTriggers) NotifyAdvanceDenied(ctx context.Context, tenantID
 	})
 }
 
-// NotifyLedgerEntry notifies an employee about a new ledger entry.
 func (t *NotificationTriggers) NotifyLedgerEntry(ctx context.Context, tenantID, employeeID, entryType string, amount float64) {
+	if !t.enabled() {
+		return
+	}
 	label := "Credit"
 	if entryType == "udhaar" {
 		label = "Debit"
@@ -99,8 +118,10 @@ func (t *NotificationTriggers) NotifyLedgerEntry(ctx context.Context, tenantID, 
 	})
 }
 
-// NotifyDisputeRaised notifies supervisors/owners about a new dispute.
 func (t *NotificationTriggers) NotifyDisputeRaised(ctx context.Context, tenantID, employeeID, employeeName string) {
+	if !t.enabled() {
+		return
+	}
 	go t.notifSvc.NotifySupervisors(ctx, tenantID, NotificationOpts{
 		Type:       "dispute",
 		Title:      "Dispute Raised",
@@ -109,8 +130,10 @@ func (t *NotificationTriggers) NotifyDisputeRaised(ctx context.Context, tenantID
 	})
 }
 
-// NotifyDisputeResolved notifies an employee that their dispute was resolved.
 func (t *NotificationTriggers) NotifyDisputeResolved(ctx context.Context, tenantID, employeeID string) {
+	if !t.enabled() {
+		return
+	}
 	go t.notifSvc.CreateAndPush(ctx, tenantID, employeeID, NotificationOpts{
 		Type:       "dispute",
 		Title:      "Dispute Resolved",
@@ -119,8 +142,10 @@ func (t *NotificationTriggers) NotifyDisputeResolved(ctx context.Context, tenant
 	})
 }
 
-// NotifyDisputeRejected notifies an employee that their dispute was rejected.
 func (t *NotificationTriggers) NotifyDisputeRejected(ctx context.Context, tenantID, employeeID string) {
+	if !t.enabled() {
+		return
+	}
 	go t.notifSvc.CreateAndPush(ctx, tenantID, employeeID, NotificationOpts{
 		Type:       "dispute",
 		Title:      "Dispute Rejected",
@@ -129,8 +154,10 @@ func (t *NotificationTriggers) NotifyDisputeRejected(ctx context.Context, tenant
 	})
 }
 
-// NotifyPayrollLocked notifies all employees that payroll has been processed.
 func (t *NotificationTriggers) NotifyPayrollLocked(ctx context.Context, tenantID, startDate, endDate string) {
+	if !t.enabled() {
+		return
+	}
 	go t.notifSvc.NotifyAllEmployees(ctx, tenantID, NotificationOpts{
 		Type:  "payroll",
 		Title: "Payroll Processed",
@@ -138,8 +165,10 @@ func (t *NotificationTriggers) NotifyPayrollLocked(ctx context.Context, tenantID
 	})
 }
 
-// NotifyWelcome sends a welcome notification to a newly created employee.
 func (t *NotificationTriggers) NotifyWelcome(ctx context.Context, tenantID, employeeID, tenantName string) {
+	if !t.enabled() {
+		return
+	}
 	go t.notifSvc.CreateAndPush(ctx, tenantID, employeeID, NotificationOpts{
 		Type:  "system",
 		Title: "Welcome to ClearWage",

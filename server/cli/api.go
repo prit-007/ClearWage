@@ -99,13 +99,26 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 		}
 		notifSvc := services.NewNotificationService(dbQueries, fcmSvc, logger)
 		triggers := services.NewNotificationTriggers(notifSvc)
-		_ = triggers // used by other services below
 
 		notifCtrl := ctrl.NewNotificationController(notifSvc, logger, cfg)
 
+		// Create services with triggers wired
+		staffSvc := services.NewStaffService(querier)
+		staffSvc.SetTriggers(triggers)
+		attSvc := services.NewAttendanceService(querier)
+		attSvc.SetTriggers(triggers)
+		ledgerSvc := services.NewLedgerService(querier)
+		ledgerSvc.SetTriggers(triggers)
+		disputeSvc := services.NewDisputeService(querier)
+		disputeSvc.SetTriggers(triggers)
+		payrollSvc := services.NewPayrollService(querier)
+		payrollSvc.SetTriggers(triggers)
+		advReqSvc := services.NewAdvanceRequestService(querier)
+		advReqSvc.SetTriggers(triggers)
+
 			shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
-			uploadCtrl := ctrl.NewUploadController(services.NewStaffService(querier), logger, cfg)
-			staffCtrl := ctrl.NewStaffController(services.NewStaffService(querier), logger, cfg)
+			uploadCtrl := ctrl.NewUploadController(staffSvc, logger, cfg)
+			staffCtrl := ctrl.NewStaffController(staffSvc, logger, cfg)
 		r.Route("/api/v1/staff", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
@@ -125,11 +138,11 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			})
 
 		meCtrl := ctrl.NewMeController(
-			services.NewStaffService(querier),
-			services.NewAttendanceService(querier),
-			services.NewLedgerService(querier),
-			services.NewPayrollService(querier),
-			services.NewAdvanceRequestService(querier),
+			staffSvc,
+			attSvc,
+			ledgerSvc,
+			payrollSvc,
+			advReqSvc,
 			logger, cfg,
 		)
 	r.Route("/api/v1/me", func(r chi.Router) {
@@ -155,7 +168,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Delete("/{id}", shiftCtrl.Delete)
 			})
 
-			attCtrl := ctrl.NewAttendanceController(services.NewAttendanceService(querier), logger, cfg)
+			attCtrl := ctrl.NewAttendanceController(attSvc, logger, cfg)
 		r.Route("/api/v1/attendance", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
@@ -168,7 +181,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Post("/lock", attCtrl.LockMonth)
 			})
 
-			ledgerCtrl := ctrl.NewLedgerController(services.NewLedgerService(querier), logger, cfg)
+			ledgerCtrl := ctrl.NewLedgerController(ledgerSvc, logger, cfg)
 		r.Route("/api/v1/ledger", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
@@ -185,7 +198,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Post("/{id}/settle", ledgerCtrl.SettleAccount)
 			})
 
-			disputeCtrl := ctrl.NewDisputeController(services.NewDisputeService(querier), logger, cfg)
+			disputeCtrl := ctrl.NewDisputeController(disputeSvc, logger, cfg)
 		r.Route("/api/v1/disputes", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
@@ -242,7 +255,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Get("/", dashCtrl.Get)
 			})
 
-			advReqCtrl := ctrl.NewAdvanceRequestController(services.NewAdvanceRequestService(querier), logger, cfg)
+			advReqCtrl := ctrl.NewAdvanceRequestController(advReqSvc, logger, cfg)
 		r.Route("/api/v1/advance-requests", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
@@ -254,7 +267,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			r.With(mw.AuthMiddleware(cfg), mw.TenantMiddleware()).Get("/uploads/{file}", uploadCtrl.ServeFile)
 
-			payrollCtrl := ctrl.NewPayrollController(services.NewPayrollService(querier), logger, cfg)
+			payrollCtrl := ctrl.NewPayrollController(payrollSvc, logger, cfg)
 		r.Route("/api/v1/payroll", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())

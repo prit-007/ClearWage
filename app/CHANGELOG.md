@@ -13,20 +13,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   auto-cleanup, paginated listing, read/unread tracking, mark-all-read.
 - **Device push notifications**: FCM HTTP v1 API integration (no Firebase Go SDK
   required). Go server sends push directly via OAuth2-authenticated HTTP POST.
+- **Notification triggers wired**: All 12 notification triggers now fire from
+  actual service methods (attendance, advances, ledger, disputes, payroll, staff).
+  Nil-safe: gracefully disabled if FCM is not configured.
 - **Notification bell in AppBar**: Animated unread badge counter visible to both
   admin and employee roles.
 - **Notifications page**: Full notification list with type-specific icons, time-ago
   display, pull-to-refresh, and tap-to-navigate to related entity.
 - **FCM token management**: Device token registration on every app foreground,
   automatic refresh on token rotation, stale token cleanup on UNREGISTERED.
-- **Notification triggers**: Attendance marked, advance requested/approved/denied,
-  ledger entry created, dispute raised/resolved/rejected, payroll locked,
-  employee welcome.
 - **Server endpoints**: `GET /notifications`, `GET /notifications/unread-count`,
   `PUT /notifications/{id}/read`, `PUT /notifications/read-all`,
   `POST /me/fcm-token`, `DELETE /me/fcm-token`.
 - **Database migrations**: `notifications` table (00025) and `fcm_tokens` table
-  (00026) with performance indexes.
+  (00026) with performance indexes. Applied to database.
+- **Server tests**: 11 new tests covering notification triggers (nil-safety,
+  construction), notification service (invalid UUID handling), and controller
+  endpoints (auth, validation, missing params).
+- **Flutter tests**: 29 new tests covering notification model (fromJson, timeAgo),
+  notification API service (list, markRead, registerToken), notification badge
+  widget (zero/unread/max counts), notifications page (empty state, list, mark
+  all read, time ago), and auth service (signIn, register, logout, phone/OTP
+  validation with test number 9426284943).
 
 ### Changed
 

@@ -14,7 +14,10 @@ class NotificationBadge extends ConsumerWidget {
 
     return countAsync.when(
       loading: () => child,
-      error: (_, __) => child,
+      error: (e, _) {
+        debugPrint('Unread count error: $e');
+        return child;
+      },
       data: (count) {
         if (count <= 0) return child;
         return Badge(

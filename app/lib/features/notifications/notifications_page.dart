@@ -239,20 +239,17 @@ class _NotificationTile extends StatelessWidget {
   (IconData, Color) _iconForType(String type) {
     switch (type) {
       case 'attendance':
-        return (
-          PhosphorIconsDuotone.calendarCheck as IconData,
-          AppColors.success,
-        );
+        return (PhosphorIconsRegular.calendarCheck, AppColors.success);
       case 'advance':
-        return (PhosphorIconsDuotone.coins as IconData, AppColors.warning);
+        return (PhosphorIconsRegular.coins, AppColors.warning);
       case 'ledger':
-        return (PhosphorIconsDuotone.receipt as IconData, AppColors.info);
+        return (PhosphorIconsRegular.receipt, AppColors.info);
       case 'dispute':
-        return (PhosphorIconsDuotone.flag as IconData, AppColors.danger);
+        return (PhosphorIconsRegular.flag, AppColors.danger);
       case 'payroll':
-        return (PhosphorIconsDuotone.fileText as IconData, AppColors.purple);
+        return (PhosphorIconsRegular.fileText, AppColors.purple);
       default:
-        return (PhosphorIconsDuotone.bell as IconData, AppColors.info);
+        return (PhosphorIconsRegular.bell, AppColors.info);
     }
   }
 }

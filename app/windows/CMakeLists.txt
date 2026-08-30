@@ -2,6 +2,10 @@
 cmake_minimum_required(VERSION 3.14)
 project(factory_workforce LANGUAGES CXX)
 
+# Firebase C++ SDK declares cmake_minimum_required(VERSION 2.8) which
+# CMake ≥ 3.27 rejects. Set a floor so sub-projects build cleanly.
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "factory_workforce")

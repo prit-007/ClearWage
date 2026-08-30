@@ -284,7 +284,7 @@ jobs:
         working-directory: app
         run: |
           ditto -c -k --sequesterRsrc --keepParent \
-            build/macos/Build/Products/Release/Factory\ Workforce.app \
+            "build/macos/Build/Products/Release/factory_workforce.app" \
             build/macos/vivek-app-macos-v${{ env.APP_VERSION }}.zip
 
       - name: Upload macOS Artifact
@@ -304,7 +304,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            ninja-build libgtk-3-dev
+            ninja-build libgtk-3-dev libsecret-1-dev
       - name: Flutter prep
         uses: ./.github/actions/flutter-prep
 

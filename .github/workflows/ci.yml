@@ -177,13 +177,15 @@ jobs:
     needs: flutter-analyze-and-test
     runs-on: macos-latest
     timeout-minutes: 60
+    env:
+      HAS_IOS_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
       - name: Flutter prep
         uses: ./.github/actions/flutter-prep
 
       - name: Write GoogleService-Info.plist from CI secrets
-        if: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 != '' }}
+        if: ${{ env.HAS_IOS_PLIST == 'true' }}
         shell: bash
         working-directory: app
         env:
@@ -274,13 +276,15 @@ jobs:
     needs: flutter-analyze-and-test
     runs-on: macos-latest
     timeout-minutes: 60
+    env:
+      HAS_MACOS_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
       - name: Flutter prep
         uses: ./.github/actions/flutter-prep
 
       - name: Write GoogleService-Info.plist from CI secrets
-        if: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 != '' }}
+        if: ${{ env.HAS_MACOS_PLIST == 'true' }}
         shell: bash
         working-directory: app
         env:

@@ -1,13 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/providers/app_providers.dart';
+import '../../../core/providers/services.dart';
 import '../../../data/models/notification_model.dart';
-import '../../../data/services/notification_api_service.dart';
-
-final notificationApiServiceProvider = Provider<NotificationApiService>((ref) {
-  final client = ref.watch(apiClientProvider);
-  return NotificationApiService(client);
-});
 
 final unreadCountProvider = FutureProvider.autoDispose<int>((ref) async {
   try {

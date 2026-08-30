@@ -4,9 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/providers/services.dart';
@@ -465,15 +465,12 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                           );
                           await file.writeAsBytes(pdf);
                           if (context.mounted) {
-                            final opened = await launchUrl(
-                              Uri.file(file.path),
-                              mode: LaunchMode.externalApplication,
-                            );
+                            final result = await OpenFilex.open(file.path);
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    opened
+                                    result.type == ResultType.done
                                         ? 'Payslip opened'
                                         : 'Payslip saved. Could not open automatically.',
                                   ),
@@ -909,15 +906,13 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
   }
 
   Future<void> _view(Map<String, dynamic> doc) async {
-    final url = resolveMediaUrl(
-      doc['file_path'] as String? ?? '',
-      ref.read(serverUrlProvider),
-    );
-    if (url.isEmpty) return;
+    final docType = doc['doc_type'] as String? ?? '';
+    if (docType.isEmpty) return;
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => _DocumentViewerPage(
-          url: url,
+          employeeId: widget.employeeId,
+          docType: docType,
           isPdf: (doc['original_name'] as String? ?? '').toLowerCase().endsWith(
             '.pdf',
           ),
@@ -1147,10 +1142,74 @@ class _DocumentCard extends StatelessWidget {
   }
 }
 
-class _DocumentViewerPage extends StatelessWidget {
-  final String url;
+class _DocumentViewerPage extends ConsumerStatefulWidget {
+  final String employeeId;
+  final String docType;
   final bool isPdf;
-  const _DocumentViewerPage({required this.url, required this.isPdf});
+  const _DocumentViewerPage({
+    required this.employeeId,
+    required this.docType,
+    required this.isPdf,
+  });
+
+  @override
+  ConsumerState<_DocumentViewerPage> createState() =>
+      _DocumentViewerPageState();
+}
+
+class _DocumentViewerPageState extends ConsumerState<_DocumentViewerPage> {
+  bool _loading = true;
+  String? _error;
+  File? _file;
+
+  @override
+  void initState() {
+    super.initState();
+    _download();
+  }
+
+  Future<void> _download() async {
+    try {
+      final svc = ref.read(documentServiceProvider);
+      final bytes = await svc.downloadDocument(
+        employeeId: widget.employeeId,
+        docType: widget.docType,
+      );
+      final dir = await getTemporaryDirectory();
+      final ext = widget.isPdf ? '.pdf' : '.jpg';
+      final file = File('${dir.path}/doc_${widget.docType}$ext');
+      await file.writeAsBytes(bytes);
+      if (mounted) {
+        setState(() {
+          _file = file;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = '$e';
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _openExternally() async {
+    if (_file == null) return;
+    final result = await OpenFilex.open(_file!.path);
+    if (mounted && result.type != ResultType.done) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.message.isNotEmpty
+                ? result.message
+                : 'Could not open document',
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1160,13 +1219,44 @@ class _DocumentViewerPage extends StatelessWidget {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         title: Text(
-          isPdf ? 'Document' : 'Document Preview',
+          widget.isPdf ? 'Document' : 'Document Preview',
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         centerTitle: true,
       ),
       body: Center(
-        child: isPdf
+        child: _loading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : _error != null
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const PhosphorIcon(
+                    PhosphorIconsRegular.warningCircle,
+                    size: 48,
+                    color: Colors.white54,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '$_error',
+                    style: const TextStyle(color: Colors.white70),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _loading = true;
+                        _error = null;
+                      });
+                      _download();
+                    },
+                    icon: const Icon(PhosphorIconsBold.arrowClockwise),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              )
+            : widget.isPdf
             ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1177,24 +1267,20 @@ class _DocumentViewerPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   FilledButton.icon(
-                    onPressed: () async {
-                      final ok = await launchUrl(
-                        Uri.parse(url),
-                        mode: LaunchMode.externalApplication,
-                      );
-                      if (!ok && context.mounted) {
-                        showError(context, 'Could not open document');
-                      }
-                    },
+                    onPressed: _openExternally,
                     icon: const Icon(PhosphorIconsRegular.arrowSquareOut),
                     label: const Text(
-                      'Open Document externally',
+                      'Open Document',
                       style: TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],
               )
-            : InteractiveViewer(child: Image.network(url, fit: BoxFit.contain)),
+            : InteractiveViewer(
+                child: _file != null
+                    ? Image.file(_file!, fit: BoxFit.contain)
+                    : const SizedBox.shrink(),
+              ),
       ),
     );
   }

@@ -49,6 +49,11 @@ func (c *DisputeController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if claims.Role == "employee" && req.EmployeeID != claims.EmployeeID {
+		utils.JSONFail(w, http.StatusForbidden, "employees can only file disputes for themselves")
+		return
+	}
+
 	dispute, err := c.disputeService.Create(r.Context(), tenantID, req.LedgerID, req.EmployeeID, claims.EmployeeID, req.Reason)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to create dispute")

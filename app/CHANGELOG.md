@@ -5,6 +5,67 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-08-30
+
+### Fixed
+
+- **Document viewer broken on Android 11+**: External PDF/image opening failed
+  silently due to missing `<queries>` declaration in AndroidManifest.xml and
+  unauthenticated server URLs. Documents now download with auth token, save
+  locally, and open via `open_filex`. Payslip opening also migrated from
+  `url_launcher` to `open_filex` for reliability.
+- **Onboarding shift times ignored**: Time picker selections in the onboarding
+  wizard were discarded; hardcoded `08:00`/`17:00`/`22:00`/`06:00` always sent
+  to server. Parent widget now receives selected times via callbacks.
+- **FCM notification tap does nothing**: Tapping push notifications from
+  background/killed state only printed debug logs. Now navigates to the relevant
+  screen based on `entity_type` (attendance, ledger, disputes, etc.).
+- **FCM token not removed on logout**: Server continued sending push
+  notifications to de-registered devices. `removeToken()` now called before
+  Firebase sign-out.
+- **`LedgerService.getBalanceSummary()` runtime crash**: Unsafe `.cast()` on
+  JSON list threw `TypeError` if server returned unexpected types. Replaced with
+  safe `.map()`.
+- **`PayrollEntry.toJson()` drops `photoUrl`**: Serialization silently lost the
+  photo URL field. Added to `toJson()`.
+- **`DailySummaryData` missing `date` field**: Server's `date` value was
+  silently discarded during deserialization. Added `date` field.
+- **`AppUser.isAdmin` security**: Blocklist (`role != 'employee'`) granted admin
+  access to any typo'd role. Changed to allowlist (`admin`/`owner`/`supervisor`).
+- **Staff update rejects empty phone**: `StaffController.Update` validated phone
+  length unconditionally, blocking partial updates. Now guarded with
+  `req.Phone != ""`.
+- **ExportCSV corrupt responses on error**: CSV headers were written before data
+  fetch; on failure, JSON error was appended to CSV-headed response. Now buffers
+  CSV in memory first.
+- **Settings endpoint leaks raw errors**: `err.Error()` sent directly to client,
+  exposing internal details. Replaced with safe message.
+- **`Attendance.toJson()` type inconsistency**: `overtime_hours` was serialized
+  as `String` instead of `double` like all other numeric fields. Fixed.
+
+### Added
+
+- **`DocumentService.downloadDocument()`**: New method to download document
+  bytes with authentication for local file opening.
+- **`Dispute.toJson()`**: Added missing serialization method for consistency
+  with all other models.
+- **Notification service centralization**: `NotificationApiService` provider
+  moved to `core/providers/services.dart` (consistent with all 16 other
+  services).
+- **Sync queue RBAC**: All 3 sync queue endpoints now enforce non-employee role
+  checks.
+- **Dispute ownership check**: Employees can now only file disputes for
+  themselves (previously could file for any employee).
+- **Notifications mounted guard**: `markAllRead` now checks `context.mounted`
+  after async operation before invalidating providers.
+
+### Changed
+
+- `BulkUpsert` doc comment corrected: operation is not actually atomic;
+  previously upserted records are not rolled back on failure.
+- Removed orphaned `reports_hub_page.dart` and its test (dead code, no route).
+- Removed dead `onBackgroundMessage` function from `fcm_service.dart`.
+
 ## [0.9.0] - 2026-08-30
 
 ### Added
@@ -38,7 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Bumped version to 0.9.0+10.
+- Bumped version to 0.9.0+11.
 
 ## [0.8.4] - 2026-08-30
 

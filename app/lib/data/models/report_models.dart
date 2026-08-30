@@ -1,6 +1,7 @@
 import '../../core/helpers.dart';
 
 class DailySummaryData {
+  final String date;
   final int totalWorkers;
   final int present;
   final int absent;
@@ -8,6 +9,7 @@ class DailySummaryData {
   final double totalWageBill;
 
   DailySummaryData({
+    required this.date,
     required this.totalWorkers,
     required this.present,
     required this.absent,
@@ -20,6 +22,7 @@ class DailySummaryData {
 
   factory DailySummaryData.fromJson(Map<String, dynamic> json) =>
       DailySummaryData(
+        date: json['date'] as String? ?? '',
         totalWorkers: safeToInt(json['total_workers']),
         present: safeToInt(json['present']),
         absent: safeToInt(json['absent']),

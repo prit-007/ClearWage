@@ -38,6 +38,16 @@ func (c *SyncQueueController) CreateEvent(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
 	var req createSyncEventRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
@@ -66,6 +76,16 @@ func (c *SyncQueueController) ListPending(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
 	limit, offset, err := parseAllLimitOffset(r)
 	if err != nil {
 		utils.JSONFail(w, http.StatusBadRequest, err.Error())
@@ -85,6 +105,16 @@ func (c *SyncQueueController) UpdateStatus(w http.ResponseWriter, r *http.Reques
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
 		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 

@@ -22,6 +22,17 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   int _otTrigger = 8;
   bool _weekOffPaid = true;
 
+  TimeOfDay _generalStart = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay _generalEnd = const TimeOfDay(hour: 17, minute: 0);
+  TimeOfDay _nightStart = const TimeOfDay(hour: 22, minute: 0);
+  TimeOfDay _nightEnd = const TimeOfDay(hour: 6, minute: 0);
+
+  String _formatTimeForApi(TimeOfDay t) {
+    final hour = t.hour.toString().padLeft(2, '0');
+    final minute = t.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
   @override
   void dispose() {
     _companyNameCtrl.dispose();
@@ -46,15 +57,15 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
         'shifts': [
           {
             'name': 'General Shift',
-            'start_time': '08:00',
-            'end_time': '17:00',
+            'start_time': _formatTimeForApi(_generalStart),
+            'end_time': _formatTimeForApi(_generalEnd),
             'grace_period_minutes': 15,
             'is_default': true,
           },
           {
             'name': 'Night Shift',
-            'start_time': '22:00',
-            'end_time': '06:00',
+            'start_time': _formatTimeForApi(_nightStart),
+            'end_time': _formatTimeForApi(_nightEnd),
             'crosses_midnight': true,
             'grace_period_minutes': 15,
             'is_default': false,
@@ -191,7 +202,19 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
                 _AnimatedStepWrapper(
                   step: 1,
                   currentStep: _currentStep,
-                  child: _StepShifts(cs: cs, tt: tt),
+                  child: _StepShifts(
+                    cs: cs,
+                    tt: tt,
+                    generalStart: _generalStart,
+                    generalEnd: _generalEnd,
+                    nightStart: _nightStart,
+                    nightEnd: _nightEnd,
+                    onGeneralStartChanged: (t) =>
+                        setState(() => _generalStart = t),
+                    onGeneralEndChanged: (t) => setState(() => _generalEnd = t),
+                    onNightStartChanged: (t) => setState(() => _nightStart = t),
+                    onNightEndChanged: (t) => setState(() => _nightEnd = t),
+                  ),
                 ),
                 _AnimatedStepWrapper(
                   step: 2,
@@ -474,18 +497,32 @@ class _StepProfile extends StatelessWidget {
 class _StepShifts extends StatefulWidget {
   final ColorScheme cs;
   final TextTheme tt;
-  const _StepShifts({required this.cs, required this.tt});
+  final TimeOfDay generalStart;
+  final TimeOfDay generalEnd;
+  final TimeOfDay nightStart;
+  final TimeOfDay nightEnd;
+  final ValueChanged<TimeOfDay> onGeneralStartChanged;
+  final ValueChanged<TimeOfDay> onGeneralEndChanged;
+  final ValueChanged<TimeOfDay> onNightStartChanged;
+  final ValueChanged<TimeOfDay> onNightEndChanged;
+  const _StepShifts({
+    required this.cs,
+    required this.tt,
+    required this.generalStart,
+    required this.generalEnd,
+    required this.nightStart,
+    required this.nightEnd,
+    required this.onGeneralStartChanged,
+    required this.onGeneralEndChanged,
+    required this.onNightStartChanged,
+    required this.onNightEndChanged,
+  });
 
   @override
   State<_StepShifts> createState() => _StepShiftsState();
 }
 
 class _StepShiftsState extends State<_StepShifts> {
-  TimeOfDay _generalStart = const TimeOfDay(hour: 8, minute: 0);
-  TimeOfDay _generalEnd = const TimeOfDay(hour: 17, minute: 0);
-  TimeOfDay _nightStart = const TimeOfDay(hour: 22, minute: 0);
-  TimeOfDay _nightEnd = const TimeOfDay(hour: 6, minute: 0);
-
   String _formatTime(TimeOfDay t) {
     final hour = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
     final minute = t.minute.toString().padLeft(2, '0');
@@ -524,32 +561,32 @@ class _StepShiftsState extends State<_StepShifts> {
         _ShiftInputCard(
           cs: cs,
           label: 'General Shift',
-          start: _formatTime(_generalStart),
-          end: _formatTime(_generalEnd),
+          start: _formatTime(widget.generalStart),
+          end: _formatTime(widget.generalEnd),
           icon: PhosphorIconsDuotone.sun,
           onStartTap: () => _pickTime(
-            initial: _generalStart,
-            onPicked: (t) => setState(() => _generalStart = t),
+            initial: widget.generalStart,
+            onPicked: widget.onGeneralStartChanged,
           ),
           onEndTap: () => _pickTime(
-            initial: _generalEnd,
-            onPicked: (t) => setState(() => _generalEnd = t),
+            initial: widget.generalEnd,
+            onPicked: widget.onGeneralEndChanged,
           ),
         ),
         const SizedBox(height: 16),
         _ShiftInputCard(
           cs: cs,
           label: 'Night Shift',
-          start: _formatTime(_nightStart),
-          end: _formatTime(_nightEnd),
+          start: _formatTime(widget.nightStart),
+          end: _formatTime(widget.nightEnd),
           icon: PhosphorIconsDuotone.moonStars,
           onStartTap: () => _pickTime(
-            initial: _nightStart,
-            onPicked: (t) => setState(() => _nightStart = t),
+            initial: widget.nightStart,
+            onPicked: widget.onNightStartChanged,
           ),
           onEndTap: () => _pickTime(
-            initial: _nightEnd,
-            onPicked: (t) => setState(() => _nightEnd = t),
+            initial: widget.nightEnd,
+            onPicked: widget.onNightEndChanged,
           ),
         ),
       ],

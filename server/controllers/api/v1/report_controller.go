@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"bytes"
 	"encoding/csv"
 	"fmt"
 	"net/http"
@@ -199,9 +200,8 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 		safeName = "report"
 	}
 
-	w.Header().Set("Content-Type", "text/csv")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.csv"`, safeName))
-	writer := csv.NewWriter(w)
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
 
 	switch reportType {
 	case "defaulters":
@@ -249,5 +249,12 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 	writer.Flush()
 	if err := writer.Error(); err != nil {
 		c.logger.Error().Err(err).Msg("csv flush error")
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.csv"`, safeName))
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		c.logger.Error().Err(err).Msg("csv write error")
 	}
 }

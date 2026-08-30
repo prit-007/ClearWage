@@ -383,7 +383,8 @@ func (c *AttendanceController) Update(w http.ResponseWriter, r *http.Request) {
 // BulkUpsert inserts or updates multiple attendance records in a single batch operation.
 // Each record is upserted independently by the service layer.
 // Duplicate employee+date combinations are overwritten.
-// If any record fails, the entire operation is rolled back and a 500 is returned.
+// If any record fails, processing stops and a 500 is returned, but previously
+// upserted records in the same batch are NOT rolled back.
 //
 // Request body: JSON object with a 'records' array of createAttendanceRequest
 // Required fields in records: employee_id, date, shift_id, status

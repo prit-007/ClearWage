@@ -37,10 +37,11 @@ class DisputeService {
     required String disputeId,
     String? resolutionNote,
   }) async {
-    final res = await _client.post(
-      '/api/v1/disputes/resolve',
-      body: {'dispute_id': disputeId, 'resolution_note': ?resolutionNote},
-    );
+    final body = <String, dynamic>{'dispute_id': disputeId};
+    if (resolutionNote != null && resolutionNote.isNotEmpty) {
+      body['resolution_note'] = resolutionNote;
+    }
+    final res = await _client.post('/api/v1/disputes/resolve', body: body);
     return Dispute.fromJson(res['data'] as Map<String, dynamic>? ?? {});
   }
 
@@ -48,10 +49,11 @@ class DisputeService {
     required String disputeId,
     String? resolutionNote,
   }) async {
-    final res = await _client.post(
-      '/api/v1/disputes/reject',
-      body: {'dispute_id': disputeId, 'resolution_note': ?resolutionNote},
-    );
+    final body = <String, dynamic>{'dispute_id': disputeId};
+    if (resolutionNote != null && resolutionNote.isNotEmpty) {
+      body['resolution_note'] = resolutionNote;
+    }
+    final res = await _client.post('/api/v1/disputes/reject', body: body);
     return Dispute.fromJson(res['data'] as Map<String, dynamic>? ?? {});
   }
 }

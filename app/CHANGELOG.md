@@ -5,6 +5,76 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-08-30
+
+### Added
+
+- **In-app notifications system**: Server-side notification storage with 30-day
+  auto-cleanup, paginated listing, read/unread tracking, mark-all-read.
+- **Device push notifications**: FCM HTTP v1 API integration (no Firebase Go SDK
+  required). Go server sends push directly via OAuth2-authenticated HTTP POST.
+- **Notification triggers wired**: All 12 notification triggers now fire from
+  actual service methods (attendance, advances, ledger, disputes, payroll, staff).
+  Nil-safe: gracefully disabled if FCM is not configured.
+- **Notification bell in AppBar**: Animated unread badge counter visible to both
+  admin and employee roles.
+- **Notifications page**: Full notification list with type-specific icons, time-ago
+  display, pull-to-refresh, and tap-to-navigate to related entity.
+- **FCM token management**: Device token registration on every app foreground,
+  automatic refresh on token rotation, stale token cleanup on UNREGISTERED.
+- **Server endpoints**: `GET /notifications`, `GET /notifications/unread-count`,
+  `PUT /notifications/{id}/read`, `PUT /notifications/read-all`,
+  `POST /me/fcm-token`, `DELETE /me/fcm-token`.
+- **Database migrations**: `notifications` table (00025) and `fcm_tokens` table
+  (00026) with performance indexes. Applied to database.
+- **Server tests**: 11 new tests covering notification triggers (nil-safety,
+  construction), notification service (invalid UUID handling), and controller
+  endpoints (auth, validation, missing params).
+- **Flutter tests**: 29 new tests covering notification model (fromJson, timeAgo),
+  notification API service (list, markRead, registerToken), notification badge
+  widget (zero/unread/max counts), notifications page (empty state, list, mark
+  all read, time ago), and auth service (signIn, register, logout, phone/OTP
+  validation with test number 9426284943).
+
+### Changed
+
+- Bumped version to 0.9.0+10.
+
+## [0.8.4] - 2026-08-30
+
+### Fixed
+
+- **Attendance `toJson` type mismatch**: `overtime_hours` now sent as string
+  (server expects string, not number). Added `version` field for optimistic
+  locking on updates.
+- **Dispute service invalid Dart syntax**: `?resolutionNote` inline syntax
+  replaced with proper conditional map building.
+- **Attendance `fromJson` dangerous default**: Status default changed from
+  `'present'` to `'absent'` — missing status no longer inflates attendance.
+- **Ledger `getBalanceSummary` ignored params**: Removed unused `start_date`/`end_date`
+  query params that the server endpoint ignores.
+- **Version string hardcoded**: Popup menu now reads version from `appInfoProvider`
+  instead of hardcoded `v0.7.0`.
+- **TextEditingController leaks**: Controllers now disposed after dialogs close
+  in dispute and advance-request dialogs.
+- **`_listenerRegistered` anti-pattern**: Removed unnecessary boolean flag guard
+  on `ref.listen` in ledger pages.
+- **Edit employee navigation**: Edit button now uses `context.push` (go_router)
+  instead of `Navigator.push` with `MaterialPageRoute`.
+- **Employee dashboard "More" button**: Now uses `goBranch` (shell tab) instead
+  of `context.push('/more')` which stacked on top of the shell.
+- **PayrollSettings `weeklyOffs` default**: No longer defaults to Monday (`[1]`)
+  when server returns null/empty — defaults to empty list.
+- **LeavePolicyService fragile error handling**: Replaced string-based exception
+  inspection (`toString().contains('401')`) with typed `ApiException`/`AuthException`
+  catching.
+- **PayrollService sensitive data logging**: Removed per-employee wage logging
+  that leaked financial data in production logs.
+
+### Removed
+
+- Unused `ApiResponse<T>` model and its test file.
+
 ## [0.8.3] - 2026-08-30
 
 ### Changed

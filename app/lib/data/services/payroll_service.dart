@@ -18,12 +18,6 @@ class PayrollService {
     final data = res['data'] as Map<String, dynamic>? ?? {};
     final entries = (data['entries'] as List?) ?? [];
     AppLogger.info('PayrollService: ${entries.length} entries returned');
-    for (final e in entries) {
-      final emp = e as Map<String, dynamic>?;
-      AppLogger.info(
-        '  → ${emp?['name']}: gross=${emp?['gross_wages']}, udhaar=${emp?['total_udhaar']}, net=${emp?['net_payable']}',
-      );
-    }
     return PayrollResult.fromJson(data);
   }
 

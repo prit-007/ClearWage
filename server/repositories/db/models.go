@@ -104,6 +104,16 @@ type EmployeeDocument struct {
 	UploadedAt   time.Time      `json:"uploaded_at"`
 }
 
+type FcmToken struct {
+	ID         uuid.UUID `json:"id"`
+	TenantID   uuid.UUID `json:"tenant_id"`
+	EmployeeID uuid.UUID `json:"employee_id"`
+	Token      string    `json:"token"`
+	Platform   string    `json:"platform"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
 type Holiday struct {
 	ID          uuid.UUID `json:"id"`
 	TenantID    uuid.UUID `json:"tenant_id"`
@@ -150,6 +160,19 @@ type LedgerDispute struct {
 	ResolutionNote sql.NullString `json:"resolution_note"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
+}
+
+type Notification struct {
+	ID         uuid.UUID      `json:"id"`
+	TenantID   uuid.UUID      `json:"tenant_id"`
+	EmployeeID uuid.UUID      `json:"employee_id"`
+	Type       string         `json:"type"`
+	Title      string         `json:"title"`
+	Body       string         `json:"body"`
+	EntityType sql.NullString `json:"entity_type"`
+	EntityID   uuid.NullUUID  `json:"entity_id"`
+	IsRead     bool           `json:"is_read"`
+	CreatedAt  time.Time      `json:"created_at"`
 }
 
 type Shift struct {

@@ -15,9 +15,10 @@ import (
 )
 
 type StaffService struct {
-	querier repositories.Querier
-	cache   *cache.TTL
-	sf      singleflight.Group
+	querier  repositories.Querier
+	cache    *cache.TTL
+	sf       singleflight.Group
+	triggers *NotificationTriggers
 }
 
 func NewStaffService(querier repositories.Querier) *StaffService {
@@ -25,6 +26,10 @@ func NewStaffService(querier repositories.Querier) *StaffService {
 		querier: querier,
 		cache:   cache.New(10 * time.Second),
 	}
+}
+
+func (s *StaffService) SetTriggers(t *NotificationTriggers) {
+	s.triggers = t
 }
 
 // EmployeeProfileDetails carries optional KYC/personal fields for an employee.
@@ -80,6 +85,14 @@ func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designat
 	})
 	if err == nil {
 		logActivity(ctx, s.querier, tenantID, employeeID, "created_employee", "employee", &emp.ID, nil)
+		if s.triggers != nil {
+			tenant, tenantErr := s.querier.FindTenantByID(ctx, tenantID)
+			tenantName := "ClearWage"
+			if tenantErr == nil {
+				tenantName = tenant.Name
+			}
+			s.triggers.NotifyWelcome(ctx, tenantID, emp.ID, tenantName)
+		}
 	}
 	return emp, err
 }

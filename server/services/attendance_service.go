@@ -23,9 +23,10 @@ func parseFloat(s, field string) (float64, error) {
 }
 
 type AttendanceService struct {
-	querier repositories.Querier
-	cache   *cache.TTL
-	sf      singleflight.Group
+	querier  repositories.Querier
+	cache    *cache.TTL
+	sf       singleflight.Group
+	triggers *NotificationTriggers
 }
 
 func NewAttendanceService(querier repositories.Querier) *AttendanceService {
@@ -33,6 +34,10 @@ func NewAttendanceService(querier repositories.Querier) *AttendanceService {
 		querier: querier,
 		cache:   cache.New(10 * time.Second),
 	}
+}
+
+func (s *AttendanceService) SetTriggers(t *NotificationTriggers) {
+	s.triggers = t
 }
 
 func (s *AttendanceService) resolveShiftID(ctx context.Context, tenantID, employeeID, shiftID string) *string {
@@ -73,6 +78,9 @@ func (s *AttendanceService) CreateAttendance(ctx context.Context, tenantID, empl
 	if err == nil {
 		logActivity(ctx, s.querier, tenantID, editedBy, "marked_attendance", "attendance", &att.ID, nil)
 		s.cache.Delete(fmt.Sprintf("roster:%s:%s", tenantID, date))
+		if s.triggers != nil {
+			s.triggers.NotifyAttendanceMarked(ctx, tenantID, employeeID, date, status)
+		}
 	}
 	return att, err
 }
@@ -177,11 +185,15 @@ func (s *AttendanceService) BulkUpsert(ctx context.Context, tenantID, employeeID
 }
 
 func (s *AttendanceService) LockMonth(ctx context.Context, tenantID, startDate, endDate string) error {
-	return s.querier.LockAttendanceMonth(ctx, repositories.LockAttendanceMonthParams{
+	err := s.querier.LockAttendanceMonth(ctx, repositories.LockAttendanceMonthParams{
 		TenantID:  tenantID,
 		StartDate: startDate,
 		EndDate:   endDate,
 	})
+	if err == nil && s.triggers != nil {
+		s.triggers.NotifyMonthLocked(ctx, tenantID, startDate, endDate)
+	}
+	return err
 }
 
 func (s *AttendanceService) IsHoliday(ctx context.Context, tenantID, date string) (bool, error) {

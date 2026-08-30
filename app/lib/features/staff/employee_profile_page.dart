@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/providers/services.dart';
 import '../dashboard/providers/dashboard_providers.dart';
@@ -17,7 +18,6 @@ import '../../core/app_config.dart';
 import '../../core/helpers.dart';
 import '../../core/logger.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
-import 'add_employee_page.dart';
 import '../../core/responsive.dart';
 import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
@@ -259,13 +259,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                       onPressed: () async {
                         final emp = _profile;
                         if (emp == null || emp['id'] == null) return;
-                        final result = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AddEmployeeScreen(
-                              employee: Employee.fromJson(emp),
-                            ),
-                          ),
+                        final result = await context.push<bool>(
+                          '/add-employee',
+                          extra: Employee.fromJson(emp),
                         );
                         if (result == true && mounted) {
                           unawaited(_loadProfile());

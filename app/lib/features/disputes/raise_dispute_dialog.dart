@@ -49,6 +49,7 @@ Future<void> showRaiseDisputeDialog(
       ],
     ),
   );
+  controller.dispose();
 
   if (confirmed == true && context.mounted) {
     try {

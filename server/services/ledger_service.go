@@ -11,11 +11,16 @@ import (
 )
 
 type LedgerService struct {
-	querier repositories.Querier
+	querier  repositories.Querier
+	triggers *NotificationTriggers
 }
 
 func NewLedgerService(querier repositories.Querier) *LedgerService {
 	return &LedgerService{querier: querier}
+}
+
+func (s *LedgerService) SetTriggers(t *NotificationTriggers) {
+	s.triggers = t
 }
 
 func (s *LedgerService) CreateEntry(ctx context.Context, tenantID, employeeID, date, entryType, amount, note, createdBy string) (repositories.Ledger, error) {
@@ -33,7 +38,7 @@ func (s *LedgerService) CreateEntry(ctx context.Context, tenantID, employeeID, d
 	if note != "" {
 		n = &note
 	}
-	return s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
+	result, err := s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
 		TenantID:   tenantID,
 		EmployeeID: employeeID,
 		Date:       date,
@@ -42,6 +47,10 @@ func (s *LedgerService) CreateEntry(ctx context.Context, tenantID, employeeID, d
 		Note:       n,
 		CreatedBy:  createdBy,
 	})
+	if err == nil && s.triggers != nil {
+		s.triggers.NotifyLedgerEntry(ctx, tenantID, employeeID, entryType, amt)
+	}
+	return result, err
 }
 
 func (s *LedgerService) UpdateEntry(ctx context.Context, id, tenantID, date, entryType, amount, note string, expectedVersion int32) (repositories.Ledger, error) {

@@ -101,7 +101,7 @@ void main() {
       },
     );
 
-    test('toJson sends overtime_hours as number (not string)', () {
+    test('toJson sends overtime_hours as string (server expects string)', () {
       final att = Attendance(
         id: 'att-5',
         employeeId: 'emp-5',
@@ -115,15 +115,16 @@ void main() {
       );
 
       final json = att.toJson();
-      expect(json['overtime_hours'], 2.5);
-      expect(json['overtime_hours'], isA<double>());
+      expect(json['overtime_hours'], '2.5');
+      expect(json['overtime_hours'], isA<String>());
       expect(json['employee_id'], 'emp-5');
       expect(json['date'], '2026-01-15');
       expect(json['shift_id'], 'shift-1');
       expect(json['status'], 'present');
+      expect(json['version'], 0);
     });
 
-    test('toJson includes overtime_hours as 0', () {
+    test('toJson includes overtime_hours as "0" for zero', () {
       final att = Attendance(
         id: 'att-6',
         employeeId: 'emp-6',
@@ -137,8 +138,8 @@ void main() {
       );
 
       final json = att.toJson();
-      expect(json['overtime_hours'], 0);
-      expect(json['overtime_hours'], isA<double>());
+      expect(json['overtime_hours'], '0.0');
+      expect(json['overtime_hours'], isA<String>());
     });
   });
 }

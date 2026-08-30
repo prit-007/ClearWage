@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -372,27 +371,20 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                 elevation: 0,
                 expandedHeight: 80,
                 collapsedHeight: 70,
-                flexibleSpace: ClipRRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(
-                      sigmaX: AppBlur.sigma,
-                      sigmaY: AppBlur.sigma,
-                    ),
-                    child: FlexibleSpaceBar(
-                      titlePadding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
-                      ),
-                      centerTitle: true,
-                      title: Text(
-                        'Daily Roster',
-                        style: tt.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
+                flexibleSpace: FlexibleSpaceBar(
+                  titlePadding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  centerTitle: true,
+                  title: Text(
+                    'Daily Roster',
+                    style: tt.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
                     ),
                   ),
+                  background: ColoredBox(color: cs.surface),
                 ),
                 actions: [
                   IconButton(

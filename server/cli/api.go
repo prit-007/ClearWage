@@ -82,19 +82,43 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				http.ServeFile(w, r, "./docs/swagger.json")
 			})
 
-			authCtrl, err := ctrl.NewAuthController(querier, logger, cfg)
-			if err != nil {
-				return err
-			}
-			r.Route("/api/v1/auth", func(r chi.Router) {
-				r.Use(mw.RateLimit(10, time.Minute))
-				r.Post("/firebase-login", authCtrl.LoginWithFirebase)
-				r.Post("/register", authCtrl.Register)
-			})
+		authCtrl, err := ctrl.NewAuthController(querier, logger, cfg)
+		if err != nil {
+			return err
+		}
+		r.Route("/api/v1/auth", func(r chi.Router) {
+			r.Use(mw.RateLimit(10, time.Minute))
+			r.Post("/firebase-login", authCtrl.LoginWithFirebase)
+			r.Post("/register", authCtrl.Register)
+		})
+
+		// Notification infrastructure
+		fcmSvc, err := services.NewFCMService(cfg, logger)
+		if err != nil {
+			logger.Warn().Err(err).Msg("FCM service init failed — push notifications disabled")
+		}
+		notifSvc := services.NewNotificationService(dbQueries, fcmSvc, logger)
+		triggers := services.NewNotificationTriggers(notifSvc)
+
+		notifCtrl := ctrl.NewNotificationController(notifSvc, logger, cfg)
+
+		// Create services with triggers wired
+		staffSvc := services.NewStaffService(querier)
+		staffSvc.SetTriggers(triggers)
+		attSvc := services.NewAttendanceService(querier)
+		attSvc.SetTriggers(triggers)
+		ledgerSvc := services.NewLedgerService(querier)
+		ledgerSvc.SetTriggers(triggers)
+		disputeSvc := services.NewDisputeService(querier)
+		disputeSvc.SetTriggers(triggers)
+		payrollSvc := services.NewPayrollService(querier)
+		payrollSvc.SetTriggers(triggers)
+		advReqSvc := services.NewAdvanceRequestService(querier)
+		advReqSvc.SetTriggers(triggers)
 
 			shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
-			uploadCtrl := ctrl.NewUploadController(services.NewStaffService(querier), logger, cfg)
-			staffCtrl := ctrl.NewStaffController(services.NewStaffService(querier), logger, cfg)
+			uploadCtrl := ctrl.NewUploadController(staffSvc, logger, cfg)
+			staffCtrl := ctrl.NewStaffController(staffSvc, logger, cfg)
 		r.Route("/api/v1/staff", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
@@ -113,24 +137,26 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Put("/{id}/default-shift", shiftCtrl.AssignDefaultShift)
 			})
 
-			meCtrl := ctrl.NewMeController(
-				services.NewStaffService(querier),
-				services.NewAttendanceService(querier),
-				services.NewLedgerService(querier),
-				services.NewPayrollService(querier),
-				services.NewAdvanceRequestService(querier),
-				logger, cfg,
-			)
-		r.Route("/api/v1/me", func(r chi.Router) {
-			r.Use(mw.AuthMiddleware(cfg))
-				r.Use(mw.TenantMiddleware())
-				r.Get("/", meCtrl.Profile)
-				r.Get("/overview", meCtrl.Overview)
-				r.Get("/attendance", meCtrl.Attendance)
-				r.Get("/ledger", meCtrl.Ledger)
-				r.Get("/payslip", meCtrl.Payslip)
-				r.Post("/advance-request", meCtrl.RequestAdvance)
-			})
+		meCtrl := ctrl.NewMeController(
+			staffSvc,
+			attSvc,
+			ledgerSvc,
+			payrollSvc,
+			advReqSvc,
+			logger, cfg,
+		)
+	r.Route("/api/v1/me", func(r chi.Router) {
+		r.Use(mw.AuthMiddleware(cfg))
+			r.Use(mw.TenantMiddleware())
+			r.Get("/", meCtrl.Profile)
+			r.Get("/overview", meCtrl.Overview)
+			r.Get("/attendance", meCtrl.Attendance)
+			r.Get("/ledger", meCtrl.Ledger)
+			r.Get("/payslip", meCtrl.Payslip)
+			r.Post("/advance-request", meCtrl.RequestAdvance)
+			r.Post("/fcm-token", notifCtrl.RegisterToken)
+			r.Delete("/fcm-token", notifCtrl.RemoveToken)
+		})
 
 		r.Route("/api/v1/shifts", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
@@ -142,7 +168,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Delete("/{id}", shiftCtrl.Delete)
 			})
 
-			attCtrl := ctrl.NewAttendanceController(services.NewAttendanceService(querier), logger, cfg)
+			attCtrl := ctrl.NewAttendanceController(attSvc, logger, cfg)
 		r.Route("/api/v1/attendance", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
@@ -155,7 +181,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Post("/lock", attCtrl.LockMonth)
 			})
 
-			ledgerCtrl := ctrl.NewLedgerController(services.NewLedgerService(querier), logger, cfg)
+			ledgerCtrl := ctrl.NewLedgerController(ledgerSvc, logger, cfg)
 		r.Route("/api/v1/ledger", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
@@ -172,7 +198,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Post("/{id}/settle", ledgerCtrl.SettleAccount)
 			})
 
-			disputeCtrl := ctrl.NewDisputeController(services.NewDisputeService(querier), logger, cfg)
+			disputeCtrl := ctrl.NewDisputeController(disputeSvc, logger, cfg)
 		r.Route("/api/v1/disputes", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
@@ -229,7 +255,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Get("/", dashCtrl.Get)
 			})
 
-			advReqCtrl := ctrl.NewAdvanceRequestController(services.NewAdvanceRequestService(querier), logger, cfg)
+			advReqCtrl := ctrl.NewAdvanceRequestController(advReqSvc, logger, cfg)
 		r.Route("/api/v1/advance-requests", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
@@ -241,7 +267,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			r.With(mw.AuthMiddleware(cfg), mw.TenantMiddleware()).Get("/uploads/{file}", uploadCtrl.ServeFile)
 
-			payrollCtrl := ctrl.NewPayrollController(services.NewPayrollService(querier), logger, cfg)
+			payrollCtrl := ctrl.NewPayrollController(payrollSvc, logger, cfg)
 		r.Route("/api/v1/payroll", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
@@ -261,9 +287,18 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			onboardingCtrl := ctrl.NewOnboardingController(services.NewOnboardingService(querier), logger, cfg)
 		r.Route("/api/v1/onboarding", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
-				r.Use(mw.TenantMiddleware())
-				r.Post("/setup", onboardingCtrl.Setup)
-			})
+			r.Use(mw.TenantMiddleware())
+			r.Post("/setup", onboardingCtrl.Setup)
+		})
+
+		r.Route("/api/v1/notifications", func(r chi.Router) {
+			r.Use(mw.AuthMiddleware(cfg))
+			r.Use(mw.TenantMiddleware())
+			r.Get("/", notifCtrl.List)
+			r.Get("/unread-count", notifCtrl.UnreadCount)
+			r.Put("/{id}/read", notifCtrl.MarkRead)
+			r.Put("/read-all", notifCtrl.MarkAllRead)
+		})
 
 			srv := &http.Server{
 				Addr:              cfg.Port,

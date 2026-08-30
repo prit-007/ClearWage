@@ -14,6 +14,7 @@ class ClearWageApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'ClearWage',
       debugShowCheckedModeBanner: false,
+      scrollBehavior: const _AppScrollBehavior(),
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -39,8 +40,28 @@ class ClearWageApp extends ConsumerWidget {
           backgroundColor: AppColors.surface,
           indicatorColor: AppColors.primary.withValues(alpha: 0.12),
         ),
+        scaffoldBackgroundColor: AppColors.surface,
       ),
       routerConfig: router,
     );
+  }
+}
+
+class _AppScrollBehavior extends ScrollBehavior {
+  const _AppScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    switch (getPlatform(context)) {
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+        return const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        );
+      default:
+        return const ClampingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        );
+    }
   }
 }

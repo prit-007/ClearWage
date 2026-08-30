@@ -43,11 +43,16 @@ type PayrollAdjustment struct {
 }
 
 type PayrollService struct {
-	querier repositories.Querier
+	querier  repositories.Querier
+	triggers *NotificationTriggers
 }
 
 func NewPayrollService(querier repositories.Querier) *PayrollService {
 	return &PayrollService{querier: querier}
+}
+
+func (s *PayrollService) SetTriggers(t *NotificationTriggers) {
+	s.triggers = t
 }
 
 func payrollMonth(startDate string) string {
@@ -294,7 +299,7 @@ func (s *PayrollService) FinalizeAndLock(ctx context.Context, tenantID, startDat
 			amount = adj
 		}
 		note := fmt.Sprintf("Wage for %s", month)
-		_, err := s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
+		_, createErr := s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
 			TenantID:           tenantID,
 			EmployeeID:         entry.EmployeeID,
 			Date:               endDate,
@@ -304,12 +309,16 @@ func (s *PayrollService) FinalizeAndLock(ctx context.Context, tenantID, startDat
 			LinkedPayrollMonth: &month,
 			CreatedBy:          "system",
 		})
-		if err != nil {
-			return err
+		if createErr != nil {
+			return createErr
 		}
 	}
 
-	return s.LockMonth(ctx, tenantID, startDate, endDate)
+	err = s.LockMonth(ctx, tenantID, startDate, endDate)
+	if err == nil && s.triggers != nil {
+		s.triggers.NotifyPayrollLocked(ctx, tenantID, startDate, endDate)
+	}
+	return err
 }
 
 func (s *PayrollService) GeneratePayslip(ctx context.Context, tenantID, employeeID, startDate, endDate string) ([]byte, string, error) {

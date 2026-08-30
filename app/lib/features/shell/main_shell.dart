@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
+import '../../core/app_info.dart';
 import '../../core/helpers.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/providers/badge_providers.dart';
 import '../../core/responsive.dart';
+import '../../core/services/fcm_service.dart';
+import '../../core/widgets/notification_badge.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
@@ -16,12 +19,23 @@ class MainShell extends ConsumerStatefulWidget {
 }
 
 class _MainShellState extends ConsumerState<MainShell> {
+  bool _fcmInitialized = false;
+
   @override
   Widget build(BuildContext context) {
+    // Initialize FCM once after auth is confirmed
+    if (!_fcmInitialized) {
+      _fcmInitialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(fcmServiceProvider).initialize(ref);
+      });
+    }
+
     final cs = Theme.of(context).colorScheme;
     final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
     final isWide = AppBreakpoints.isDesktop(context);
     final disputesCount = ref.watch(openDisputesCountProvider).valueOrNull ?? 0;
+    final appVersion = ref.watch(appInfoProvider).valueOrNull;
 
     ref.listen<bool>(sessionExpiredProvider, (prev, next) {
       if (next && prev != true) {
@@ -125,6 +139,12 @@ class _MainShellState extends ConsumerState<MainShell> {
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         actions: [
+          NotificationBadge(
+            child: IconButton(
+              icon: Icon(PhosphorIconsRegular.bell, color: cs.onSurfaceVariant),
+              onPressed: () => context.push('/notifications'),
+            ),
+          ),
           PopupMenuButton<String>(
             icon: PhosphorIcon(
               PhosphorIconsRegular.userCircle,
@@ -144,7 +164,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               PopupMenuItem(
                 enabled: false,
                 child: Text(
-                  'v0.7.0',
+                  'v${appVersion?.version ?? '0.0.0'}',
                   style: TextStyle(
                     color: cs.onSurfaceVariant,
                     fontSize: 12,

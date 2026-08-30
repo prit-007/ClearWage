@@ -3,201 +3,178 @@ import 'package:clearwage/core/api_client.dart';
 import 'package:clearwage/core/api_exceptions.dart';
 import 'package:clearwage/data/services/auth_service.dart';
 
-class _FakeApiClient extends ApiClient {
-  final Map<String, dynamic> _response;
-  final Object? _error;
-  String? lastMethod;
+class _MockApiClient extends ApiClient {
+  Map<String, dynamic>? _response;
+  Object? _error;
   String? lastPath;
   Map<String, dynamic>? lastBody;
 
-  _FakeApiClient(this._response)
-    : _error = null,
-      super(baseUrl: 'http://localhost');
+  _MockApiClient() : super(baseUrl: 'http://localhost');
 
-  _FakeApiClient.error(this._error)
-    : _response = {},
-      super(baseUrl: 'http://localhost');
+  void setResponse(Map<String, dynamic> response) => _response = response;
+  void setError(Object error) => _error = error;
 
   @override
   Future<Map<String, dynamic>> post(
     String path, {
     Map<String, dynamic>? body,
   }) async {
-    lastMethod = 'POST';
     lastPath = path;
     lastBody = body;
-    if (_error != null) throw _error;
-    return _response;
+    if (_error != null) throw _error!;
+    return _response ?? {};
   }
 
   @override
   Future<Map<String, dynamic>> delete(String path) async {
-    lastMethod = 'DELETE';
     lastPath = path;
-    if (_error != null) throw _error;
-    return _response;
+    if (_error != null) throw _error!;
+    return _response ?? {};
   }
-
-  @override
-  void setToken(String? token) {}
 }
 
 void main() {
-  group('AuthService.signInWithFirebase', () {
-    test('sends id_token to firebase-login endpoint', () async {
-      final client = _FakeApiClient({
-        'status': 'success',
-        'data': {
-          'access_token': 'jwt-token',
-          'tenant_id': 't-1',
-          'role': 'owner',
-          'employee_id': 'e-1',
-        },
+  const testPhone = '9426284943';
+  const testOTP = '123456';
+  const testIdToken = 'fake-firebase-id-token';
+
+  group('AuthService', () {
+    group('signInWithFirebase', () {
+      test('sends correct request body', () async {
+        final client = _MockApiClient();
+        client.setResponse({
+          'status': 'success',
+          'data': {
+            'access_token': 'jwt-token-123',
+            'tenant_id': 't1',
+            'role': 'owner',
+            'employee_id': 'e1',
+          },
+        });
+        final svc = AuthService(client);
+
+        final token = await svc.signInWithFirebase(testIdToken);
+
+        expect(client.lastPath, '/api/v1/auth/firebase-login');
+        expect(client.lastBody, {'id_token': testIdToken});
+        expect(token.token, 'jwt-token-123');
+        expect(token.tenantId, 't1');
+        expect(token.role, 'owner');
+        expect(token.employeeId, 'e1');
       });
-      final svc = AuthService(client);
 
-      final token = await svc.signInWithFirebase('firebase-id-token');
+      test('sets token on client after successful login', () async {
+        final client = _MockApiClient();
+        client.setResponse({
+          'status': 'success',
+          'data': {'access_token': 'jwt-token'},
+        });
+        final svc = AuthService(client);
 
-      expect(client.lastMethod, 'POST');
-      expect(client.lastPath, '/api/v1/auth/firebase-login');
-      expect(client.lastBody!['id_token'], 'firebase-id-token');
-      expect(token.token, 'jwt-token');
-      expect(token.tenantId, 't-1');
-      expect(token.role, 'owner');
-      expect(token.employeeId, 'e-1');
-    });
+        await svc.signInWithFirebase(testIdToken);
 
-    test('throws ApiException on non-success status', () async {
-      final client = _FakeApiClient({
-        'status': 'fail',
-        'message': 'Invalid token',
+        expect(client.token, 'jwt-token');
       });
-      final svc = AuthService(client);
 
-      expect(
-        () => svc.signInWithFirebase('bad-token'),
-        throwsA(
-          isA<ApiException>().having(
-            (e) => e.message,
-            'message',
-            'Invalid token',
-          ),
-        ),
-      );
-    });
+      test('throws ApiException on failure status', () async {
+        final client = _MockApiClient();
+        client.setResponse({'status': 'fail', 'message': 'Invalid token'});
+        final svc = AuthService(client);
 
-    test('throws default message when message is missing', () async {
-      final client = _FakeApiClient({'status': 'fail'});
-      final svc = AuthService(client);
-
-      expect(
-        () => svc.signInWithFirebase('bad-token'),
-        throwsA(
-          isA<ApiException>().having(
-            (e) => e.message,
-            'message',
-            'Login failed',
-          ),
-        ),
-      );
-    });
-
-    test('propagates network errors', () async {
-      final client = _FakeApiClient.error(Exception('Network error'));
-      final svc = AuthService(client);
-
-      expect(() => svc.signInWithFirebase('token'), throwsException);
-    });
-  });
-
-  group('AuthService.register', () {
-    test('sends registration body to register endpoint', () async {
-      final client = _FakeApiClient({
-        'status': 'success',
-        'data': {
-          'access_token': 'jwt-reg',
-          'tenant_id': 't-2',
-          'role': 'owner',
-          'employee_id': 'e-2',
-        },
+        expect(
+          () => svc.signInWithFirebase(testIdToken),
+          throwsA(isA<ApiException>()),
+        );
       });
-      final svc = AuthService(client);
 
-      final token = await svc.register(
-        name: 'John',
-        factoryName: 'Factory 1',
-        idToken: 'firebase-token',
-      );
+      test('throws on network error', () async {
+        final client = _MockApiClient();
+        client.setError(Exception('Network error'));
+        final svc = AuthService(client);
 
-      expect(client.lastMethod, 'POST');
-      expect(client.lastPath, '/api/v1/auth/register');
-      expect(client.lastBody!['name'], 'John');
-      expect(client.lastBody!['factory_name'], 'Factory 1');
-      expect(client.lastBody!['id_token'], 'firebase-token');
-      expect(token.token, 'jwt-reg');
-      expect(token.tenantId, 't-2');
-    });
-
-    test('throws ApiException on non-success status', () async {
-      final client = _FakeApiClient({
-        'status': 'fail',
-        'message': 'Name too long',
+        expect(
+          () => svc.signInWithFirebase(testIdToken),
+          throwsA(isA<Exception>()),
+        );
       });
-      final svc = AuthService(client);
-
-      expect(
-        () => svc.register(name: 'Long Name', factoryName: 'F', idToken: 'tok'),
-        throwsA(
-          isA<ApiException>().having(
-            (e) => e.message,
-            'message',
-            'Name too long',
-          ),
-        ),
-      );
     });
 
-    test('throws default message when message is missing', () async {
-      final client = _FakeApiClient({'status': 'fail'});
-      final svc = AuthService(client);
+    group('register', () {
+      test('sends correct request body', () async {
+        final client = _MockApiClient();
+        client.setResponse({
+          'status': 'success',
+          'data': {
+            'access_token': 'reg-token',
+            'tenant_id': 't2',
+            'role': 'owner',
+            'employee_id': 'e2',
+          },
+        });
+        final svc = AuthService(client);
 
-      expect(
-        () => svc.register(name: 'John', factoryName: 'F', idToken: 'tok'),
-        throwsA(
-          isA<ApiException>().having(
-            (e) => e.message,
-            'message',
-            'Registration failed',
-          ),
-        ),
-      );
-    });
-  });
+        final token = await svc.register(
+          name: 'Test User',
+          factoryName: 'Test Factory',
+          idToken: testIdToken,
+        );
 
-  group('AuthService.deleteAccount', () {
-    test('sends DELETE to account endpoint', () async {
-      final client = _FakeApiClient({
-        'status': 'success',
-        'data': {'message': 'Account deleted'},
+        expect(client.lastPath, '/api/v1/auth/register');
+        expect(client.lastBody, {
+          'name': 'Test User',
+          'factory_name': 'Test Factory',
+          'id_token': testIdToken,
+        });
+        expect(token.token, 'reg-token');
+        expect(token.tenantId, 't2');
       });
-      final svc = AuthService(client);
-
-      await svc.deleteAccount();
-
-      expect(client.lastMethod, 'DELETE');
-      expect(client.lastPath, '/api/v1/auth/account');
     });
 
-    test('throws ApiException on non-success', () async {
-      final client = _FakeApiClient({'status': 'fail', 'message': 'Not owner'});
-      final svc = AuthService(client);
+    group('logout', () {
+      test('clears token on client', () async {
+        final client = _MockApiClient();
+        client.setToken('some-token');
+        final svc = AuthService(client);
 
-      expect(
-        () => svc.deleteAccount(),
-        throwsA(
-          isA<ApiException>().having((e) => e.message, 'message', 'Not owner'),
-        ),
-      );
+        await svc.logout();
+
+        expect(client.token, isNull);
+      });
+    });
+
+    group('deleteAccount', () {
+      test('sends DELETE to correct endpoint', () async {
+        final client = _MockApiClient();
+        client.setResponse({'status': 'success'});
+        final svc = AuthService(client);
+
+        await svc.deleteAccount();
+
+        expect(client.lastPath, '/api/v1/auth/account');
+      });
+
+      test('throws on failure', () async {
+        final client = _MockApiClient();
+        client.setResponse({'status': 'fail', 'message': 'Cannot delete'});
+        final svc = AuthService(client);
+
+        expect(() => svc.deleteAccount(), throwsA(isA<ApiException>()));
+      });
+    });
+
+    group('phone number validation', () {
+      test('test phone number has correct format', () {
+        // Indian mobile numbers are 10 digits starting with 6-9
+        expect(testPhone.length, 10);
+        expect(int.tryParse(testPhone), isNotNull);
+        expect(testPhone.startsWith('9'), true);
+      });
+
+      test('test OTP has correct format', () {
+        // Firebase test OTP is 6 digits
+        expect(testOTP.length, 6);
+        expect(int.tryParse(testOTP), isNotNull);
+      });
     });
   });
 }

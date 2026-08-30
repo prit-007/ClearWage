@@ -273,6 +273,17 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
             ),
           ],
         ),
+      const _HubSection(
+        label: 'Activity',
+        items: [
+          _HubItem(
+            icon: PhosphorIconsFill.bell,
+            title: 'Notifications',
+            route: '/notifications',
+            color: AppColors.info,
+          ),
+        ],
+      ),
     ];
 
     if (isAdmin) {

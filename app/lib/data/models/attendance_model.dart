@@ -44,7 +44,7 @@ class Attendance {
     employeePhoto: json['employee_photo'] as String?,
     date: json['date'] as String? ?? '',
     shiftId: json['shift_id'] as String? ?? '',
-    status: json['status'] as String? ?? 'present',
+    status: json['status'] as String? ?? 'absent',
     checkInTime: json['check_in_time'] as String?,
     checkOutTime: json['check_out_time'] as String?,
     overtimeHours: safeToDouble(json['overtime_hours']),
@@ -63,6 +63,7 @@ class Attendance {
     'status': status,
     'check_in_time': checkInTime,
     'check_out_time': checkOutTime,
-    'overtime_hours': overtimeHours,
+    'overtime_hours': overtimeHours.toString(),
+    'version': version,
   };
 }

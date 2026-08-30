@@ -20,6 +20,7 @@ import '../features/ledger/my_ledger_page.dart';
 import '../features/ledger/new_ledger_entry_page.dart';
 import '../data/models/ledger_model.dart';
 import '../features/disputes/disputes_list_page.dart';
+import '../features/notifications/notifications_page.dart';
 import '../features/onboarding/onboarding_wizard.dart';
 import '../features/profile/my_profile_page.dart';
 import '../features/profile/profile_hub_page.dart';
@@ -40,13 +41,14 @@ import 'logger.dart';
 import 'providers/app_providers.dart';
 import 'responsive.dart';
 
-const _transitionDuration = Duration(milliseconds: 300);
+const _transitionDuration = Duration(milliseconds: 280);
+const _fastTransition = Duration(milliseconds: 200);
 
 Page<void> _slideUpPage(GoRouterState state, Widget child) {
   return CustomTransitionPage<void>(
     key: state.pageKey,
     transitionDuration: _transitionDuration,
-    reverseTransitionDuration: _transitionDuration,
+    reverseTransitionDuration: _fastTransition,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curved = CurvedAnimation(
         parent: animation,
@@ -56,15 +58,13 @@ Page<void> _slideUpPage(GoRouterState state, Widget child) {
       if (AppBreakpoints.isDesktop(context)) {
         return FadeTransition(opacity: curved, child: child);
       }
+      final slideTween = Tween<Offset>(
+        begin: const Offset(0, 0.06),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
       return FadeTransition(
         opacity: curved,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.08),
-            end: Offset.zero,
-          ).animate(curved),
-          child: child,
-        ),
+        child: SlideTransition(position: slideTween, child: child),
       );
     },
     child: child,
@@ -75,10 +75,13 @@ Page<void> _fadePage(GoRouterState state, Widget child) {
   return CustomTransitionPage<void>(
     key: state.pageKey,
     opaque: false,
-    transitionDuration: _transitionDuration,
-    reverseTransitionDuration: _transitionDuration,
+    transitionDuration: _fastTransition,
+    reverseTransitionDuration: _fastTransition,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      return FadeTransition(opacity: animation, child: child);
+      return FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        child: child,
+      );
     },
     child: child,
   );
@@ -377,6 +380,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/disputes',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const DisputesListScreen()),
+      ),
+      GoRoute(
+        path: '/notifications',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const NotificationsPage()),
       ),
       GoRoute(
         path: '/debug/logs',

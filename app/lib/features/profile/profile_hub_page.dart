@@ -228,7 +228,7 @@ class ProfileHubPage extends ConsumerWidget {
                     tt: tt,
                     icon: PhosphorIconsRegular.info,
                     title: 'About',
-                    subtitle: 'Factory Workforce v0.7.0',
+                    subtitle: 'ClearWage v0.7.0',
                     onTap: null,
                   ),
                   const SizedBox(height: 24),

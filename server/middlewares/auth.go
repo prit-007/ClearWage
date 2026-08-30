@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/pkg"
-	"github.com/vivek-app/vivek_app/utils"
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/pkg"
+	"github.com/clearwage/clearwage/utils"
 )
 
 type contextKey string

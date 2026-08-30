@@ -1,0 +1,14 @@
+v0.8.3 — Rebrand to ClearWage
+
+Changed:
+- Full rebrand: Factory Workforce → ClearWage
+- Dart package: vivek_app → clearwage
+- Bundle IDs: com.vivek.* → com.devparadise.clearwage
+- Go module: github.com/clearwage/clearwage
+- Binary names: clearwage (all platforms)
+- JWT issuer: clearwage
+- CI artifacts: clearwage-*
+
+Added:
+- About developers page
+- package_info_plus for runtime version

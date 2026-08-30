@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/vivek-app/vivek_app/config"
+	"github.com/clearwage/clearwage/config"
 )
 
 func TestGenerateAndValidateToken(t *testing.T) {

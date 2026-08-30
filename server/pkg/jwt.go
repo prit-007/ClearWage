@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/vivek-app/vivek_app/config"
+	"github.com/clearwage/clearwage/config"
 )
 
 // Claims contains the custom JWT claims used by the application.
@@ -25,7 +25,7 @@ func GenerateToken(cfg config.AppConfig, tenantID, employeeID, role string, expi
 		EmployeeID: employeeID,
 		Role:       role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    "vivek-app",
+			Issuer:    "clearwage",
 			Subject:   employeeID,
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

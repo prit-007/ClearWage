@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
-	"github.com/vivek-app/vivek_app/pkg/cache"
-	"github.com/vivek-app/vivek_app/repositories"
-	"github.com/vivek-app/vivek_app/utils"
+	"github.com/clearwage/clearwage/pkg/cache"
+	"github.com/clearwage/clearwage/repositories"
+	"github.com/clearwage/clearwage/utils"
 	"golang.org/x/sync/singleflight"
 )
 

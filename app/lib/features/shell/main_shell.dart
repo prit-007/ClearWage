@@ -119,7 +119,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         backgroundColor: cs.surface,
         elevation: 0,
         title: Text(
-          'Factory Workforce',
+          'ClearWage',
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),

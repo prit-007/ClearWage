@@ -6,7 +6,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/app_info.dart';
 
-/// Full editorial "About" screen for Factory Workforce.
+/// Full editorial "About" screen for ClearWage.
 ///
 /// Employs glassmorphism, macro-typography, and high-contrast
 /// spacing to deliver a premium, editorial reading experience.
@@ -62,7 +62,7 @@ class SettingsAboutPage extends ConsumerWidget {
           ),
           const SizedBox(height: 32),
           Text(
-            'Factory Workforce',
+            'ClearWage',
             textAlign: TextAlign.center,
             style: text.displayLarge?.copyWith(
               fontSize: 40,
@@ -99,7 +99,7 @@ class SettingsAboutPage extends ConsumerWidget {
           _GlassCard(
             scheme: scheme,
             child: Text(
-              'Factory Workforce is a comprehensive attendance, payroll, and '
+              'ClearWage is a comprehensive attendance, payroll, and '
               'workforce management platform built for modern factories. From '
               'real-time attendance tracking with OT computation to ledger '
               'management and payroll processing — everything you need to '

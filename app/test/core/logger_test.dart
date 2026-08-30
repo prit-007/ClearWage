@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:talker/talker.dart';
-import 'package:vivek_app/core/logger.dart';
+import 'package:clearwage/core/logger.dart';
 
 void main() {
   group('AppLogger', () {

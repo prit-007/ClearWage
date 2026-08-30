@@ -6,7 +6,7 @@ import (
 	"github.com/pressly/goose/v3"
 	"github.com/spf13/cobra"
 
-	"github.com/vivek-app/vivek_app/config"
+	"github.com/clearwage/clearwage/config"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 

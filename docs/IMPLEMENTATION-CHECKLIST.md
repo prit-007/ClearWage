@@ -180,9 +180,9 @@ subsequent release cycles.
 
 ### Platform configs
 
-- [x] `app/linux/CMakeLists.txt` — binary name `factory_workforce`, app ID `com.vivek.factory_workforce`.
-- [x] `app/windows/CMakeLists.txt` — binary name `factory_workforce`.
-- [x] `app/windows/runner/Runner.rc` — product name "Factory Workforce".
+- [x] `app/linux/CMakeLists.txt` — binary name `clearwage`, app ID `com.devparadise.clearwage`.
+- [x] `app/windows/CMakeLists.txt` — binary name `clearwage`.
+- [x] `app/windows/runner/Runner.rc` — product name "ClearWage".
 
 ### CI
 
@@ -199,3 +199,28 @@ subsequent release cycles.
 - [x] `app/pubspec.yaml` bumped to `0.8.2+7`.
 - [x] `fastlane` changelog `changelogs/7.txt`.
 - [x] Tag `v0.8.2` created at the CHANGELOG commit.
+
+## Phase 11 — v0.8.3 rebrand to ClearWage
+
+### Rebrand
+
+- [x] Dart package `vivek_app` → `clearwage` (all lib/ + test/ imports).
+- [x] Display name `Factory Workforce` → `ClearWage` (all code, config, web, Fastlane).
+- [x] Binary names `factory_workforce` → `clearwage` (Linux, Windows, macOS, installer).
+- [x] Bundle IDs `com.vivek.*` → `com.devparadise.clearwage` (Android, iOS, macOS, Linux).
+- [x] Go module `github.com/vivek-app/vivek_app` → `github.com/clearwage/clearwage`.
+- [x] JWT issuer `vivek-app` → `clearwage`.
+- [x] Window titles → `ClearWage` (Linux, Windows).
+- [x] CI artifacts `vivek-app-*` → `clearwage-*`.
+- [x] All docs updated (README, ARCHITECTURE, API, ADRs, CONTRIBUTING, AGENTS).
+
+### New features
+
+- [x] About developers page with glassmorphic design + `package_info_plus`.
+
+### Release
+
+- [x] `CHANGELOG.md` entry for `[0.8.3]`.
+- [x] `app/pubspec.yaml` bumped to `0.8.3+8`.
+- [x] `fastlane` changelog `changelogs/8.txt`.
+- [x] Tag `v0.8.3` created at the CHANGELOG commit.

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vivek_app/data/models/roster_model.dart';
+import 'package:clearwage/data/models/roster_model.dart';
 
 void main() {
   group('RosterRow', () {

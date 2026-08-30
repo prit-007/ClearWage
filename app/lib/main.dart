@@ -68,7 +68,7 @@ void main() {
         AppLogger.error('Firebase initialization failed', e);
       }
 
-      runApp(const ProviderScope(child: FactoryWorkforceApp()));
+      runApp(const ProviderScope(child: ClearWageApp()));
     },
     (error, stackTrace) {
       AppLogger.error('Uncaught zone error', error, stackTrace);

@@ -162,14 +162,14 @@ jobs:
       - name: Upload Dart symbol files
         uses: actions/upload-artifact@v4
         with:
-          name: vivek-app-symbols
+          name: clearwage-symbols
           path: app/build/symbols
           if-no-files-found: warn
 
       - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vivek-app-apks
+          name: clearwage-apks
           path: app/build/app/outputs/flutter-apk/*-release.apk
           if-no-files-found: error
 
@@ -196,14 +196,14 @@ jobs:
         working-directory: app
         run: |
           cd build/ios/iphoneos
-          zip -r ../vivek-app-ios-v${{ env.APP_VERSION }}.zip Runner.app
+          zip -r ../clearwage-ios-v${{ env.APP_VERSION }}.zip Runner.app
           cd ../../..
 
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vivek-app-ios
-          path: app/build/ios/vivek-app-ios-v${{ env.APP_VERSION }}.zip
+          name: clearwage-ios
+          path: app/build/ios/clearwage-ios-v${{ env.APP_VERSION }}.zip
           if-no-files-found: error
 
   build-windows:
@@ -242,7 +242,7 @@ jobs:
         shell: powershell
         working-directory: app
         run: |
-          $exe = Get-ChildItem build/installers/factory_workforce_setup_*.exe
+          $exe = Get-ChildItem build/installers/clearwage_setup_*.exe
           if (-not $exe) { throw "Installer .exe was not produced" }
           Write-Host "Installer: $($exe.FullName)"
 
@@ -250,15 +250,15 @@ jobs:
         shell: powershell
         working-directory: app
         run: |
-          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath build/vivek-app-windows-v$env:APP_VERSION.zip -Force
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath build/clearwage-windows-v$env:APP_VERSION.zip -Force
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vivek-app-windows
+          name: clearwage-windows
           path: |
-            app/build/vivek-app-windows-v${{ env.APP_VERSION }}.zip
-            app/build/installers/factory_workforce_setup_*.exe
+            app/build/clearwage-windows-v${{ env.APP_VERSION }}.zip
+            app/build/installers/clearwage_setup_*.exe
           if-no-files-found: error
 
   build-macos:
@@ -284,14 +284,14 @@ jobs:
         working-directory: app
         run: |
           ditto -c -k --sequesterRsrc --keepParent \
-            "build/macos/Build/Products/Release/factory_workforce.app" \
-            build/macos/vivek-app-macos-v${{ env.APP_VERSION }}.zip
+            "build/macos/Build/Products/Release/clearwage.app" \
+            build/macos/clearwage-macos-v${{ env.APP_VERSION }}.zip
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vivek-app-macos
-          path: app/build/macos/vivek-app-macos-v${{ env.APP_VERSION }}.zip
+          name: clearwage-macos
+          path: app/build/macos/clearwage-macos-v${{ env.APP_VERSION }}.zip
           if-no-files-found: error
 
   build-linux:
@@ -321,14 +321,14 @@ jobs:
       - name: Package Linux build
         working-directory: app
         run: |
-          tar -czf build/vivek-app-linux-v${{ env.APP_VERSION }}.tar.gz \
+          tar -czf build/clearwage-linux-v${{ env.APP_VERSION }}.tar.gz \
             -C build/linux/x64/release bundle
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vivek-app-linux
-          path: app/build/vivek-app-linux-v${{ env.APP_VERSION }}.tar.gz
+          name: clearwage-linux
+          path: app/build/clearwage-linux-v${{ env.APP_VERSION }}.tar.gz
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
@@ -359,35 +359,35 @@ jobs:
         if: needs.build-android.result == 'success'
         uses: actions/download-artifact@v4
         with:
-          name: vivek-app-apks
+          name: clearwage-apks
           path: release/apks
 
       - name: Download iOS artifact
         if: needs.build-ios.result == 'success'
         uses: actions/download-artifact@v4
         with:
-          name: vivek-app-ios
+          name: clearwage-ios
           path: release/ios
 
       - name: Download Windows artifact
         if: needs.build-windows.result == 'success'
         uses: actions/download-artifact@v4
         with:
-          name: vivek-app-windows
+          name: clearwage-windows
           path: release/windows
 
       - name: Download macOS artifact
         if: needs.build-macos.result == 'success'
         uses: actions/download-artifact@v4
         with:
-          name: vivek-app-macos
+          name: clearwage-macos
           path: release/macos
 
       - name: Download Linux artifact
         if: needs.build-linux.result == 'success'
         uses: actions/download-artifact@v4
         with:
-          name: vivek-app-linux
+          name: clearwage-linux
           path: release/linux
 
       - name: Prepare release body from CHANGELOG

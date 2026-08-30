@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vivek_app/app.dart';
-import 'package:vivek_app/core/providers/app_providers.dart';
-import 'package:vivek_app/data/models/auth_model.dart';
+import 'package:clearwage/app.dart';
+import 'package:clearwage/core/providers/app_providers.dart';
+import 'package:clearwage/data/models/auth_model.dart';
 
 void main() {
-  testWidgets('App renders factory workforce shell when authenticated', (
+  testWidgets('App renders ClearWage shell when authenticated', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -22,13 +22,13 @@ void main() {
             ),
           ),
         ],
-        child: const FactoryWorkforceApp(),
+        child: const ClearWageApp(),
       ),
     );
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Factory Workforce'), findsWidgets);
+    expect(find.text('ClearWage'), findsWidgets);
   });
 
   testWidgets('App renders login screen when unauthenticated', (
@@ -41,7 +41,7 @@ void main() {
           tokenProvider.overrideWith((ref) => null),
           userInfoProvider.overrideWith((ref) => null),
         ],
-        child: const FactoryWorkforceApp(),
+        child: const ClearWageApp(),
       ),
     );
 
@@ -50,6 +50,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Workforce Portal'), findsOneWidget);
-    expect(find.text('Factory Workforce'), findsNothing);
+    expect(find.text('ClearWage'), findsNothing);
   });
 }

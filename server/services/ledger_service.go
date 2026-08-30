@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/shopspring/decimal"
-	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/clearwage/clearwage/repositories"
 )
 
 type LedgerService struct {

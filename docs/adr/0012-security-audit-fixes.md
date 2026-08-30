@@ -66,7 +66,7 @@ refactored to use them, eliminating nil-claims bypass vulnerabilities.
 `COUNT` instead of loading up to 1000 holidays. `listAll` capped at 10,000.
 Staff list limit capped at 100.
 
-**JWT claims (#33)**: Added `iss` ("vivek-app") and `sub` (employee_id)
+**JWT claims (#33)**: Added `iss` ("clearwage") and `sub` (employee_id)
 claims for token revocation support.
 
 **OT multiplier validation (#25-26)**: Controller now enforces 1.0–2.0 range

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import 'package:vivek_app/core/api_client.dart';
-import 'package:vivek_app/core/widgets/shimmer_loading.dart';
-import 'package:vivek_app/core/providers/services.dart';
-import 'package:vivek_app/data/models/attendance_model.dart';
-import 'package:vivek_app/data/services/profile_service.dart';
-import 'package:vivek_app/features/attendance/my_attendance_page.dart';
+import 'package:clearwage/core/api_client.dart';
+import 'package:clearwage/core/widgets/shimmer_loading.dart';
+import 'package:clearwage/core/providers/services.dart';
+import 'package:clearwage/data/models/attendance_model.dart';
+import 'package:clearwage/data/services/profile_service.dart';
+import 'package:clearwage/features/attendance/my_attendance_page.dart';
 
 class _NoOpApiClient extends ApiClient {
   _NoOpApiClient() : super(baseUrl: 'http://localhost');

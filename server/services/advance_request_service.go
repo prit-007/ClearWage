@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/clearwage/clearwage/repositories"
 )
 
 type AdvanceRequestService struct {

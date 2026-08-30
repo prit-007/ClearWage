@@ -59,7 +59,7 @@ are excluded from lints.
   add a repo-wide `*.yml text eol=lf` `.gitattributes` — it dirties
   fdroiddata's CRLF files and breaks their whole-repo diff checks.
 - `AutoName` in fdroiddata must equal the manifest `android:label`
-  byte-for-byte (currently `Factory Workforce`).
+  byte-for-byte (currently `ClearWage`).
 
 ## CI behavior
 

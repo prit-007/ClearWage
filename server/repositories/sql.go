@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/vivek-app/vivek_app/repositories/db"
+	"github.com/clearwage/clearwage/repositories/db"
 )
 
 // GetDashboardSnapshot runs a single aggregated query for the dashboard,

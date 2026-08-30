@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vivek-app/vivek_app/utils"
+	"github.com/clearwage/clearwage/utils"
 )
 
 type visitor struct {

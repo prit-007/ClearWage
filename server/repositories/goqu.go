@@ -10,7 +10,7 @@ import (
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/google/uuid"
-	"github.com/vivek-app/vivek_app/repositories/db"
+	"github.com/clearwage/clearwage/repositories/db"
 )
 
 var ErrNotFound = errors.New("not found")

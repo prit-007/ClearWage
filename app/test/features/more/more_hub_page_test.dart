@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vivek_app/core/providers/app_providers.dart';
-import 'package:vivek_app/data/models/auth_model.dart';
-import 'package:vivek_app/features/more/more_hub_page.dart';
+import 'package:clearwage/core/providers/app_providers.dart';
+import 'package:clearwage/data/models/auth_model.dart';
+import 'package:clearwage/features/more/more_hub_page.dart';
 
 Widget _buildApp(AppUser? user) {
   return ProviderScope(

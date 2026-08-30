@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vivek_app/data/models/advance_request_model.dart';
+import 'package:clearwage/data/models/advance_request_model.dart';
 
 void main() {
   group('AdvanceRequest', () {

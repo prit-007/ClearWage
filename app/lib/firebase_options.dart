@@ -64,7 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '482473409370',
     projectId: 'workforce-9b7de',
     storageBucket: 'workforce-9b7de.firebasestorage.app',
-    iosBundleId: 'com.vivek.vivekApp',
+    iosBundleId: 'com.devparadise.clearwage',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -73,7 +73,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '482473409370',
     projectId: 'workforce-9b7de',
     storageBucket: 'workforce-9b7de.firebasestorage.app',
-    iosBundleId: 'com.vivek.vivekApp',
+    iosBundleId: 'com.devparadise.clearwage',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

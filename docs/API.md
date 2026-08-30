@@ -1,4 +1,4 @@
-# API Endpoints Documentation — Factory Workforce Management App
+# API Endpoints Documentation — ClearWage Management App
 
 ## Architecture Overview
 
@@ -86,7 +86,7 @@ LoginScreen
   "tenant_id":   "uuid",   // The tenant (factory) the user belongs to
   "employee_id": "uuid",   // The employee record ID (empty for tenant owners)
   "role":        "owner" | "manager" | "employee",
-  "iss":         "vivek-app",   // Issuer — enables token revocation
+  "iss":         "clearwage",   // Issuer — enables token revocation
   "sub":         "uuid",        // Subject — the employee_id
   "exp":         int64,    // Unix timestamp — token expires in TOKEN_TTL hours
   "iat":         int64     // Unix timestamp — issued at

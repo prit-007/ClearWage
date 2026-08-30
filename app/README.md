@@ -1,6 +1,6 @@
-# Factory Workforce App (Flutter)
+# ClearWage App (Flutter)
 
-Mobile client for the Factory Workforce Management SaaS. Runs against the Go
+Mobile client for the ClearWage Management SaaS. Runs against the Go
 backend in `../server` (see the root [README](../README.md) for setup).
 
 ## Tech stack

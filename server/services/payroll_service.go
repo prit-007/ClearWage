@@ -12,7 +12,7 @@ import (
 
 	"github.com/jung-kurt/gofpdf"
 	"github.com/shopspring/decimal"
-	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/clearwage/clearwage/repositories"
 )
 
 type PayrollEntry struct {

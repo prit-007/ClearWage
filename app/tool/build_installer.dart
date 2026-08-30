@@ -1,6 +1,6 @@
 import 'dart:io';
 
-/// Builds a Windows installer for Factory Workforce using the Inno Setup
+/// Builds a Windows installer for ClearWage using the Inno Setup
 /// compiler.
 ///
 /// Pipeline (run on Windows):
@@ -14,12 +14,12 @@ import 'dart:io';
 ///   --iscc     Absolute path to ISCC.exe when it is not resolvable from PATH.
 
 const _publisher = 'Vivek';
-const _homeUrl = 'https://github.com/prit_vasani/vivek_app';
+const _homeUrl = 'https://github.com/devparadise/clearwage';
 // Stable AppId so Windows Update / upgrades install over a previous version.
 const _appId = '{{a3f1c8d2-7b4e-4e9a-b5c6-1d2e3f4a5b6c}}';
 
 const _releaseDir = 'build/windows/x64/runner/Release';
-const _exeName = 'factory_workforce.exe';
+const _exeName = 'clearwage.exe';
 const _iconPath = 'windows/runner/resources/app_icon.ico';
 const _licensePath = 'LICENSE';
 const _outputDir = 'build/installers';
@@ -37,7 +37,7 @@ void main(List<String> args) {
   }
 
   final outputDir = Directory(_outputDir)..createSync(recursive: true);
-  final issFile = File('${outputDir.path}/factory_workforce_setup_$version.iss');
+  final issFile = File('${outputDir.path}/clearwage_setup_$version.iss');
   issFile.writeAsStringSync(_buildIss(version, exe));
   stdout.writeln('Wrote ${issFile.path}');
 
@@ -57,7 +57,7 @@ void main(List<String> args) {
   stderr.write(result.stderr);
   if (result.exitCode != 0) exit(result.exitCode);
   stdout.writeln(
-    'Installer: ${outputDir.path}/factory_workforce_setup_$version.exe',
+    'Installer: ${outputDir.path}/clearwage_setup_$version.exe',
   );
 }
 
@@ -82,21 +82,21 @@ String _buildIss(String version, File exe) {
   return '''
 [Setup]
 AppId=$_appId
-AppName=Factory Workforce
+AppName=ClearWage
 AppVersion=$version
-AppVerName=Factory Workforce $version
+AppVerName=ClearWage $version
 AppPublisher=$_publisher
 AppPublisherURL=$_homeUrl
 AppSupportURL=$_homeUrl
 AppUpdatesURL=$_homeUrl
-DefaultDirName={localappdata}\\FactoryWorkforce
-DefaultGroupName=Factory Workforce
+DefaultDirName={localappdata}\\ClearWage
+DefaultGroupName=ClearWage
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 WizardStyle=modern
 OutputDir=$outputDir
-OutputBaseFilename=factory_workforce_setup_$version
+OutputBaseFilename=clearwage_setup_$version
 SetupIconFile=$icon
 Compression=lzma2
 SolidCompression=yes
@@ -113,11 +113,11 @@ Source: "$exePath"; DestDir: "{app}"; Flags: ignoreversion
 Source: "$releaseDir\\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\\Factory Workforce"; Filename: "{app}\\$_exeName"
-Name: "{autodesktop}\\Factory Workforce"; Filename: "{app}\\$_exeName"; Tasks: desktopicon
+Name: "{autoprograms}\\ClearWage"; Filename: "{app}\\$_exeName"
+Name: "{autodesktop}\\ClearWage"; Filename: "{app}\\$_exeName"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\\$_exeName"; Description: "{cm:LaunchProgram,Factory Workforce}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\\$_exeName"; Description: "{cm:LaunchProgram,ClearWage}"; Flags: nowait postinstall skipifsilent
 ''';
 }
 

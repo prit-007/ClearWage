@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 2026-08-30
+
+### Changed
+
+- **Full rebrand: Factory Workforce → ClearWage** across all code, configs,
+  docs, CI, Fastlane metadata, and window titles.
+- Dart package renamed `vivek_app` → `clearwage` (all imports updated).
+- Bundle IDs changed to `com.devparadise.clearwage` (Android, iOS, macOS, Linux).
+- Go module renamed `github.com/vivek-app/vivek_app` → `github.com/clearwage/clearwage`.
+- Binary names changed to `clearwage` (was `factory_workforce`).
+- JWT issuer changed to `clearwage` (was `vivek-app`).
+- CI artifact names changed to `clearwage-*` (was `vivek-app-*`).
+
+### Added
+
+- About developers page (`/settings/about`) with glassmorphic design,
+  version badge, and tech stack — accessible to all roles via More hub.
+- `package_info_plus` for runtime version display (single source of truth).
+
 ## [0.8.2] - 2026-08-30
 
 ### Added
@@ -21,8 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Platform binary names updated to `factory_workforce` (was `vivek_app`).
-  Windows `Runner.rc` product metadata updated to "Factory Workforce".
+- Platform binary names updated to `clearwage` (was `vivek_app`).
+  Windows `Runner.rc` product metadata updated to "ClearWage".
 - `main.dart` uses `DefaultFirebaseOptions.currentPlatform` for Firebase
   initialization (wrapped in try/catch for graceful degradation).
 - Widget smoke test fixed (was referencing non-existent `MyApp` class).
@@ -297,7 +316,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.0] - 2026-08-15
 
-Baseline release. First tagged version of the Factory Workforce app, aligned
+Baseline release. First tagged version of the ClearWage app, aligned
 with the repo-wide structure conventions (docs pyramid, release pipeline, lint
 contract).
 

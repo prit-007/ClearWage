@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vivek_app/core/api_client.dart';
-import 'package:vivek_app/core/providers/services.dart';
-import 'package:vivek_app/data/services/auth_service.dart';
-import 'package:vivek_app/features/auth/register_page.dart';
+import 'package:clearwage/core/api_client.dart';
+import 'package:clearwage/core/providers/services.dart';
+import 'package:clearwage/data/services/auth_service.dart';
+import 'package:clearwage/features/auth/register_page.dart';
 
 class _NoOpApiClient extends ApiClient {
   _NoOpApiClient() : super(baseUrl: 'http://localhost');

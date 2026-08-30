@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vivek_app/core/app_info.dart';
-import 'package:vivek_app/features/settings/settings_about_page.dart';
+import 'package:clearwage/core/app_info.dart';
+import 'package:clearwage/features/settings/settings_about_page.dart';
 
 Widget _buildApp() {
   return ProviderScope(
@@ -21,7 +21,7 @@ void main() {
       await tester.pumpWidget(_buildApp());
       await tester.pumpAndSettle();
 
-      expect(find.text('Factory Workforce'), findsOneWidget);
+      expect(find.text('ClearWage'), findsOneWidget);
       expect(find.text('VERSION 0.8.2'), findsOneWidget);
     });
 

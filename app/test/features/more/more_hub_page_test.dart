@@ -41,10 +41,15 @@ void main() {
       await tester.pumpWidget(_buildApp(user));
       await tester.pumpAndSettle();
 
+      expect(find.text('Reports'), findsOneWidget);
       expect(find.text('Workforce'), findsOneWidget);
-      expect(find.text('Financial'), findsOneWidget);
       expect(find.text('Shift Timings'), findsOneWidget);
       expect(find.text('Holidays'), findsOneWidget);
+
+      final scrollable = find.byType(CustomScrollView);
+      await tester.drag(scrollable, const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(find.text('Financial'), findsOneWidget);
       expect(find.text('Advance Requests'), findsOneWidget);
     });
 
@@ -74,10 +79,15 @@ void main() {
       await tester.pumpWidget(_buildApp(user));
       await tester.pumpAndSettle();
 
+      expect(find.text('Reports'), findsOneWidget);
+      expect(find.text('Workforce'), findsOneWidget);
+
+      final scrollable = find.byType(CustomScrollView);
+      await tester.drag(scrollable, const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(find.text('Financial'), findsOneWidget);
       expect(find.text('Leave Policy'), findsOneWidget);
       expect(find.text('Payroll Settings'), findsOneWidget);
-      expect(find.text('Workforce'), findsOneWidget);
-      expect(find.text('Financial'), findsOneWidget);
     });
 
     testWidgets('shows Debug section for admin', (tester) async {
@@ -91,7 +101,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final listView = find.byType(CustomScrollView);
-      await tester.drag(listView, const Offset(0, -500));
+      await tester.drag(listView, const Offset(0, -800));
       await tester.pumpAndSettle();
 
       expect(find.text('Debug'), findsOneWidget);

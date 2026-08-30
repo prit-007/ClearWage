@@ -58,7 +58,6 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
 
   void _initFromData(Map<String, dynamic>? data) {
     if (_loaded) return;
-    _loaded = true;
     if (data != null) {
       _paidCtrl.text = data['paid'].toString();
       _unpaidCtrl.text = data['unpaid'].toString();
@@ -66,6 +65,7 @@ class _LeavePolicyScreenState extends ConsumerState<LeavePolicyScreen> {
       _paidCtrl.text = '12';
       _unpaidCtrl.text = '0';
     }
+    _loaded = true;
   }
 
   String? _paidError;

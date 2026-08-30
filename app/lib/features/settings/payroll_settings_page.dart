@@ -67,7 +67,6 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
 
   void _initFromData(PayrollSettings data) {
     if (_loaded) return;
-    _loaded = true;
     _thresholdCtrl.text = data.otThresholdHours.toString();
     _otMultiplierCtrl.text = data.otMultiplierDefault.toString();
     _roundingCtrl.text = data.otRounding.toString();
@@ -76,6 +75,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
     _weekOffPaid = data.weekOffPaid;
     _weeklyOffs = List.of(data.weeklyOffs);
     _selectedMultiplier = data.otMultiplierDefault;
+    _loaded = true;
   }
 
   String? _thresholdError;

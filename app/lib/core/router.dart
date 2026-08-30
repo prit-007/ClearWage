@@ -28,7 +28,6 @@ import '../features/reports/defaulters_page.dart';
 import '../features/reports/my_reports_page.dart';
 import '../features/reports/payroll_preview_page.dart';
 import '../features/more/more_hub_page.dart';
-import '../features/reports/reports_hub_page.dart';
 import '../features/settings/payroll_settings_page.dart';
 import '../features/shell/main_shell.dart';
 import '../features/shifts/my_shifts_page.dart';
@@ -125,9 +124,9 @@ List<StatefulShellBranch> _adminBranches() {
     StatefulShellBranch(
       routes: [
         GoRoute(
-          path: '/reports',
+          path: '/more',
           pageBuilder: (context, state) =>
-              const NoTransitionPage(child: ReportsHubScreen()),
+              const NoTransitionPage(child: MoreHubPage()),
         ),
       ],
     ),
@@ -157,9 +156,9 @@ List<StatefulShellBranch> _employeeBranches() {
     StatefulShellBranch(
       routes: [
         GoRoute(
-          path: '/reports',
+          path: '/more',
           pageBuilder: (context, state) =>
-              const NoTransitionPage(child: ReportsHubScreen()),
+              const NoTransitionPage(child: MoreHubPage()),
         ),
       ],
     ),

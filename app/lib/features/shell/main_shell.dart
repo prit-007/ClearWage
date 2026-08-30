@@ -74,20 +74,15 @@ class _MainShellState extends ConsumerState<MainShell> {
           label: 'Ledger',
         ),
         const NavigationDestination(
-          icon: Icon(Icons.analytics_outlined),
-          selectedIcon: Icon(Icons.analytics),
-          label: 'Reports',
+          icon: Icon(Icons.more_horiz_outlined),
+          selectedIcon: Icon(Icons.more_horiz),
+          label: 'More',
         ),
       ] else ...[
         const NavigationDestination(
           icon: Icon(Icons.event_available_outlined),
           selectedIcon: Icon(Icons.event_available),
           label: 'Attendance',
-        ),
-        const NavigationDestination(
-          icon: Icon(Icons.analytics_outlined),
-          selectedIcon: Icon(Icons.analytics),
-          label: 'Reports',
         ),
         const NavigationDestination(
           icon: Icon(Icons.account_balance_wallet_outlined),
@@ -98,6 +93,11 @@ class _MainShellState extends ConsumerState<MainShell> {
           icon: Icon(Icons.person_outlined),
           selectedIcon: Icon(Icons.person),
           label: 'Profile',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.more_horiz_outlined),
+          selectedIcon: Icon(Icons.more_horiz),
+          label: 'More',
         ),
       ],
     ];
@@ -125,13 +125,6 @@ class _MainShellState extends ConsumerState<MainShell> {
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         actions: [
-          IconButton(
-            icon: PhosphorIcon(
-              PhosphorIconsRegular.gear,
-              color: cs.onSurfaceVariant,
-            ),
-            onPressed: () => context.push('/more'),
-          ),
           PopupMenuButton<String>(
             icon: PhosphorIcon(
               PhosphorIconsRegular.userCircle,

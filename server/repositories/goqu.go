@@ -75,17 +75,6 @@ func (q *GoquQuerier) BeginTx(ctx context.Context) (*GoquQuerier, *sql.Tx, error
 }
 
 func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAttendanceParams) ([]Attendance, error) {
-	var locked bool
-	_, err := q.db.Select(goqu.C("is_locked")).From("attendance").Where(
-		goqu.C("tenant_id").Eq(arg.TenantID),
-		goqu.C("employee_id").Eq(arg.EmployeeID),
-		goqu.C("date").Eq(arg.Date),
-		goqu.C("is_locked").Eq(true),
-	).Executor().ScanValContext(ctx, &locked)
-	if err == nil && locked {
-		return nil, ErrAttendanceLocked
-	}
-
 	query := `
 		INSERT INTO attendance (tenant_id, employee_id, date, shift_id, status, overtime_hours, overtime_rate_multiplier, units_produced)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -96,6 +85,7 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 			overtime_rate_multiplier = EXCLUDED.overtime_rate_multiplier,
 			units_produced = EXCLUDED.units_produced,
 			updated_at = now()
+		WHERE NOT attendance.is_locked
 		RETURNING id, tenant_id, employee_id, date, shift_id, status, check_in_time, check_out_time,
 			overtime_hours, overtime_rate_multiplier, units_produced, computed_wage, is_locked,
 			edited_by, edited_at, created_at, updated_at, version
@@ -120,6 +110,9 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 			); scanErr != nil {
 				return nil, scanErr
 			}
+			if a.IsLocked {
+				return nil, ErrAttendanceLocked
+			}
 			normalizeAttendanceDate(&a)
 			items = append(items, a)
 		}
@@ -136,7 +129,15 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 		"overtime_rate_multiplier": arg.OvertimeRateMultiplier,
 		"units_produced":           arg.UnitsProduced,
 	}
-	err = q.db.Insert("attendance").Rows(row).
+	err := q.db.Insert("attendance").Rows(row).
+		OnConflict(goqu.DoUpdate("tenant_id, employee_id, date", goqu.Record{
+			"shift_id":                 goqu.L("EXCLUDED.shift_id"),
+			"status":                   goqu.L("EXCLUDED.status"),
+			"overtime_hours":           goqu.L("EXCLUDED.overtime_hours"),
+			"overtime_rate_multiplier": goqu.L("EXCLUDED.overtime_rate_multiplier"),
+			"units_produced":           goqu.L("EXCLUDED.units_produced"),
+			"updated_at":               goqu.L("now()"),
+		}).Where(goqu.C("is_locked").Eq(false))).
 		Returning(goqu.Star()).Executor().ScanStructsContext(ctx, &items)
 	for i := range items {
 		normalizeAttendanceDate(&items[i])
@@ -155,17 +156,6 @@ func normalizeAttendanceDate(a *Attendance) {
 }
 
 func (q *GoquQuerier) CreateAttendance(ctx context.Context, arg CreateAttendanceParams) (Attendance, error) {
-	var locked bool
-	_, err := q.db.Select(goqu.C("is_locked")).From("attendance").Where(
-		goqu.C("tenant_id").Eq(arg.TenantID),
-		goqu.C("employee_id").Eq(arg.EmployeeID),
-		goqu.C("date").Eq(arg.Date),
-		goqu.C("is_locked").Eq(true),
-	).Executor().ScanValContext(ctx, &locked)
-	if err == nil && locked {
-		return Attendance{}, ErrAttendanceLocked
-	}
-
 	var a Attendance
 	row := goqu.Record{
 		"tenant_id":                arg.TenantID,
@@ -190,13 +180,16 @@ func (q *GoquQuerier) CreateAttendance(ctx context.Context, arg CreateAttendance
 			"overtime_rate_multiplier": excluded("overtime_rate_multiplier"),
 			"units_produced":           excluded("units_produced"),
 			"updated_at":               goqu.L("now()"),
-		})).
+		}).Where(goqu.C("is_locked").Eq(false))).
 		Returning(goqu.Star()).Executor().ScanStructContext(ctx, &a)
 	if err != nil {
 		return Attendance{}, err
 	}
 	if !found {
 		return Attendance{}, errors.New("insert did not return a row")
+	}
+	if a.IsLocked {
+		return Attendance{}, ErrAttendanceLocked
 	}
 	normalizeAttendanceDate(&a)
 	return a, nil
@@ -1274,17 +1267,36 @@ func (q *GoquQuerier) UpsertTenantConfig(ctx context.Context, arg UpsertTenantCo
 	return tc, nil
 }
 
-func parseUUID(s string) uuid.UUID {
-	u, _ := uuid.Parse(s)
-	return u
+func parseUUID(s string) (uuid.UUID, error) {
+	u, err := uuid.Parse(s)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("invalid UUID %q: %w", s, err)
+	}
+	return u, nil
 }
 
 func (q *GoquQuerier) CreateDispute(ctx context.Context, arg CreateDisputeParams) (LedgerDispute, error) {
+	tenantUUID, err := parseUUID(arg.TenantID)
+	if err != nil {
+		return LedgerDispute{}, fmt.Errorf("invalid tenant_id: %w", err)
+	}
+	ledgerUUID, err := parseUUID(arg.LedgerID)
+	if err != nil {
+		return LedgerDispute{}, fmt.Errorf("invalid ledger_id: %w", err)
+	}
+	empUUID, err := parseUUID(arg.EmployeeID)
+	if err != nil {
+		return LedgerDispute{}, fmt.Errorf("invalid employee_id: %w", err)
+	}
+	raisedUUID, err := parseUUID(arg.RaisedBy)
+	if err != nil {
+		return LedgerDispute{}, fmt.Errorf("invalid raised_by: %w", err)
+	}
 	dbArg := db.CreateDisputeParams{
-		TenantID:   parseUUID(arg.TenantID),
-		LedgerID:   parseUUID(arg.LedgerID),
-		EmployeeID: parseUUID(arg.EmployeeID),
-		RaisedBy:   parseUUID(arg.RaisedBy),
+		TenantID:   tenantUUID,
+		LedgerID:   ledgerUUID,
+		EmployeeID: empUUID,
+		RaisedBy:   raisedUUID,
 		Reason:     arg.Reason,
 	}
 	d, err := q.sqlc.CreateDispute(ctx, dbArg)
@@ -1305,8 +1317,12 @@ func (q *GoquQuerier) CreateDispute(ctx context.Context, arg CreateDisputeParams
 }
 
 func (q *GoquQuerier) ListDisputesByTenant(ctx context.Context, arg ListDisputesByTenantParams) ([]ListDisputesByTenantRow, error) {
+	tenantUUID, err := parseUUID(arg.TenantID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid tenant_id: %w", err)
+	}
 	dbArg := db.ListDisputesByTenantParams{
-		TenantID: parseUUID(arg.TenantID),
+		TenantID: tenantUUID,
 		Status:   arg.Status,
 		Limit:    arg.Limit,
 		Offset:   arg.Offset,
@@ -1344,10 +1360,22 @@ func (q *GoquQuerier) ListDisputesByTenant(ctx context.Context, arg ListDisputes
 }
 
 func (q *GoquQuerier) ResolveDispute(ctx context.Context, arg ResolveDisputeParams) (LedgerDispute, error) {
+	idUUID, err := parseUUID(arg.ID)
+	if err != nil {
+		return LedgerDispute{}, fmt.Errorf("invalid dispute id: %w", err)
+	}
+	resolvedUUID, err := parseUUID(arg.ResolvedBy)
+	if err != nil {
+		return LedgerDispute{}, fmt.Errorf("invalid resolved_by: %w", err)
+	}
+	tenantUUID, err := parseUUID(arg.TenantID)
+	if err != nil {
+		return LedgerDispute{}, fmt.Errorf("invalid tenant_id: %w", err)
+	}
 	dbArg := db.ResolveDisputeParams{
-		ID:         parseUUID(arg.ID),
-		ResolvedBy: uuid.NullUUID{UUID: parseUUID(arg.ResolvedBy), Valid: true},
-		TenantID:   parseUUID(arg.TenantID),
+		ID:         idUUID,
+		ResolvedBy: uuid.NullUUID{UUID: resolvedUUID, Valid: true},
+		TenantID:   tenantUUID,
 	}
 	if arg.ResolutionNote != nil {
 		dbArg.ResolutionNote = sql.NullString{String: *arg.ResolutionNote, Valid: true}
@@ -1370,10 +1398,22 @@ func (q *GoquQuerier) ResolveDispute(ctx context.Context, arg ResolveDisputePara
 }
 
 func (q *GoquQuerier) RejectDispute(ctx context.Context, arg RejectDisputeParams) (LedgerDispute, error) {
+	idUUID, err := parseUUID(arg.ID)
+	if err != nil {
+		return LedgerDispute{}, fmt.Errorf("invalid dispute id: %w", err)
+	}
+	resolvedUUID, err := parseUUID(arg.ResolvedBy)
+	if err != nil {
+		return LedgerDispute{}, fmt.Errorf("invalid resolved_by: %w", err)
+	}
+	tenantUUID, err := parseUUID(arg.TenantID)
+	if err != nil {
+		return LedgerDispute{}, fmt.Errorf("invalid tenant_id: %w", err)
+	}
 	dbArg := db.RejectDisputeParams{
-		ID:         parseUUID(arg.ID),
-		ResolvedBy: uuid.NullUUID{UUID: parseUUID(arg.ResolvedBy), Valid: true},
-		TenantID:   parseUUID(arg.TenantID),
+		ID:         idUUID,
+		ResolvedBy: uuid.NullUUID{UUID: resolvedUUID, Valid: true},
+		TenantID:   tenantUUID,
 	}
 	if arg.ResolutionNote != nil {
 		dbArg.ResolutionNote = sql.NullString{String: *arg.ResolutionNote, Valid: true}

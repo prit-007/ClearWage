@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"sync"
 	"time"
 )
@@ -21,6 +22,17 @@ type TTL struct {
 func New(ttl time.Duration) *TTL {
 	c := &TTL{ttl: ttl, stopCh: make(chan struct{})}
 	go c.sweep()
+	return c
+}
+
+// NewWithContext creates a TTL cache that stops sweeping when ctx is canceled.
+func NewWithContext(ctx context.Context, ttl time.Duration) *TTL {
+	c := &TTL{ttl: ttl, stopCh: make(chan struct{})}
+	go c.sweep()
+	go func() {
+		<-ctx.Done()
+		c.Stop()
+	}()
 	return c
 }
 

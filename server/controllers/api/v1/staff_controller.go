@@ -412,6 +412,10 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 			utils.JSONFail(w, http.StatusConflict, "Record was modified by another user. Please refresh and try again.")
 			return
 		}
+		if err == repositories.ErrNotFound {
+			utils.JSONFail(w, http.StatusNotFound, "employee not found")
+			return
+		}
 		ctrl.logger.Error().Err(err).Msg("failed to update employee")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to update employee")
 		return

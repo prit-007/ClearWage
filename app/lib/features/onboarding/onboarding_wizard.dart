@@ -597,6 +597,7 @@ class _StepShiftsState extends State<_StepShifts> {
 class _ShiftInputCard extends StatelessWidget {
   final ColorScheme cs;
   final String label, start, end;
+  // ignore: avoid_dynamic
   final dynamic icon;
   final VoidCallback? onStartTap;
   final VoidCallback? onEndTap;
@@ -1018,6 +1019,7 @@ class _StepReview extends StatelessWidget {
 
 class _ReviewSummaryCard extends StatelessWidget {
   final ColorScheme cs;
+  // ignore: avoid_dynamic
   final dynamic icon;
   final String title;
   final List<String> items;

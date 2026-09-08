@@ -135,7 +135,14 @@ func (ctrl *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("registration failed")
-		utils.JSONFail(w, http.StatusUnauthorized, err.Error())
+		msg := err.Error()
+		status := http.StatusBadRequest
+		if strings.Contains(msg, "already registered") {
+			status = http.StatusConflict
+		} else if strings.Contains(msg, "database error") {
+			status = http.StatusInternalServerError
+		}
+		utils.JSONFail(w, status, msg)
 		return
 	}
 	maxAge := int(ctrl.authService.TokenTTL().Seconds())
@@ -179,4 +186,17 @@ func (ctrl *AuthController) DeleteAccount(w http.ResponseWriter, r *http.Request
 	}
 
 	utils.JSONSuccess(w, http.StatusOK, map[string]string{"message": "Account deleted"})
+}
+
+func (ctrl *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   !ctrl.config.IsDevelopment,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+	utils.JSONSuccess(w, http.StatusOK, map[string]string{"message": "Logged out"})
 }

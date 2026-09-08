@@ -144,7 +144,7 @@ func (s *AuthService) LoginWithFirebase(ctx context.Context, idToken string) (Ve
 			}
 		}
 		if matchEmp == nil {
-			matchEmp = &employees[0]
+			return VerifyResult{}, errors.New("no employee record found for this phone number in this tenant")
 		}
 		if !matchEmp.IsActive {
 			return VerifyResult{}, errors.New("account is deactivated")

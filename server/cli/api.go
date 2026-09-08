@@ -53,14 +53,18 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 		r.Use(mw.RequestLogger(logger))
 		r.Use(middleware.Recoverer)
 		r.Use(mw.LimitBodySize(5 << 20))
+		r.Use(mw.RateLimit(100, time.Minute))
 		r.Use(func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("X-Content-Type-Options", "nosniff")
 				w.Header().Set("X-Frame-Options", "DENY")
-				w.Header().Set("X-XSS-Protection", "1; mode=block")
+				w.Header().Set("X-XSS-Protection", "0")
+				w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+				w.Header().Set("Content-Security-Policy", "default-src 'self'")
 				next.ServeHTTP(w, r)
 			})
 		})
+		r.Use(mw.CSRFProtection)
 			r.Use(cors.Handler(cors.Options{
 				AllowedOrigins:   []string{cfg.AllowedOrigin},
 				AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -87,9 +91,9 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			return err
 		}
 		r.Route("/api/v1/auth", func(r chi.Router) {
-			r.Use(mw.RateLimit(10, time.Minute))
 			r.Post("/firebase-login", authCtrl.LoginWithFirebase)
 			r.Post("/register", authCtrl.Register)
+			r.Post("/logout", authCtrl.Logout)
 		})
 
 		// Notification infrastructure

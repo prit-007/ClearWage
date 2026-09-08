@@ -450,6 +450,7 @@ class _AttendanceOverviewCard extends StatelessWidget {
 class _GlassStatCard extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
+  // ignore: avoid_dynamic
   final dynamic icon;
   final String label, value;
   final Color color;

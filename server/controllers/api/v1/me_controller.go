@@ -114,7 +114,13 @@ func (ctrl *MeController) Attendance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	records, err := ctrl.attendanceSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate, 100000, 0)
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	records, err := ctrl.attendanceSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate, limit, offset)
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("failed to get my attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to get attendance")
@@ -144,7 +150,13 @@ func (ctrl *MeController) Ledger(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := ctrl.ledgerSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate, 100000, 0)
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	entries, err := ctrl.ledgerSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate, limit, offset)
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("failed to get my ledger")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to get ledger")

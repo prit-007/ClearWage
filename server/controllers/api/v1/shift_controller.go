@@ -2,12 +2,14 @@ package v1
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 	"github.com/clearwage/clearwage/config"
 	"github.com/clearwage/clearwage/middlewares"
+	"github.com/clearwage/clearwage/repositories"
 	"github.com/clearwage/clearwage/services"
 	"github.com/clearwage/clearwage/utils"
 )
@@ -200,6 +202,10 @@ func (c *ShiftController) Update(w http.ResponseWriter, r *http.Request) {
 
 	shift, err := c.shiftService.UpdateShift(r.Context(), shiftID, tenantID, req.Name, req.StartTime, req.EndTime, req.CrossesMidnight, req.GraceMinutes, req.IsDefault)
 	if err != nil {
+		if errors.Is(err, repositories.ErrNotFound) {
+			utils.JSONFail(w, http.StatusNotFound, "Shift not found")
+			return
+		}
 		c.logger.Error().Err(err).Msg("failed to update shift")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to update shift")
 		return

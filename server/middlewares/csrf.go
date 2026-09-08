@@ -18,13 +18,14 @@ func CSRFProtection(next http.Handler) http.Handler {
 				http.Error(w, "failed to generate csrf token", http.StatusInternalServerError)
 				return
 			}
-			http.SetCookie(w, &http.Cookie{
-				Name:     csrfCookieName,
-				Value:    token,
-				Path:     "/",
-				HttpOnly: true,
-				SameSite: http.SameSiteStrictMode,
-			})
+		http.SetCookie(w, &http.Cookie{
+			Name:     csrfCookieName,
+			Value:    token,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   r.TLS != nil,
+			SameSite: http.SameSiteStrictMode,
+		})
 			w.Header().Set(csrfHeaderName, token)
 			next.ServeHTTP(w, r)
 

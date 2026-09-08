@@ -13,7 +13,6 @@ import '../../data/models/auth_model.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/providers/services.dart';
 import '../../core/responsive.dart';
-import 'register_page.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -480,12 +479,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       TextButton(
                         onPressed: () {
                           HapticFeedback.selectionClick();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RegisterScreen(),
-                            ),
-                          );
+                          context.push('/register');
                         },
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 8),

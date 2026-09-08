@@ -70,9 +70,20 @@ func (c *ReportController) EmployeeMonthly(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
 	employeeID := r.URL.Query().Get("employee_id")
+
+	if claims.Role == "employee" && claims.EmployeeID != employeeID {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
 
 	if startDate == "" || endDate == "" || employeeID == "" {
 		utils.JSONFail(w, http.StatusBadRequest, "employee_id, start_date, and end_date query parameters are required")

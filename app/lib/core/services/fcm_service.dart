@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -17,8 +18,10 @@ const _channelName = 'ClearWage Notifications';
 class FcmService {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+  final List<StreamSubscription<dynamic>> _subscriptions = [];
 
   Future<void> initialize(WidgetRef ref) async {
+    _cancelSubscriptions();
     try {
       final messaging = FirebaseMessaging.instance;
 
@@ -46,19 +49,25 @@ class FcmService {
       }
 
       // Token refresh
-      messaging.onTokenRefresh.listen((newToken) {
-        _registerToken(ref, newToken);
-      });
+      _subscriptions.add(
+        messaging.onTokenRefresh.listen((newToken) {
+          _registerToken(ref, newToken);
+        }),
+      );
 
       // Foreground messages → show local notification
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        _showForegroundNotification(message);
-      });
+      _subscriptions.add(
+        FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+          _showForegroundNotification(message);
+        }),
+      );
 
       // Background tap → navigate
-      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        _handleNotificationTap(ref, message.data);
-      });
+      _subscriptions.add(
+        FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+          _handleNotificationTap(ref, message.data);
+        }),
+      );
 
       // Killed state tap
       final initialMessage = await messaging.getInitialMessage();
@@ -68,6 +77,13 @@ class FcmService {
     } catch (e) {
       debugPrint('FCM initialization failed: $e');
     }
+  }
+
+  void _cancelSubscriptions() {
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    _subscriptions.clear();
   }
 
   Future<void> _initLocalNotifications() async {
@@ -138,32 +154,32 @@ class FcmService {
     final entityType = data['entity_type'] as String?;
     final entityId = data['entity_id'] as String?;
     final navigatorKey = ref.read(routerProvider).routerDelegate.navigatorKey;
-    final context = navigatorKey.currentContext;
-    if (context == null || entityType == null) return;
+    final ctx = navigatorKey.currentContext;
+    if (ctx == null || entityType == null) return;
 
     switch (entityType) {
       case 'attendance':
-        context.go('/my-attendance');
+        ctx.go('/my-attendance');
       case 'ledger':
-        context.go('/my-ledger');
+        ctx.go('/my-ledger');
       case 'dispute':
-        context.go('/disputes');
+        ctx.go('/disputes');
       case 'advance_request':
-        context.go('/my-advance-requests');
+        ctx.go('/my-advance-requests');
       case 'holiday':
-        context.go('/my-holidays');
+        ctx.go('/my-holidays');
       case 'shift':
-        context.go('/my-shifts');
+        ctx.go('/my-shifts');
       case 'notification':
-        context.go('/notifications');
+        ctx.go('/notifications');
       case 'staff':
         if (entityId != null) {
-          context.push('/employee/$entityId');
+          ctx.push('/employee/$entityId');
         } else {
-          context.go('/staff');
+          ctx.go('/staff');
         }
       default:
-        context.go('/home');
+        ctx.go('/home');
     }
   }
 }

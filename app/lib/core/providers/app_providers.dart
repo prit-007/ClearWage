@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api_client.dart';
 import '../app_config.dart';
+import '../logger.dart';
 import '../token_storage.dart';
 import '../../data/models/auth_model.dart';
 
@@ -73,8 +74,9 @@ final initialTokenProvider = FutureProvider<String?>((ref) async {
         ref.read(userInfoProvider.notifier).state = info;
         return token;
       }
-    } catch (_) {
+    } catch (e) {
       // Firebase refresh failed; fall through to stored token
+      AppLogger.warn('Firebase token refresh failed, using stored token: $e');
     }
   }
   final token = await TokenStorage.load();

@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"net/http"
+	"strings"
 )
 
 const csrfCookieName = "csrf_token"
@@ -23,7 +24,7 @@ func CSRFProtection(next http.Handler) http.Handler {
 			Value:    token,
 			Path:     "/",
 			HttpOnly: true,
-			Secure:   r.TLS != nil,
+			Secure:   isSecure(r),
 			SameSite: http.SameSiteStrictMode,
 		})
 			w.Header().Set(csrfHeaderName, token)
@@ -53,6 +54,19 @@ func CSRFProtection(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		}
 	})
+}
+
+// isSecure reports whether the request arrived over HTTPS, either directly
+// or via a TLS-terminating proxy that sets X-Forwarded-Proto: https.
+func isSecure(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	proto := r.Header.Get("X-Forwarded-Proto")
+	if proto == "" {
+		proto = r.Header.Get("X-Forwarded-Scheme")
+	}
+	return strings.EqualFold(proto, "https")
 }
 
 // isBearerOnly returns true when the request authenticates via a Bearer

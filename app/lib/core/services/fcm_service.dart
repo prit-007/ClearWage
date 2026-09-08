@@ -97,7 +97,9 @@ class FcmService {
           try {
             final data = jsonDecode(details.payload!) as Map<String, dynamic>;
             AppLogger.info('Notification tap: $data');
-          } catch (_) {}
+          } catch (e) {
+            AppLogger.warn('Failed to parse notification payload: $e');
+          }
         }
       },
     );

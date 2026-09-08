@@ -97,7 +97,7 @@ class DailySummaryScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '$e',
+                          friendlyError(e),
                           style: tt.bodySmall,
                           textAlign: TextAlign.center,
                         ),

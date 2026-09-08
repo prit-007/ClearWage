@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jung-kurt/gofpdf"
+	"github.com/rs/zerolog/log"
 	"github.com/shopspring/decimal"
 	"github.com/clearwage/clearwage/repositories"
 )
@@ -295,6 +296,7 @@ func (s *PayrollService) FinalizeAndLock(ctx context.Context, tenantID, startDat
 
 	ts, ok := s.querier.(txStarter)
 	if !ok {
+		log.Warn().Msg("querier does not support transactions; payroll finalization running without atomic guarantees")
 		return s.finalizeAndLockNoTx(ctx, result, adjustByEmployee, tenantID, startDate, endDate, month)
 	}
 	txQuerier, tx, err := ts.BeginTx(ctx)

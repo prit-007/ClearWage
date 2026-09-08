@@ -79,7 +79,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   const SizedBox(height: 16),
                   Text('Something went wrong', style: tt.titleMedium),
                   const SizedBox(height: 8),
-                  Text('$e', style: tt.bodySmall, textAlign: TextAlign.center),
+                  Text(
+                    friendlyError(e),
+                    style: tt.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     icon: const Icon(PhosphorIconsFill.arrowClockwise),

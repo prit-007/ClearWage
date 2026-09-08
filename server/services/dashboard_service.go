@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -80,19 +81,50 @@ func (s *DashboardService) fetchDashboard(ctx context.Context, tenantID, today, 
 		return DashboardData{}, err
 	}
 
-	activity, err := s.querier.ListActivityLogsByTenant(ctx, repositories.ListActivityLogsByTenantParams{
-		TenantID: tenantID,
-		Limit:    5,
-		Offset:   0,
-	})
-	if err != nil {
-		return DashboardData{}, err
+	type activityResult struct {
+		v []repositories.ActivityLog
+		e error
+	}
+	type balancesResult struct {
+		v []repositories.EmployeeBalance
+		e error
 	}
 
-	balances, balErr := s.querier.ListEmployeeBalances(ctx, tenantID)
+	activityCh := make(chan activityResult, 1)
+	balancesCh := make(chan balancesResult, 1)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.ListActivityLogsByTenant(ctx, repositories.ListActivityLogsByTenantParams{
+			TenantID: tenantID,
+			Limit:    5,
+			Offset:   0,
+		})
+		activityCh <- activityResult{v, e}
+	}()
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.ListEmployeeBalances(ctx, tenantID)
+		balancesCh <- balancesResult{v, e}
+	}()
+
+	wg.Wait()
+	close(activityCh)
+	close(balancesCh)
+
+	actRes := <-activityCh
+	if actRes.e != nil {
+		return DashboardData{}, actRes.e
+	}
+
 	defaultersCount := 0
-	if balErr == nil {
-		for _, b := range balances {
+	balRes := <-balancesCh
+	if balRes.e == nil {
+		for _, b := range balRes.v {
 			if !b.Balance.Equal(decimal.Zero) {
 				defaultersCount++
 			}
@@ -118,6 +150,6 @@ func (s *DashboardService) fetchDashboard(ctx context.Context, tenantID, today, 
 		WageBillMTD:          snapshot.WageBillMTD,
 		TotalOutstanding:     snapshot.TotalOutstanding,
 		DefaultersCount:      defaultersCount,
-		RecentActivity:       activity,
+		RecentActivity:       actRes.v,
 	}, nil
 }

@@ -11,6 +11,7 @@ import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/helpers.dart';
+import '../../core/logger.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import 'dart:async';
@@ -98,7 +99,8 @@ class _AdvanceRequestsScreenState extends ConsumerState<AdvanceRequestsScreen> {
           _loadingMore = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Failed to load more advance requests: $e');
       if (mounted) setState(() => _loadingMore = false);
     }
   }

@@ -622,7 +622,7 @@ class _EmployeePickerSheetState extends ConsumerState<_EmployeePickerSheet> {
             height: MediaQuery.of(context).size.height * 0.55,
             child: asyncData.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('$e')),
+              error: (e, _) => Center(child: Text(friendlyError(e))),
               data: (employees) {
                 final filtered = query.isEmpty
                     ? employees

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/design_tokens.dart';
+import '../../core/helpers.dart';
 import '../../core/providers/services.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
@@ -104,7 +105,7 @@ class _DisputesListScreenState extends ConsumerState<DisputesListScreen>
                 ),
               ],
             ),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            error: (e, _) => Center(child: Text(friendlyError(e))),
           ),
           closedDisputes.when(
             data: (disputes) => disputes.isEmpty
@@ -130,7 +131,7 @@ class _DisputesListScreenState extends ConsumerState<DisputesListScreen>
                 ),
               ],
             ),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            error: (e, _) => Center(child: Text(friendlyError(e))),
           ),
         ],
       ),
@@ -294,7 +295,7 @@ class _DisputeCard extends ConsumerWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(
                     context,
-                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
                 }
               }
             },

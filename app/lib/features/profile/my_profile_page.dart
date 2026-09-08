@@ -255,7 +255,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '$e',
+                      friendlyError(e),
                       style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                       textAlign: TextAlign.center,
                     ),
@@ -716,7 +716,7 @@ class _MyAttendanceTab extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '$e',
+                friendlyError(e),
                 style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
@@ -941,7 +941,7 @@ class _MyLedgerTab extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '$e',
+                friendlyError(e),
                 style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),

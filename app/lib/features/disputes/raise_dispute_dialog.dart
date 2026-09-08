@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/helpers.dart';
 import '../../data/services/dispute_service.dart';
 
 Future<void> showRaiseDisputeDialog(
@@ -67,7 +68,7 @@ Future<void> showRaiseDisputeDialog(
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     }
   }

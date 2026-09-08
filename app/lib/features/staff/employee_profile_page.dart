@@ -773,7 +773,7 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = '$e';
+          _error = friendlyError(e);
         });
       }
     }
@@ -1188,7 +1188,7 @@ class _DocumentViewerPageState extends ConsumerState<_DocumentViewerPage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = '$e';
+          _error = friendlyError(e);
           _loading = false;
         });
       }

@@ -58,7 +58,7 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = '$e';
+          _error = friendlyError(e);
           _loading = false;
         });
       }

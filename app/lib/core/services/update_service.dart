@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
 import '../app_info.dart';
+import '../logger.dart';
 
 class UpdateInfo {
   final String latestVersion;
@@ -70,7 +71,8 @@ class UpdateService {
         body: body,
         changelog: changelog,
       );
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Update check failed: $e');
       return null;
     }
   }
@@ -127,7 +129,8 @@ final updateCheckProvider = FutureProvider<UpdateInfo?>((ref) async {
     final service = ref.watch(updateServiceProvider);
     final appInfo = await ref.watch(appInfoProvider.future);
     return service.checkForUpdate(appInfo.version);
-  } catch (_) {
+  } catch (e) {
+    AppLogger.warn('Update check provider failed: $e');
     return null;
   }
 });

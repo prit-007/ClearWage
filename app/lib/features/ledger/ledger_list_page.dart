@@ -5,6 +5,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/ledger_model.dart';
 import '../../core/providers/services.dart';
+import '../../core/logger.dart';
 import '../../data/services/dispute_service.dart';
 import 'providers/ledger_providers.dart';
 import '../../core/helpers.dart';
@@ -84,7 +85,8 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
       LedgerSummary? summary;
       try {
         summary = await svc.getSummary(startDate: _startStr, endDate: _endStr);
-      } catch (_) {
+      } catch (e) {
+        AppLogger.warn('Failed to load ledger summary: $e');
         summary = null;
       }
       if (mounted) {
@@ -98,7 +100,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = friendlyError(e);
           _loading = false;
         });
       }
@@ -123,7 +125,8 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
           _loadingMore = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Failed to load more ledger entries: $e');
       if (mounted) setState(() => _loadingMore = false);
     }
   }

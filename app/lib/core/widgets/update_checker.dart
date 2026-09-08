@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app_info.dart';
+import '../logger.dart';
 import '../services/update_service.dart';
 import '../widgets/update_dialog.dart';
 
@@ -44,7 +45,9 @@ class _UpdateCheckerState extends ConsumerState<UpdateChecker> {
           changelog: updateInfo.changelog,
         );
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.warn('Update check failed: $e');
+    }
   }
 
   @override

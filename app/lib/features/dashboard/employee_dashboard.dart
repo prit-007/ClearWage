@@ -44,7 +44,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = '$e';
+          _error = friendlyError(e);
           _loading = false;
         });
       }

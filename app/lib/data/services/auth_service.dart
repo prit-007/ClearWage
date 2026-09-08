@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../core/api_client.dart';
 import '../../core/api_exceptions.dart';
+import '../../core/logger.dart';
 import '../models/auth_model.dart';
 import 'notification_api_service.dart';
 
@@ -59,10 +60,14 @@ class AuthService {
       if (token != null) {
         await _notifSvc.removeToken(token);
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.warn('Failed to remove FCM token during logout: $e');
+    }
     try {
       await FirebaseAuth.instance.signOut();
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.warn('Failed to sign out from Firebase: $e');
+    }
     _client.setToken(null);
   }
 

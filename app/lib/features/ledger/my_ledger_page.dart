@@ -57,7 +57,7 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = '$e';
+          _error = friendlyError(e);
           _loading = false;
         });
       }
@@ -187,9 +187,15 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
                         Text('Failed to load', style: tt.titleMedium),
                         const SizedBox(height: 8),
                         Text(
-                          '$_error',
+                          _error!,
                           style: tt.bodySmall,
                           textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          icon: const Icon(PhosphorIconsRegular.arrowClockwise),
+                          label: const Text('Retry'),
+                          onPressed: _loadLedger,
                         ),
                       ],
                     ),

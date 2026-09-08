@@ -139,7 +139,7 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
         error: (e, _) {
           if (mounted) {
             setState(() {
-              _loadError = '$e';
+              _loadError = friendlyError(e);
               _loaded = true;
             });
           }

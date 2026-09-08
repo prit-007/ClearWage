@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/helpers.dart';
 import '../../core/widgets/validated_field.dart';
 import '../../core/providers/services.dart';
 
@@ -90,9 +91,9 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to save setup: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save setup: ${friendlyError(e)}')),
+        );
       }
     } finally {
       if (mounted) setState(() => _creatingShifts = false);

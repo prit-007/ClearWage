@@ -5,6 +5,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/design_tokens.dart';
 import '../../core/helpers.dart';
+import '../../core/logger.dart';
 import '../../core/providers/services.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/shimmer_loading.dart';
@@ -73,7 +74,11 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                 const SizedBox(height: 16),
                 Text('Something went wrong', style: tt.titleMedium),
                 const SizedBox(height: 8),
-                Text('$e', style: tt.bodySmall, textAlign: TextAlign.center),
+                Text(
+                  friendlyError(e),
+                  style: tt.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
                   icon: const Icon(PhosphorIconsBold.arrowClockwise),
@@ -125,7 +130,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
             .markRead(notification.id);
         ref.invalidate(unreadCountProvider);
         ref.invalidate(notificationListProvider);
-      } catch (_) {}
+      } catch (e) {
+        AppLogger.warn('Failed to mark notification as read: $e');
+      }
     }
 
     // Navigate to entity

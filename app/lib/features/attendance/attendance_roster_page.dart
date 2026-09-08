@@ -84,9 +84,9 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load shifts: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load shifts: ${friendlyError(e)}')),
+        );
       }
     }
   }
@@ -99,9 +99,11 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load holidays: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load holidays: ${friendlyError(e)}'),
+          ),
+        );
       }
     }
   }
@@ -116,9 +118,11 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load settings: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load settings: ${friendlyError(e)}'),
+          ),
+        );
       }
     }
   }
@@ -681,7 +685,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '$e',
+                          friendlyError(e),
                           style: tt.bodySmall,
                           textAlign: TextAlign.center,
                         ),

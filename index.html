@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClearWage — Factory workforce management. Clear. Simple. Yours.</title>
+<meta name="description" content="ClearWage is an open-source workforce management platform for modern factories. Attendance, payroll, ledger, disputes, and reporting. Deploy it yourself or build on it.">
+<meta name="theme-color" content="#F8F9FA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="ClearWage — Factory workforce management">
+<meta property="og:description" content="Open-source workforce management platform. Attendance, payroll, ledger, disputes, and real-time reporting.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+
+<script>
+  window.CLEARWAGE_CONFIG = {
+    githubOwner: "prit-007",
+    githubRepo: "ClearWage"
+  };
+</script>
+
+<link rel="icon" href="app/web/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #F8F9FA;
+    --bg-alt: #F1F3F5;
+    --surface: #FFFFFF;
+    --ink: #0F172A;
+    --ink-soft: #475569;
+    --ink-faint: #94A3B8;
+    --accent: #0D9488;
+    --accent-soft: rgba(13, 148, 136, 0.08);
+    --accent-strong: #0F766E;
+    --teal: #14B8A6;
+    --teal-bright: #2DD4BF;
+    --rule: rgba(15,23,42,0.08);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+    --shadow: 0 10px 30px rgba(0,0,0,0.06);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,0.08);
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 20px;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  [data-theme="dark"] {
+    --bg: #0F172A;
+    --bg-alt: #1E293B;
+    --surface: #1E293B;
+    --ink: #F1F5F9;
+    --ink-soft: #94A3B8;
+    --ink-faint: #64748B;
+    --accent: #2DD4BF;
+    --accent-soft: rgba(45, 212, 191, 0.10);
+    --accent-strong: #5EEAD4;
+    --teal: #2DD4BF;
+    --teal-bright: #5EEAD4;
+    --rule: rgba(241,245,249,0.08);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+    --shadow: 0 10px 30px rgba(0,0,0,0.3);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; display: block; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+  ::selection { background: var(--accent); color: var(--surface); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .skip-link {
+    position: absolute; left: -999px; top: auto;
+    background: var(--ink); color: var(--surface); padding: 12px 18px; border-radius: var(--radius-sm);
+    z-index: 200;
+  }
+  .skip-link:focus { left: 20px; top: 20px; }
+
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-d1 { transition-delay: 0.08s; }
+  .reveal-d2 { transition-delay: 0.16s; }
+  .reveal-d3 { transition-delay: 0.24s; }
+  .reveal-d4 { transition-delay: 0.32s; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+  /* ================================================================
+     HEADER
+     ================================================================ */
+  header {
+    position: sticky; top: 0; z-index: 40;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--rule);
+    transition: box-shadow 0.3s;
+  }
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px; max-width: 1080px; margin: 0 auto;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-icon {
+    width: 32px; height: 32px; background: var(--accent); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: white; font-weight: 700; font-family: var(--serif);
+  }
+  .brand span { font-family: var(--serif); font-size: 1.35rem; font-weight: 400; }
+  .nav-right { display: flex; align-items: center; gap: 6px; }
+  .nav-links { display: flex; gap: 4px; align-items: center; }
+  .nav-links a {
+    padding: 8px 14px; border-radius: var(--radius-sm); font-size: 0.92rem; font-weight: 500;
+    color: var(--ink-soft); transition: color 0.2s, background 0.2s;
+  }
+  .nav-links a:hover { color: var(--ink); background: var(--accent-soft); }
+  .nav-gh {
+    display: flex; align-items: center; gap: 7px;
+    border: 1px solid var(--rule); padding: 8px 14px !important;
+    color: var(--ink) !important;
+  }
+  .theme-toggle {
+    background: none; border: 1px solid var(--rule); border-radius: var(--radius-sm);
+    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--ink-soft); transition: color 0.2s, border-color 0.2s;
+  }
+  .theme-toggle:hover { color: var(--ink); border-color: var(--ink-faint); }
+  .theme-toggle svg { width: 17px; height: 17px; }
+  .nav-mobile-toggle {
+    display: none; background: none; border: none; cursor: pointer;
+    padding: 8px; color: var(--ink);
+  }
+  @media (max-width: 760px) {
+    .nav-links a:not(.nav-gh) { display: none; }
+    .nav-mobile-toggle { display: flex; }
+    .nav-links.active {
+      position: absolute; top: 100%; left: 0; right: 0; flex-direction: column;
+      background: var(--surface); border-bottom: 1px solid var(--rule);
+      padding: 12px 28px 18px; box-shadow: var(--shadow);
+    }
+    .nav-links.active a { display: block; width: 100%; padding: 12px 8px; }
+  }
+
+  /* ================================================================
+     HERO
+     ================================================================ */
+  .hero { padding: 80px 0 96px; }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; }
+  @media (max-width: 860px) { .hero-grid { grid-template-columns: 1fr; text-align: center; } }
+
+  .hero-load { opacity: 0; transform: translateY(12px); }
+  .hero-load.ready { opacity: 1; transform: translateY(0); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .hero-load.d1 { transition-delay: 0.08s; }
+  .hero-load.d2 { transition-delay: 0.16s; }
+  .hero-load.d3 { transition-delay: 0.24s; }
+  @media (prefers-reduced-motion: reduce) { .hero-load { opacity: 1; transform: none; transition: none; } }
+
+  .eyebrow {
+    font-size: 0.88rem; color: var(--teal); margin-bottom: 24px;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
+
+  h1.headline {
+    font-family: var(--serif); font-weight: 400; font-optical-sizing: auto;
+    font-size: clamp(2.5rem, 5.5vw, 3.8rem); line-height: 1.08; letter-spacing: -0.01em;
+    margin: 0 0 24px; max-width: 14ch;
+  }
+  .hero-sub { font-size: 1.1rem; color: var(--ink-soft); max-width: 48ch; margin: 0 0 36px; }
+  .hero-sub strong { color: var(--ink); font-weight: 600; }
+  @media (max-width: 860px) { .hero-sub { margin: 0 auto 36px; } }
+
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 860px) { .cta-row { justify-content: center; } }
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px; padding: 14px 24px; border-radius: var(--radius-sm);
+    font-weight: 600; font-size: 0.97rem; cursor: pointer; border: 1px solid transparent;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--accent); color: var(--surface); }
+  .btn-primary:hover { background: var(--accent-strong); }
+  .btn-ghost { border-color: var(--rule); color: var(--ink); background: var(--surface); }
+  .btn-ghost:hover { border-color: var(--ink-faint); }
+
+  .hero-avail { color: var(--ink-soft); font-size: 0.92rem; margin: 0 0 36px; }
+  @media (max-width: 860px) { .hero-avail { text-align: center; } }
+
+  .stat-strip {
+    display: flex; gap: 36px; padding-top: 28px; border-top: 1px solid var(--rule);
+  }
+  @media (max-width: 860px) { .stat-strip { justify-content: center; } }
+  .stat b { display: block; font-family: var(--serif); font-size: 1.5rem; font-weight: 400; }
+  .stat span { font-size: 0.82rem; color: var(--ink-faint); }
+
+  .phone-frame {
+    justify-self: center; position: relative;
+    border: 8px solid var(--surface); border-radius: 24px;
+    box-shadow: var(--shadow-lg), 0 0 0 1px var(--rule);
+    overflow: hidden; width: min(290px, 78vw); background: var(--surface);
+  }
+
+  /* ================================================================
+     SECTIONS
+     ================================================================ */
+  section { padding: 88px 0; }
+  .section-head { max-width: 58ch; margin-bottom: 48px; }
+  .section-head h2 {
+    font-family: var(--serif); font-weight: 400; font-size: clamp(1.7rem, 3vw, 2.2rem);
+    margin: 0 0 12px;
+  }
+  .section-head p { color: var(--ink-soft); margin: 0; font-size: 1.04rem; }
+  hr.rule { border: none; border-top: 1px solid var(--rule); margin: 0; }
+
+  /* ================================================================
+     THE PROBLEM (editorial)
+     ================================================================ */
+  .tradeoff { background: var(--surface); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .tradeoff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; padding: 88px 0; }
+  @media (max-width: 800px) { .tradeoff-grid { grid-template-columns: 1fr; } }
+  .tradeoff-quote {
+    font-family: var(--serif); font-style: italic; font-weight: 400;
+    font-size: clamp(1.3rem, 2.4vw, 1.7rem); line-height: 1.35; margin: 0; color: var(--ink);
+  }
+  .tradeoff p { color: var(--ink-soft); font-size: 1.02rem; margin: 0 0 16px; }
+  .tradeoff p:last-child { margin-bottom: 0; }
+  .tradeoff p strong { color: var(--ink); font-weight: 600; }
+
+  /* ================================================================
+     PROMISES (glossary style)
+     ================================================================ */
+  .promise-list { list-style: none; padding: 0; margin: 0; }
+  .promise {
+    display: grid; grid-template-columns: 200px 1fr; gap: 24px;
+    padding: 26px 0; border-top: 1px solid var(--rule);
+  }
+  .promise:last-child { border-bottom: 1px solid var(--rule); }
+  @media (max-width: 640px) { .promise { grid-template-columns: 1fr; gap: 8px; } }
+  .promise dt {
+    font-family: var(--serif); font-style: italic; font-weight: 400;
+    font-size: 1.2rem; color: var(--accent);
+  }
+  .promise dd { margin: 0; color: var(--ink-soft); font-size: 0.98rem; line-height: 1.7; }
+
+  /* ================================================================
+     FEATURES (bento grid)
+     ================================================================ */
+  .bento-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 900px) { .bento-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .bento-grid { grid-template-columns: 1fr; } }
+  .bento-card {
+    background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius);
+    padding: 28px 24px; transition: transform 0.3s ease, box-shadow 0.3s, border-color 0.3s;
+  }
+  .bento-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--ink-faint); }
+  .bento-icon {
+    width: 44px; height: 44px; background: var(--accent-soft); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px; font-size: 20px;
+  }
+  .bento-card h3 { font-size: 1.05rem; font-weight: 600; margin: 0 0 8px; }
+  .bento-card p { color: var(--ink-soft); margin: 0; font-size: 0.92rem; line-height: 1.6; }
+
+  /* ================================================================
+     SCREENSHOTS
+     ================================================================ */
+  .shots-wrap { position: relative; }
+  .shots-wrap::before, .shots-wrap::after {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 60px; z-index: 2; pointer-events: none;
+  }
+  .shots-wrap::before { left: 0; background: linear-gradient(90deg, var(--bg) 0%, transparent 100%); }
+  .shots-wrap::after { right: 0; background: linear-gradient(-90deg, var(--bg) 0%, transparent 100%); }
+  .shots {
+    display: flex; gap: 16px; overflow-x: auto; padding: 8px 0 16px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin; scrollbar-color: var(--rule) transparent;
+  }
+  .shots img {
+    scroll-snap-align: start; height: 420px; width: auto; border-radius: var(--radius);
+    border: 1px solid var(--rule); flex: none; cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s;
+  }
+  .shots img:hover { transform: scale(1.02); box-shadow: var(--shadow); }
+  .shots::-webkit-scrollbar { height: 6px; }
+  .shots::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+  .shot-dots { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+  .shot-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--rule); border: none;
+    cursor: pointer; padding: 0; transition: background 0.3s, transform 0.3s;
+  }
+  .shot-dot.active { background: var(--accent); transform: scale(1.3); }
+
+  /* ---- Lightbox ---- */
+  .lightbox {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.88); backdrop-filter: blur(8px);
+    display: none; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .lightbox.open { display: flex; opacity: 1; }
+  .lightbox-img {
+    max-width: min(90vw, 420px); max-height: 88vh; border-radius: var(--radius);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    transform: scale(0.92); transition: transform 0.3s ease;
+  }
+  .lightbox.open .lightbox-img { transform: scale(1); }
+  .lightbox-close {
+    position: absolute; top: 20px; right: 24px;
+    background: rgba(255,255,255,0.12); border: none; border-radius: 50%;
+    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #fff; transition: background 0.2s;
+  }
+  .lightbox-close:hover { background: rgba(255,255,255,0.25); }
+  .lightbox-close svg { width: 22px; height: 22px; }
+  .lightbox-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.12); border: none; border-radius: 50%;
+    width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #fff; transition: background 0.2s;
+  }
+  .lightbox-nav:hover { background: rgba(255,255,255,0.25); }
+  .lightbox-nav svg { width: 24px; height: 24px; }
+  .lightbox-prev { left: 20px; }
+  .lightbox-next { right: 20px; }
+  .lightbox-counter {
+    position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.6); font-size: 0.88rem; font-weight: 500;
+  }
+
+  /* ================================================================
+     ARCHITECTURE
+     ================================================================ */
+  .arch-bg { background: var(--surface); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .arch-diagram {
+    background: var(--bg); border: 1px solid var(--rule); border-radius: var(--radius);
+    padding: 32px; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.85rem; line-height: 1.7; color: var(--ink-soft); overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* ================================================================
+     DOWNLOADS
+     ================================================================ */
+  .downloads-bg { background: var(--surface); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .dl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 16px; }
+  @media (max-width: 860px) { .dl-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .dl-grid { grid-template-columns: 1fr; } }
+  .dl-card {
+    background: var(--bg); border: 1px solid var(--rule); border-radius: var(--radius);
+    padding: 22px; display: flex; flex-direction: column; gap: 10px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .dl-card:hover { box-shadow: var(--shadow-sm); }
+  .dl-card[data-recommended="true"] { border-color: var(--accent); }
+  .dl-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .dl-card h4 { margin: 0; font-size: 1rem; font-weight: 600; }
+  .recommended-tag {
+    font-size: 0.7rem; color: var(--accent); border: 1px solid var(--accent); border-radius: 20px;
+    padding: 2px 8px; white-space: nowrap; font-weight: 500;
+  }
+  .dl-card .meta { font-size: 0.86rem; color: var(--ink-faint); min-height: 1.3em; }
+  .dl-card a.dl-btn {
+    margin-top: auto; text-align: center; padding: 10px; border-radius: var(--radius-sm);
+    background: var(--surface); color: var(--ink); font-size: 0.92rem; font-weight: 500;
+    border: 1px solid var(--rule); transition: background 0.2s, border-color 0.2s;
+  }
+  .dl-card a.dl-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+
+  .see-all { font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 36px; }
+  .see-all a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+
+  .notice {
+    background: var(--bg); border: 1px solid var(--rule); border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm); padding: 22px 26px;
+  }
+  .notice strong { display: block; margin-bottom: 6px; font-size: 1rem; }
+  .notice p { margin: 0; color: var(--ink-soft); font-size: 0.93rem; line-height: 1.7; }
+  .notice a { color: var(--accent); font-weight: 600; }
+
+  /* ================================================================
+     FOOTER
+     ================================================================ */
+  footer { padding: 56px 0 40px; border-top: 1px solid var(--rule); }
+  .foot-grid { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; margin-bottom: 28px; }
+  .foot-motto { font-family: var(--serif); font-style: italic; color: var(--ink-soft); font-size: 1rem; margin: 0; }
+  .foot-links { display: flex; gap: 20px; flex-wrap: wrap; }
+  .foot-links a { color: var(--ink-soft); font-size: 0.9rem; transition: color 0.2s; }
+  .foot-links a:hover { color: var(--ink); }
+  .foot-legal { margin: 0; font-size: 0.82rem; color: var(--ink-faint); }
+  .foot-legal a { color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header>
+  <nav class="nav">
+    <a class="brand" href="#top">
+      <div class="brand-icon">CW</div>
+      <span>ClearWage</span>
+    </a>
+    <div class="nav-right">
+      <div class="nav-links" id="nav-links">
+        <a href="#features">Features</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#downloads">Downloads</a>
+        <a class="nav-gh" href="https://github.com/prit-007/ClearWage">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.49c-2.23.48-2.7-1.07-2.7-1.07-.36-.93-.89-1.17-.89-1.17-.73-.5.05-.49.05-.49.8.06 1.23.83 1.23.83.72 1.23 1.87.88 2.33.67.07-.52.28-.88.51-1.08-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.01.08-2.11 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.91.08 2.11.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          GitHub
+        </a>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+        <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+      </button>
+      <button class="nav-mobile-toggle" id="nav-toggle" aria-label="Toggle menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<main id="main">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="top">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow hero-load"><span class="dot"></span> Free &amp; open source · GPL-3.0</div>
+        <h1 class="headline hero-load d1">Factory workforce<br>management.<br>Clear.</h1>
+        <p class="hero-sub hero-load d2">
+          ClearWage is a full-stack workforce platform built for factory-floor realities.
+          <strong>Attendance, payroll, ledger, disputes, and reporting</strong> — all in
+          one open-source package you can deploy on your own infrastructure.
+        </p>
+        <div class="cta-row hero-load d3">
+          <a id="hero-cta" class="btn btn-primary" href="#downloads">Download ClearWage<span id="hero-os"></span></a>
+          <a class="btn btn-ghost" href="#downloads">All platforms</a>
+        </div>
+        <p class="hero-avail hero-load d3">Available on Android, iOS, Windows, macOS, Linux and Web.</p>
+        <div class="stat-strip hero-load d3">
+          <div class="stat"><b>6</b><span>platforms</span></div>
+          <div class="stat"><b>0</b><span>vendor lock-in</span></div>
+          <div class="stat"><b id="hero-version">beta</b><span>current build</span></div>
+        </div>
+      </div>
+      <div class="phone-frame hero-load d2">
+        <img src="app/web/icons/Icon-512.png" alt="ClearWage app icon" loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ THE PROBLEM ============ -->
+  <section class="tradeoff">
+    <div class="wrap tradeoff-grid reveal">
+      <p class="tradeoff-quote">"Factory workforce tools shouldn't be black boxes you rent monthly. ClearWage gives you the whole system — transparent and free."</p>
+      <div>
+        <p>Most workforce management tools are SaaS black boxes. You feed them your workers' data and hope the payroll math is right. When something breaks, you file a ticket and wait.</p>
+        <p><strong>ClearWage is different:</strong> it's a full-stack platform you deploy yourself. Your data stays on your server, the code is readable, and every feature — from OT computation to ledger disputes — is built for factory-floor realities. No accounts to manage, no per-seat pricing, no surprises.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ THREE PILLARS ============ -->
+  <section>
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>Three pillars</h2>
+        <p>Built on principles that matter for factory workforce management.</p>
+      </div>
+      <dl class="promise-list">
+        <div class="promise reveal reveal-d1">
+          <dt>Transparent</dt>
+          <dd>Every line of code is readable. Payroll logic, OT computation, attendance rules — nothing is hidden behind a proprietary API.</dd>
+        </div>
+        <div class="promise reveal reveal-d2">
+          <dt>Self-hosted</dt>
+          <dd>Deploy on any Linux host with Docker. Your factory's data never leaves your network. No cloud dependency, ever.</dd>
+        </div>
+        <div class="promise reveal reveal-d3">
+          <dt>Complete</dt>
+          <dd>Attendance with OT, payroll with configurable wage basis, ledger with advance requests, disputes, and real-time reporting.</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ FEATURES ============ -->
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>What's inside</h2>
+        <p>Everything a serious workforce platform needs, without the vendor lock-in.</p>
+      </div>
+      <div class="bento-grid">
+        <div class="bento-card reveal">
+          <div class="bento-icon">📋</div>
+          <h3>Attendance</h3>
+          <p>Daily roster with bulk mark, status toggles (P/HD/L/A), OT calculation, holiday detection, and weekly-off awareness.</p>
+        </div>
+        <div class="bento-card reveal">
+          <div class="bento-icon">💰</div>
+          <h3>Payroll</h3>
+          <p>Period-based processing with configurable wage basis (calendar/fixed-26/fixed-30), OT multiplier, deductions, and PDF payslips.</p>
+        </div>
+        <div class="bento-card reveal">
+          <div class="bento-icon">📒</div>
+          <h3>Ledger</h3>
+          <p>Employee credit/debit tracking, advance requests with approval workflow, and balance sheets.</p>
+        </div>
+        <div class="bento-card reveal">
+          <div class="bento-icon">⚖️</div>
+          <h3>Disputes</h3>
+          <p>Employee-initiated ledger disputes with admin resolve/reject workflow. Fair and transparent.</p>
+        </div>
+        <div class="bento-card reveal">
+          <div class="bento-icon">👥</div>
+          <h3>Staff Management</h3>
+          <p>Directory, profiles, document uploads (KYC), onboarding wizard, and role-based access.</p>
+        </div>
+        <div class="bento-card reveal">
+          <div class="bento-icon">🕐</div>
+          <h3>Shifts & Holidays</h3>
+          <p>Configurable shift timings, employee assignment, tenant holiday calendar with recurring support.</p>
+        </div>
+        <div class="bento-card reveal">
+          <div class="bento-icon">📊</div>
+          <h3>Reports & Dashboard</h3>
+          <p>Real-time KPIs, attendance trends, daily summary, defaulters, payroll summary with charts.</p>
+        </div>
+        <div class="bento-card reveal">
+          <div class="bento-icon">🔐</div>
+          <h3>Security</h3>
+          <p>Firebase Auth, JWT with tenant scoping, CSRF protection, rate limiting, optimistic locking.</p>
+        </div>
+        <div class="bento-card reveal">
+          <div class="bento-icon">📱</div>
+          <h3>Cross-Platform</h3>
+          <p>Flutter client for Android, iOS, Windows, macOS, Linux, and Web. Same experience everywhere.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SCREENSHOTS ============ -->
+  <section style="padding-top:0;">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>A closer look</h2>
+        <p>ClearWage on mobile — the same experience carries across every platform.</p>
+      </div>
+      <div class="shots-wrap reveal">
+        <div class="shots" id="shots"></div>
+      </div>
+      <div class="shot-dots" id="shot-dots"></div>
+    </div>
+  </section>
+
+  <!-- ============ ARCHITECTURE ============ -->
+  <div class="arch-bg">
+    <section id="architecture" style="padding-top:0;padding-bottom:0;">
+      <div class="wrap" style="padding-top:88px;padding-bottom:88px;">
+        <div class="section-head reveal">
+          <h2>Built with clean architecture</h2>
+          <p>Go backend + Flutter client + PostgreSQL. Controllers, services, repositories — no God objects.</p>
+        </div>
+        <div class="arch-diagram reveal">
+┌──────────────────────────────────────────────────────────┐
+│                    ClearWage Platform                     │
+├──────────────────────┬───────────────────────────────────┤
+│   Flutter Client     │        Go REST API                │
+│   (Mobile + Desktop) │        (server/)                  │
+│                      │                                   │
+│  lib/core/           │  controllers/api/v1/              │
+│    router, theme,    │    → services/                    │
+│    api_client,       │      → repositories/ (goqu+sqlc) │
+│    logger, tokens    │        → models/                  │
+│  lib/data/           │                                   │
+│    models/           │  middlewares/                      │
+│    services/         │    auth, tenant, CSRF, ratelimit  │
+│  lib/features/       │                                   │
+│    screens + state   │  database/ (goose migrations)     │
+│    (Riverpod)        │                                   │
+├──────────────────────┴───────────────────────────────────┤
+│                    PostgreSQL 16                          │
+├──────────────────────────────────────────────────────────┤
+│                    Firebase                              │
+│              Phone Auth + Admin SDK                      │
+└──────────────────────────────────────────────────────────┘</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ DOWNLOADS ============ -->
+  <div class="downloads-bg">
+    <section id="downloads" style="padding-top:0;padding-bottom:0;">
+      <div class="wrap" style="padding-top:88px;padding-bottom:88px;">
+        <div class="section-head reveal">
+          <h2>Get ClearWage</h2>
+          <p>Signed builds are published automatically by CI on every tagged release.</p>
+        </div>
+
+        <div class="dl-grid" id="dl-grid">
+          <div class="dl-card reveal" data-platform="android">
+            <div class="dl-card-top"><h4>Android</h4></div>
+            <div class="meta">Universal signed APK</div>
+            <a class="dl-btn" href="https://github.com/prit-007/ClearWage/releases/latest">See releases</a>
+          </div>
+          <div class="dl-card reveal reveal-d1" data-platform="windows-exe">
+            <div class="dl-card-top"><h4>Windows</h4></div>
+            <div class="meta">Installer (.exe)</div>
+            <a class="dl-btn" href="https://github.com/prit-007/ClearWage/releases/latest">See releases</a>
+          </div>
+          <div class="dl-card reveal reveal-d2" data-platform="windows-zip">
+            <div class="dl-card-top"><h4>Windows (portable)</h4></div>
+            <div class="meta">.zip, no install needed</div>
+            <a class="dl-btn" href="https://github.com/prit-007/ClearWage/releases/latest">See releases</a>
+          </div>
+          <div class="dl-card reveal reveal-d3" data-platform="macos">
+            <div class="dl-card-top"><h4>macOS</h4></div>
+            <div class="meta">Unsigned .app bundle</div>
+            <a class="dl-btn" href="https://github.com/prit-007/ClearWage/releases/latest">See releases</a>
+          </div>
+          <div class="dl-card reveal reveal-d4" data-platform="linux">
+            <div class="dl-card-top"><h4>Linux</h4></div>
+            <div class="meta">Release bundle (.tar.gz)</div>
+            <a class="dl-btn" href="https://github.com/prit-007/ClearWage/releases/latest">See releases</a>
+          </div>
+          <div class="dl-card reveal" data-platform="web">
+            <div class="dl-card-top"><h4>Web</h4></div>
+            <div class="meta">SPA — deploy anywhere</div>
+            <a class="dl-btn" href="https://github.com/prit-007/ClearWage/releases/latest">See releases</a>
+          </div>
+        </div>
+
+        <p class="see-all reveal">Looking for an older version, checksums, or release notes? <a href="https://github.com/prit-007/ClearWage/releases">Browse all releases on GitHub.</a></p>
+
+        <div class="notice reveal">
+          <strong>ClearWage is in active development.</strong>
+          <p>Core features (attendance, payroll, ledger, staff, reporting) are production-ready. The platform is built on battle-tested open-source technologies and deployed in real factory environments. See the <a href="https://github.com/prit-007/ClearWage/blob/main/app/CHANGELOG.md">changelog</a> for what's shipped in each release.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <p class="foot-motto">"Factory workforce management. Clear. Simple. Yours."</p>
+      <div class="foot-links">
+        <a href="https://github.com/prit-007/ClearWage">Source</a>
+        <a href="https://github.com/prit-007/ClearWage/issues">Report a bug</a>
+        <a href="https://github.com/prit-007/ClearWage/blob/main/CONTRIBUTING.md">Contribute</a>
+        <a href="https://github.com/prit-007/ClearWage/blob/main/LICENSE">GPL-3.0 license</a>
+      </div>
+    </div>
+    <p class="foot-legal">ClearWage is free software, distributed with no warranty, under the GNU General Public License v3.0. · Built by <a href="https://github.com/prit-007">Developer's Paradise</a></p>
+  </div>
+</footer>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightbox-close" aria-label="Close">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <button class="lightbox-nav lightbox-prev" id="lightbox-prev" aria-label="Previous">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <img class="lightbox-img" id="lightbox-img" src="" alt="ClearWage screenshot">
+  <button class="lightbox-nav lightbox-next" id="lightbox-next" aria-label="Next">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+  <div class="lightbox-counter" id="lightbox-counter"></div>
+</div>
+
+<script>
+(function(){
+  var CFG = window.CLEARWAGE_CONFIG;
+  var API = "https://api.github.com/repos/" + CFG.githubOwner + "/" + CFG.githubRepo;
+
+  /* ---- theme ---- */
+  var root = document.documentElement;
+  var sunPath = 'M12 3v2m0 14v2m9-9h-2M5 12H3m15.36 6.36-1.41-1.41M6.05 6.05 4.64 4.64m12.72 0-1.41 1.41M6.05 17.95l-1.41 1.41M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z';
+  var moonPath = 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z';
+  var icon = document.getElementById('theme-icon');
+  function applyTheme(mode) {
+    if (mode === 'dark') root.setAttribute('data-theme', 'dark');
+    else root.removeAttribute('data-theme');
+    icon.innerHTML = '<path d="' + (mode === 'dark' ? sunPath : moonPath) + '"/>';
+  }
+  var stored = null;
+  try { stored = localStorage.getItem('clearwage-theme'); } catch(e) {}
+  applyTheme(stored || 'light');
+  document.getElementById('theme-toggle').addEventListener('click', function() {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    try { localStorage.setItem('clearwage-theme', next); } catch(e) {}
+  });
+
+  /* ---- hero entrance ---- */
+  requestAnimationFrame(function() {
+    document.querySelectorAll('.hero-load').forEach(function(el) { el.classList.add('ready'); });
+  });
+
+  /* ---- scroll reveal ---- */
+  var reveals = document.querySelectorAll('.reveal');
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+  reveals.forEach(function(el) { obs.observe(el); });
+
+  /* ---- mobile nav ---- */
+  var navToggle = document.getElementById('nav-toggle');
+  var navLinks = document.getElementById('nav-links');
+  navToggle.addEventListener('click', function() { navLinks.classList.toggle('active'); });
+  navLinks.querySelectorAll('a').forEach(function(a) {
+    a.addEventListener('click', function() { navLinks.classList.remove('active'); });
+  });
+
+  /* ---- platform detection ---- */
+  function detectPlatform() {
+    var ua = navigator.userAgent || "", plat = navigator.platform || "";
+    if (/android/i.test(ua)) return "android";
+    if (/iphone|ipad|ipod/i.test(ua)) return "ios";
+    if (/mac/i.test(plat) && !/iphone|ipad/i.test(ua)) return "macos";
+    if (/win/i.test(plat)) return "windows";
+    if (/linux/i.test(plat)) return "linux";
+    return null;
+  }
+  var labels = { android:" for Android", ios:" for iOS", windows:" for Windows", macos:" for macOS", linux:" for Linux" };
+  var detected = detectPlatform();
+  if (detected && labels[detected]) document.getElementById("hero-os").textContent = labels[detected];
+
+  /* ---- screenshots + dots ---- */
+  var shots = document.getElementById("shots");
+  var dots = document.getElementById("shot-dots");
+  var shotCount = 10;
+  for (var i = 1; i <= shotCount; i++) {
+    var n = (i < 10 ? "0" + i : "" + i);
+    var img = document.createElement("img");
+    img.loading = "lazy";
+    img.alt = "ClearWage screenshot " + n;
+    img.src = "https://raw.githubusercontent.com/" + CFG.githubOwner + "/" + CFG.githubRepo + "/main/screenshots/" + n + ".png";
+    img.onerror = function() { this.remove(); };
+    shots.appendChild(img);
+    var dot = document.createElement("button");
+    dot.className = "shot-dot" + (i === 1 ? " active" : "");
+    dot.setAttribute("aria-label", "Screenshot " + n);
+    dot.dataset.idx = i - 1;
+    dots.appendChild(dot);
+  }
+  shots.addEventListener("scroll", function() {
+    var visible = shots.querySelectorAll("img");
+    if (!visible.length) return;
+    var idx = Math.round(shots.scrollLeft / (shots.scrollWidth / visible.length));
+    dots.querySelectorAll(".shot-dot").forEach(function(d, i) {
+      d.classList.toggle("active", i === idx);
+    });
+  }, { passive: true });
+  dots.addEventListener("click", function(e) {
+    var btn = e.target.closest(".shot-dot");
+    if (!btn) return;
+    var visible = shots.querySelectorAll("img");
+    if (!visible.length) return;
+    var w = shots.scrollWidth / visible.length;
+    shots.scrollTo({ left: w * parseInt(btn.dataset.idx), behavior: "smooth" });
+  });
+
+  /* ---- live release data ---- */
+  var assetPatterns = {
+    android:       /clearwage.*\.apk$/i,
+    "windows-exe": /clearwage.*setup.*\.exe$/i,
+    "windows-zip": /clearwage.*windows.*\.zip$/i,
+    macos:         /clearwage.*macos.*\.zip$/i,
+    linux:         /clearwage.*linux.*\.tar\.gz$/i,
+    web:           /clearwage.*web.*\.zip$/i
+  };
+
+  fetch(API + "/releases/latest")
+    .then(function(r) { if (!r.ok) throw new Error("no releases yet"); return r.json(); })
+    .then(function(release) {
+      var version = release.tag_name || release.name;
+      if (version) document.getElementById("hero-version").textContent = version;
+
+      var assets = release.assets || [];
+      Object.keys(assetPatterns).forEach(function(platform) {
+        var match = assets.find(function(a) { return assetPatterns[platform].test(a.name); });
+        var card = document.querySelector('.dl-card[data-platform="' + platform + '"]');
+        if (!card) return;
+        var meta = card.querySelector(".meta");
+        var link = card.querySelector("a.dl-btn");
+        if (match) {
+          link.href = match.browser_download_url;
+          link.textContent = "Download " + version;
+          meta.textContent = (match.size / 1048576).toFixed(1) + " MB";
+        } else {
+          meta.textContent = meta.textContent + " — not in " + version;
+        }
+      });
+
+      if (detected) {
+        ["", "-exe", "-zip"].forEach(function(suffix) {
+          var card = document.querySelector('.dl-card[data-platform="' + detected + suffix + '"]');
+          if (card) {
+            card.dataset.recommended = "true";
+            var tag = document.createElement("span");
+            tag.className = "recommended-tag";
+            tag.textContent = "Your platform";
+            card.querySelector(".dl-card-top").appendChild(tag);
+            document.getElementById("hero-cta").href = card.querySelector("a.dl-btn").href;
+          }
+        });
+      }
+    })
+    .catch(function() {});
+
+  /* ---- lightbox ---- */
+  var lightbox = document.getElementById('lightbox');
+  var lbImg = document.getElementById('lightbox-img');
+  var lbCounter = document.getElementById('lightbox-counter');
+  var lbIdx = 0;
+  var shotImgs = [];
+
+  function openLightbox(idx) {
+    lbIdx = idx;
+    lbImg.src = shotImgs[idx].src;
+    lbImg.alt = shotImgs[idx].alt;
+    lbCounter.textContent = (idx + 1) + ' / ' + shotImgs.length;
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function navLightbox(dir) {
+    lbIdx = (lbIdx + dir + shotImgs.length) % shotImgs.length;
+    openLightbox(lbIdx);
+  }
+
+  shots.querySelectorAll('img').forEach(function(img, i) {
+    shotImgs.push(img);
+    img.addEventListener('click', function() { openLightbox(i); });
+  });
+
+  document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+  document.getElementById('lightbox-prev').addEventListener('click', function() { navLightbox(-1); });
+  document.getElementById('lightbox-next').addEventListener('click', function() { navLightbox(1); });
+  lightbox.addEventListener('click', function(e) { if (e.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', function(e) {
+    if (!lightbox.classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') navLightbox(-1);
+    if (e.key === 'ArrowRight') navLightbox(1);
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+- Fix server log.Printf in JSON responses (now zerolog)
+- Fix CSRF Secure flag behind reverse proxies
+- Fix HTTP request log missing tenant_id
+- Fix server DB connection not drained on shutdown
+- Fix payroll transaction fallback silent
+- Parallelize staff overview and dashboard fetches
+- Remove stale permission check in upload controller
+- Fix silent error swallowing in 10 app files
+- Add friendlyError() to 15+ error states
+- Add retry button on My Ledger error state
+- Add server config options (pprof, timeouts, rate limits, metrics)
+- Add server and app test coverage (9 new test files)

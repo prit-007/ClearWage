@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-09-08
+
+### Fixed
+
+- **Server `log.Printf` in JSON responses**: Replaced with structured zerolog
+  global logger for consistent log output.
+- **CSRF `Secure` flag broken behind reverse proxies**: Now checks
+  `X-Forwarded-Proto` / `X-Forwarded-Scheme` headers to detect TLS in
+  load-balanced deployments.
+- **HTTP request log missing tenant context**: Request logger now includes
+  `tenant_id` field for correlation.
+- **Server DB connection not drained on shutdown**: HTTP server now explicitly
+  closes the database pool after listeners stop.
+- **Payroll transaction fallback silent**: Warning logged when transaction-
+  based payroll falls back to non-transactional path.
+- **Staff overview fetch sequential**: `fetchOverview` now runs 6 queries
+  concurrently (was sequential), reducing latency.
+- **Dashboard fetch sequential**: `fetchDashboard` now runs activity and
+  balance queries concurrently.
+- **Upload controller stale permission check**: Removed redundant
+  `employeeId != claims.EmployeeID` guard in `UploadPhoto`.
+- **App silent `catch (_) {}` blocks**: 10 files now log via
+  `AppLogger.warn()` instead of swallowing errors silently.
+- **App raw `$e` in user-facing errors**: 15+ screens now use `friendlyError()`
+  for safe, user-readable error messages.
+- **My Ledger missing retry on error**: Added retry button when ledger
+  fetch fails.
+- **Server settings controller missing tests**: Added tests for
+  `GetPayrollSettings` and `UpsertPayrollSettings` (validation, auth,
+  error paths).
+- **Server advance request controller missing tests**: Added tests for
+  `Create`, `List`, and `Deny` endpoints (auth, validation, success).
+
+### Added
+
+- **Server config options**: `PprofPassword`, `ReadTimeoutSeconds`,
+  `WriteTimeoutSeconds`, `IdleTimeoutSeconds`, `ReadHeaderTimeoutSeconds`,
+  `BodyLimitMB`, `UploadLimitMB`, `RateLimitPerMinute`,
+  `AuthRateLimitPerMinute`, `MetricsEnabled` env vars.
+- **Server pprof basic auth**: `/debug/pprof/` gated behind
+  `PPROF_PASSWORD` (no auth in development).
+- **Server `/metrics` endpoint**: Gated behind `METRICS_ENABLED` env var
+  (disabled by default).
+- **Server tests**: 7 new test files covering utils (json_response,
+  validation, timezone), middlewares (csrf, ratelimit), and controllers
+  (settings, advance_request).
+- **App tests**: 2 new test files covering `MyLedgerPage` and
+  `MyAdvanceRequestsPage` (loading, error, retry, empty, data display).
+
 ## [0.9.2] - 2026-09-08
 
 ### Fixed

@@ -115,6 +115,10 @@ func (c *AdvanceRequestController) Create(w http.ResponseWriter, r *http.Request
 		utils.JSONFail(w, http.StatusBadRequest, "amount must be a positive number")
 		return
 	}
+	if amt > 100000 {
+		utils.JSONFail(w, http.StatusBadRequest, "amount must not exceed 1,00,000")
+		return
+	}
 
 	advReq, err := c.advanceRequestService.CreateRequest(r.Context(), tenantID, req.EmployeeID, amt, req.Note)
 	if err != nil {

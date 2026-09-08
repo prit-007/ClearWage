@@ -421,6 +421,10 @@ func (c *AttendanceController) BulkUpsert(w http.ResponseWriter, r *http.Request
 		utils.JSONFail(w, http.StatusBadRequest, "records is required")
 		return
 	}
+	if len(req.Records) > 500 {
+		utils.JSONFail(w, http.StatusBadRequest, "records must not exceed 500 per request")
+		return
+	}
 
 	var results []interface{}
 	for _, rec := range req.Records {

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -234,13 +235,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(PhosphorIconsRegular.gear, color: cs.onSurfaceVariant),
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              _showServerDialog();
-            },
-          ),
+          if (kDebugMode)
+            IconButton(
+              icon: Icon(PhosphorIconsRegular.gear, color: cs.onSurfaceVariant),
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                _showServerDialog();
+              },
+            ),
           const SizedBox(width: 8),
         ],
       ),

@@ -50,6 +50,7 @@ func RequestLogger(logger *zerolog.Logger) func(next http.Handler) http.Handler 
 			evt.
 				Str("method", r.Method).
 				Str("path", r.URL.Path).
+				Str("request_id", GetRequestID(r.Context())).
 				Int("status", ww.Status()).
 				Dur("duration", dur).
 				Int("bytes", ww.BytesWritten()).

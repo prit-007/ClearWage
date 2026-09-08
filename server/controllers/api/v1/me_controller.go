@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/rs/zerolog"
 	"github.com/clearwage/clearwage/config"
@@ -206,6 +208,7 @@ func (ctrl *MeController) Payslip(w http.ResponseWriter, r *http.Request) {
 	if safeFilename == "" {
 		safeFilename = "payslip.pdf"
 	}
+	safeFilename = sanitizeFilename(safeFilename)
 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", `attachment; filename="`+safeFilename+`"`)
@@ -248,4 +251,21 @@ func (ctrl *MeController) RequestAdvance(w http.ResponseWriter, r *http.Request)
 	}
 
 	utils.JSONSuccess(w, http.StatusOK, result)
+}
+
+// sanitizeFilename removes or replaces characters that are unsafe in
+// Content-Disposition headers and filesystem paths.
+func sanitizeFilename(name string) string {
+	var b strings.Builder
+	for _, r := range name {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '.' || r == '-' || r == '_' {
+			b.WriteRune(r)
+		} else if r == ' ' {
+			b.WriteRune('_')
+		}
+	}
+	if b.Len() == 0 {
+		return "payslip.pdf"
+	}
+	return b.String()
 }

@@ -48,8 +48,11 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			dbQueries := sqldb.New(sqlDB)
 			querier := repositories.NewGoquQuerierWithSQL(goquDB, sqlDB, dbQueries)
 
-			r := chi.NewRouter()
+		services.SetActivityLogger(*logger)
 
+		r := chi.NewRouter()
+
+		r.Use(mw.RequestID)
 		r.Use(mw.RequestLogger(logger))
 		r.Use(middleware.Recoverer)
 		r.Use(mw.LimitBodySize(5 << 20))
@@ -61,6 +64,9 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				w.Header().Set("X-XSS-Protection", "0")
 				w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 				w.Header().Set("Content-Security-Policy", "default-src 'self'")
+				if !cfg.IsDevelopment {
+					w.Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+				}
 				next.ServeHTTP(w, r)
 			})
 		})
@@ -73,10 +79,20 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				MaxAge:           300,
 			}))
 
-			r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte("ok"))
-			})
+		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("ok"))
+		})
+
+		r.Get("/ready", func(w http.ResponseWriter, r *http.Request) {
+			if pingErr := sqlDB.PingContext(r.Context()); pingErr != nil {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				_, _ = w.Write([]byte("database unreachable"))
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("ok"))
+		})
 
 			r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
 				http.ServeFile(w, r, "./docs/index.html")
@@ -90,11 +106,12 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 		if err != nil {
 			return err
 		}
-		r.Route("/api/v1/auth", func(r chi.Router) {
-			r.Post("/firebase-login", authCtrl.LoginWithFirebase)
-			r.Post("/register", authCtrl.Register)
-			r.Post("/logout", authCtrl.Logout)
-		})
+	r.Route("/api/v1/auth", func(r chi.Router) {
+		r.Use(mw.RateLimit(20, time.Minute))
+		r.Post("/firebase-login", authCtrl.LoginWithFirebase)
+		r.Post("/register", authCtrl.Register)
+		r.Post("/logout", authCtrl.Logout)
+	})
 
 		// Notification infrastructure
 		fcmSvc, err := services.NewFCMService(cfg, logger)

@@ -44,8 +44,8 @@ func GetConfig() AppConfig {
 		log.Fatal(err)
 	}
 
-	if len(AllConfig.Secret) < 16 {
-		log.Fatal("JWT_SECRET must be at least 16 characters")
+	if len(AllConfig.Secret) < 32 {
+		log.Fatal("JWT_SECRET must be at least 32 characters")
 	}
 	if AllConfig.FirebaseCredentialsPath == "" && AllConfig.FirebaseCredBase64 == "" {
 		log.Fatal("either FIREBASE_CREDENTIALS_PATH or FIREBASE_CRED_BASE64 must be set")

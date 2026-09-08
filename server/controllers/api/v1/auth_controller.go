@@ -84,7 +84,8 @@ func (ctrl *AuthController) LoginWithFirebase(w http.ResponseWriter, r *http.Req
 
 	token, err := ctrl.authService.LoginWithFirebase(r.Context(), req.IDToken)
 	if err != nil {
-		utils.JSONFail(w, http.StatusUnauthorized, err.Error())
+		ctrl.logger.Warn().Err(err).Msg("login failed")
+		utils.JSONFail(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
@@ -137,12 +138,16 @@ func (ctrl *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 		ctrl.logger.Error().Err(err).Msg("registration failed")
 		msg := err.Error()
 		status := http.StatusBadRequest
-		if strings.Contains(msg, "already registered") {
+		userMsg := "registration failed"
+		switch {
+		case strings.Contains(msg, "already registered"):
 			status = http.StatusConflict
-		} else if strings.Contains(msg, "database error") {
+			userMsg = "phone number already registered"
+		case strings.Contains(msg, "database error"):
 			status = http.StatusInternalServerError
+			userMsg = "internal server error"
 		}
-		utils.JSONFail(w, status, msg)
+		utils.JSONFail(w, status, userMsg)
 		return
 	}
 	maxAge := int(ctrl.authService.TokenTTL().Seconds())

@@ -49,6 +49,11 @@ func (c *DisputeController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(req.Reason) > 1000 {
+		utils.JSONFail(w, http.StatusBadRequest, "reason must be at most 1000 characters")
+		return
+	}
+
 	if claims.Role == "employee" && req.EmployeeID != claims.EmployeeID {
 		utils.JSONFail(w, http.StatusForbidden, "employees can only file disputes for themselves")
 		return

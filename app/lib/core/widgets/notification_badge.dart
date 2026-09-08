@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../design_tokens.dart';
+import '../logger.dart';
 import '../../features/notifications/providers/notification_providers.dart';
 
 class NotificationBadge extends ConsumerWidget {
@@ -15,7 +16,7 @@ class NotificationBadge extends ConsumerWidget {
     return countAsync.when(
       loading: () => child,
       error: (e, _) {
-        debugPrint('Unread count error: $e');
+        AppLogger.warn('Unread count error: $e');
         return child;
       },
       data: (count) {

@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-09-08
+
+### Fixed
+
+- **Raw database errors exposed to clients**: Login and registration endpoints
+  returned internal error messages. Now returns safe generic messages.
+- **Activity audit logging silently discarded**: `SetActivityLogger` was never
+  called at startup, so all audit logs were lost.
+- **No readiness health check**: Added `GET /ready` endpoint that verifies
+  database connectivity for orchestrator probes.
+- **Auth endpoints not rate-limited separately**: Auth routes now have a stricter
+  20 req/min limit (vs 100 global) to mitigate brute-force attacks.
+- **Rate limiter broken behind reverse proxies**: Now supports
+  `TRUSTED_PROXY_COUNT` env var and reads `X-Forwarded-For` / `X-Real-IP`.
+- **JWT secret minimum too weak**: Raised minimum from 16 to 32 characters.
+- **No HSTS header**: Added `Strict-Transport-Security` in non-development mode.
+- **Advance amount unbounded**: Added ₹1,00,000 server-side cap.
+- **Bulk attendance upsert unbounded**: Added 500-record per-request limit.
+- **Ledger note and dispute reason unbounded**: Added 500 / 1000 character caps.
+- **Payslip filename not sanitized**: Filenames now stripped of special characters.
+- **Server URL editable in production**: Login gear icon now only visible in
+  debug builds.
+- **Badge/notification counts silently wrong on error**: Providers now log errors
+  instead of returning 0.
+- **debugPrint invisible in release logs**: Replaced with structured `AppLogger`.
+- **FluidSlideIn timer leak**: Delay timer now stored and cancelled on dispose.
+- **IFSC code format not validated**: Employee form now validates IFSC pattern.
+- **Missing request ID correlation**: Added per-request UUID middleware with
+  `X-Request-ID` header and log correlation.
+
 ## [0.9.1] - 2026-08-30
 
 ### Fixed

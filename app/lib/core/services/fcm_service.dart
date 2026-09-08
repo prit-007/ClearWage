@@ -3,12 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../logger.dart';
 import '../providers/services.dart';
 import '../router.dart';
 
@@ -32,7 +31,7 @@ class FcmService {
         sound: true,
       );
       if (settings.authorizationStatus != AuthorizationStatus.authorized) {
-        debugPrint('Notification permission denied');
+        AppLogger.warn('Notification permission denied');
         return;
       }
 
@@ -75,7 +74,7 @@ class FcmService {
         _handleNotificationTap(ref, initialMessage.data);
       }
     } catch (e) {
-      debugPrint('FCM initialization failed: $e');
+      AppLogger.error('FCM initialization failed', e);
     }
   }
 
@@ -97,8 +96,7 @@ class FcmService {
         if (details.payload != null) {
           try {
             final data = jsonDecode(details.payload!) as Map<String, dynamic>;
-            // Navigation will be handled by the app's router
-            debugPrint('Notification tap: $data');
+            AppLogger.info('Notification tap: $data');
           } catch (_) {}
         }
       },
@@ -146,7 +144,7 @@ class FcmService {
       final platform = Platform.isAndroid ? 'android' : 'ios';
       await svc.registerToken(token, platform);
     } catch (e) {
-      debugPrint('Failed to register FCM token: $e');
+      AppLogger.error('Failed to register FCM token', e);
     }
   }
 

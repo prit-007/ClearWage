@@ -749,19 +749,26 @@
   /* ---- screenshots + dots ---- */
   var shots = document.getElementById("shots");
   var dots = document.getElementById("shot-dots");
-  var shotCount = 10;
-  for (var i = 1; i <= shotCount; i++) {
-    var n = (i < 10 ? "0" + i : "" + i);
+  var shotFiles = [
+    "01_login", "02_dashboard_admin", "03_staff_directory",
+    "04_attendance_roster", "05_ledger_hub", "06_disputes",
+    "07_holidays", "08_shifts", "09_advance_requests",
+    "10_leave_policy", "11_daily_summary", "12_payroll_preview",
+    "13_defaulters", "14_notifications", "15_payroll_settings",
+    "16_more_hub_admin", "17_more_hub_employee"
+  ];
+  for (var i = 0; i < shotFiles.length; i++) {
+    var n = shotFiles[i];
     var img = document.createElement("img");
     img.loading = "lazy";
-    img.alt = "ClearWage screenshot " + n;
-    img.src = "https://raw.githubusercontent.com/" + CFG.githubOwner + "/" + CFG.githubRepo + "/main/screenshots/" + n + ".png";
+    img.alt = "ClearWage screenshot: " + n.replace(/^\d+_/, "").replace(/_/g, " ");
+    img.src = "screenshots/" + n + ".png";
     img.onerror = function() { this.remove(); };
     shots.appendChild(img);
     var dot = document.createElement("button");
-    dot.className = "shot-dot" + (i === 1 ? " active" : "");
+    dot.className = "shot-dot" + (i === 0 ? " active" : "");
     dot.setAttribute("aria-label", "Screenshot " + n);
-    dot.dataset.idx = i - 1;
+    dot.dataset.idx = i;
     dots.appendChild(dot);
   }
   shots.addEventListener("scroll", function() {

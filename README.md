@@ -1,20 +1,57 @@
 # ClearWage
 
-**Open-source workforce management platform for modern factories.**
+**Factory workforce management, without the register, the spreadsheet, or the monthly bill.**
 
-ClearWage is a full-stack SaaS built for factory-floor realities — attendance
-tracking with OT computation, payroll processing, ledger management, advance
-requests, dispute resolution, and real-time reporting. Deploy it yourself
-or use it as a foundation for your own workforce platform.
+ClearWage marks attendance, runs payroll, tracks every advance, and lets a
+worker check their own payslip — all from a phone, and all on infrastructure
+you own. It's also a full-stack, open-source platform a developer can deploy
+or build on.
 
-[![CI](https://github.com/devparadise/clearwage/actions/workflows/ci.yml/badge.svg)](https://github.com/devparadise/clearwage/actions)
+[![CI](https://github.com/prit-007/ClearWage/actions/workflows/ci.yml/badge.svg)](https://github.com/prit-007/ClearWage/actions)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.44+-02569B?logo=flutter)](https://flutter.dev)
 [![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go)](https://go.dev)
 
+**[Website](https://prit-007.github.io/ClearWage)** · **[Download the latest build](https://github.com/prit-007/ClearWage/releases/latest)** · **[All releases](https://github.com/prit-007/ClearWage/releases)**
+
 ---
 
-## What ClearWage does
+## The problem it solves
+
+Attendance gets marked on paper. Payroll gets worked out on a spreadsheet
+only one person really understands. Advances get lent out on trust and
+half-remembered by payday. And when a worker questions a deduction, there's
+nothing to point to except "trust me."
+
+ClearWage puts attendance, payroll, and the advance ledger in one place, and
+lets workers see their own record instead of asking the office. Because it
+runs on your own server, none of it depends on a subscription you could lose
+access to.
+
+---
+
+## A day with ClearWage
+
+**For the owner / admin**
+- **Mark** — bulk-mark the day's roster in a couple of minutes; OT and holidays are worked out automatically.
+- **Lend** — log an advance against a worker's ledger the moment you hand it over, not from memory later.
+- **Run** — process payroll for the period and get PDF payslips, without a spreadsheet formula in sight.
+- **Resolve** — when a worker flags a deduction, the dispute arrives with the record attached, not a guessing game.
+
+**For the worker**
+- **Check** — see this month's attendance and OT as it's marked, not only at month-end.
+- **Download** — pull last month's payslip themselves, any time.
+- **Ask** — request an advance from inside the app, and see where it stands.
+- **Flag** — raise a dispute on a deduction that doesn't look right, and get a real answer.
+
+---
+
+## What's inside
+
+Two roles: the **Admin/Owner**, who gets full access to attendance, payroll,
+ledger, staff management, reports, and settings; and the **Employee**, who
+gets a read-only view of their own attendance, payslips, advance requests,
+and profile.
 
 | Capability | Details |
 |-----------|---------|
@@ -28,14 +65,70 @@ or use it as a foundation for your own workforce platform.
 | **Reports** | Daily summary, defaulters, payroll summary with charts and date range filters |
 | **Dashboard** | Real-time KPIs, attendance trends, staff breakdown, quick actions |
 
-### Two user roles
+---
 
-- **Admin/Owner** — full access: attendance roster, payroll, ledger, staff management, reports, settings
-- **Employee** — read-only: own attendance, payslips, advance requests, profile
+## Platforms
+
+| Platform | Build | Status |
+|----------|-------|--------|
+| Android | APK (split-per-ABI + universal), AAB | Production |
+| iOS | unsigned archive | Production-ready |
+| Windows | EXE + Inno Setup installer | Production-ready |
+| macOS | .app bundle | Production-ready |
+| Linux | bundle (tar.gz) | Production-ready |
+| Web | SPA | Firebase config ready |
 
 ---
 
-## Architecture
+## How it compares to a typical paid platform
+
+|  | ClearWage | Typical paid SaaS |
+|---|---|---|
+| Pricing | Free, GPL-3.0 | Per-worker, monthly |
+| Where your data lives | Your own server | The vendor's cloud |
+| Source code | Fully open, readable | Closed |
+| If the company shuts down | You still have everything | You lose access |
+| Setup | You (or a developer) deploy it | Vendor onboarding call |
+| Platforms | Android, iOS, Windows, macOS, Linux, Web | Usually app + web only |
+
+---
+
+## FAQ
+
+**Do I need a developer to set this up?**
+For the first deploy, yes — you're standing up a Postgres database, the Go
+API (Docker or bare metal), and a free Firebase project for phone-OTP login.
+Once that's running, day-to-day use needs no technical knowledge at all.
+
+**What happens if the internet goes down on the shop floor?**
+Right now, ClearWage needs a connection — it's REST-driven with no local
+database, and an offline banner shows when you've lost signal. Offline
+queuing for attendance is on the roadmap; the database already has a
+`sync_queue` table reserved for it, it's just not wired up to the app yet.
+
+**Is it actually finished, or still in progress?**
+Core features — attendance, payroll, ledger, staff management, and
+reporting — are production-ready. The project is under active development;
+check the [changelog](app/CHANGELOG.md) for what's shipped in each release.
+
+**What does it cost to run?**
+The software is free under GPL-3.0. You pay for whatever you host it on — a
+small Linux server or a Docker host — and Firebase's free tier covers
+phone-auth OTP for most factories' worker counts.
+
+**Can I customize it for my factory's specific rules?**
+Payroll wage basis, OT multipliers, leave policies, and shift timings are
+already configurable per tenant in Settings; anything beyond that is a code
+change away, and the code is yours to change.
+
+---
+
+## For developers
+
+The rest of this document is for whoever is deploying, extending, or
+contributing to ClearWage.
+
+### Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -72,11 +165,9 @@ or use it as a foundation for your own workforce platform.
 - **Offline-first logging** — Talker in-memory history inspectable on-device at `/debug/logs`
 - **Zero vendor lock-in** — open-source, deploys to any Linux host with Docker or bare metal
 
----
+### Tech stack
 
-## Tech stack
-
-### Backend
+#### Backend
 
 | Component | Technology |
 |-----------|-----------|
@@ -90,7 +181,7 @@ or use it as a foundation for your own workforce platform.
 | CLI | spf13/cobra |
 | Testing | testify, GoMock, testcontainers-go |
 
-### Frontend
+#### Frontend
 
 | Component | Technology |
 |-----------|-----------|
@@ -103,7 +194,7 @@ or use it as a foundation for your own workforce platform.
 | Logging | Talker (AppLogger facade) |
 | OTP | pinput |
 
-### Infrastructure
+#### Infrastructure
 
 | Component | Technology |
 |-----------|-----------|
@@ -113,22 +204,7 @@ or use it as a foundation for your own workforce platform.
 | Store | Fastlane (Android), manual (iOS) |
 | Installer | Inno Setup (Windows) |
 
----
-
-## Platform support
-
-| Platform | Build | Status |
-|----------|-------|--------|
-| Android | APK (split-per-ABI + universal), AAB | Production |
-| iOS | unsigned archive | Production-ready |
-| Windows | EXE + Inno Setup installer | Production-ready |
-| macOS | .app bundle | Production-ready |
-| Linux | bundle (tar.gz) | Production-ready |
-| Web | SPA | Firebase config ready |
-
----
-
-## Project structure
+### Project structure
 
 ```
 clearwage/
@@ -173,18 +249,16 @@ clearwage/
 └── README.md                     This file
 ```
 
----
+### Quick start
 
-## Quick start
-
-### Prerequisites
+#### Prerequisites
 
 - Go 1.26+
 - PostgreSQL 16 (or Docker)
 - Flutter 3.44+ / Dart 3.12+
 - Firebase project with Phone Auth enabled
 
-### Server
+#### Server
 
 ```bash
 cd server
@@ -194,7 +268,7 @@ make migrate-up
 make start-api              # http://127.0.0.1:8080
 ```
 
-### Flutter app
+#### Flutter app
 
 ```bash
 cd app
@@ -202,7 +276,7 @@ flutter pub get
 flutter run
 ```
 
-### Firebase config files (gitignored — never commit)
+#### Firebase config files (gitignored — never commit)
 
 | File | Location |
 |------|----------|
@@ -210,9 +284,7 @@ flutter run
 | `GoogleService-Info.plist` | `app/ios/Runner/` |
 | `firebase-credentials.json` | `server/` |
 
----
-
-## Environment variables
+### Environment variables
 
 See `server/.env.example`. Key variables:
 
@@ -227,9 +299,7 @@ See `server/.env.example`. Key variables:
 | `FIREBASE_CRED_BASE64` / `FIREBASE_CREDENTIALS_PATH` | Firebase Admin SDK credentials | — |
 | `CLOUDINARY_*` | Optional profile/KYC asset storage | — |
 
----
-
-## Database
+### Database
 
 Managed via goose migrations (`server/database/migrations/`). Core tables:
 
@@ -252,11 +322,9 @@ Managed via goose migrations (`server/database/migrations/`). Core tables:
 cd server && make migrate-up      # apply all pending goose migrations
 ```
 
----
+### Testing
 
-## Testing
-
-### Server
+#### Server
 
 ```bash
 cd server
@@ -265,7 +333,7 @@ make lint                  # golangci-lint
 go build ./...             # compile check
 ```
 
-### Flutter
+#### Flutter
 
 ```bash
 cd app
@@ -274,7 +342,7 @@ flutter analyze            # must be zero issues
 flutter test --coverage -x network    # 543+ tests
 ```
 
-### What we test
+#### What we test
 
 | Layer | Technique | Coverage |
 |-------|-----------|----------|
@@ -285,9 +353,7 @@ flutter test --coverage -x network    # 543+ tests
 | App entry | Router redirect tests | Auth flows |
 | Go backend | Unit + integration (testcontainers) | All packages |
 
----
-
-## CI/CD
+### CI/CD
 
 GitHub Actions (`.github/workflows/ci.yml`):
 
@@ -316,15 +382,13 @@ GitHub Actions (`.github/workflows/ci.yml`):
 
 All platform builds run in parallel after `flutter-analyze-and-test` passes.
 
----
-
-## API
+### API
 
 Full REST API reference: [docs/API.md](docs/API.md)
 
 Swagger UI: `server/docs/` (generated from Go annotations in `server/app.go`)
 
-### Key endpoints
+#### Key endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -337,9 +401,7 @@ Swagger UI: `server/docs/` (generated from Go annotations in `server/app.go`)
 | `GET` | `/api/v1/ledger` | Employee ledger entries |
 | `POST` | `/api/v1/advance-requests` | Request advance |
 
----
-
-## Key design decisions
+### Key design decisions
 
 | Decision | Rationale |
 |----------|-----------|
@@ -353,9 +415,7 @@ Swagger UI: `server/docs/` (generated from Go annotations in `server/app.go`)
 
 Full rationale: [docs/adr/](docs/adr/)
 
----
-
-## Documentation
+### Documentation
 
 | Document | Audience | Contents |
 |----------|----------|----------|

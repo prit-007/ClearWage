@@ -56,7 +56,6 @@ import 'package:clearwage/features/notifications/notifications_page.dart';
 import 'package:clearwage/features/notifications/providers/notification_providers.dart';
 import 'package:clearwage/features/settings/payroll_settings_page.dart';
 import 'package:clearwage/features/more/more_hub_page.dart';
-import 'package:clearwage/core/app_info.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers

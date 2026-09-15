@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,10 +8,12 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/app_info.dart';
 import '../../core/helpers.dart';
 import '../../core/providers/app_providers.dart';
-import '../../core/providers/badge_providers.dart';
 import '../../core/responsive.dart';
+import '../../core/providers/services.dart';
 import '../../core/services/fcm_service.dart';
+import '../../core/token_storage.dart';
 import '../../core/widgets/notification_badge.dart';
+import '../../core/widgets/offline_banner.dart';
 import '../../core/widgets/update_checker.dart';
 
 class MainShell extends ConsumerStatefulWidget {
@@ -35,7 +39,6 @@ class _MainShellState extends ConsumerState<MainShell> {
     final cs = Theme.of(context).colorScheme;
     final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
     final isWide = AppBreakpoints.isDesktop(context);
-    final disputesCount = ref.watch(openDisputesCountProvider).valueOrNull ?? 0;
     final appVersion = ref.watch(appInfoProvider).valueOrNull;
 
     ref.listen<bool>(sessionExpiredProvider, (prev, next) {
@@ -75,17 +78,9 @@ class _MainShellState extends ConsumerState<MainShell> {
           selectedIcon: Icon(Icons.event_available),
           label: 'Attendance',
         ),
-        NavigationDestination(
-          icon: Badge(
-            isLabelVisible: disputesCount > 0,
-            label: Text('$disputesCount'),
-            child: const Icon(Icons.account_balance_wallet_outlined),
-          ),
-          selectedIcon: Badge(
-            isLabelVisible: disputesCount > 0,
-            label: Text('$disputesCount'),
-            child: const Icon(Icons.account_balance_wallet),
-          ),
+        const NavigationDestination(
+          icon: Icon(Icons.account_balance_wallet_outlined),
+          selectedIcon: Icon(Icons.account_balance_wallet),
           label: 'Ledger',
         ),
         const NavigationDestination(
@@ -155,12 +150,20 @@ class _MainShellState extends ConsumerState<MainShell> {
                 PhosphorIconsRegular.userCircle,
                 color: cs.onSurfaceVariant,
               ),
-              onSelected: (value) {
+              onSelected: (value) async {
                 if (value == 'profile') {
-                  context.push('/my-profile');
+                  unawaited(
+                    Future<void>.microtask(() {
+                      if (context.mounted) context.push('/my-profile');
+                    }),
+                  );
                 } else if (value == 'signout') {
+                  await ref.read(authServiceProvider).logout();
+                  await TokenStorage.clear();
+                  if (!context.mounted) return;
                   ref.read(tokenProvider.notifier).state = null;
                   ref.read(userInfoProvider.notifier).state = null;
+                  if (!context.mounted) return;
                   context.go('/login');
                 }
               },
@@ -186,43 +189,47 @@ class _MainShellState extends ConsumerState<MainShell> {
             ),
           ],
         ),
-        body: isWide
-            ? Row(
-                children: [
-                  NavigationRail(
-                    selectedIndex: effectiveIdx,
-                    onDestinationSelected: (i) {
-                      widget.navigationShell.goBranch(
-                        i,
-                        initialLocation:
-                            i == widget.navigationShell.currentIndex,
-                      );
-                    },
-                    labelType: NavigationRailLabelType.all,
-                    backgroundColor: cs.surface,
-                    indicatorColor: cs.primaryContainer.withValues(alpha: 0.5),
-                    selectedIconTheme: IconThemeData(color: cs.primary),
-                    selectedLabelTextStyle: TextStyle(
-                      color: cs.primary,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
+        body: OfflineBanner(
+          child: isWide
+              ? Row(
+                  children: [
+                    NavigationRail(
+                      selectedIndex: effectiveIdx,
+                      onDestinationSelected: (i) {
+                        widget.navigationShell.goBranch(
+                          i,
+                          initialLocation:
+                              i == widget.navigationShell.currentIndex,
+                        );
+                      },
+                      labelType: NavigationRailLabelType.all,
+                      backgroundColor: cs.surface,
+                      indicatorColor: cs.primaryContainer.withValues(
+                        alpha: 0.5,
+                      ),
+                      selectedIconTheme: IconThemeData(color: cs.primary),
+                      selectedLabelTextStyle: TextStyle(
+                        color: cs.primary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                      unselectedLabelTextStyle: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                      destinations: railDestinations,
                     ),
-                    unselectedLabelTextStyle: TextStyle(
-                      color: cs.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
+                    VerticalDivider(
+                      width: 1,
+                      thickness: 1,
+                      color: cs.outlineVariant.withValues(alpha: 0.3),
                     ),
-                    destinations: railDestinations,
-                  ),
-                  VerticalDivider(
-                    width: 1,
-                    thickness: 1,
-                    color: cs.outlineVariant.withValues(alpha: 0.3),
-                  ),
-                  Expanded(child: widget.navigationShell),
-                ],
-              )
-            : widget.navigationShell,
+                    Expanded(child: widget.navigationShell),
+                  ],
+                )
+              : widget.navigationShell,
+        ),
         bottomNavigationBar: isWide
             ? null
             : NavigationBar(

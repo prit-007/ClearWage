@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,8 +47,8 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
 
   bool _creatingShifts = false;
 
-  Future<void> _setupFactory() async {
-    if (_creatingShifts) return;
+  Future<bool> _setupFactory() async {
+    if (_creatingShifts) return false;
     setState(() => _creatingShifts = true);
     try {
       final svc = ref.read(onboardingServiceProvider);
@@ -89,46 +91,39 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
         },
         'holidays': <Map<String, dynamic>>[],
       });
+      return true;
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to save setup: ${friendlyError(e)}')),
         );
       }
+      return false;
     } finally {
       if (mounted) setState(() => _creatingShifts = false);
     }
   }
 
-  void _nextStep() {
+  Future<void> _nextStep() async {
     if (_currentStep == 0 && _companyNameCtrl.text.trim().isEmpty) {
-      HapticFeedback.vibrate();
+      unawaited(HapticFeedback.vibrate());
       setState(() {});
       return;
     }
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     if (_currentStep < _totalSteps - 1) {
       FocusScope.of(context).unfocus();
-      _pageCtrl.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.fastOutSlowIn,
+      unawaited(
+        _pageCtrl.nextPage(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.fastOutSlowIn,
+        ),
       );
       setState(() => _currentStep++);
     } else {
-      HapticFeedback.heavyImpact();
-      _setupFactory()
-          .then((_) {
-            if (mounted) context.go('/home');
-          })
-          .catchError((_) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Setup failed. Please try again.'),
-                ),
-              );
-            }
-          });
+      unawaited(HapticFeedback.heavyImpact());
+      final success = await _setupFactory();
+      if (success && mounted) context.go('/home');
     }
   }
 

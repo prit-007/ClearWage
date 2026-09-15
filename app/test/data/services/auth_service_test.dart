@@ -27,7 +27,7 @@ class _MockApiClient extends ApiClient {
   }
 
   @override
-  Future<Map<String, dynamic>> delete(String path) async {
+  Future<Map<String, dynamic>> delete(String path, {Map<String, dynamic>? body}) async {
     lastPath = path;
     if (_error != null) throw _error!;
     return _response ?? {};

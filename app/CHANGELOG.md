@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-09-15
+
+### Fixed
+
+- **FCM token not removed on logout** (`#25`): `removeToken()` now sends the
+  token in the request body as the server requires.
+- **Sign-out doesn't clear storage or Firebase** (`#26`): Sign-out now calls
+  `AuthService.logout()` which clears `TokenStorage`, deregisters FCM tokens,
+  and signs out from Firebase.
+- **401 token refresh doesn't retry original request** (`#27`): `ApiClient`
+  now transparently retries the failed request after a successful token
+  refresh, eliminating flash errors on every token expiry cycle.
+- **`postMultipart` bypasses 401 refresh** (`#28`): File uploads now route
+  401 responses through the token refresh flow.
+- **Server URL config lost on restart** (`#30`): Server URL now persists to
+  `FlutterSecureStorage` across app restarts.
+- **Update service hardcoded old repo name** (`#29`): GitHub repo updated
+  from `vivek-app` to `ClearWage` for in-app update checks.
+- **Ledger tab badge shows disputes count** (`#31`): Removed misleading
+  disputes badge from the Ledger navigation tab.
+- **Employee route guards create dead-ends** (`#32`): Admin-only report items
+  (Daily Summary, Defaulters, Payroll) are now hidden from employees in the
+  More hub. Employees see "My Reports" instead.
+- **Onboarding navigates away on partial failure** (`#33`): Factory setup
+  wizard now only navigates to dashboard if the entire setup succeeds.
+
+### Added
+
+- **Dark Mode support** (`#34`): Full dark theme with Light/Dark/System toggle
+  in the More hub. Preference persists across restarts.
+- **Offline connectivity banner** (`#36`): Uses `connectivity_plus` to monitor
+  network state. Shows a persistent orange banner when offline.
+- **Employee dispute raising** (`#39`): Employees can now long-press any
+  ledger entry to raise a dispute, wired to the existing `DisputeService`.
+- **API request retry** (`#44`): All HTTP methods (`get`, `post`, `put`,
+  `delete`, `getRaw`, `postRaw`, `postMultipart`) now retry once after a
+  transparent token refresh on 401 responses.
+- **New dependencies**: `connectivity_plus` for network monitoring, `share_plus`
+  for report sharing, `local_auth` for future biometric support.
+- **New files**: `core/theme_provider.dart`, `core/services/connectivity_service.dart`,
+  `core/widgets/offline_banner.dart`.
+
+### Changed
+
+- `ApiClient.delete()` now accepts an optional `body` parameter for endpoints
+  that require a request body on DELETE.
+- Test mock classes updated to match the new `delete()` signature.
+
 ## [0.9.3] - 2026-09-08
 
 ### Fixed

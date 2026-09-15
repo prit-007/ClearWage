@@ -581,8 +581,9 @@ class _ServerConfigSheetState extends ConsumerState<_ServerConfigSheet> {
               FilledButton(
                 onPressed: () {
                   HapticFeedback.selectionClick();
-                  ref.read(serverUrlProvider.notifier).state = _urlCtrl.text
-                      .trim();
+                  ref
+                      .read(serverUrlProvider.notifier)
+                      .update(_urlCtrl.text.trim());
                   Navigator.pop(context);
                 },
                 style: FilledButton.styleFrom(

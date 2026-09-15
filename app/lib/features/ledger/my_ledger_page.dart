@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
+import '../../core/providers/app_providers.dart';
 import '../../core/providers/services.dart';
+import '../disputes/raise_dispute_dialog.dart';
 import '../../core/responsive.dart';
 import '../../core/helpers.dart';
 import '../../core/design_tokens.dart';
@@ -234,9 +238,30 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final entry = entries[index];
+                        final entryId = entry['id'] as String? ?? '';
                         return FluidSlideIn(
                           delay: (index * 50).clamp(0, 400).toInt(),
-                          child: _LedgerEntryCard(cs: cs, tt: tt, entry: entry),
+                          child: _LedgerEntryCard(
+                            cs: cs,
+                            tt: tt,
+                            entry: entry,
+                            onLongPress: entryId.isNotEmpty
+                                ? () async {
+                                    unawaited(HapticFeedback.mediumImpact());
+                                    final user = ref.read(userInfoProvider);
+                                    final empId = user?.employeeId ?? '';
+                                    if (empId.isEmpty) return;
+                                    await showRaiseDisputeDialog(
+                                      context,
+                                      disputeService: ref.read(
+                                        disputeServiceProvider,
+                                      ),
+                                      ledgerId: entryId,
+                                      employeeId: empId,
+                                    );
+                                  }
+                                : null,
+                          ),
                         );
                       }, childCount: entries.length),
                     ),
@@ -458,11 +483,13 @@ class _LedgerEntryCard extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final Map<String, dynamic> entry;
+  final VoidCallback? onLongPress;
 
   const _LedgerEntryCard({
     required this.cs,
     required this.tt,
     required this.entry,
+    this.onLongPress,
   });
 
   @override
@@ -476,84 +503,90 @@ class _LedgerEntryCard extends StatelessWidget {
     final color = isJama ? AppColors.success : AppColors.danger;
     final label = isJama ? 'Jama' : 'Udhaar';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: PhosphorIcon(
-                isJama
-                    ? PhosphorIconsFill.arrowDownLeft
-                    : PhosphorIconsFill.arrowUpRight,
-                color: color,
-                size: 20,
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: PhosphorIcon(
+                  isJama
+                      ? PhosphorIconsFill.arrowDownLeft
+                      : PhosphorIconsFill.arrowUpRight,
+                  color: color,
+                  size: 20,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    date.isNotEmpty ? formatDate(date) : '',
+                    style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  if (note.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      note,
+                      style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  date.isNotEmpty ? formatDate(date) : '',
-                  style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                if (note.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    note,
-                    style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${isJama ? "+" : "-"}\u20B9${amount.toStringAsFixed(0)}',
-                style: tt.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  label.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 10,
+                  '${isJama ? "+" : "-"}\u20B9${amount.toStringAsFixed(0)}',
+                  style: tt.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: color,
-                    letterSpacing: 0.5,
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(height: 2),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    label.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: color,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

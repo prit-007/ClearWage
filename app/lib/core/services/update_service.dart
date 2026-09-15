@@ -22,7 +22,7 @@ class UpdateInfo {
 
 class UpdateService {
   static const _githubOwner = 'prit-007';
-  static const _githubRepo = 'vivek-app';
+  static const _githubRepo = 'ClearWage';
 
   http.Client? _httpClient;
 

@@ -14,6 +14,14 @@ class TokenStorage {
     ),
   );
 
+  static Future<String?> read(String key) async {
+    return _storage.read(key: key);
+  }
+
+  static Future<void> write(String key, String value) async {
+    await _storage.write(key: key, value: value);
+  }
+
   static Future<String?> load() async {
     return _storage.read(key: _tokenKey);
   }

@@ -269,3 +269,56 @@ subsequent release cycles.
 - [x] `fastlane` changelog `changelogs/14.txt`.
 - [x] README test count updated to 543+.
 - [ ] Tag `v0.9.3` created at the CHANGELOG commit.
+
+## Phase 13 — v1.0.0 production release
+
+### Bug fixes
+
+- [x] #25: FCM removeToken() sends token in body
+- [x] #26: Sign-out clears TokenStorage + Firebase
+- [x] #27: 401 handler retries after token refresh
+- [x] #28: postMultipart routes 401 through _handle()
+- [x] #29: UpdateService repo name fixed
+- [x] #30: Server URL persists to FlutterSecureStorage
+- [x] #31: Ledger tab disputes badge removed
+- [x] #32: Employee route guards — hidden dead-end items
+- [x] #33: Onboarding only navigates on full success
+
+### Features
+
+- [x] #34: Dark mode (System/Light/Dark toggle, persisted)
+- [x] #36: Offline connectivity banner (connectivity_plus)
+- [x] #39: Employee dispute raising from My Ledger
+- [x] #44: API request retry on transparent token refresh
+
+### CI/Infra
+
+- [x] Android signing secrets created (4 new secrets)
+- [x] CI secrets context fix (env vars for step if conditions)
+- [x] build.gradle.kts proper release signing config
+- [x] Windows MSVC coroutine deprecation fix
+- [x] CI workflow: master branch added to triggers
+
+### Release
+
+- [x] `CHANGELOG.md` entry for `[1.0.0]`.
+- [x] `app/pubspec.yaml` bumped to `1.0.0+15`.
+- [x] `fastlane` changelog `changelogs/15.txt`.
+- [x] Tag `v1.0.0` created and pushed.
+
+## Phase 14 — v1.1.0 feature pass
+
+### Features
+
+- [x] #37: Ledger Hub search by employee name/note
+- [x] #40: Daily summary share via SharePlus
+- [x] #43: Biometric auth + inactivity lock (local_auth, 5-min timeout)
+- [x] #41: Skeleton loading — primary screens use ShimmerLoading
+- [x] #42: Desktop/tablet — NavigationRail, adaptive sheets, breakpoints
+
+### Release
+
+- [x] `CHANGELOG.md` entry for `[1.1.0]`.
+- [x] `app/pubspec.yaml` bumped to `1.1.0+16`.
+- [x] `fastlane` changelog `changelogs/16.txt`.
+- [ ] PR #47 merged to master.

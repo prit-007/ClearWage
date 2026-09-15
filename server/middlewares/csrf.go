@@ -12,6 +12,14 @@ const csrfHeaderName = "X-CSRF-Token"
 
 func CSRFProtection(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Skip CSRF for auth endpoints (login, register) — these are called
+		// before the client has a session token.
+		path := r.URL.Path
+		if strings.HasPrefix(path, "/api/v1/auth/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		switch r.Method {
 		case http.MethodGet, http.MethodHead, http.MethodOptions:
 			token, err := generateCSRFToken()

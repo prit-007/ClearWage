@@ -210,6 +210,38 @@
   }
 
   /* ================================================================
+     PLATFORM DOWNLOAD BAR (floating)
+     ================================================================ */
+  .dl-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--rule);
+    padding: 14px 28px;
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .dl-bar.visible { transform: translateY(0); }
+  .dl-bar.hidden { display: none; }
+  .dl-bar-icon {
+    width: 36px; height: 36px; background: var(--accent-soft); border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 18px;
+  }
+  .dl-bar-text { flex: 1; min-width: 0; }
+  .dl-bar-text strong { font-size: 0.95rem; display: block; }
+  .dl-bar-text span { font-size: 0.82rem; color: var(--ink-soft); }
+  .dl-bar .btn { padding: 10px 20px; font-size: 0.88rem; white-space: nowrap; flex-shrink: 0; }
+  .dl-bar-close {
+    background: none; border: none; cursor: pointer; color: var(--ink-faint);
+    padding: 6px; border-radius: 50%; transition: color 0.2s, background 0.2s;
+    flex-shrink: 0;
+  }
+  .dl-bar-close:hover { color: var(--ink); background: var(--accent-soft); }
+  .dl-bar-close svg { width: 18px; height: 18px; display: block; }
+
+  /* ================================================================
      SECTIONS
      ================================================================ */
   section { padding: 88px 0; }
@@ -271,6 +303,27 @@
   .bento-card p { color: var(--ink-soft); margin: 0; font-size: 0.92rem; line-height: 1.6; }
 
   /* ================================================================
+     ROLE CARDS (day in the life)
+     ================================================================ */
+  .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 800px) { .role-grid { grid-template-columns: 1fr; } }
+  .role-card {
+    background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-lg);
+    overflow: hidden; transition: box-shadow 0.3s, border-color 0.3s;
+  }
+  .role-card:hover { box-shadow: var(--shadow); }
+  .role-shot { width: 100%; display: block; border-bottom: 1px solid var(--rule); }
+  .role-body { padding: 26px 26px 30px; }
+  .role-tag {
+    font-size: 0.78rem; color: var(--accent); font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; display: block; margin-bottom: 8px;
+  }
+  .role-body h3 { font-size: 1.2rem; font-weight: 600; margin: 0 0 4px; }
+  .role-steps { margin: 16px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 11px; }
+  .role-steps li { font-size: 0.93rem; color: var(--ink-soft); line-height: 1.6; }
+  .role-steps li b { color: var(--ink); font-weight: 600; }
+
+  /* ================================================================
      SCREENSHOTS
      ================================================================ */
   .shots-wrap { position: relative; }
@@ -298,6 +351,66 @@
     cursor: pointer; padding: 0; transition: background 0.3s, transform 0.3s;
   }
   .shot-dot.active { background: var(--accent); transform: scale(1.3); }
+  .shot-caption { text-align: center; color: var(--ink-soft); font-size: 0.92rem; margin: 14px 0 0; min-height: 1.4em; }
+
+  /* ================================================================
+     APP MOCKUPS
+     ================================================================ */
+  .mock-note { font-size: 0.82rem; color: var(--ink-faint); margin: -8px 0 32px; }
+  .mock-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 800px) { .mock-grid { grid-template-columns: 1fr; } }
+  .mock-card { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-lg); padding: 22px; }
+  .mock-card h3 { font-size: 1.05rem; font-weight: 600; margin: 0 0 4px; }
+  .mock-card > p { color: var(--ink-soft); font-size: 0.88rem; margin: 0 0 18px; }
+  .app-mock {
+    width: 100%; max-width: 260px; margin: 0 auto; aspect-ratio: 9/17.5;
+    background: var(--bg); border: 6px solid #fff; border-radius: 22px;
+    box-shadow: 0 0 0 1px var(--rule), var(--shadow); overflow: hidden;
+    display: flex; flex-direction: column; font-family: var(--sans);
+  }
+  .app-mock .bar { padding: 14px 14px 8px; font-weight: 700; font-size: 0.88rem; background: var(--surface); }
+  .app-mock .bar small { display: block; font-weight: 400; color: var(--ink-faint); font-size: 0.68rem; margin-top: 2px; }
+  .app-mock .steps { display: flex; gap: 6px; padding: 0 14px 12px; background: var(--surface); }
+  .app-mock .steps span { flex: 1; height: 3px; border-radius: 3px; background: var(--rule); }
+  .app-mock .steps span.done { background: var(--accent); }
+  .app-mock .tabs { display: flex; border-bottom: 1px solid var(--rule); background: var(--surface); }
+  .app-mock .tabs span { flex: 1; text-align: center; padding: 10px 0; font-size: 0.68rem; font-weight: 600; color: var(--ink-faint); }
+  .app-mock .tabs span.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+  .app-mock .body { padding: 14px; display: flex; flex-direction: column; gap: 9px; flex: 1; overflow: hidden; }
+  .app-mock .field { display: flex; flex-direction: column; gap: 4px; }
+  .app-mock .field label { font-size: 0.62rem; color: var(--ink-faint); }
+  .app-mock .field .box { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 9px 10px; font-size: 0.72rem; color: var(--ink); }
+  .app-mock .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 11px; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; font-size: 0.7rem; color: var(--ink-soft); }
+  .app-mock .row b { color: var(--ink); font-size: 0.74rem; }
+  .app-mock .doc-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 11px; border: 1px dashed var(--rule); border-radius: 10px; font-size: 0.68rem; color: var(--ink-faint); }
+  .app-mock .doc-row .tag { color: var(--accent); font-weight: 700; font-size: 0.62rem; }
+  .app-mock .cta { margin-top: auto; background: var(--accent); color: #fff; border-radius: 9px; padding: 11px; text-align: center; font-size: 0.74rem; font-weight: 700; }
+
+  /* ================================================================
+     COMPARISON TABLE
+     ================================================================ */
+  .compare-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+  .compare-table th, .compare-table td { padding: 16px 18px; text-align: left; font-size: 0.92rem; border-bottom: 1px solid var(--rule); }
+  .compare-table th { font-family: var(--serif); font-weight: 400; font-size: 1rem; color: var(--ink-faint); }
+  .compare-table th.hl, .compare-table td.hl { background: var(--accent-soft); }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table td.hl { font-weight: 600; color: var(--ink); }
+  .compare-scroll { overflow-x: auto; }
+  @media (max-width: 640px) { .compare-table { font-size: 0.85rem; } .compare-table th, .compare-table td { padding: 12px 14px; } }
+
+  /* ================================================================
+     FAQ
+     ================================================================ */
+  .faq-list { display: flex; flex-direction: column; gap: 10px; }
+  .faq-item { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+  .faq-item summary {
+    padding: 18px 22px; cursor: pointer; font-weight: 600; font-size: 0.98rem;
+    display: flex; justify-content: space-between; align-items: center; list-style: none;
+  }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item summary::after { content: '+'; font-size: 1.3rem; color: var(--ink-faint); font-weight: 400; }
+  .faq-item[open] summary::after { content: '\2212'; }
+  .faq-item p { margin: 0; padding: 0 22px 20px; color: var(--ink-soft); font-size: 0.92rem; line-height: 1.7; }
 
   /* ---- Lightbox ---- */
   .lightbox {
@@ -412,7 +525,7 @@
     <div class="nav-right">
       <div class="nav-links" id="nav-links">
         <a href="#features">Features</a>
-        <a href="#architecture">Architecture</a>
+        <a href="#faq">FAQ</a>
         <a href="#downloads">Downloads</a>
         <a class="nav-gh" href="https://github.com/prit-007/ClearWage">
           <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.49c-2.23.48-2.7-1.07-2.7-1.07-.36-.93-.89-1.17-.89-1.17-.73-.5.05-.49.05-.49.8.06 1.23.83 1.23.83.72 1.23 1.87.88 2.33.67.07-.52.28-.88.51-1.08-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.01.08-2.11 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.91.08 2.11.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
@@ -435,12 +548,13 @@
   <section class="hero" id="top">
     <div class="wrap hero-grid">
       <div>
-        <div class="eyebrow hero-load"><span class="dot"></span> Free &amp; open source · GPL-3.0</div>
-        <h1 class="headline hero-load d1">Factory workforce<br>management.<br>Clear.</h1>
+        <div class="eyebrow hero-load"><span class="dot"></span> Free &amp; open source &middot; GPL-3.0</div>
+        <h1 class="headline hero-load d1">From the attendance<br>register to the<br>payslip. One app.</h1>
         <p class="hero-sub hero-load d2">
-          ClearWage is a full-stack workforce platform built for factory-floor realities.
-          <strong>Attendance, payroll, ledger, disputes, and reporting</strong> — all in
-          one open-source package you can deploy on your own infrastructure.
+          No more paper registers, payroll spreadsheets nobody else can read, or advances
+          people forget were ever lent. <strong>ClearWage marks attendance, runs payroll,
+          tracks every advance, and lets a worker check their own payslip</strong> &mdash; on your
+          server, not someone else's subscription.
         </p>
         <div class="cta-row hero-load d3">
           <a id="hero-cta" class="btn btn-primary" href="#downloads">Download ClearWage<span id="hero-os"></span></a>
@@ -454,7 +568,7 @@
         </div>
       </div>
       <div class="phone-frame hero-load d2">
-        <img src="app/web/icons/Icon-512.png" alt="ClearWage app icon" loading="lazy">
+        <img src="screenshots/02_dashboard_admin.png" alt="ClearWage admin dashboard showing attendance, payroll and defaulter KPIs" loading="lazy">
       </div>
     </div>
   </section>
@@ -462,10 +576,48 @@
   <!-- ============ THE PROBLEM ============ -->
   <section class="tradeoff">
     <div class="wrap tradeoff-grid reveal">
-      <p class="tradeoff-quote">"Factory workforce tools shouldn't be black boxes you rent monthly. ClearWage gives you the whole system — transparent and free."</p>
+      <p class="tradeoff-quote">&ldquo;Every factory runs on the same three things: a paper register, a payroll spreadsheet, and someone doing the OT math by hand at month-end.&rdquo;</p>
       <div>
-        <p>Most workforce management tools are SaaS black boxes. You feed them your workers' data and hope the payroll math is right. When something breaks, you file a ticket and wait.</p>
-        <p><strong>ClearWage is different:</strong> it's a full-stack platform you deploy yourself. Your data stays on your server, the code is readable, and every feature — from OT computation to ledger disputes — is built for factory-floor realities. No accounts to manage, no per-seat pricing, no surprises.</p>
+        <p>Attendance gets marked on paper. Payroll gets worked out on a spreadsheet only one person really understands. Advances get lent out on trust and half-remembered by payday. And when a worker questions a deduction, there's nothing to point to except &ldquo;trust me.&rdquo;</p>
+        <p><strong>ClearWage puts all three in one place</strong> &mdash; attendance, payroll, and the advance ledger, on a phone instead of a register. Workers can check their own attendance and pull their own payslip instead of asking the office. And because it runs on your own server, none of it depends on a subscription you could lose access to.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A DAY WITH CLEARWAGE ============ -->
+  <section>
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>A day with ClearWage</h2>
+        <p>What actually changes for the person marking attendance, and the person waiting on their payslip.</p>
+      </div>
+      <div class="role-grid">
+        <div class="role-card reveal">
+          <img class="role-shot" src="screenshots/04_attendance_roster.png" alt="Admin bulk-marking the daily attendance roster" loading="lazy">
+          <div class="role-body">
+            <span class="role-tag">For the owner / admin</span>
+            <h3>Morning roster to month-end payroll</h3>
+            <ul class="role-steps">
+              <li><b>Mark &mdash;</b> Bulk-mark the day's roster in a couple of minutes; OT and holidays are worked out automatically.</li>
+              <li><b>Lend &mdash;</b> Log an advance against a worker's ledger the moment you hand it over, not from memory later.</li>
+              <li><b>Run &mdash;</b> Process payroll for the period and get PDF payslips, without a spreadsheet formula in sight.</li>
+              <li><b>Resolve &mdash;</b> When a worker flags a deduction, the dispute arrives with the record attached &mdash; no guesswork.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="role-card reveal reveal-d1">
+          <img class="role-shot" src="screenshots/17_more_hub_employee.png" alt="Employee hub showing their own attendance, payslips and advance requests" loading="lazy">
+          <div class="role-body">
+            <span class="role-tag">For the worker</span>
+            <h3>Their own record, without asking the office</h3>
+            <ul class="role-steps">
+              <li><b>Check &mdash;</b> See this month's attendance and OT as it's marked, not only at month-end.</li>
+              <li><b>Download &mdash;</b> Pull last month's payslip themselves, any time.</li>
+              <li><b>Ask &mdash;</b> Request an advance from inside the app, and see where it stands.</li>
+              <li><b>Flag &mdash;</b> Raise a dispute on a deduction that doesn't look right, and get a real answer.</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -474,21 +626,21 @@
   <section>
     <div class="wrap">
       <div class="section-head reveal">
-        <h2>Three pillars</h2>
-        <p>Built on principles that matter for factory workforce management.</p>
+        <h2>Three reasons factories stick with it</h2>
+        <p>Not marketing promises &mdash; properties of how the system is actually built.</p>
       </div>
       <dl class="promise-list">
         <div class="promise reveal reveal-d1">
           <dt>Transparent</dt>
-          <dd>Every line of code is readable. Payroll logic, OT computation, attendance rules — nothing is hidden behind a proprietary API.</dd>
+          <dd>No black-box payroll math. Every rule &mdash; OT computation, wage basis, deductions &mdash; is code you or a hired developer can read and check.</dd>
         </div>
         <div class="promise reveal reveal-d2">
-          <dt>Self-hosted</dt>
-          <dd>Deploy on any Linux host with Docker. Your factory's data never leaves your network. No cloud dependency, ever.</dd>
+          <dt>Your data, your server</dt>
+          <dd>Deploy it on your own host. Worker records, wages, and documents never sit on someone else's cloud, and access doesn't disappear if a subscription lapses.</dd>
         </div>
         <div class="promise reveal reveal-d3">
           <dt>Complete</dt>
-          <dd>Attendance with OT, payroll with configurable wage basis, ledger with advance requests, disputes, and real-time reporting.</dd>
+          <dd>Attendance with OT, payroll with configurable wage basis, a ledger with advance requests, disputes, and real-time reporting &mdash; not a partial tool you have to patch with spreadsheets.</dd>
         </div>
       </dl>
     </div>
@@ -500,54 +652,54 @@
   <section id="features">
     <div class="wrap">
       <div class="section-head reveal">
-        <h2>What's inside</h2>
+        <h2>What&rsquo;s inside</h2>
         <p>Everything a serious workforce platform needs, without the vendor lock-in.</p>
       </div>
       <div class="bento-grid">
         <div class="bento-card reveal">
-          <div class="bento-icon">📋</div>
+          <div class="bento-icon">&#x1F4CB;</div>
           <h3>Attendance</h3>
           <p>Daily roster with bulk mark, status toggles (P/HD/L/A), OT calculation, holiday detection, and weekly-off awareness.</p>
         </div>
         <div class="bento-card reveal">
-          <div class="bento-icon">💰</div>
+          <div class="bento-icon">&#x1F4B0;</div>
           <h3>Payroll</h3>
           <p>Period-based processing with configurable wage basis (calendar/fixed-26/fixed-30), OT multiplier, deductions, and PDF payslips.</p>
         </div>
         <div class="bento-card reveal">
-          <div class="bento-icon">📒</div>
+          <div class="bento-icon">&#x1F4D2;</div>
           <h3>Ledger</h3>
           <p>Employee credit/debit tracking, advance requests with approval workflow, and balance sheets.</p>
         </div>
         <div class="bento-card reveal">
-          <div class="bento-icon">⚖️</div>
+          <div class="bento-icon">&#x2696;&#xFE0F;</div>
           <h3>Disputes</h3>
           <p>Employee-initiated ledger disputes with admin resolve/reject workflow. Fair and transparent.</p>
         </div>
         <div class="bento-card reveal">
-          <div class="bento-icon">👥</div>
+          <div class="bento-icon">&#x1F465;</div>
           <h3>Staff Management</h3>
           <p>Directory, profiles, document uploads (KYC), onboarding wizard, and role-based access.</p>
         </div>
         <div class="bento-card reveal">
-          <div class="bento-icon">🕐</div>
-          <h3>Shifts & Holidays</h3>
+          <div class="bento-icon">&#x1F550;</div>
+          <h3>Shifts &amp; Holidays</h3>
           <p>Configurable shift timings, employee assignment, tenant holiday calendar with recurring support.</p>
         </div>
         <div class="bento-card reveal">
-          <div class="bento-icon">📊</div>
-          <h3>Reports & Dashboard</h3>
+          <div class="bento-icon">&#x1F4CA;</div>
+          <h3>Reports &amp; Dashboard</h3>
           <p>Real-time KPIs, attendance trends, daily summary, defaulters, payroll summary with charts.</p>
         </div>
         <div class="bento-card reveal">
-          <div class="bento-icon">🔐</div>
-          <h3>Security</h3>
-          <p>Firebase Auth, JWT with tenant scoping, CSRF protection, rate limiting, optimistic locking.</p>
+          <div class="bento-icon">&#x1F510;</div>
+          <h3>Built-in safeguards</h3>
+          <p>Two admins editing the same record at once? ClearWage catches the conflict instead of silently overwriting someone's edit. Sign-in is a phone number and an OTP &mdash; no passwords to manage.</p>
         </div>
         <div class="bento-card reveal">
-          <div class="bento-icon">📱</div>
-          <h3>Cross-Platform</h3>
-          <p>Flutter client for Android, iOS, Windows, macOS, Linux, and Web. Same experience everywhere.</p>
+          <div class="bento-icon">&#x1F4F1;</div>
+          <h3>Every device, one system</h3>
+          <p>Office desktop, owner's phone, or a tablet at the gate &mdash; Android, iOS, Windows, macOS, Linux and Web all read the same data, live.</p>
         </div>
       </div>
     </div>
@@ -558,12 +710,57 @@
     <div class="wrap">
       <div class="section-head reveal">
         <h2>A closer look</h2>
-        <p>ClearWage on mobile — the same experience carries across every platform.</p>
+        <p>ClearWage on mobile &mdash; the same experience carries across every platform.</p>
       </div>
       <div class="shots-wrap reveal">
         <div class="shots" id="shots"></div>
       </div>
       <div class="shot-dots" id="shot-dots"></div>
+      <p class="shot-caption" id="shot-caption"></p>
+    </div>
+  </section>
+
+  <!-- ============ ADDITIONAL SCREEN MOCKUPS ============ -->
+  <section style="padding-top:0;">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>What setup and staff onboarding look like</h2>
+        <p>Two screens that don't have a captured screenshot yet &mdash; rendered here to scale from the app's real layout and copy.</p>
+      </div>
+      <div class="mock-grid">
+        <div class="mock-card reveal">
+          <h3>Factory setup wizard</h3>
+          <p>Runs once, the first time an owner opens the app.</p>
+          <div class="app-mock">
+            <div class="bar">Setup Factory<small>Step 1 of 2</small></div>
+            <div class="steps"><span class="done"></span><span></span></div>
+            <div class="body">
+              <div class="field"><label>FACTORY PROFILE</label></div>
+              <div class="field"><label>Factory Name</label><div class="box">Your Factory</div></div>
+              <div class="field"><label>Factory Address</label><div class="box">&mdash;</div></div>
+              <div class="row"><span>Overtime rule</span><b>Standard global rule</b></div>
+              <div class="row"><span>Overtime rule</span><b>No Overtime</b></div>
+              <div class="cta">Continue to Payroll Policies</div>
+            </div>
+          </div>
+        </div>
+        <div class="mock-card reveal reveal-d1">
+          <h3>Employee profile</h3>
+          <p>Profile, attendance history, and ledger, per worker.</p>
+          <div class="app-mock">
+            <div class="bar">Employee Profile</div>
+            <div class="tabs"><span class="active">Profile</span><span>Attendance</span><span>Ledger</span></div>
+            <div class="body">
+              <div class="doc-row"><span>Aadhaar Card</span><span class="tag">Upload</span></div>
+              <div class="doc-row"><span>PAN Card</span><span class="tag">Uploaded</span></div>
+              <div class="row"><span>Status</span><b>Active</b></div>
+              <div class="row"><span>Ledger balance</span><b>Settled</b></div>
+              <div class="cta">Settle Account</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="mock-note">Built from the actual screen code (onboarding_wizard.dart, employee_profile_page.dart) &mdash; not live captures, since this environment can't run the Flutter app to screenshot it. Swap in real device screenshots here when you have them.</p>
     </div>
   </section>
 
@@ -573,34 +770,91 @@
       <div class="wrap" style="padding-top:88px;padding-bottom:88px;">
         <div class="section-head reveal">
           <h2>Built with clean architecture</h2>
-          <p>Go backend + Flutter client + PostgreSQL. Controllers, services, repositories — no God objects.</p>
+          <p>Go backend + Flutter client + PostgreSQL. Controllers, services, repositories &mdash; no God objects.</p>
         </div>
         <div class="arch-diagram reveal">
-┌──────────────────────────────────────────────────────────┐
-│                    ClearWage Platform                     │
-├──────────────────────┬───────────────────────────────────┤
-│   Flutter Client     │        Go REST API                │
-│   (Mobile + Desktop) │        (server/)                  │
-│                      │                                   │
-│  lib/core/           │  controllers/api/v1/              │
-│    router, theme,    │    → services/                    │
-│    api_client,       │      → repositories/ (goqu+sqlc) │
-│    logger, tokens    │        → models/                  │
-│  lib/data/           │                                   │
-│    models/           │  middlewares/                      │
-│    services/         │    auth, tenant, CSRF, ratelimit  │
-│  lib/features/       │                                   │
-│    screens + state   │  database/ (goose migrations)     │
-│    (Riverpod)        │                                   │
-├──────────────────────┴───────────────────────────────────┤
-│                    PostgreSQL 16                          │
-├──────────────────────────────────────────────────────────┤
-│                    Firebase                              │
-│              Phone Auth + Admin SDK                      │
-└──────────────────────────────────────────────────────────┘</div>
+&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502;                    ClearWage Platform                     &#x2502;
+&#x251C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2524;
+&#x2502;   Flutter Client     &#x2502;        Go REST API                &#x2502;
+&#x2502;   (Mobile + Desktop) &#x2502;        (server/)                  &#x2502;
+&#x2502;                      &#x2502;                                   &#x2502;
+&#x2502;  lib/core/           &#x2502;  controllers/api/v1/              &#x2502;
+&#x2502;    router, theme,    &#x2502;    &#x2192; services/                    &#x2502;
+&#x2502;    api_client,       &#x2502;      &#x2192; repositories/ (goqu+sqlc) &#x2502;
+&#x2502;    logger, tokens    &#x2502;        &#x2192; models/                  &#x2502;
+&#x2502;  lib/data/           &#x2502;                                   &#x2502;
+&#x2502;    models/           &#x2502;  middlewares/                      &#x2502;
+&#x2502;    services/         &#x2502;    auth, tenant, CSRF, ratelimit  &#x2502;
+&#x2502;  lib/features/       &#x2502;                                   &#x2502;
+&#x2502;    screens + state   &#x2502;  database/ (goose migrations)     &#x2502;
+&#x2502;    (Riverpod)        &#x2502;                                   &#x2502;
+&#x251C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2534;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2524;
+&#x2502;                    PostgreSQL 16                          &#x2502;
+&#x251C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2524;
+&#x2502;                    Firebase                              &#x2502;
+&#x2502;              Phone Auth + Admin SDK                      &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;</div>
       </div>
     </section>
   </div>
+
+  <!-- ============ COMPARISON ============ -->
+  <section>
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>How it compares to a typical paid platform</h2>
+        <p>The trade-off is real: you (or a developer you hire) do the initial setup. In exchange, nothing about your workforce data depends on someone else's server staying in business.</p>
+      </div>
+      <div class="compare-scroll reveal">
+        <table class="compare-table">
+          <thead>
+            <tr><th>&nbsp;</th><th class="hl">ClearWage</th><th>Typical paid SaaS</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Pricing</td><td class="hl">Free, GPL-3.0</td><td>Per-worker, monthly</td></tr>
+            <tr><td>Where your data lives</td><td class="hl">Your own server</td><td>The vendor's cloud</td></tr>
+            <tr><td>Source code</td><td class="hl">Fully open, readable</td><td>Closed</td></tr>
+            <tr><td>If the company shuts down</td><td class="hl">You still have everything</td><td>You lose access</td></tr>
+            <tr><td>Setup</td><td class="hl">You deploy it (Docker + Postgres + Firebase)</td><td>Vendor onboarding call</td></tr>
+            <tr><td>Platforms</td><td class="hl">Android, iOS, Windows, macOS, Linux, Web</td><td>Usually app + web only</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section id="faq" style="padding-top:0;">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>Before you deploy it</h2>
+        <p>The honest answers, not the polished ones.</p>
+      </div>
+      <div class="faq-list reveal">
+        <details class="faq-item">
+          <summary>Do I need a developer to set this up?</summary>
+          <p>For the first deploy, yes &mdash; you're standing up a Postgres database, the Go API (Docker or bare metal), and a free Firebase project for phone-OTP login. Once that's running, day-to-day use &mdash; marking attendance, running payroll, approving advances &mdash; needs no technical knowledge at all.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What happens if the internet goes down on the shop floor?</summary>
+          <p>Right now, ClearWage needs a connection &mdash; it's REST-driven with no local database, and an offline banner tells you when you've lost signal. Offline queuing for attendance is on the roadmap; the database already has a <code>sync_queue</code> table reserved for it, it's just not wired up to the app yet.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Is it actually finished, or still in progress?</summary>
+          <p>Core features &mdash; attendance, payroll, ledger, staff management, and reporting &mdash; are production-ready and built on battle-tested technologies. The project is under active development, so check the <a href="https://github.com/prit-007/ClearWage/blob/main/app/CHANGELOG.md">changelog</a> for what's shipped in each release before you commit to a version.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What does it cost to run?</summary>
+          <p>The software itself is free under GPL-3.0. You pay for whatever you host it on &mdash; a small Linux server or a Docker host &mdash; and Firebase's free tier covers phone-auth OTP for most factories' worker counts.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Can I customize it for my factory's specific rules?</summary>
+          <p>That's the point of it being open source &mdash; payroll wage basis, OT multipliers, leave policies, and shift timings are already configurable per tenant in Settings; anything beyond that is a code change away, and the code is yours to change.</p>
+        </details>
+      </div>
+    </div>
+  </section>
 
   <!-- ============ DOWNLOADS ============ -->
   <div class="downloads-bg">
@@ -639,7 +893,7 @@
           </div>
           <div class="dl-card reveal" data-platform="web">
             <div class="dl-card-top"><h4>Web</h4></div>
-            <div class="meta">SPA — deploy anywhere</div>
+            <div class="meta">SPA &mdash; deploy anywhere</div>
             <a class="dl-btn" href="https://github.com/prit-007/ClearWage/releases/latest">See releases</a>
           </div>
         </div>
@@ -656,10 +910,23 @@
 
 </main>
 
+<!-- ============ PLATFORM DOWNLOAD BAR ============ -->
+<div class="dl-bar hidden" id="dl-bar">
+  <div class="dl-bar-icon" id="dl-bar-icon"></div>
+  <div class="dl-bar-text">
+    <strong id="dl-bar-title">Download ClearWage</strong>
+    <span id="dl-bar-meta"></span>
+  </div>
+  <a class="btn btn-primary" id="dl-bar-btn" href="#">Download</a>
+  <button class="dl-bar-close" id="dl-bar-close" aria-label="Dismiss">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+</div>
+
 <footer>
   <div class="wrap">
     <div class="foot-grid">
-      <p class="foot-motto">"Factory workforce management. Clear. Simple. Yours."</p>
+      <p class="foot-motto">&ldquo;Factory workforce management. Clear. Simple. Yours.&rdquo;</p>
       <div class="foot-links">
         <a href="https://github.com/prit-007/ClearWage">Source</a>
         <a href="https://github.com/prit-007/ClearWage/issues">Report a bug</a>
@@ -667,7 +934,7 @@
         <a href="https://github.com/prit-007/ClearWage/blob/main/LICENSE">GPL-3.0 license</a>
       </div>
     </div>
-    <p class="foot-legal">ClearWage is free software, distributed with no warranty, under the GNU General Public License v3.0. · Built by <a href="https://github.com/prit-007">Developer's Paradise</a></p>
+    <p class="foot-legal">ClearWage is free software, distributed with no warranty, under the GNU General Public License v3.0. &middot; Built by <a href="https://github.com/prit-007">Developer's Paradise</a></p>
   </div>
 </footer>
 
@@ -743,12 +1010,15 @@
     return null;
   }
   var labels = { android:" for Android", ios:" for iOS", windows:" for Windows", macos:" for macOS", linux:" for Linux" };
+  var barIcons = { android:"&#x1F4F1;", ios:"&#x1F4F1;", windows:"&#x1F5A5;&#xFE0F;", macos:"&#x1F34E;", linux:"&#x1F427;" };
+  var barTitles = { android:"ClearWage for Android", ios:"ClearWage for iOS", windows:"ClearWage for Windows", macos:"ClearWage for macOS", linux:"ClearWage for Linux" };
   var detected = detectPlatform();
   if (detected && labels[detected]) document.getElementById("hero-os").textContent = labels[detected];
 
   /* ---- screenshots + dots ---- */
   var shots = document.getElementById("shots");
   var dots = document.getElementById("shot-dots");
+  var caption = document.getElementById("shot-caption");
   var shotFiles = [
     "01_login", "02_dashboard_admin", "03_staff_directory",
     "04_attendance_roster", "05_ledger_hub", "06_disputes",
@@ -757,11 +1027,30 @@
     "13_defaulters", "14_notifications", "15_payroll_settings",
     "16_more_hub_admin", "17_more_hub_employee"
   ];
+  var shotLabels = [
+    "Sign in with a phone number and an OTP \u2014 no password to manage.",
+    "Everything an owner needs at a glance: attendance, payroll, defaulters.",
+    "Every worker's profile and documents in one directory.",
+    "Bulk-mark the whole floor's attendance in a couple of minutes.",
+    "Every advance and deduction, tracked against each worker.",
+    "Workers flag a deduction; admins resolve it with the record attached.",
+    "Set the factory's holiday calendar once \u2014 attendance respects it automatically.",
+    "Configure shift timings per tenant.",
+    "Workers request an advance from their phone; owners approve or decline.",
+    "Leave rules set per tenant, applied automatically.",
+    "A daily read on who showed up and who didn't.",
+    "Review the numbers before you commit to a payroll run.",
+    "See who's missed days before it becomes a payday surprise.",
+    "Approvals, disputes, and reminders land here.",
+    "Wage basis, OT multiplier, deductions \u2014 configured once.",
+    "Quick access to everything else an admin needs.",
+    "The worker's own hub: attendance, payslips, advances."
+  ];
   for (var i = 0; i < shotFiles.length; i++) {
     var n = shotFiles[i];
     var img = document.createElement("img");
     img.loading = "lazy";
-    img.alt = "ClearWage screenshot: " + n.replace(/^\d+_/, "").replace(/_/g, " ");
+    img.alt = "ClearWage screenshot: " + n.replace(/^\d+_/, "").replace(/_/g, " ") + " \u2014 " + shotLabels[i];
     img.src = "screenshots/" + n + ".png";
     img.onerror = function() { this.remove(); };
     shots.appendChild(img);
@@ -771,6 +1060,7 @@
     dot.dataset.idx = i;
     dots.appendChild(dot);
   }
+  if (shotLabels[0]) caption.textContent = shotLabels[0];
   shots.addEventListener("scroll", function() {
     var visible = shots.querySelectorAll("img");
     if (!visible.length) return;
@@ -778,17 +1068,20 @@
     dots.querySelectorAll(".shot-dot").forEach(function(d, i) {
       d.classList.toggle("active", i === idx);
     });
+    if (shotLabels[idx]) caption.textContent = shotLabels[idx];
   }, { passive: true });
   dots.addEventListener("click", function(e) {
     var btn = e.target.closest(".shot-dot");
     if (!btn) return;
     var visible = shots.querySelectorAll("img");
     if (!visible.length) return;
+    var idx = parseInt(btn.dataset.idx);
     var w = shots.scrollWidth / visible.length;
-    shots.scrollTo({ left: w * parseInt(btn.dataset.idx), behavior: "smooth" });
+    shots.scrollTo({ left: w * idx, behavior: "smooth" });
+    if (shotLabels[idx]) caption.textContent = shotLabels[idx];
   });
 
-  /* ---- live release data ---- */
+  /* ---- live release data + platform download bar ---- */
   var assetPatterns = {
     android:       /clearwage.*\.apk$/i,
     "windows-exe": /clearwage.*setup.*\.exe$/i,
@@ -798,6 +1091,31 @@
     web:           /clearwage.*web.*\.zip$/i
   };
 
+  var dlBar = document.getElementById('dl-bar');
+  var dlBarBtn = document.getElementById('dl-bar-btn');
+  var dlBarTitle = document.getElementById('dl-bar-title');
+  var dlBarMeta = document.getElementById('dl-bar-meta');
+  var dlBarIcon = document.getElementById('dl-bar-icon');
+  var dlBarClose = document.getElementById('dl-bar-close');
+  var dlBarDismissed = false;
+  try { dlBarDismissed = sessionStorage.getItem('dl-bar-dismissed') === '1'; } catch(e) {}
+
+  function showDlBar(version, downloadUrl, sizeMB) {
+    if (dlBarDismissed || !detected) return;
+    dlBarIcon.innerHTML = barIcons[detected] || '&#x1F4E5;';
+    dlBarTitle.textContent = barTitles[detected] || 'Download ClearWage';
+    dlBarMeta.textContent = 'v' + version + (sizeMB ? ' \u00B7 ' + sizeMB + ' MB' : '') + ' \u00B7 One-click install';
+    dlBarBtn.href = downloadUrl;
+    dlBar.classList.remove('hidden');
+    setTimeout(function() { dlBar.classList.add('visible'); }, 3000);
+  }
+
+  dlBarClose.addEventListener('click', function() {
+    dlBar.classList.remove('visible');
+    dlBarDismissed = true;
+    try { sessionStorage.setItem('dl-bar-dismissed', '1'); } catch(e) {}
+  });
+
   fetch(API + "/releases/latest")
     .then(function(r) { if (!r.ok) throw new Error("no releases yet"); return r.json(); })
     .then(function(release) {
@@ -805,6 +1123,9 @@
       if (version) document.getElementById("hero-version").textContent = version;
 
       var assets = release.assets || [];
+      var matchedPlatformUrl = null;
+      var matchedPlatformSize = null;
+
       Object.keys(assetPatterns).forEach(function(platform) {
         var match = assets.find(function(a) { return assetPatterns[platform].test(a.name); });
         var card = document.querySelector('.dl-card[data-platform="' + platform + '"]');
@@ -815,8 +1136,17 @@
           link.href = match.browser_download_url;
           link.textContent = "Download " + version;
           meta.textContent = (match.size / 1048576).toFixed(1) + " MB";
+
+          /* Track the detected platform's asset */
+          if (detected) {
+            var platformKey = detected === "windows" ? "windows-exe" : detected;
+            if (platform === platformKey) {
+              matchedPlatformUrl = match.browser_download_url;
+              matchedPlatformSize = (match.size / 1048576).toFixed(1);
+            }
+          }
         } else {
-          meta.textContent = meta.textContent + " — not in " + version;
+          meta.textContent = meta.textContent + " \u2014 not in " + version;
         }
       });
 
@@ -832,6 +1162,11 @@
             document.getElementById("hero-cta").href = card.querySelector("a.dl-btn").href;
           }
         });
+      }
+
+      /* Show platform-specific download bar */
+      if (matchedPlatformUrl) {
+        showDlBar(version, matchedPlatformUrl, matchedPlatformSize);
       }
     })
     .catch(function() {});

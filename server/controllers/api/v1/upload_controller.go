@@ -236,11 +236,12 @@ func (c *UploadController) ListDocuments(w http.ResponseWriter, r *http.Request)
 	}
 
 	employeeID := chi.URLParam(r, "id")
-	claims := middlewares.RequireNonEmployee(w, r.Context())
+	claims := middlewares.RequireClaims(w, r.Context())
 	if claims == nil {
 		return
 	}
-	if claims.EmployeeID != employeeID {
+	// Employees can only view their own documents; admins can view any.
+	if claims.Role == "employee" && claims.EmployeeID != employeeID {
 		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
@@ -252,6 +253,87 @@ func (c *UploadController) ListDocuments(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	utils.JSONSuccess(w, http.StatusOK, docs)
+}
+
+// DownloadDocument returns the raw file bytes for a specific document type.
+func (c *UploadController) DownloadDocument(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	employeeID := chi.URLParam(r, "id")
+	docType := chi.URLParam(r, "type")
+
+	claims := middlewares.RequireClaims(w, r.Context())
+	if claims == nil {
+		return
+	}
+	// Employees can only download their own documents.
+	if claims.Role == "employee" && claims.EmployeeID != employeeID {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	doc, err := c.staffService.GetDocumentByType(r.Context(), tenantID, employeeID, docType)
+	if err != nil {
+		if errors.Is(err, repositories.ErrNotFound) {
+			utils.JSONFail(w, http.StatusNotFound, "document not found")
+			return
+		}
+		c.logger.Error().Err(err).Msg("failed to get document")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to get document")
+		return
+	}
+
+	if c.config.CloudinaryEnabled() && doc.PublicID != nil && *doc.PublicID != "" {
+		// Redirect to the Cloudinary URL
+		cloudName := c.config.CloudinaryCloudName
+		url := fmt.Sprintf("https://res.cloudinary.com/%s/image/upload/%s", cloudName, *doc.PublicID)
+		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+		return
+	}
+
+	if doc.FilePath == "" {
+		utils.JSONFail(w, http.StatusNotFound, "document file not found")
+		return
+	}
+
+	cleaned := filepath.Clean(doc.FilePath)
+	cleaned = strings.TrimPrefix(cleaned, "/uploads/")
+	absPath, err := filepath.Abs(filepath.Join(c.uploadDir, cleaned))
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, "Invalid file path")
+		return
+	}
+
+	f, err := os.Open(absPath)
+	if err != nil {
+		c.logger.Error().Err(err).Str("path", absPath).Msg("failed to open document file")
+		utils.JSONFail(w, http.StatusNotFound, "document file not found on disk")
+		return
+	}
+	defer f.Close()
+
+	// Determine content type from extension.
+	ext := strings.ToLower(filepath.Ext(absPath))
+	contentType := "application/octet-stream"
+	switch ext {
+	case ".pdf":
+		contentType = "application/pdf"
+	case ".jpg", ".jpeg":
+		contentType = "image/jpeg"
+	case ".png":
+		contentType = "image/png"
+	}
+
+	filename := fmt.Sprintf("%s_%s%s", employeeID, docType, ext)
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Disposition", `attachment; filename="`+filename+`"`)
+	if _, err := io.Copy(w, f); err != nil {
+		c.logger.Error().Err(err).Msg("failed to stream document to response")
+	}
 }
 
 // DeleteDocument removes a stored document (record + file).

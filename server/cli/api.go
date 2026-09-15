@@ -173,6 +173,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Delete("/{id}", staffCtrl.Delete)
 				r.Post("/{id}/upload-photo", uploadCtrl.UploadPhoto)
 				r.Get("/{id}/documents", uploadCtrl.ListDocuments)
+				r.Get("/{id}/documents/{type}", uploadCtrl.DownloadDocument)
 				r.Post("/{id}/documents/{type}", uploadCtrl.UploadDocument)
 				r.Delete("/{id}/documents/{type}", uploadCtrl.DeleteDocument)
 				r.Get("/{id}/profile", staffCtrl.Profile)

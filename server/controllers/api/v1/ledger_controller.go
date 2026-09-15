@@ -65,6 +65,11 @@ func (c *LedgerController) CreateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(req.Note) > 500 {
+		utils.JSONFail(w, http.StatusBadRequest, "note must be at most 500 characters")
+		return
+	}
+
 	if !utils.ValidateDate(req.Date) {
 		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return

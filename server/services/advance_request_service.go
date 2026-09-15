@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/clearwage/clearwage/repositories"
@@ -89,7 +90,57 @@ func (s *AdvanceRequestService) DenyRequest(ctx context.Context, id, tenantID, d
 	return result, err
 }
 
+type txStarter interface {
+	BeginTx(ctx context.Context) (*repositories.GoquQuerier, *sql.Tx, error)
+}
+
 func (s *AdvanceRequestService) ApproveAndCreateLedger(ctx context.Context, id, tenantID, date, approvedBy string) (repositories.Ledger, error) {
+	ts, ok := s.querier.(txStarter)
+	if !ok {
+		return s.approveAndCreateLedgerNoTx(ctx, id, tenantID, date, approvedBy)
+	}
+	txQuerier, tx, err := ts.BeginTx(ctx)
+	if err != nil {
+		return repositories.Ledger{}, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	req, err := txQuerier.UpdateAdvanceRequestStatus(ctx, repositories.UpdateAdvanceRequestStatusParams{
+		ID:         id,
+		TenantID:   tenantID,
+		Status:     "approved",
+		ApprovedBy: &approvedBy,
+	})
+	if err != nil {
+		return repositories.Ledger{}, err
+	}
+
+	entryType := "udhaar"
+	note := "Advance approved"
+	ledger, err := txQuerier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
+		TenantID:   tenantID,
+		EmployeeID: req.EmployeeID,
+		Date:       date,
+		Type:       entryType,
+		Amount:     req.Amount.InexactFloat64(),
+		Note:       &note,
+		CreatedBy:  approvedBy,
+	})
+	if err != nil {
+		return repositories.Ledger{}, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return repositories.Ledger{}, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	if s.triggers != nil {
+		s.triggers.NotifyAdvanceApproved(ctx, tenantID, req.EmployeeID, req.Amount.InexactFloat64())
+	}
+	return ledger, nil
+}
+
+func (s *AdvanceRequestService) approveAndCreateLedgerNoTx(ctx context.Context, id, tenantID, date, approvedBy string) (repositories.Ledger, error) {
 	req, err := s.querier.UpdateAdvanceRequestStatus(ctx, repositories.UpdateAdvanceRequestStatusParams{
 		ID:         id,
 		TenantID:   tenantID,

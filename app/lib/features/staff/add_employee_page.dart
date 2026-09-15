@@ -129,6 +129,10 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     if (wage.isEmpty) return 'Wage amount is required';
     final wageVal = double.tryParse(wage);
     if (wageVal == null || wageVal <= 0) return 'Wage must be a valid number';
+    final ifsc = _ifscCtrl.text.trim();
+    if (ifsc.isNotEmpty && !RegExp(r'^[A-Z]{4}0[A-Z0-9]{6}$').hasMatch(ifsc)) {
+      return 'Invalid IFSC code format (e.g., SBIN0001234)';
+    }
     return null;
   }
 

@@ -1,0 +1,18 @@
+v1.0.0 — Production Release
+
+Bug Fixes:
+- FCM token not removed on logout
+- Sign-out doesn't clear storage or Firebase session
+- 401 token refresh doesn't retry original request
+- File uploads bypass 401 token refresh
+- Server URL config lost on app restart
+- Update service hardcoded old repo name
+- Ledger tab badge showed wrong count
+- Employee route guards created dead-end navigation
+- Onboarding navigated away on partial setup failure
+
+New Features:
+- Dark Mode (Light/Dark/System toggle)
+- Offline connectivity banner
+- Employee dispute raising from ledger
+- API request retry on token expiry

@@ -94,7 +94,7 @@ func TestLoginWithFirebase_Success_ExistingTenant(t *testing.T) {
 	mockQuerier.EXPECT().
 		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
 		Return([]repositories.Employee{
-			{ID: "e1", TenantID: "t1", Role: "owner", IsActive: true},
+			{ID: "e1", TenantID: "t1", Role: "owner", Phone: "+91-9876543210", IsActive: true},
 		}, nil)
 
 	svc := NewAuthService(cfg, verifier, mockQuerier)

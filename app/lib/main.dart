@@ -14,7 +14,7 @@ import 'firebase_options.dart';
 
 @pragma('vm:entry-point')
 Future<void> _onBackgroundMessage(RemoteMessage message) async {
-  debugPrint('Background message: ${message.messageId}');
+  AppLogger.info('Background message: ${message.messageId}');
 }
 
 void main() {

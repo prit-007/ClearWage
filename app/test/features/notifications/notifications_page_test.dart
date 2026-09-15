@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/api_client.dart';
 import 'package:clearwage/core/providers/app_providers.dart';
+import 'package:clearwage/core/providers/services.dart';
 import 'package:clearwage/data/models/notification_model.dart';
 import 'package:clearwage/data/services/notification_api_service.dart';
 import 'package:clearwage/features/notifications/notifications_page.dart';

@@ -81,6 +81,7 @@ class MyReportsPage extends StatelessWidget {
 class _ReportCard extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
+  // ignore: avoid_dynamic
   final dynamic icon;
   final String label;
   final String description;

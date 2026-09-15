@@ -5,6 +5,7 @@ void main() {
   group('DailySummaryData', () {
     test('fromJson parses all fields correctly', () {
       final json = {
+        'date': '2026-01-15',
         'total_workers': 50,
         'present': 40,
         'absent': 5,
@@ -14,6 +15,7 @@ void main() {
 
       final data = DailySummaryData.fromJson(json);
 
+      expect(data.date, '2026-01-15');
       expect(data.totalWorkers, 50);
       expect(data.present, 40);
       expect(data.absent, 5);
@@ -23,6 +25,7 @@ void main() {
 
     test('attendancePercentage computes correctly', () {
       final data = DailySummaryData(
+        date: '',
         totalWorkers: 100,
         present: 75,
         absent: 15,
@@ -35,6 +38,7 @@ void main() {
 
     test('attendancePercentage returns 0 when totalWorkers is 0', () {
       final data = DailySummaryData(
+        date: '',
         totalWorkers: 0,
         present: 0,
         absent: 0,

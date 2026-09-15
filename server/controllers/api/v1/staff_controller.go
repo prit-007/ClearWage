@@ -370,7 +370,7 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(req.Phone) < 10 || len(req.Phone) > 20 {
+	if req.Phone != "" && (len(req.Phone) < 10 || len(req.Phone) > 20) {
 		utils.JSONFail(w, http.StatusBadRequest, "phone must be between 10 and 20 characters")
 		return
 	}
@@ -410,6 +410,10 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == repositories.ErrConcurrentModification {
 			utils.JSONFail(w, http.StatusConflict, "Record was modified by another user. Please refresh and try again.")
+			return
+		}
+		if err == repositories.ErrNotFound {
+			utils.JSONFail(w, http.StatusNotFound, "employee not found")
 			return
 		}
 		ctrl.logger.Error().Err(err).Msg("failed to update employee")

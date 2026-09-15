@@ -79,15 +79,33 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   Future<void> _loadShifts() async {
     try {
       final shifts = await ref.read(shiftServiceProvider).list();
-      if (mounted) setState(() => _shifts = shifts);
-    } catch (_) {}
+      if (mounted) {
+        setState(() => _shifts = shifts);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load shifts: ${friendlyError(e)}')),
+        );
+      }
+    }
   }
 
   Future<void> _loadHolidays() async {
     try {
       final holidays = await ref.read(holidayServiceProvider).list(limit: 200);
-      if (mounted) setState(() => _holidays = holidays);
-    } catch (_) {}
+      if (mounted) {
+        setState(() => _holidays = holidays);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load holidays: ${friendlyError(e)}'),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _loadWeeklyOffs() async {
@@ -95,8 +113,18 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       final settings = await ref
           .read(settingsServiceProvider)
           .getPayrollSettings();
-      if (mounted) setState(() => _weeklyOffs = settings.weeklyOffs);
-    } catch (_) {}
+      if (mounted) {
+        setState(() => _weeklyOffs = settings.weeklyOffs);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load settings: ${friendlyError(e)}'),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _markRemainingPresent() async {
@@ -657,7 +685,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '$e',
+                          friendlyError(e),
                           style: tt.bodySmall,
                           textAlign: TextAlign.center,
                         ),
@@ -825,9 +853,12 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
         ),
         content: TextField(
           controller: ctrl,
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           autofocus: true,
           textAlign: TextAlign.center,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,1}$')),
+          ],
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
           decoration: InputDecoration(
             hintText: '0.0',
@@ -852,6 +883,15 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
           ),
           FilledButton(
             onPressed: () {
+              final parsed = double.tryParse(ctrl.text);
+              if (parsed == null || parsed < 0 || parsed > 24) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('OT hours must be between 0 and 24'),
+                  ),
+                );
+                return;
+              }
               _otCtrl.text = ctrl.text;
               if (mounted) setState(() {});
               Navigator.pop(ctx);
@@ -1193,9 +1233,12 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
         ),
         content: TextField(
           controller: ctrl,
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           autofocus: true,
           textAlign: TextAlign.center,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,1}$')),
+          ],
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
           decoration: InputDecoration(
             hintText: '0.0',
@@ -1220,15 +1263,33 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
           ),
           FilledButton(
             onPressed: () {
+              final parsed = double.tryParse(ctrl.text);
+              if (parsed == null || parsed < 0 || parsed > 24) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('OT hours must be between 0 and 24'),
+                  ),
+                );
+                return;
+              }
               _otCtrl.text = ctrl.text;
               if (mounted) setState(() {});
               Navigator.pop(ctx);
-              widget.onUpdate?.call(
-                widget.attendance,
-                _status,
-                double.tryParse(ctrl.text) ?? 0,
-                _shiftId,
-              );
+              widget.onUpdate
+                  ?.call(
+                    widget.attendance,
+                    _status,
+                    double.tryParse(ctrl.text) ?? 0,
+                    _shiftId,
+                  )
+                  .then((_) {
+                    if (mounted) setState(() => _saving = false);
+                  })
+                  .catchError((_) {
+                    if (mounted) {
+                      setState(() => _saving = false);
+                    }
+                  });
             },
             style: FilledButton.styleFrom(
               backgroundColor: widget.cs.primary,

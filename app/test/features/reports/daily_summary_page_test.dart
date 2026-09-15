@@ -30,6 +30,7 @@ class FakeReportService extends ReportService {
     if (_dailyError != null) throw _dailyError!;
     return _dailyToReturn ??
         DailySummaryData(
+          date: '',
           totalWorkers: 0,
           present: 0,
           absent: 0,
@@ -64,6 +65,7 @@ void main() {
     ) async {
       fakeService.setDailySummary(
         DailySummaryData(
+          date: '',
           totalWorkers: 40,
           present: 30,
           absent: 8,
@@ -84,6 +86,7 @@ void main() {
     testWidgets('shows wage bill today', (tester) async {
       fakeService.setDailySummary(
         DailySummaryData(
+          date: '',
           totalWorkers: 10,
           present: 10,
           absent: 0,
@@ -120,6 +123,7 @@ void main() {
     testWidgets('shows calendar icon to pick date', (tester) async {
       fakeService.setDailySummary(
         DailySummaryData(
+          date: '',
           totalWorkers: 10,
           present: 10,
           absent: 0,

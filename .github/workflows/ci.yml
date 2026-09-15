@@ -2,10 +2,10 @@ name: CI & Release
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, master, develop]
     tags: ['v*']
   pull_request:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
@@ -119,7 +119,7 @@ jobs:
         uses: ./.github/actions/flutter-prep
 
       - name: Write Android signing config from CI secrets
-        if: ${{ env.HAS_KEYSTORE == 'true' }}
+        if: env.HAS_KEYSTORE == 'true'
         shell: bash
         working-directory: app
         env:
@@ -135,9 +135,10 @@ jobs:
           keyAlias=$KEY_ALIAS
           storeFile=upload-keystore.jks
           EOF
+          sed -i 's/^          //' android/key.properties
 
       - name: Write google-services.json from CI secrets
-        if: ${{ env.HAS_KEYSTORE == 'true' }}
+        if: env.HAS_KEYSTORE == 'true'
         shell: bash
         working-directory: app
         env:
@@ -185,7 +186,7 @@ jobs:
         uses: ./.github/actions/flutter-prep
 
       - name: Write GoogleService-Info.plist from CI secrets
-        if: ${{ env.HAS_IOS_PLIST == 'true' }}
+        if: env.HAS_IOS_PLIST == 'true'
         shell: bash
         working-directory: app
         env:
@@ -284,7 +285,7 @@ jobs:
         uses: ./.github/actions/flutter-prep
 
       - name: Write GoogleService-Info.plist from CI secrets
-        if: ${{ env.HAS_MACOS_PLIST == 'true' }}
+        if: env.HAS_MACOS_PLIST == 'true'
         shell: bash
         working-directory: app
         env:

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,7 +14,6 @@ import '../../data/models/auth_model.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/providers/services.dart';
 import '../../core/responsive.dart';
-import 'register_page.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -235,13 +235,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(PhosphorIconsRegular.gear, color: cs.onSurfaceVariant),
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              _showServerDialog();
-            },
-          ),
+          if (kDebugMode)
+            IconButton(
+              icon: Icon(PhosphorIconsRegular.gear, color: cs.onSurfaceVariant),
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                _showServerDialog();
+              },
+            ),
           const SizedBox(width: 8),
         ],
       ),
@@ -480,12 +481,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       TextButton(
                         onPressed: () {
                           HapticFeedback.selectionClick();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RegisterScreen(),
-                            ),
-                          );
+                          context.push('/register');
                         },
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -585,8 +581,9 @@ class _ServerConfigSheetState extends ConsumerState<_ServerConfigSheet> {
               FilledButton(
                 onPressed: () {
                   HapticFeedback.selectionClick();
-                  ref.read(serverUrlProvider.notifier).state = _urlCtrl.text
-                      .trim();
+                  ref
+                      .read(serverUrlProvider.notifier)
+                      .update(_urlCtrl.text.trim());
                   Navigator.pop(context);
                 },
                 style: FilledButton.styleFrom(

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../logger.dart';
 import '../providers/app_providers.dart';
 import '../providers/services.dart';
 
@@ -9,7 +10,8 @@ final openDisputesCountProvider = FutureProvider.autoDispose<int>((ref) async {
         .watch(disputeServiceProvider)
         .list(status: 'open');
     return disputes.length;
-  } catch (_) {
+  } catch (e, st) {
+    AppLogger.error('Failed to load open disputes count', e, st);
     return 0;
   }
 });
@@ -23,7 +25,8 @@ final pendingAdvancesCountProvider = FutureProvider.autoDispose<int>((
         .watch(advanceRequestServiceProvider)
         .list(status: 'pending');
     return advances.length;
-  } catch (_) {
+  } catch (e, st) {
+    AppLogger.error('Failed to load pending advances count', e, st);
     return 0;
   }
 });

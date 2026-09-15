@@ -271,7 +271,7 @@ go build ./...             # compile check
 cd app
 dart format --set-exit-if-changed lib test
 flutter analyze            # must be zero issues
-flutter test --coverage -x network    # 488+ tests
+flutter test --coverage -x network    # 543+ tests
 ```
 
 ### What we test

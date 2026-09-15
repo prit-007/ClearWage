@@ -1,12 +1,16 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../core/api_client.dart';
 import '../../core/api_exceptions.dart';
+import '../../core/logger.dart';
 import '../models/auth_model.dart';
+import 'notification_api_service.dart';
 
 class AuthService {
   final ApiClient _client;
+  final NotificationApiService _notifSvc;
 
-  AuthService(this._client);
+  AuthService(this._client, this._notifSvc);
 
   Future<AuthToken> signInWithFirebase(String idToken) async {
     final res = await _client.post(
@@ -52,8 +56,18 @@ class AuthService {
 
   Future<void> logout() async {
     try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await _notifSvc.removeToken(token);
+      }
+    } catch (e) {
+      AppLogger.warn('Failed to remove FCM token during logout: $e');
+    }
+    try {
       await FirebaseAuth.instance.signOut();
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.warn('Failed to sign out from Firebase: $e');
+    }
     _client.setToken(null);
   }
 

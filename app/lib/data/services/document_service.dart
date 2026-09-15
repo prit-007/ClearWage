@@ -29,6 +29,13 @@ class DocumentService {
     );
   }
 
+  Future<List<int>> downloadDocument({
+    required String employeeId,
+    required String docType,
+  }) async {
+    return _client.getRaw('/api/v1/staff/$employeeId/documents/$docType');
+  }
+
   Future<void> deleteDocument({
     required String employeeId,
     required String docType,

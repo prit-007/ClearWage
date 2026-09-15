@@ -82,10 +82,6 @@ func (c *UploadController) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 	if claims == nil {
 		return
 	}
-	if claims.EmployeeID != employeeID {
-		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
-		return
-	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 	data, filename, err := uploadBytes(r)

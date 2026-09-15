@@ -5,6 +5,194 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-09-15
+
+### Fixed
+
+- **FCM token not removed on logout** (`#25`): `removeToken()` now sends the
+  token in the request body as the server requires.
+- **Sign-out doesn't clear storage or Firebase** (`#26`): Sign-out now calls
+  `AuthService.logout()` which clears `TokenStorage`, deregisters FCM tokens,
+  and signs out from Firebase.
+- **401 token refresh doesn't retry original request** (`#27`): `ApiClient`
+  now transparently retries the failed request after a successful token
+  refresh, eliminating flash errors on every token expiry cycle.
+- **`postMultipart` bypasses 401 refresh** (`#28`): File uploads now route
+  401 responses through the token refresh flow.
+- **Server URL config lost on restart** (`#30`): Server URL now persists to
+  `FlutterSecureStorage` across app restarts.
+- **Update service hardcoded old repo name** (`#29`): GitHub repo updated
+  from `vivek-app` to `ClearWage` for in-app update checks.
+- **Ledger tab badge shows disputes count** (`#31`): Removed misleading
+  disputes badge from the Ledger navigation tab.
+- **Employee route guards create dead-ends** (`#32`): Admin-only report items
+  (Daily Summary, Defaulters, Payroll) are now hidden from employees in the
+  More hub. Employees see "My Reports" instead.
+- **Onboarding navigates away on partial failure** (`#33`): Factory setup
+  wizard now only navigates to dashboard if the entire setup succeeds.
+
+### Added
+
+- **Dark Mode support** (`#34`): Full dark theme with Light/Dark/System toggle
+  in the More hub. Preference persists across restarts.
+- **Offline connectivity banner** (`#36`): Uses `connectivity_plus` to monitor
+  network state. Shows a persistent orange banner when offline.
+- **Employee dispute raising** (`#39`): Employees can now long-press any
+  ledger entry to raise a dispute, wired to the existing `DisputeService`.
+- **API request retry** (`#44`): All HTTP methods (`get`, `post`, `put`,
+  `delete`, `getRaw`, `postRaw`, `postMultipart`) now retry once after a
+  transparent token refresh on 401 responses.
+- **New dependencies**: `connectivity_plus` for network monitoring, `share_plus`
+  for report sharing, `local_auth` for future biometric support.
+- **New files**: `core/theme_provider.dart`, `core/services/connectivity_service.dart`,
+  `core/widgets/offline_banner.dart`.
+
+### Changed
+
+- `ApiClient.delete()` now accepts an optional `body` parameter for endpoints
+  that require a request body on DELETE.
+- Test mock classes updated to match the new `delete()` signature.
+
+## [0.9.3] - 2026-09-08
+
+### Fixed
+
+- **Server `log.Printf` in JSON responses**: Replaced with structured zerolog
+  global logger for consistent log output.
+- **CSRF `Secure` flag broken behind reverse proxies**: Now checks
+  `X-Forwarded-Proto` / `X-Forwarded-Scheme` headers to detect TLS in
+  load-balanced deployments.
+- **HTTP request log missing tenant context**: Request logger now includes
+  `tenant_id` field for correlation.
+- **Server DB connection not drained on shutdown**: HTTP server now explicitly
+  closes the database pool after listeners stop.
+- **Payroll transaction fallback silent**: Warning logged when transaction-
+  based payroll falls back to non-transactional path.
+- **Staff overview fetch sequential**: `fetchOverview` now runs 6 queries
+  concurrently (was sequential), reducing latency.
+- **Dashboard fetch sequential**: `fetchDashboard` now runs activity and
+  balance queries concurrently.
+- **Upload controller stale permission check**: Removed redundant
+  `employeeId != claims.EmployeeID` guard in `UploadPhoto`.
+- **App silent `catch (_) {}` blocks**: 10 files now log via
+  `AppLogger.warn()` instead of swallowing errors silently.
+- **App raw `$e` in user-facing errors**: 15+ screens now use `friendlyError()`
+  for safe, user-readable error messages.
+- **My Ledger missing retry on error**: Added retry button when ledger
+  fetch fails.
+- **Server settings controller missing tests**: Added tests for
+  `GetPayrollSettings` and `UpsertPayrollSettings` (validation, auth,
+  error paths).
+- **Server advance request controller missing tests**: Added tests for
+  `Create`, `List`, and `Deny` endpoints (auth, validation, success).
+
+### Added
+
+- **Server config options**: `PprofPassword`, `ReadTimeoutSeconds`,
+  `WriteTimeoutSeconds`, `IdleTimeoutSeconds`, `ReadHeaderTimeoutSeconds`,
+  `BodyLimitMB`, `UploadLimitMB`, `RateLimitPerMinute`,
+  `AuthRateLimitPerMinute`, `MetricsEnabled` env vars.
+- **Server pprof basic auth**: `/debug/pprof/` gated behind
+  `PPROF_PASSWORD` (no auth in development).
+- **Server `/metrics` endpoint**: Gated behind `METRICS_ENABLED` env var
+  (disabled by default).
+- **Server tests**: 7 new test files covering utils (json_response,
+  validation, timezone), middlewares (csrf, ratelimit), and controllers
+  (settings, advance_request).
+- **App tests**: 2 new test files covering `MyLedgerPage` and
+  `MyAdvanceRequestsPage` (loading, error, retry, empty, data display).
+
+## [0.9.2] - 2026-09-08
+
+### Fixed
+
+- **Raw database errors exposed to clients**: Login and registration endpoints
+  returned internal error messages. Now returns safe generic messages.
+- **Activity audit logging silently discarded**: `SetActivityLogger` was never
+  called at startup, so all audit logs were lost.
+- **No readiness health check**: Added `GET /ready` endpoint that verifies
+  database connectivity for orchestrator probes.
+- **Auth endpoints not rate-limited separately**: Auth routes now have a stricter
+  20 req/min limit (vs 100 global) to mitigate brute-force attacks.
+- **Rate limiter broken behind reverse proxies**: Now supports
+  `TRUSTED_PROXY_COUNT` env var and reads `X-Forwarded-For` / `X-Real-IP`.
+- **JWT secret minimum too weak**: Raised minimum from 16 to 32 characters.
+- **No HSTS header**: Added `Strict-Transport-Security` in non-development mode.
+- **Advance amount unbounded**: Added ₹1,00,000 server-side cap.
+- **Bulk attendance upsert unbounded**: Added 500-record per-request limit.
+- **Ledger note and dispute reason unbounded**: Added 500 / 1000 character caps.
+- **Payslip filename not sanitized**: Filenames now stripped of special characters.
+- **Server URL editable in production**: Login gear icon now only visible in
+  debug builds.
+- **Badge/notification counts silently wrong on error**: Providers now log errors
+  instead of returning 0.
+- **debugPrint invisible in release logs**: Replaced with structured `AppLogger`.
+- **FluidSlideIn timer leak**: Delay timer now stored and cancelled on dispose.
+- **IFSC code format not validated**: Employee form now validates IFSC pattern.
+- **Missing request ID correlation**: Added per-request UUID middleware with
+  `X-Request-ID` header and log correlation.
+
+## [0.9.1] - 2026-08-30
+
+### Fixed
+
+- **Document viewer broken on Android 11+**: External PDF/image opening failed
+  silently due to missing `<queries>` declaration in AndroidManifest.xml and
+  unauthenticated server URLs. Documents now download with auth token, save
+  locally, and open via `open_filex`. Payslip opening also migrated from
+  `url_launcher` to `open_filex` for reliability.
+- **Onboarding shift times ignored**: Time picker selections in the onboarding
+  wizard were discarded; hardcoded `08:00`/`17:00`/`22:00`/`06:00` always sent
+  to server. Parent widget now receives selected times via callbacks.
+- **FCM notification tap does nothing**: Tapping push notifications from
+  background/killed state only printed debug logs. Now navigates to the relevant
+  screen based on `entity_type` (attendance, ledger, disputes, etc.).
+- **FCM token not removed on logout**: Server continued sending push
+  notifications to de-registered devices. `removeToken()` now called before
+  Firebase sign-out.
+- **`LedgerService.getBalanceSummary()` runtime crash**: Unsafe `.cast()` on
+  JSON list threw `TypeError` if server returned unexpected types. Replaced with
+  safe `.map()`.
+- **`PayrollEntry.toJson()` drops `photoUrl`**: Serialization silently lost the
+  photo URL field. Added to `toJson()`.
+- **`DailySummaryData` missing `date` field**: Server's `date` value was
+  silently discarded during deserialization. Added `date` field.
+- **`AppUser.isAdmin` security**: Blocklist (`role != 'employee'`) granted admin
+  access to any typo'd role. Changed to allowlist (`admin`/`owner`/`supervisor`).
+- **Staff update rejects empty phone**: `StaffController.Update` validated phone
+  length unconditionally, blocking partial updates. Now guarded with
+  `req.Phone != ""`.
+- **ExportCSV corrupt responses on error**: CSV headers were written before data
+  fetch; on failure, JSON error was appended to CSV-headed response. Now buffers
+  CSV in memory first.
+- **Settings endpoint leaks raw errors**: `err.Error()` sent directly to client,
+  exposing internal details. Replaced with safe message.
+- **`Attendance.toJson()` type inconsistency**: `overtime_hours` was serialized
+  as `String` instead of `double` like all other numeric fields. Fixed.
+
+### Added
+
+- **`DocumentService.downloadDocument()`**: New method to download document
+  bytes with authentication for local file opening.
+- **`Dispute.toJson()`**: Added missing serialization method for consistency
+  with all other models.
+- **Notification service centralization**: `NotificationApiService` provider
+  moved to `core/providers/services.dart` (consistent with all 16 other
+  services).
+- **Sync queue RBAC**: All 3 sync queue endpoints now enforce non-employee role
+  checks.
+- **Dispute ownership check**: Employees can now only file disputes for
+  themselves (previously could file for any employee).
+- **Notifications mounted guard**: `markAllRead` now checks `context.mounted`
+  after async operation before invalidating providers.
+
+### Changed
+
+- `BulkUpsert` doc comment corrected: operation is not actually atomic;
+  previously upserted records are not rolled back on failure.
+- Removed orphaned `reports_hub_page.dart` and its test (dead code, no route).
+- Removed dead `onBackgroundMessage` function from `fcm_service.dart`.
+
 ## [0.9.0] - 2026-08-30
 
 ### Added
@@ -38,7 +226,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Bumped version to 0.9.0+10.
+- Bumped version to 0.9.0+11.
 
 ## [0.8.4] - 2026-08-30
 

@@ -72,7 +72,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
       AppLogger.error('Payroll: Failed to load data', e, st);
       if (mounted) {
         setState(() {
-          _error = '$e';
+          _error = friendlyError(e);
           _loading = false;
         });
       }

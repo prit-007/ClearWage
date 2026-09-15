@@ -2,7 +2,9 @@ package cli
 
 import (
 	"context"
+	"crypto/subtle"
 	"database/sql"
+	"fmt"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -37,7 +39,6 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			if err != nil {
 				return err
 			}
-			defer func() { _ = sqlDB.Close() }()
 
 			sqlDB.SetMaxOpenConns(cfg.DB.MaxConns)
 			sqlDB.SetMaxIdleConns(cfg.DB.MaxIdleConns)
@@ -48,19 +49,29 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			dbQueries := sqldb.New(sqlDB)
 			querier := repositories.NewGoquQuerierWithSQL(goquDB, sqlDB, dbQueries)
 
-			r := chi.NewRouter()
+		services.SetActivityLogger(*logger)
 
+		r := chi.NewRouter()
+
+		r.Use(mw.RequestID)
 		r.Use(mw.RequestLogger(logger))
 		r.Use(middleware.Recoverer)
-		r.Use(mw.LimitBodySize(5 << 20))
+		r.Use(mw.LimitBodySize(int64(cfg.BodyLimitMB) << 20))
+		r.Use(mw.RateLimit(cfg.RateLimitPerMinute, time.Minute))
 		r.Use(func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("X-Content-Type-Options", "nosniff")
 				w.Header().Set("X-Frame-Options", "DENY")
-				w.Header().Set("X-XSS-Protection", "1; mode=block")
+				w.Header().Set("X-XSS-Protection", "0")
+				w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+				w.Header().Set("Content-Security-Policy", "default-src 'self'")
+				if !cfg.IsDevelopment {
+					w.Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+				}
 				next.ServeHTTP(w, r)
 			})
 		})
+		r.Use(mw.CSRFProtection)
 			r.Use(cors.Handler(cors.Options{
 				AllowedOrigins:   []string{cfg.AllowedOrigin},
 				AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -69,10 +80,42 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				MaxAge:           300,
 			}))
 
-			r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte("ok"))
+		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("ok"))
+		})
+
+		r.Get("/ready", func(w http.ResponseWriter, r *http.Request) {
+			if pingErr := sqlDB.PingContext(r.Context()); pingErr != nil {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				_, _ = w.Write([]byte("database unreachable"))
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("ok"))
+		})
+
+		if cfg.MetricsEnabled {
+			r.Get("/metrics", func(w http.ResponseWriter, r *http.Request) {
+				stats := sqlDB.Stats()
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = fmt.Fprintf(w, `{
+					"db_open_connections": %d,
+					"db_in_use": %d,
+					"db_idle": %d,
+					"db_wait_count": %d,
+					"db_wait_duration_ms": %d,
+					"db_max_open_connections": %d
+				}`,
+					stats.OpenConnections,
+					stats.InUse,
+					stats.Idle,
+					stats.WaitCount,
+					stats.WaitDuration.Milliseconds(),
+					stats.MaxOpenConnections,
+				)
 			})
+		}
 
 			r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
 				http.ServeFile(w, r, "./docs/index.html")
@@ -86,11 +129,12 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 		if err != nil {
 			return err
 		}
-		r.Route("/api/v1/auth", func(r chi.Router) {
-			r.Use(mw.RateLimit(10, time.Minute))
-			r.Post("/firebase-login", authCtrl.LoginWithFirebase)
-			r.Post("/register", authCtrl.Register)
-		})
+	r.Route("/api/v1/auth", func(r chi.Router) {
+		r.Use(mw.RateLimit(cfg.AuthRateLimitPerMinute, time.Minute))
+		r.Post("/firebase-login", authCtrl.LoginWithFirebase)
+		r.Post("/register", authCtrl.Register)
+		r.Post("/logout", authCtrl.Logout)
+	})
 
 		// Notification infrastructure
 		fcmSvc, err := services.NewFCMService(cfg, logger)
@@ -300,23 +344,44 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			r.Put("/read-all", notifCtrl.MarkAllRead)
 		})
 
-			srv := &http.Server{
-				Addr:              cfg.Port,
-				Handler:           r,
-				ReadTimeout:       10 * time.Second,
-				ReadHeaderTimeout: 5 * time.Second,
-				WriteTimeout:      10 * time.Second,
-				IdleTimeout:       30 * time.Second,
-			}
+		srv := &http.Server{
+			Addr:              cfg.Port,
+			Handler:           r,
+			ReadTimeout:       time.Duration(cfg.ReadTimeoutSeconds) * time.Second,
+			ReadHeaderTimeout: time.Duration(cfg.ReadHeaderTimeoutSeconds) * time.Second,
+			WriteTimeout:      time.Duration(cfg.WriteTimeoutSeconds) * time.Second,
+			IdleTimeout:       time.Duration(cfg.IdleTimeoutSeconds) * time.Second,
+		}
 
 			var pprofSrv *http.Server
 			if cfg.PprofAddr != "" {
 				mux := http.NewServeMux()
-				mux.HandleFunc("/debug/pprof/", pprof.Index)
-				mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-				mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-				mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-				mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+				pprofHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if cfg.PprofPassword != "" {
+						user, pass, ok := r.BasicAuth()
+						if !ok || subtle.ConstantTimeCompare([]byte(pass), []byte(cfg.PprofPassword)) != 1 {
+							w.Header().Set("WWW-Authenticate", `Basic realm="pprof"`)
+							http.Error(w, "Unauthorized", http.StatusUnauthorized)
+							return
+						}
+						_ = user
+					}
+					switch r.URL.Path {
+					case "/debug/pprof/":
+						pprof.Index(w, r)
+					case "/debug/pprof/cmdline":
+						pprof.Cmdline(w, r)
+					case "/debug/pprof/profile":
+						pprof.Profile(w, r)
+					case "/debug/pprof/symbol":
+						pprof.Symbol(w, r)
+					case "/debug/pprof/trace":
+						pprof.Trace(w, r)
+					default:
+						pprof.Index(w, r)
+					}
+				})
+				mux.Handle("/debug/pprof/", pprofHandler)
 				pprofSrv = &http.Server{
 					Addr:              cfg.PprofAddr,
 					Handler:           mux,
@@ -352,6 +417,10 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				if err := pprofSrv.Shutdown(ctx); err != nil {
 					logger.Error().Err(err).Msg("pprof shutdown failed")
 				}
+			}
+
+			if err := sqlDB.Close(); err != nil {
+				logger.Error().Err(err).Msg("database close failed")
 			}
 
 			logger.Info().Msg("Server stopped")

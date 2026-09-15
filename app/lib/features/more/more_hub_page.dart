@@ -7,6 +7,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/design_tokens.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/responsive.dart';
+import '../../core/theme_provider.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
 class _HubItem {
@@ -187,6 +188,13 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
                 }, childCount: filtered.length),
               ),
             ),
+            if (_query.isEmpty)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                sliver: SliverToBoxAdapter(
+                  child: _ThemeToggleCard(cs: cs, tt: tt),
+                ),
+              ),
           ],
         ),
       ),
@@ -198,24 +206,33 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
       _HubSection(
         label: 'Reports',
         items: [
-          const _HubItem(
-            icon: PhosphorIconsFill.chartLineUp,
-            title: 'Daily Summary',
-            route: '/reports/daily-summary',
-            color: AppColors.info,
-          ),
-          const _HubItem(
-            icon: PhosphorIconsFill.warningCircle,
-            title: 'Defaulters',
-            route: '/reports/defaulters',
-            color: AppColors.danger,
-          ),
+          if (isAdmin)
+            const _HubItem(
+              icon: PhosphorIconsFill.chartLineUp,
+              title: 'Daily Summary',
+              route: '/reports/daily-summary',
+              color: AppColors.info,
+            ),
+          if (isAdmin)
+            const _HubItem(
+              icon: PhosphorIconsFill.warningCircle,
+              title: 'Defaulters',
+              route: '/reports/defaulters',
+              color: AppColors.danger,
+            ),
           if (isAdmin)
             const _HubItem(
               icon: PhosphorIconsFill.wallet,
               title: 'Payroll Summary',
               route: '/reports/payroll',
               color: AppColors.success,
+            ),
+          if (!isAdmin)
+            const _HubItem(
+              icon: PhosphorIconsFill.chartLineUp,
+              title: 'My Reports',
+              route: '/my-reports',
+              color: AppColors.info,
             ),
         ],
       ),
@@ -433,6 +450,138 @@ class _HubCard extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeToggleCard extends ConsumerWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+
+  const _ThemeToggleCard({required this.cs, required this.tt});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentMode = ref.watch(themeModeProvider);
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Appearance',
+            style: tt.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _ThemeOption(
+                  cs: cs,
+                  icon: PhosphorIconsFill.sun,
+                  label: 'Light',
+                  isSelected: currentMode == ThemeMode.light,
+                  onTap: () => ref
+                      .read(themeModeProvider.notifier)
+                      .setThemeMode(ThemeMode.light),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ThemeOption(
+                  cs: cs,
+                  icon: PhosphorIconsFill.moon,
+                  label: 'Dark',
+                  isSelected: currentMode == ThemeMode.dark,
+                  onTap: () => ref
+                      .read(themeModeProvider.notifier)
+                      .setThemeMode(ThemeMode.dark),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ThemeOption(
+                  cs: cs,
+                  icon: PhosphorIconsFill.monitor,
+                  label: 'System',
+                  isSelected: currentMode == ThemeMode.system,
+                  onTap: () => ref
+                      .read(themeModeProvider.notifier)
+                      .setThemeMode(ThemeMode.system),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  final ColorScheme cs;
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ThemeOption({
+    required this.cs,
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? cs.primaryContainer.withValues(alpha: 0.3)
+              : cs.surfaceContainerHighest.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? cs.primary
+                : cs.outlineVariant.withValues(alpha: 0.3),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? cs.primary : cs.onSurfaceVariant,
+              size: 22,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                color: isSelected ? cs.primary : cs.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jung-kurt/gofpdf"
+	"github.com/rs/zerolog/log"
 	"github.com/shopspring/decimal"
 	"github.com/clearwage/clearwage/repositories"
 )
@@ -293,6 +294,58 @@ func (s *PayrollService) FinalizeAndLock(ctx context.Context, tenantID, startDat
 
 	month := payrollMonth(startDate)
 
+	ts, ok := s.querier.(txStarter)
+	if !ok {
+		log.Warn().Msg("querier does not support transactions; payroll finalization running without atomic guarantees")
+		return s.finalizeAndLockNoTx(ctx, result, adjustByEmployee, tenantID, startDate, endDate, month)
+	}
+	txQuerier, tx, err := ts.BeginTx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	for _, entry := range result.Entries {
+		amount := entry.NetPayable
+		if adj, ok := adjustByEmployee[entry.EmployeeID]; ok {
+			amount = adj
+		}
+		note := fmt.Sprintf("Wage for %s", month)
+		_, createErr := txQuerier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
+			TenantID:           tenantID,
+			EmployeeID:         entry.EmployeeID,
+			Date:               endDate,
+			Type:               "jama",
+			Amount:             amount,
+			Note:               &note,
+			LinkedPayrollMonth: &month,
+			CreatedBy:          "system",
+		})
+		if createErr != nil {
+			return createErr
+		}
+	}
+
+	err = txQuerier.LockAttendanceMonth(ctx, repositories.LockAttendanceMonthParams{
+		TenantID:  tenantID,
+		StartDate: startDate,
+		EndDate:   endDate,
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+
+	if s.triggers != nil {
+		s.triggers.NotifyPayrollLocked(ctx, tenantID, startDate, endDate)
+	}
+	return nil
+}
+
+func (s *PayrollService) finalizeAndLockNoTx(ctx context.Context, result PayrollResult, adjustByEmployee map[string]float64, tenantID, startDate, endDate, month string) error {
 	for _, entry := range result.Entries {
 		amount := entry.NetPayable
 		if adj, ok := adjustByEmployee[entry.EmployeeID]; ok {
@@ -314,7 +367,7 @@ func (s *PayrollService) FinalizeAndLock(ctx context.Context, tenantID, startDat
 		}
 	}
 
-	err = s.LockMonth(ctx, tenantID, startDate, endDate)
+	err := s.LockMonth(ctx, tenantID, startDate, endDate)
 	if err == nil && s.triggers != nil {
 		s.triggers.NotifyPayrollLocked(ctx, tenantID, startDate, endDate)
 	}

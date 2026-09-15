@@ -187,14 +187,17 @@ List<StatefulShellBranch> _employeeBranches() {
   ];
 }
 
+final isAdminProvider = Provider<bool>((ref) {
+  return ref.watch(userInfoProvider.select((u) => u?.isAdmin ?? false));
+});
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.listen(tokenProvider, (_, _) => refresh.value++);
   ref.listen(initialTokenProvider, (_, _) => refresh.value++);
   ref.listen(userInfoProvider, (_, _) => refresh.value++);
 
-  final user = ref.watch(userInfoProvider);
-  final isAdmin = user?.isAdmin ?? false;
+  final isAdmin = ref.watch(isAdminProvider);
 
   return GoRouter(
     refreshListenable: refresh,

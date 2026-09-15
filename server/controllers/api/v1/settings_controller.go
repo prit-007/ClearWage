@@ -45,7 +45,7 @@ func (c *SettingsController) GetPayrollSettings(w http.ResponseWriter, r *http.R
 
 	settings, err := c.settingsSvc.GetPayrollSettings(r.Context(), tenantID)
 	if err != nil {
-		utils.JSONError(w, http.StatusInternalServerError, err.Error())
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to load payroll settings")
 		return
 	}
 

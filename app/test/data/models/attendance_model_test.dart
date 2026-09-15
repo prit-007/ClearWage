@@ -115,8 +115,8 @@ void main() {
       );
 
       final json = att.toJson();
-      expect(json['overtime_hours'], '2.5');
-      expect(json['overtime_hours'], isA<String>());
+      expect(json['overtime_hours'], 2.5);
+      expect(json['overtime_hours'], isA<double>());
       expect(json['employee_id'], 'emp-5');
       expect(json['date'], '2026-01-15');
       expect(json['shift_id'], 'shift-1');
@@ -138,8 +138,8 @@ void main() {
       );
 
       final json = att.toJson();
-      expect(json['overtime_hours'], '0.0');
-      expect(json['overtime_hours'], isA<String>());
+      expect(json['overtime_hours'], 0.0);
+      expect(json['overtime_hours'], isA<double>());
     });
   });
 }

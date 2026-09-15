@@ -224,3 +224,48 @@ subsequent release cycles.
 - [x] `app/pubspec.yaml` bumped to `0.8.3+8`.
 - [x] `fastlane` changelog `changelogs/8.txt`.
 - [x] Tag `v0.8.3` created at the CHANGELOG commit.
+
+## Phase 12 — v0.9.3 bug-fix + test coverage
+
+### Server fixes
+
+- [x] `log.Printf` → zerolog in `json_response.go`.
+- [x] CSRF `Secure` flag: now checks `X-Forwarded-Proto`/`X-Forwarded-Scheme`.
+- [x] HTTP request logger adds `tenant_id` field.
+- [x] DB pool explicitly closed on shutdown in `cli/api.go`.
+- [x] Payroll transaction fallback logs a warning.
+- [x] `fetchOverview` parallelized (6 concurrent queries).
+- [x] `fetchDashboard` parallelized (activity + balances).
+- [x] Removed stale `employeeId != claims.EmployeeID` check in upload.
+
+### App fixes
+
+- [x] 10 silent `catch (_) {}` blocks now log via `AppLogger.warn()`.
+- [x] 15+ screens replaced raw `$e` with `friendlyError()`.
+- [x] My Ledger error state now has retry button.
+
+### Config
+
+- [x] New env vars: `PPROF_PASSWORD`, `READ_TIMEOUT_SECONDS`,
+      `WRITE_TIMEOUT_SECONDS`, `IDLE_TIMEOUT_SECONDS`,
+      `READ_HEADER_TIMEOUT_SECONDS`, `BODY_LIMIT_MB`, `UPLOAD_LIMIT_MB`,
+      `RATE_LIMIT_PER_MINUTE`, `AUTH_RATE_LIMIT_PER_MINUTE`,
+      `METRICS_ENABLED`.
+- [x] `/debug/pprof/` gated behind `PPROF_PASSWORD`.
+- [x] `/metrics` endpoint gated behind `METRICS_ENABLED`.
+
+### Tests
+
+- [x] Server: 7 new test files (utils/json_response, utils/validation,
+      utils/timezone, middlewares/csrf, middlewares/ratelimit,
+      controllers/settings, controllers/advance_request).
+- [x] App: 2 new test files (my_ledger_page, my_advance_requests_page).
+- [x] App tests: 543 passing (up from 488).
+
+### Release
+
+- [x] `CHANGELOG.md` entry for `[0.9.3]`.
+- [x] `app/pubspec.yaml` bumped to `0.9.3+14`.
+- [x] `fastlane` changelog `changelogs/14.txt`.
+- [x] README test count updated to 543+.
+- [ ] Tag `v0.9.3` created at the CHANGELOG commit.

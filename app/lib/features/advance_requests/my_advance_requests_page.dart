@@ -7,6 +7,7 @@ import '../../core/providers/services.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/design_tokens.dart';
+import '../../core/logger.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/responsive.dart';
 
@@ -93,7 +94,8 @@ class _MyAdvanceRequestsPageState extends ConsumerState<MyAdvanceRequestsPage> {
           _loadingMore = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Failed to load more advance requests: $e');
       if (mounted) setState(() => _loadingMore = false);
     }
   }

@@ -84,7 +84,8 @@ func (ctrl *AuthController) LoginWithFirebase(w http.ResponseWriter, r *http.Req
 
 	token, err := ctrl.authService.LoginWithFirebase(r.Context(), req.IDToken)
 	if err != nil {
-		utils.JSONFail(w, http.StatusUnauthorized, err.Error())
+		ctrl.logger.Warn().Err(err).Msg("login failed")
+		utils.JSONFail(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
@@ -135,7 +136,18 @@ func (ctrl *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("registration failed")
-		utils.JSONFail(w, http.StatusUnauthorized, err.Error())
+		msg := err.Error()
+		status := http.StatusBadRequest
+		userMsg := "registration failed"
+		switch {
+		case strings.Contains(msg, "already registered"):
+			status = http.StatusConflict
+			userMsg = "phone number already registered"
+		case strings.Contains(msg, "database error"):
+			status = http.StatusInternalServerError
+			userMsg = "internal server error"
+		}
+		utils.JSONFail(w, status, userMsg)
 		return
 	}
 	maxAge := int(ctrl.authService.TokenTTL().Seconds())
@@ -179,4 +191,17 @@ func (ctrl *AuthController) DeleteAccount(w http.ResponseWriter, r *http.Request
 	}
 
 	utils.JSONSuccess(w, http.StatusOK, map[string]string{"message": "Account deleted"})
+}
+
+func (ctrl *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   !ctrl.config.IsDevelopment,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+	utils.JSONSuccess(w, http.StatusOK, map[string]string{"message": "Logged out"})
 }

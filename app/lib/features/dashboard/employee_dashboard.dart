@@ -44,7 +44,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = '$e';
+          _error = friendlyError(e);
           _loading = false;
         });
       }
@@ -129,7 +129,11 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                             _buildAttendanceSummary(cs, tt),
                             const SizedBox(height: 16),
                             if (_overview?['outstanding_balance'] != null &&
-                                (_overview!['outstanding_balance'] as num) > 0)
+                                (num.tryParse(
+                                          '${_overview!['outstanding_balance']}',
+                                        ) ??
+                                        0) >
+                                    0)
                               _buildOutstandingCard(cs, tt),
                             const SizedBox(height: 32),
                             Text(
@@ -409,149 +413,158 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
 
   void _showAdvanceDialog(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final amountCtrl = TextEditingController();
-    final noteCtrl = TextEditingController();
     bool submitting = false;
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          icon: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cs.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+      builder: (ctx) {
+        final amountCtrl = TextEditingController();
+        final noteCtrl = TextEditingController();
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
             ),
-            child: PhosphorIcon(
-              PhosphorIconsDuotone.coins,
-              size: 32,
-              color: cs.primary,
+            icon: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: PhosphorIcon(
+                PhosphorIconsDuotone.coins,
+                size: 32,
+                color: cs.primary,
+              ),
             ),
-          ),
-          title: Text(
-            'Request Advance',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
+            title: Text(
+              'Request Advance',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: amountCtrl,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Amount',
-                  prefixText: '\u20B9 ',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: amountCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Amount',
+                    prefixText: '\u20B9 ',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: noteCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Note (optional)',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actionsAlignment: MainAxisAlignment.center,
+            actions: [
+              TextButton(
+                onPressed: () {
+                  amountCtrl.dispose();
+                  noteCtrl.dispose();
+                  Navigator.pop(ctx);
+                },
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: noteCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Note (optional)',
-                  border: OutlineInputBorder(
+              FilledButton(
+                onPressed: submitting
+                    ? null
+                    : () async {
+                        final amountText = amountCtrl.text.trim();
+                        if (amountText.isEmpty) return;
+                        final amountValue = double.tryParse(amountText);
+                        if (amountValue == null ||
+                            amountValue <= 0 ||
+                            amountValue > 100000) {
+                          if (ctx.mounted) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Amount must be between ₹1 and ₹1,00,000',
+                                ),
+                              ),
+                            );
+                          }
+                          return;
+                        }
+                        setDialogState(() => submitting = true);
+                        try {
+                          await ref
+                              .read(profileServiceProvider)
+                              .requestAdvance(
+                                amount: amountText,
+                                note: noteCtrl.text.trim().isEmpty
+                                    ? null
+                                    : noteCtrl.text.trim(),
+                              );
+                          amountCtrl.dispose();
+                          noteCtrl.dispose();
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                            if (context.mounted) {
+                              showSuccess(context, 'Advance request submitted');
+                            }
+                          }
+                        } catch (e) {
+                          if (ctx.mounted) {
+                            if (context.mounted) showError(context, e);
+                            setDialogState(() => submitting = false);
+                          }
+                        }
+                      },
+                style: FilledButton.styleFrom(
+                  backgroundColor: cs.primary,
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
+                child: submitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Submit',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
               ),
             ],
           ),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            FilledButton(
-              onPressed: submitting
-                  ? null
-                  : () async {
-                      final amountText = amountCtrl.text.trim();
-                      if (amountText.isEmpty) return;
-                      final amountValue = double.tryParse(amountText);
-                      if (amountValue == null ||
-                          amountValue <= 0 ||
-                          amountValue > 100000) {
-                        if (ctx.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Amount must be between ₹1 and ₹1,00,000',
-                              ),
-                            ),
-                          );
-                        }
-                        return;
-                      }
-                      setDialogState(() => submitting = true);
-                      try {
-                        await ref
-                            .read(profileServiceProvider)
-                            .requestAdvance(
-                              amount: amountText,
-                              note: noteCtrl.text.trim().isEmpty
-                                  ? null
-                                  : noteCtrl.text.trim(),
-                            );
-                        if (ctx.mounted) {
-                          Navigator.pop(ctx);
-                          showSuccess(context, 'Advance request submitted');
-                        }
-                      } catch (e) {
-                        if (ctx.mounted) {
-                          showError(context, e);
-                          setDialogState(() => submitting = false);
-                        }
-                      }
-                    },
-              style: FilledButton.styleFrom(
-                backgroundColor: cs.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: submitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text(
-                      'Submit',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-            ),
-          ],
-        ),
-      ),
+        );
+      },
     );
-    amountCtrl.dispose();
-    noteCtrl.dispose();
   }
 }
 
 class _GlassActionCard extends StatelessWidget {
   final ColorScheme cs;
   final TextTheme tt;
+  // ignore: avoid_dynamic
   final dynamic icon;
   final String label;
   final VoidCallback onTap;

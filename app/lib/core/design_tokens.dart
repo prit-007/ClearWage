@@ -19,6 +19,12 @@ abstract final class AppColors {
   static const Color primary = Color(0xFF1E40AF);
   static const Color surface = Color(0xFFFBF9F8);
   static const Color card = Color(0xFFF5F3F3);
+
+  // Dark theme variants
+  static const Color darkSurface = Color(0xFF0F1114);
+  static const Color darkCard = Color(0xFF1A1D23);
+  static const Color darkOnSurface = Color(0xFFE6EAF5);
+  static const Color darkOnSurfaceVariant = Color(0xFF9CA3AF);
 }
 
 abstract final class AppBlur {

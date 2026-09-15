@@ -23,6 +23,7 @@ class _FluidSlideInState extends State<FluidSlideIn>
   late final AnimationController _ctrl;
   late final Animation<double> _fade;
   late final Animation<Offset> _slide;
+  Timer? _delayTimer;
   bool _started = false;
 
   @override
@@ -42,7 +43,7 @@ class _FluidSlideInState extends State<FluidSlideIn>
       _ctrl.forward();
       _started = true;
     } else {
-      Timer(Duration(milliseconds: widget.delay), () {
+      _delayTimer = Timer(Duration(milliseconds: widget.delay), () {
         if (mounted && !_started) {
           _started = true;
           _ctrl.forward();
@@ -53,6 +54,7 @@ class _FluidSlideInState extends State<FluidSlideIn>
 
   @override
   void dispose() {
+    _delayTimer?.cancel();
     _ctrl.dispose();
     super.dispose();
   }

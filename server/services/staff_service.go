@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -343,70 +344,159 @@ func (s *StaffService) fetchOverview(ctx context.Context, employeeID, tenantID s
 		return EmployeeOverview{}, err
 	}
 
-	balance, err := s.querier.GetBalanceByEmployee(ctx, repositories.GetBalanceByEmployeeParams{
-		EmployeeID: employeeID,
-		TenantID:   tenantID,
-	})
-	if err != nil {
-		return EmployeeOverview{}, err
-	}
-
 	now := utils.TenantNow(s.getTimezone(ctx, tenantID))
 	startDate := fmt.Sprintf("%d-01-01", now.Year())
 	endDate := now.Format("2006-01-02")
 
-	ledgerSummary, err := s.querier.GetEmployeeLedgerSummary(ctx, repositories.GetEmployeeLedgerSummaryParams{
-		TenantID:   tenantID,
-		EmployeeID: employeeID,
-		StartDate:  startDate,
-		EndDate:    endDate,
-	})
-	if err != nil {
-		return EmployeeOverview{}, err
+	type balanceResult struct {
+		v float64
+		e error
+	}
+	type ledgerSummaryResult struct {
+		v repositories.LedgerSummaryRange
+		e error
+	}
+	type recentLedgerResult struct {
+		v []repositories.Ledger
+		e error
+	}
+	type attSummaryResult struct {
+		v repositories.EmployeeAttendanceSummary
+		e error
+	}
+	type recentAttendanceResult struct {
+		v []repositories.Attendance
+		e error
+	}
+	type documentsResult struct {
+		v []repositories.EmployeeDocument
+		e error
 	}
 
-	recentLedger, err := s.querier.ListLedgerByEmployeeMonth(ctx, repositories.ListLedgerByEmployeeMonthParams{
-		EmployeeID: employeeID,
-		TenantID:   tenantID,
-		StartDate:  startDate,
-		EndDate:    endDate,
-		Limit:      5,
-		Offset:     0,
-	})
-	if err != nil {
-		return EmployeeOverview{}, err
+	var (
+		balanceCh      chan balanceResult
+		ledgerSumCh    chan ledgerSummaryResult
+		recentLedCh    chan recentLedgerResult
+		attSumCh       chan attSummaryResult
+		recentAttCh    chan recentAttendanceResult
+		documentsCh    chan documentsResult
+		wg             sync.WaitGroup
+	)
+
+	balanceCh = make(chan balanceResult, 1)
+	ledgerSumCh = make(chan ledgerSummaryResult, 1)
+	recentLedCh = make(chan recentLedgerResult, 1)
+	attSumCh = make(chan attSummaryResult, 1)
+	recentAttCh = make(chan recentAttendanceResult, 1)
+	documentsCh = make(chan documentsResult, 1)
+
+	wg.Add(6)
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.GetBalanceByEmployee(ctx, repositories.GetBalanceByEmployeeParams{
+			EmployeeID: employeeID,
+			TenantID:   tenantID,
+		})
+		balanceCh <- balanceResult{v, e}
+	}()
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.GetEmployeeLedgerSummary(ctx, repositories.GetEmployeeLedgerSummaryParams{
+			TenantID:   tenantID,
+			EmployeeID: employeeID,
+			StartDate:  startDate,
+			EndDate:    endDate,
+		})
+		ledgerSumCh <- ledgerSummaryResult{v, e}
+	}()
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.ListLedgerByEmployeeMonth(ctx, repositories.ListLedgerByEmployeeMonthParams{
+			EmployeeID: employeeID,
+			TenantID:   tenantID,
+			StartDate:  startDate,
+			EndDate:    endDate,
+			Limit:      5,
+			Offset:     0,
+		})
+		recentLedCh <- recentLedgerResult{v, e}
+	}()
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.GetEmployeeAttendanceSummary(ctx, repositories.GetEmployeeAttendanceSummaryParams{
+			TenantID:   tenantID,
+			EmployeeID: employeeID,
+			StartDate:  startDate,
+			EndDate:    endDate,
+		})
+		attSumCh <- attSummaryResult{v, e}
+	}()
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.ListAttendanceByEmployeeMonth(ctx, repositories.ListAttendanceByEmployeeMonthParams{
+			EmployeeID: employeeID,
+			TenantID:   tenantID,
+			StartDate:  startDate,
+			EndDate:    endDate,
+			Limit:      5,
+			Offset:     0,
+		})
+		recentAttCh <- recentAttendanceResult{v, e}
+	}()
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.ListEmployeeDocumentsByEmployee(ctx, repositories.ListEmployeeDocumentsByEmployeeParams{
+			TenantID:   tenantID,
+			EmployeeID: employeeID,
+		})
+		documentsCh <- documentsResult{v, e}
+	}()
+
+	wg.Wait()
+	close(balanceCh)
+	close(ledgerSumCh)
+	close(recentLedCh)
+	close(attSumCh)
+	close(recentAttCh)
+	close(documentsCh)
+
+	balanceRes := <-balanceCh
+	if balanceRes.e != nil {
+		return EmployeeOverview{}, balanceRes.e
 	}
 
-	attSummary, err := s.querier.GetEmployeeAttendanceSummary(ctx, repositories.GetEmployeeAttendanceSummaryParams{
-		TenantID:   tenantID,
-		EmployeeID: employeeID,
-		StartDate:  startDate,
-		EndDate:    endDate,
-	})
-	if err != nil {
-		return EmployeeOverview{}, err
+	ledgerSumRes := <-ledgerSumCh
+	if ledgerSumRes.e != nil {
+		return EmployeeOverview{}, ledgerSumRes.e
 	}
 
-	recentAttendance, err := s.querier.ListAttendanceByEmployeeMonth(ctx, repositories.ListAttendanceByEmployeeMonthParams{
-		EmployeeID: employeeID,
-		TenantID:   tenantID,
-		StartDate:  startDate,
-		EndDate:    endDate,
-		Limit:      5,
-		Offset:     0,
-	})
-	if err != nil {
-		return EmployeeOverview{}, err
+	recentLedRes := <-recentLedCh
+	if recentLedRes.e != nil {
+		return EmployeeOverview{}, recentLedRes.e
 	}
 
-	documents, err := s.querier.ListEmployeeDocumentsByEmployee(ctx, repositories.ListEmployeeDocumentsByEmployeeParams{
-		TenantID:   tenantID,
-		EmployeeID: employeeID,
-	})
-	if err != nil {
-		return EmployeeOverview{}, err
+	attSumRes := <-attSumCh
+	if attSumRes.e != nil {
+		return EmployeeOverview{}, attSumRes.e
 	}
 
+	recentAttRes := <-recentAttCh
+	if recentAttRes.e != nil {
+		return EmployeeOverview{}, recentAttRes.e
+	}
+
+	documentsRes := <-documentsCh
+	if documentsRes.e != nil {
+		return EmployeeOverview{}, documentsRes.e
+	}
+
+	attSummary := attSumRes.v
 	if attSummary.Total > 0 {
 		attSummary.Percent = math.Round(float64(attSummary.Present) / float64(attSummary.Total) * 100)
 	}
@@ -414,16 +504,16 @@ func (s *StaffService) fetchOverview(ctx context.Context, employeeID, tenantID s
 	return EmployeeOverview{
 		Profile: profile,
 		Ledger: EmployeeLedgerOverview{
-			Balance:     balance,
-			JamaTotal:   ledgerSummary.JamaTotal,
-			UdhaarTotal: ledgerSummary.UdhaarTotal,
-			Recent:      recentLedger,
+			Balance:     balanceRes.v,
+			JamaTotal:   ledgerSumRes.v.JamaTotal,
+			UdhaarTotal: ledgerSumRes.v.UdhaarTotal,
+			Recent:      recentLedRes.v,
 		},
 		Attendance: EmployeeAttendanceOverview{
 			Summary: attSummary,
-			Recent:  recentAttendance,
+			Recent:  recentAttRes.v,
 		},
-		Documents: documents,
+		Documents: documentsRes.v,
 	}, nil
 }
 

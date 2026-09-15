@@ -65,6 +65,7 @@ class PayrollEntry {
   Map<String, dynamic> toJson() => {
     'employee_id': employeeId,
     'name': name,
+    'photo_url': photoUrl,
     'wage_type': wageType,
     'wage_amount': wageAmount,
     'days_present': daysPresent,

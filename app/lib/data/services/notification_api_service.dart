@@ -39,6 +39,6 @@ class NotificationApiService {
   }
 
   Future<void> removeToken(String token) async {
-    await _client.delete('/api/v1/me/fcm-token');
+    await _client.delete('/api/v1/me/fcm-token', body: {'token': token});
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../data/models/auth_model.dart';
+import 'logger.dart';
 
 class TokenStorage {
   static const _tokenKey = 'auth_token';
@@ -12,6 +13,14 @@ class TokenStorage {
       accessibility: KeychainAccessibility.first_unlock_this_device,
     ),
   );
+
+  static Future<String?> read(String key) async {
+    return _storage.read(key: key);
+  }
+
+  static Future<void> write(String key, String value) async {
+    await _storage.write(key: key, value: value);
+  }
 
   static Future<String?> load() async {
     return _storage.read(key: _tokenKey);
@@ -35,7 +44,8 @@ class TokenStorage {
     if (raw == null) return null;
     try {
       return AppUser.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Failed to parse stored user info: $e');
       return null;
     }
   }

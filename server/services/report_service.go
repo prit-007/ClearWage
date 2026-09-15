@@ -13,7 +13,10 @@ import (
 	"golang.org/x/sync/singleflight"
 )
 
-const listAll int32 = 10000
+// listAll is an internal cap for queries that need all records within a tenant.
+// Kept intentionally high to cover most tenants without pagination, but bounded
+// to prevent unbounded memory allocation. Large tenants should paginate.
+const listAll int32 = 5000
 
 type ReportService struct {
 	querier repositories.Querier

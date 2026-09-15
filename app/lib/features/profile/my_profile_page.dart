@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:open_filex/open_filex.dart';
 import '../../core/token_storage.dart';
 import '../../data/models/attendance_model.dart';
 import '../../core/providers/app_providers.dart';
@@ -201,15 +201,12 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen>
       final file = File('${dir.path}/payslip_$start.pdf');
       await file.writeAsBytes(bytes);
       if (mounted) {
-        final opened = await launchUrl(
-          Uri.file(file.path),
-          mode: LaunchMode.externalApplication,
-        );
+        final result = await OpenFilex.open(file.path);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                opened
+                result.type == ResultType.done
                     ? 'Payslip opened'
                     : 'Payslip saved. Could not open automatically.',
               ),
@@ -258,7 +255,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '$e',
+                      friendlyError(e),
                       style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                       textAlign: TextAlign.center,
                     ),
@@ -719,7 +716,7 @@ class _MyAttendanceTab extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '$e',
+                friendlyError(e),
                 style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
@@ -944,7 +941,7 @@ class _MyLedgerTab extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '$e',
+                friendlyError(e),
                 style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),

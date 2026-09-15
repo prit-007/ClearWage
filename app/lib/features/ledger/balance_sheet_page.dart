@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/providers/services.dart';
+import '../../core/helpers.dart';
 import '../../core/responsive.dart';
 import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
@@ -43,7 +44,7 @@ class _BalanceSheetPageState extends ConsumerState<BalanceSheetPage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = '$e';
+          _error = friendlyError(e);
           _loading = false;
         });
       }

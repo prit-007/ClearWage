@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"bytes"
 	"encoding/csv"
 	"fmt"
 	"net/http"
@@ -69,9 +70,20 @@ func (c *ReportController) EmployeeMonthly(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
 	employeeID := r.URL.Query().Get("employee_id")
+
+	if claims.Role == "employee" && claims.EmployeeID != employeeID {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
 
 	if startDate == "" || endDate == "" || employeeID == "" {
 		utils.JSONFail(w, http.StatusBadRequest, "employee_id, start_date, and end_date query parameters are required")
@@ -199,9 +211,8 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 		safeName = "report"
 	}
 
-	w.Header().Set("Content-Type", "text/csv")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.csv"`, safeName))
-	writer := csv.NewWriter(w)
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
 
 	switch reportType {
 	case "defaulters":
@@ -249,5 +260,12 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 	writer.Flush()
 	if err := writer.Error(); err != nil {
 		c.logger.Error().Err(err).Msg("csv flush error")
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.csv"`, safeName))
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		c.logger.Error().Err(err).Msg("csv write error")
 	}
 }

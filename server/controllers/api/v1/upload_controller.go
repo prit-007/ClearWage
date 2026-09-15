@@ -314,7 +314,7 @@ func (c *UploadController) DownloadDocument(w http.ResponseWriter, r *http.Reque
 		utils.JSONFail(w, http.StatusNotFound, "document file not found on disk")
 		return
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Determine content type from extension.
 	ext := strings.ToLower(filepath.Ext(absPath))

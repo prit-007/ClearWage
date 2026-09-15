@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-09-15
+
+### Added
+
+- **Ledger Hub search** (`#37`): Client-side search by employee name and note
+  on the Ledger Hub page, with debounced input and filtered results.
+- **Daily summary share** (`#40`): Share button on the Daily Summary page
+  exports the report as a text file and shares via SharePlus.
+- **Biometric auth + inactivity lock** (`#43`): Fingerprint/face unlock
+  via `local_auth`, 5-minute inactivity timeout with configurable lock,
+  `AppLockOverlay` in MainShell.
+
+### Changed
+
+- **CI secrets context fix**: Android signing and Google Services config
+  steps now use job-level `env` vars for `HAS_KEYSTORE` conditions instead
+  of raw `secrets` context in step `if` expressions.
+- **Android signing config**: `build.gradle.kts` now defines a proper
+  `signingConfigs.release` block with fallback to debug key.
+- **CI workflow**: Added `master` branch to push/PR triggers (was only `main`).
+- **Windows build**: Added `_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS`
+  to CMakeLists.txt to fix MSVC 14.51+ `local_auth_windows` build error.
+
 ## [1.0.0] - 2026-09-15
 
 ### Fixed

@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../core/providers/services.dart';
 import '../../data/models/report_models.dart';
 import '../../core/widgets/fluid_slide_in.dart';
@@ -54,6 +57,39 @@ class DailySummaryScreen extends ConsumerWidget {
               ),
               centerTitle: true,
               actions: [
+                IconButton(
+                  icon: PhosphorIcon(
+                    PhosphorIconsRegular.shareFat,
+                    color: cs.onSurfaceVariant,
+                  ),
+                  onPressed: () async {
+                    final data = ref.read(dailySummaryProvider).valueOrNull;
+                    if (data == null) return;
+                    final dateStr =
+                        '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}';
+                    final buffer = StringBuffer();
+                    buffer.writeln('Daily Summary — $dateStr');
+                    buffer.writeln('Total Workers: ${data.totalWorkers}');
+                    buffer.writeln('Present: ${data.present}');
+                    buffer.writeln('Absent: ${data.absent}');
+                    buffer.writeln('On Leave: ${data.onLeave}');
+                    buffer.writeln(
+                      'Attendance: ${data.attendancePercentage.toStringAsFixed(1)}%',
+                    );
+                    buffer.writeln(
+                      'Wage Bill: ${AppCurrency.format(data.totalWageBill)}',
+                    );
+                    final dir = await getTemporaryDirectory();
+                    final file = File('${dir.path}/daily_summary_$dateStr.txt');
+                    await file.writeAsString(buffer.toString());
+                    await SharePlus.instance.share(
+                      ShareParams(
+                        files: [XFile(file.path)],
+                        text: 'Daily Summary — $dateStr',
+                      ),
+                    );
+                  },
+                ),
                 IconButton(
                   icon: PhosphorIcon(
                     PhosphorIconsRegular.calendarBlank,

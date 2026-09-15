@@ -27,6 +27,7 @@ class LedgerListScreen extends ConsumerStatefulWidget {
 
 class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
   final ScrollController _scrollCtrl = ScrollController();
+  final TextEditingController _searchCtrl = TextEditingController();
   List<LedgerEntry> _entries = [];
   LedgerSummary? _summary;
   bool _loading = true;
@@ -35,6 +36,8 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
   String? _error;
   late DateTime _startDate;
   late DateTime _endDate;
+  String _searchQuery = '';
+  Timer? _debounce;
 
   String get _startStr =>
       '${_startDate.year}-${_startDate.month.toString().padLeft(2, '0')}-${_startDate.day.toString().padLeft(2, '0')}';
@@ -53,9 +56,27 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _searchCtrl.dispose();
     _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      setState(() => _searchQuery = value.trim().toLowerCase());
+    });
+  }
+
+  List<LedgerEntry> get _filteredEntries {
+    if (_searchQuery.isEmpty) return _entries;
+    return _entries.where((e) {
+      final name = e.employeeName.toLowerCase();
+      final note = (e.note ?? '').toLowerCase();
+      return name.contains(_searchQuery) || note.contains(_searchQuery);
+    }).toList();
   }
 
   void _onScroll() {
@@ -235,6 +256,40 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                   ),
                 ),
               ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'Search by name or note...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                _onSearchChanged('');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: cs.surfaceContainerHighest.withValues(
+                        alpha: 0.5,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
               if (_loading)
                 const SliverFillRemaining(
                   child: CustomScrollView(
@@ -293,15 +348,14 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                     ),
                   ),
                 ),
-                if (_entries.isEmpty)
+                if (_filteredEntries.isEmpty)
                   const SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(vertical: 48),
                       child: EmptyState(
                         icon: PhosphorIconsRegular.listDashes,
-                        title: 'No ledger entries yet',
-                        subtitle:
-                            'Entries will appear here once transactions are recorded.',
+                        title: 'No entries found',
+                        subtitle: 'Try a different search term or date range.',
                       ),
                     ),
                   )
@@ -315,12 +369,12 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                           child: _LedgerRow(
                             cs: cs,
                             tt: tt,
-                            entry: _entries[index],
+                            entry: _filteredEntries[index],
                             disputeService: ref.watch(disputeServiceProvider),
                           ),
                         ),
                       );
-                    }, childCount: _entries.length),
+                    }, childCount: _filteredEntries.length),
                   ),
                 if (_loadingMore)
                   const SliverToBoxAdapter(

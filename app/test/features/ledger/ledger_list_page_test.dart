@@ -111,9 +111,9 @@ void main() {
       await tester.pumpWidget(_buildApp(fakeService));
       await tester.pumpAndSettle();
 
-      expect(find.text('No ledger entries yet'), findsOneWidget);
+      expect(find.text('No entries found'), findsOneWidget);
       expect(
-        find.text('Entries will appear here once transactions are recorded.'),
+        find.text('Try a different search term or date range.'),
         findsOneWidget,
       );
     });
@@ -140,7 +140,7 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
-      expect(find.text('No ledger entries yet'), findsOneWidget);
+      expect(find.text('No entries found'), findsOneWidget);
     });
 
     testWidgets('shows ledger entries when data is loaded', (tester) async {

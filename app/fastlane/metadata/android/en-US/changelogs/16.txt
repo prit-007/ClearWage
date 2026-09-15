@@ -1,0 +1,15 @@
+v1.1.0 — Features & CI Hardening
+
+New Features:
+- Ledger Hub search by employee name and note
+- Daily summary report sharing via SharePlus
+- Biometric auth (fingerprint/face) with 5-minute inactivity lock
+
+CI Fixes:
+- Android signing secrets now used (not skipped)
+- Fixed secrets context in step if conditions
+- Added master branch to CI triggers
+- Windows build: fixed MSVC coroutine deprecation error
+
+Changed:
+- build.gradle.kts: proper release signing config with debug fallback

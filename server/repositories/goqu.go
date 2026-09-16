@@ -137,7 +137,7 @@ func (q *GoquQuerier) BulkUpsertAttendance(ctx context.Context, arg BulkUpsertAt
 			"overtime_rate_multiplier": goqu.L("EXCLUDED.overtime_rate_multiplier"),
 			"units_produced":           goqu.L("EXCLUDED.units_produced"),
 			"updated_at":               goqu.L("now()"),
-		}).Where(goqu.C("is_locked").Eq(false))).
+		}).Where(goqu.T("attendance").Col("is_locked").Eq(false))).
 		Returning(goqu.Star()).Executor().ScanStructsContext(ctx, &items)
 	for i := range items {
 		normalizeAttendanceDate(&items[i])
@@ -180,7 +180,7 @@ func (q *GoquQuerier) CreateAttendance(ctx context.Context, arg CreateAttendance
 			"overtime_rate_multiplier": excluded("overtime_rate_multiplier"),
 			"units_produced":           excluded("units_produced"),
 			"updated_at":               goqu.L("now()"),
-		}).Where(goqu.C("is_locked").Eq(false))).
+		}).Where(goqu.T("attendance").Col("is_locked").Eq(false))).
 		Returning(goqu.Star()).Executor().ScanStructContext(ctx, &a)
 	if err != nil {
 		return Attendance{}, err

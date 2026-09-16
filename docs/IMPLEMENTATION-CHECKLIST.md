@@ -322,3 +322,16 @@ subsequent release cycles.
 - [x] `app/pubspec.yaml` bumped to `1.1.0+16`.
 - [x] `fastlane` changelog `changelogs/16.txt`.
 - [ ] PR #47 merged to master.
+
+## Phase 15 — v1.1.5 bugfix
+
+### Fixes
+
+- [x] Ambiguous `is_locked` column in attendance upsert queries (SQLSTATE 42702)
+
+### Release
+
+- [x] `CHANGELOG.md` entry for `[1.1.5]`.
+- [x] `app/pubspec.yaml` bumped to `1.1.5+18`.
+- [x] `fastlane` changelog `changelogs/18.txt`.
+- [ ] Tag `v1.1.5` created and pushed.

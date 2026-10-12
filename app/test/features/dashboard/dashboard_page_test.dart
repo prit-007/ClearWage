@@ -84,16 +84,16 @@ Widget _buildApp(FakeDashboardService fakeService, {bool isAdmin = true}) {
       ),
       connectivityProvider.overrideWith(FakeConnectivity.new),
     ],
-    child: MaterialApp(
-      locale: const Locale('en'),
+    child: const MaterialApp(
+      locale: Locale('en'),
       supportedLocales: supportedLocales,
-      localizationsDelegates: const [
+      localizationsDelegates: [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const DashboardScreen(),
+      home: DashboardScreen(),
     ),
   );
 }

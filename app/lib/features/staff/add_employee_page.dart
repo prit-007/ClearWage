@@ -28,6 +28,7 @@ class AddEmployeeScreen extends ConsumerStatefulWidget {
 class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
   final _desigCtrl = TextEditingController();
   final _deptCtrl = TextEditingController();
   final _wageCtrl = TextEditingController();
@@ -63,6 +64,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     if (e != null) {
       _nameCtrl.text = e.name;
       _phoneCtrl.text = e.phone;
+      _emailCtrl.text = e.email ?? '';
       _desigCtrl.text = e.designation ?? '';
       _deptCtrl.text = e.department ?? '';
       _wageCtrl.text = e.wageAmount == 0 ? '' : e.wageAmount.toStringAsFixed(0);
@@ -120,6 +122,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
+    _emailCtrl.dispose();
     _desigCtrl.dispose();
     _deptCtrl.dispose();
     _wageCtrl.dispose();
@@ -244,6 +247,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       final body = {
         'name': _nameCtrl.text.trim(),
         'phone': _phoneCtrl.text.trim(),
+        'email': _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
         'designation': _desigCtrl.text.trim().isEmpty
             ? null
             : _desigCtrl.text.trim(),
@@ -334,6 +338,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
           _phoneCtrl.text.isNotEmpty ||
           _desigCtrl.text.isNotEmpty ||
           _deptCtrl.text.isNotEmpty ||
+          _emailCtrl.text.isNotEmpty ||
           _wageCtrl.text.isNotEmpty ||
           _photoPath != null ||
           _selectedShiftId != null ||
@@ -353,6 +358,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     }
     return differs(_nameCtrl.text, e.name) ||
         differs(_phoneCtrl.text, e.phone) ||
+        differs(_emailCtrl.text, e.email) ||
         differs(_desigCtrl.text, e.designation) ||
         differs(_deptCtrl.text, e.department) ||
         differs(
@@ -570,6 +576,15 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                         }
                         return null;
                       },
+                    ),
+                  ),
+                  FluidSlideIn(
+                    delay: 220,
+                    child: ValidatedField(
+                      controller: _emailCtrl,
+                      label: 'Email (Optional)',
+                      prefixIcon: PhosphorIconsDuotone.envelope,
+                      keyboardType: TextInputType.emailAddress,
                     ),
                   ),
                   FluidSlideIn(

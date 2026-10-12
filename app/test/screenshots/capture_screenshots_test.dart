@@ -11,7 +11,6 @@ import 'package:clearwage/core/api_client.dart';
 import 'package:clearwage/core/providers/app_providers.dart';
 import 'package:clearwage/core/providers/services.dart';
 import 'package:clearwage/core/services/connectivity_service.dart';
-import 'package:clearwage/core/services/locale_service.dart';
 import 'package:clearwage/l10n/app_localizations.dart';
 import 'package:clearwage/data/models/advance_request_model.dart';
 import 'package:clearwage/data/models/attendance_model.dart';
@@ -587,16 +586,16 @@ void main() {
             userInfoProvider.overrideWith((ref) => _admin()),
             connectivityProvider.overrideWith(() => _Connectivity()),
           ],
-          child: MaterialApp(
-            locale: const Locale('en'),
-            supportedLocales: supportedLocales,
-            localizationsDelegates: const [
+          child: const MaterialApp(
+            locale: Locale('en'),
+            supportedLocales: [Locale('en'), Locale('hi'), Locale('gu')],
+            localizationsDelegates: [
               AppLocalizations.delegate,
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            home: const DashboardScreen(),
+            home: DashboardScreen(),
           ),
         ),
       );

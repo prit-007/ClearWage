@@ -16,4 +16,18 @@ class SettingsService {
     final res = await _client.put('/api/v1/settings/payroll', body: body);
     return PayrollSettings.fromJson(res['data'] as Map<String, dynamic>? ?? {});
   }
+
+  Future<Map<String, dynamic>> getMailSettings() async {
+    final res = await _client.get('/api/v1/settings/mail');
+    return (res['data'] as Map<String, dynamic>?)?.cast<String, dynamic>() ??
+        {};
+  }
+
+  Future<Map<String, dynamic>> updateMailSettings(
+    Map<String, dynamic> body,
+  ) async {
+    final res = await _client.put('/api/v1/settings/mail', body: body);
+    return (res['data'] as Map<String, dynamic>?)?.cast<String, dynamic>() ??
+        {};
+  }
 }

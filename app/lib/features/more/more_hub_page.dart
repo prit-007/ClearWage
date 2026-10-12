@@ -357,6 +357,12 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
             color: AppColors.success,
           ),
           const _HubItem(
+            icon: PhosphorIconsFill.envelope,
+            title: 'Email Settings',
+            route: '/settings/mail',
+            color: AppColors.purple,
+          ),
+          const _HubItem(
             icon: PhosphorIconsFill.info,
             title: 'About',
             route: '/settings/about',

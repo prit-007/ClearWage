@@ -43,11 +43,13 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
   List<Map<String, dynamic>>? _ledger;
   double? _balance;
   bool _loading = true;
+  List<Map<String, dynamic>> _auditLogs = [];
 
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 3, vsync: this);
+    final isAdmin = ref.read(userInfoProvider)?.isAdmin ?? false;
+    _tabCtrl = TabController(length: isAdmin ? 4 : 3, vsync: this);
     _tabCtrl.addListener(() {
       if (!_tabCtrl.indexIsChanging) HapticFeedback.selectionClick();
     });
@@ -94,6 +96,18 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
         _balance = bal;
         _loading = false;
       });
+    }
+    if (mounted && (ref.read(userInfoProvider)?.isAdmin ?? false)) {
+      unawaited(_loadAudit());
+    }
+  }
+
+  Future<void> _loadAudit() async {
+    final logs = await _fetch(
+      () => ref.read(staffServiceProvider).getAuditLogs(widget.employeeId),
+    );
+    if (logs != null && mounted) {
+      setState(() => _auditLogs = logs);
     }
   }
 
@@ -381,10 +395,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                         fontSize: 13,
                       ),
                       dividerColor: Colors.transparent,
-                      tabs: const [
-                        Tab(text: 'Profile'),
-                        Tab(text: 'Attendance'),
-                        Tab(text: 'Ledger'),
+                      tabs: [
+                        const Tab(text: 'Profile'),
+                        const Tab(text: 'Attendance'),
+                        const Tab(text: 'Ledger'),
+                        if (isAdmin) const Tab(text: 'Audit'),
                       ],
                     ),
                   ),
@@ -415,6 +430,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                   ledgerList: _ledger,
                   balance: _balance,
                 ),
+                if (isAdmin) _AuditTab(cs: cs, tt: tt, logs: _auditLogs),
               ],
             ),
           ),
@@ -1799,6 +1815,90 @@ class _LedgerEntryRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AuditTab extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final List<Map<String, dynamic>> logs;
+
+  const _AuditTab({required this.cs, required this.tt, required this.logs});
+
+  String _when(String? iso) {
+    if (iso == null || iso.isEmpty) return '';
+    final dt = DateTime.tryParse(iso);
+    if (dt == null) return iso;
+    final d = dt.toLocal();
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')} '
+        '${d.hour.toString().padLeft(2, '0')}:'
+        '${d.minute.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (logs.isEmpty) {
+      return const Center(child: Text('No audit activity recorded'));
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 160),
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: logs.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final log = logs[index];
+        final action = (log['action'] as String? ?? 'action')
+            .replaceAll('_', ' ')
+            .toUpperCase();
+        final entity = log['entity_type'] as String? ?? '';
+        final when = _when(log['created_at'] as String?);
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: cs.primaryContainer.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  PhosphorIconsRegular.clockCounterClockwise,
+                  size: 18,
+                  color: cs.primary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      action,
+                      style: tt.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      [entity, when].where((s) => s.isNotEmpty).join(' · '),
+                      style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -852,6 +852,15 @@ func (q *GoquQuerier) ListActivityLogsByTenant(ctx context.Context, arg ListActi
 	return items, err
 }
 
+func (q *GoquQuerier) ListActivityLogsByEmployee(ctx context.Context, arg ListActivityLogsByEmployeeParams) ([]ActivityLog, error) {
+	var items []ActivityLog
+	err := q.db.From("activity_logs").Where(
+		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("employee_id").Eq(arg.EmployeeID),
+	).Order(goqu.C("created_at").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
+	return items, err
+}
+
 func (q *GoquQuerier) GetDailyJamaTotal(ctx context.Context, tenantID string, date string) (float64, error) {
 	var total float64
 	found, err := q.db.From("ledger").

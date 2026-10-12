@@ -257,6 +257,13 @@ type ListActivityLogsByTenantParams struct {
 	Offset   int32  `json:"offset"`
 }
 
+type ListActivityLogsByEmployeeParams struct {
+	TenantID   string `json:"tenant_id"`
+	EmployeeID string `json:"employee_id"`
+	Limit      int32  `json:"limit"`
+	Offset     int32  `json:"offset"`
+}
+
 type ListAdvanceRequestsByTenantParams struct {
 	TenantID string `json:"tenant_id"`
 	Status   string `json:"status"`
@@ -530,6 +537,7 @@ type Querier interface {
 	GetDailySummary(ctx context.Context, tenantID, date string) (DailySummary, error)
 	GetWageBillTrends(ctx context.Context, tenantID, startDate, endDate string) ([]WageBillTrend, error)
 	ListActivityLogsByTenant(ctx context.Context, arg ListActivityLogsByTenantParams) ([]ActivityLog, error)
+	ListActivityLogsByEmployee(ctx context.Context, arg ListActivityLogsByEmployeeParams) ([]ActivityLog, error)
 	ListAdvanceRequestsByTenant(ctx context.Context, arg ListAdvanceRequestsByTenantParams) ([]AdvanceRequest, error)
 	ListAttendanceByDate(ctx context.Context, arg ListAttendanceByDateParams) ([]Attendance, error)
 	ListAttendanceByDateRange(ctx context.Context, arg ListAttendanceByDateRangeParams) ([]Attendance, error)

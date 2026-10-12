@@ -162,7 +162,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 
 			shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
 			uploadCtrl := ctrl.NewUploadController(staffSvc, logger, cfg)
-			staffCtrl := ctrl.NewStaffController(staffSvc, logger, cfg)
+			staffCtrl := ctrl.NewStaffController(staffSvc, services.NewActivityService(querier), logger, cfg)
 		r.Route("/api/v1/staff", func(r chi.Router) {
 			r.Use(mw.AuthMiddleware(cfg))
 				r.Use(mw.TenantMiddleware())
@@ -171,6 +171,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Get("/{id}", staffCtrl.Get)
 				r.Put("/{id}", staffCtrl.Update)
 				r.Delete("/{id}", staffCtrl.Delete)
+				r.Get("/{id}/audit", staffCtrl.Audit)
 				r.Post("/{id}/upload-photo", uploadCtrl.UploadPhoto)
 				r.Get("/{id}/documents", uploadCtrl.ListDocuments)
 				r.Get("/{id}/documents/{type}", uploadCtrl.DownloadDocument)

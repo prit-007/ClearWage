@@ -18,17 +18,19 @@ import (
 // All methods enforce tenant isolation via the TenantMiddleware.
 // RBAC rules: Update blocks the "employee" role; Delete requires the "owner" role.
 type StaffController struct {
-	staffService *services.StaffService
-	logger       *zerolog.Logger
-	config       config.AppConfig
+	staffService   *services.StaffService
+	activityService *services.ActivityService
+	logger         *zerolog.Logger
+	config         config.AppConfig
 }
 
 // NewStaffController creates a StaffController wired to the given service, logger, and config.
-func NewStaffController(staffService *services.StaffService, logger *zerolog.Logger, cfg config.AppConfig) *StaffController {
+func NewStaffController(staffService *services.StaffService, activityService *services.ActivityService, logger *zerolog.Logger, cfg config.AppConfig) *StaffController {
 	return &StaffController{
-		staffService: staffService,
-		logger:       logger,
-		config:       cfg,
+		staffService:    staffService,
+		activityService: activityService,
+		logger:          logger,
+		config:          cfg,
 	}
 }
 
@@ -296,6 +298,29 @@ func (ctrl *StaffController) Overview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.JSONSuccess(w, http.StatusOK, overview)
+}
+
+// Audit returns the activity log trail for an employee (owner/supervisor only).
+func (ctrl *StaffController) Audit(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	claims := middlewares.GetClaims(r.Context())
+	if tenantID == "" || claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	employeeID := chi.URLParam(r, "id")
+	logs, err := ctrl.activityService.ListByEmployee(r.Context(), tenantID, employeeID, 100, 0)
+	if err != nil {
+		ctrl.logger.Error().Err(err).Msg("failed to list audit logs")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to list audit logs")
+		return
+	}
+	utils.JSONSuccess(w, http.StatusOK, logs)
 }
 
 // AssignManager sets the reporting manager for an employee.

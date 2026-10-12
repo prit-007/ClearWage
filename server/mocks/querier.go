@@ -666,6 +666,21 @@ func (mr *MockQuerierMockRecorder) ListActivityLogsByTenant(ctx, arg any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListActivityLogsByTenant", reflect.TypeOf((*MockQuerier)(nil).ListActivityLogsByTenant), ctx, arg)
 }
 
+// ListActivityLogsByEmployee mocks base method.
+func (m *MockQuerier) ListActivityLogsByEmployee(ctx context.Context, arg repositories.ListActivityLogsByEmployeeParams) ([]repositories.ActivityLog, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListActivityLogsByEmployee", ctx, arg)
+	ret0, _ := ret[0].([]repositories.ActivityLog)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListActivityLogsByEmployee indicates an expected call of ListActivityLogsByEmployee.
+func (mr *MockQuerierMockRecorder) ListActivityLogsByEmployee(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListActivityLogsByEmployee", reflect.TypeOf((*MockQuerier)(nil).ListActivityLogsByEmployee), ctx, arg)
+}
+
 // ListAdvanceRequestsByTenant mocks base method.
 func (m *MockQuerier) ListAdvanceRequestsByTenant(ctx context.Context, arg repositories.ListAdvanceRequestsByTenantParams) ([]repositories.AdvanceRequest, error) {
 	m.ctrl.T.Helper()

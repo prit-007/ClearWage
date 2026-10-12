@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:async';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/services/document_upload_queue.dart';
+import '../../core/services/media_service.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/providers/services.dart';
 import '../dashboard/providers/dashboard_providers.dart';
@@ -18,13 +22,13 @@ import '../../data/models/employee_model.dart';
 import '../../core/app_config.dart';
 import '../../core/helpers.dart';
 import '../../core/logger.dart';
+import '../../core/api_exceptions.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/responsive.dart';
 import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/currency_format.dart';
-import 'dart:async';
 
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -871,6 +875,7 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
           _loading = false;
         });
       }
+      unawaited(_flushPendingUploads());
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -879,6 +884,34 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
         });
       }
     }
+  }
+
+  bool _isConnectivityError(Object e) =>
+      e is SocketException ||
+      e is http.ClientException ||
+      e is TimeoutException ||
+      (e is ApiException && e.statusCode == null);
+
+  Future<void> _flushPendingUploads() async {
+    try {
+      final queue = ref.read(documentUploadQueueProvider);
+      final pending = await queue.pending();
+      for (final item in pending) {
+        if (item.employeeId != widget.employeeId) continue;
+        try {
+          await ref
+              .read(documentServiceProvider)
+              .uploadDocument(
+                employeeId: item.employeeId,
+                docType: item.docType,
+                filePath: item.filePath,
+              );
+          await queue.remove(item.employeeId, item.docType);
+        } catch (_) {
+          // Leave queued; it will retry on the next open.
+        }
+      }
+    } catch (_) {}
   }
 
   Map<String, dynamic>? _docFor(String type) {
@@ -985,6 +1018,14 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
     }
     if (path == null || !mounted) return;
 
+    var uploadPath = path;
+    if (source == 'camera' || source == 'gallery') {
+      if (MediaService.needsCompression(path)) {
+        final compressed = await MediaService.compressImage(path);
+        if (compressed != null) uploadPath = compressed;
+      }
+    }
+
     setState(() => _uploadingType = type);
     try {
       await ref
@@ -992,8 +1033,11 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
           .uploadDocument(
             employeeId: widget.employeeId,
             docType: type,
-            filePath: path,
+            filePath: uploadPath,
           );
+      await ref
+          .read(documentUploadQueueProvider)
+          .remove(widget.employeeId, type);
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -1001,7 +1045,26 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
         unawaited(_load());
       }
     } catch (e) {
-      if (mounted) showError(context, e);
+      if (_isConnectivityError(e)) {
+        await ref
+            .read(documentUploadQueueProvider)
+            .enqueue(
+              PendingDocument(
+                employeeId: widget.employeeId,
+                docType: type,
+                filePath: uploadPath,
+              ),
+            );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Queued: document will upload when back online'),
+            ),
+          );
+        }
+      } else if (mounted) {
+        showError(context, e);
+      }
     } finally {
       if (mounted) setState(() => _uploadingType = null);
     }

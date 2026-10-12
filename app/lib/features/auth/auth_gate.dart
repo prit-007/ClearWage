@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/providers/app_providers.dart';
+import 'splash_screen.dart';
 
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
@@ -12,8 +13,7 @@ class AuthGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final init = ref.watch(initialTokenProvider);
     return init.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const SplashScreen(),
       error: (e, _) => Scaffold(
         body: Center(
           child: Padding(
@@ -56,7 +56,7 @@ class AuthGate extends ConsumerWidget {
           final token = ref.read(tokenProvider);
           context.go(token != null ? '/home' : '/login');
         });
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        return const SplashScreen();
       },
     );
   }

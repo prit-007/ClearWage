@@ -10,6 +10,8 @@ import '../../data/models/employee_model.dart';
 import '../../data/models/roster_model.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/providers/services.dart';
+import '../../core/providers/sync_providers.dart';
+import '../../core/services/connectivity_service.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/tactile_toggle.dart';
 import '../../core/helpers.dart';
@@ -184,6 +186,21 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
         .toList();
 
     if (records.isNotEmpty) {
+      if (_offline) {
+        await _stageOffline({'records': records});
+        ref.invalidate(rosterByDateProvider(_dateStr));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${records.length} saved offline — will sync when back online',
+              ),
+            ),
+          );
+        }
+        setState(() => _saving = false);
+        return;
+      }
       try {
         await ref.read(attendanceServiceProvider).bulkUpsert(records);
         ref.invalidate(rosterByDateProvider(_dateStr));
@@ -209,12 +226,28 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     double ot, {
     String? shiftId,
   }) async {
+    final statusMap = {
+      _AttStatus.present: 'present',
+      _AttStatus.absent: 'absent',
+      _AttStatus.halfDay: 'half_day',
+    };
+    if (_offline) {
+      await _stageOffline({
+        'records': [
+          {
+            'employee_id': att.employeeId,
+            'date': att.date,
+            'shift_id': shiftId ?? att.shiftId,
+            'status': statusMap[newStatus],
+            'overtime_hours': ot.toStringAsFixed(1),
+          },
+        ],
+      });
+      ref.invalidate(rosterByDateProvider(_dateStr));
+      _offlineSavedSnack();
+      return;
+    }
     try {
-      final statusMap = {
-        _AttStatus.present: 'present',
-        _AttStatus.absent: 'absent',
-        _AttStatus.halfDay: 'half_day',
-      };
       await ref.read(attendanceServiceProvider).update(att.id, {
         'status': statusMap[newStatus],
         'overtime_hours': ot.toStringAsFixed(1),
@@ -258,22 +291,50 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       }
       return;
     }
-    try {
-      final statusMap = {
-        _AttStatus.present: 'present',
-        _AttStatus.absent: 'absent',
-        _AttStatus.halfDay: 'half_day',
-      };
-      await ref.read(attendanceServiceProvider).create({
-        'employee_id': emp.id,
-        'date': _dateStr,
-        'shift_id': chosenShift,
-        'status': statusMap[status],
-        'overtime_hours': ot.toStringAsFixed(1),
+    final statusMap = {
+      _AttStatus.present: 'present',
+      _AttStatus.absent: 'absent',
+      _AttStatus.halfDay: 'half_day',
+    };
+    final record = {
+      'employee_id': emp.id,
+      'date': _dateStr,
+      'shift_id': chosenShift,
+      'status': statusMap[status],
+      'overtime_hours': ot.toStringAsFixed(1),
+    };
+    if (_offline) {
+      await _stageOffline({
+        'records': [record],
       });
+      ref.invalidate(rosterByDateProvider(_dateStr));
+      _offlineSavedSnack();
+      return;
+    }
+    try {
+      await ref.read(attendanceServiceProvider).create(record);
       ref.invalidate(rosterByDateProvider(_dateStr));
     } catch (e) {
       if (mounted) showError(context, e);
+    }
+  }
+
+  bool get _offline => !(ref.read(connectivityProvider).value ?? true);
+
+  Future<void> _stageOffline(Map<String, dynamic> payload) async {
+    await ref
+        .read(syncServiceProvider)
+        .enqueue(kind: 'attendance', payload: payload);
+    await refreshPendingSyncCount(ref);
+  }
+
+  void _offlineSavedSnack() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Saved offline — will sync when you\'re back online'),
+        ),
+      );
     }
   }
 

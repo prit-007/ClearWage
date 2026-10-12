@@ -8,8 +8,10 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/app_info.dart';
 import '../../core/helpers.dart';
 import '../../core/providers/app_providers.dart';
-import '../../core/responsive.dart';
 import '../../core/providers/services.dart';
+import '../../core/providers/sync_providers.dart';
+import '../../core/responsive.dart';
+import '../../core/services/connectivity_service.dart';
 import '../../core/services/fcm_service.dart';
 import '../../core/token_storage.dart';
 import '../../core/widgets/notification_badge.dart';
@@ -26,15 +28,34 @@ class MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<MainShell> {
   bool _fcmInitialized = false;
+  bool _syncWatched = false;
+  bool _prevOnline = true;
 
   @override
   Widget build(BuildContext context) {
+    if (!_syncWatched) {
+      _syncWatched = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(refreshPendingSyncCount(ref));
+      });
+    }
     // Initialize FCM once after auth is confirmed
     if (!_fcmInitialized) {
       _fcmInitialized = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(fcmServiceProvider).initialize(ref);
       });
+    }
+
+    final online = ref.watch(connectivityProvider).value ?? true;
+    if (online && !_prevOnline) {
+      _prevOnline = online;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(ref.read(syncServiceProvider).flush());
+        unawaited(refreshPendingSyncCount(ref));
+      });
+    } else if (!online) {
+      _prevOnline = online;
     }
 
     final cs = Theme.of(context).colorScheme;

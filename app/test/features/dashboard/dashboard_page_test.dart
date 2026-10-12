@@ -136,6 +136,27 @@ void main() {
       expect(find.text('3'), findsOneWidget);
     });
 
+    testWidgets('shows Add Jama/Udhaar quick action for admin', (tester) async {
+      fakeService.setData(_makeData());
+      await tester.pumpWidget(_buildApp(fakeService));
+      await tester.pumpAndSettle();
+
+      final scrollable = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(
+        find.text('Add\nJama/Udhaar'),
+        200,
+        scrollable: scrollable,
+      );
+      expect(find.text('Add\nJama/Udhaar'), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.text('Broadcast'),
+        200,
+        scrollable: scrollable,
+      );
+      expect(find.text('Broadcast'), findsOneWidget);
+    });
+
     testWidgets('shows error state on fetch failure', (tester) async {
       fakeService.setError(Exception('Server down'));
       await tester.pumpWidget(_buildApp(fakeService));

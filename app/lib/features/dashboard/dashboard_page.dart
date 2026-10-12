@@ -266,6 +266,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                       ).goBranch(2);
                                     },
                                   ),
+                                  _QuickActionTile(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsRegular.coins,
+                                    label: 'Add\nJama/Udhaar',
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      context.push('/new-ledger');
+                                    },
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 16),

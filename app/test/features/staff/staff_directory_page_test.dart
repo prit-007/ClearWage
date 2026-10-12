@@ -8,6 +8,7 @@ import 'package:clearwage/core/providers/services.dart';
 import 'package:clearwage/core/widgets/shimmer_loading.dart';
 import 'package:clearwage/data/models/auth_model.dart';
 import 'package:clearwage/data/models/employee_model.dart';
+import 'package:clearwage/data/services/ledger_service.dart';
 import 'package:clearwage/data/services/staff_service.dart';
 import 'package:clearwage/features/staff/staff_directory_page.dart';
 
@@ -48,10 +49,22 @@ class FakeStaffService extends StaffService {
   }
 }
 
-Widget _buildApp(FakeStaffService fakeService) {
+class FakeLedgerService extends LedgerService {
+  List<Map<String, dynamic>> _rows = [];
+
+  FakeLedgerService() : super(_NoOpApiClient());
+
+  void setBalanceRows(List<Map<String, dynamic>> rows) => _rows = rows;
+
+  @override
+  Future<List<Map<String, dynamic>>> getBalanceSummary() async => _rows;
+}
+
+Widget _buildApp(FakeStaffService fakeService, {FakeLedgerService? ledger}) {
   return ProviderScope(
     overrides: [
       staffServiceProvider.overrideWithValue(fakeService),
+      if (ledger != null) ledgerServiceProvider.overrideWithValue(ledger),
       userInfoProvider.overrideWith(
         (ref) => AppUser(
           token: 'test',
@@ -202,6 +215,41 @@ void main() {
 
       expect(find.text('A'), findsOneWidget);
       expect(find.text('B'), findsOneWidget);
+    });
+
+    testWidgets('shows DUE/EXCESS balance chip from balance summary', (
+      tester,
+    ) async {
+      fakeService.setEmployees([
+        Employee(
+          id: 'emp-1',
+          name: 'Due Worker',
+          phone: '1111111111',
+          wageType: 'daily',
+          wageAmount: 500,
+          role: 'employee',
+          isActive: true,
+        ),
+        Employee(
+          id: 'emp-2',
+          name: 'Excess Worker',
+          phone: '2222222222',
+          wageType: 'daily',
+          wageAmount: 500,
+          role: 'employee',
+          isActive: true,
+        ),
+      ]);
+      final ledger = FakeLedgerService()
+        ..setBalanceRows([
+          {'employee_id': 'emp-1', 'net_balance': -1500},
+          {'employee_id': 'emp-2', 'net_balance': 800},
+        ]);
+      await tester.pumpWidget(_buildApp(fakeService, ledger: ledger));
+      await tester.pumpAndSettle();
+
+      expect(find.text('DUE -₹1,500'), findsOneWidget);
+      expect(find.text('EXCESS +₹800'), findsOneWidget);
     });
   });
 }

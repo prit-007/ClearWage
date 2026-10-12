@@ -15,6 +15,7 @@ import '../../core/logger.dart';
 import '../../core/responsive.dart';
 import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/currency_format.dart';
 
 const int _pageSize = 20;
 
@@ -41,6 +42,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
   Set<String> _roleFilters = {};
   Set<String> _wageFilters = {};
   bool _showInactive = false;
+  Map<String, double> _balances = {};
 
   @override
   void initState() {
@@ -110,6 +112,22 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
         });
       }
     }
+    await _loadBalances();
+  }
+
+  Future<void> _loadBalances() async {
+    try {
+      final rows = await ref.read(ledgerServiceProvider).getBalanceSummary();
+      if (mounted) {
+        setState(() {
+          _balances = {
+            for (final r in rows)
+              (r['employee_id'] as String? ?? ''):
+                  (r['net_balance'] as num?)?.toDouble() ?? 0,
+          };
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadMore() async {
@@ -358,6 +376,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
                                 cs: cs,
                                 tt: tt,
                                 employee: staffList[i],
+                                balance: _balances[staffList[i].id],
                               ),
                             );
                           }),
@@ -548,15 +567,59 @@ class _PremiumSearchBarState extends State<_PremiumSearchBar> {
   }
 }
 
+class _BalanceChip extends StatelessWidget {
+  final TextTheme tt;
+  final double balance;
+
+  const _BalanceChip({required this.tt, required this.balance});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDue = balance < 0;
+    final color = isDue ? AppColors.danger : AppColors.success;
+    final formatted =
+        '${isDue ? '-' : '+'}${AppCurrency.format(balance.abs())}';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isDue ? PhosphorIconsFill.caretDown : PhosphorIconsFill.caretUp,
+            color: color,
+            size: 10,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '${isDue ? 'DUE' : 'EXCESS'} $formatted',
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _StaffDirectoryTile extends ConsumerWidget {
   final ColorScheme cs;
   final TextTheme tt;
   final Employee employee;
+  final double? balance;
 
   const _StaffDirectoryTile({
     required this.cs,
     required this.tt,
     required this.employee,
+    this.balance,
   });
 
   @override
@@ -626,6 +689,10 @@ class _StaffDirectoryTile extends ConsumerWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
+                      if (balance != null && balance != 0) ...[
+                        const SizedBox(height: 6),
+                        _BalanceChip(tt: tt, balance: balance!),
+                      ],
                     ],
                   ),
                 ),

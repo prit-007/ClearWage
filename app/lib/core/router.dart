@@ -6,6 +6,7 @@ import 'package:talker_flutter/talker_flutter.dart';
 import '../features/advance_requests/advance_requests_page.dart';
 import '../features/advance_requests/my_advance_requests_page.dart';
 import '../features/attendance/attendance_roster_page.dart';
+import '../features/attendance/attendance_bulk_page.dart';
 import '../features/attendance/my_attendance_page.dart';
 import '../features/auth/auth_gate.dart';
 import '../features/auth/login_page.dart';
@@ -297,6 +298,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/add-employee',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const AddEmployeeScreen()),
+      ),
+      GoRoute(
+        path: '/attendance-bulk',
+        pageBuilder: (context, state) => _slideUpPage(
+          state,
+          AttendanceBulkScreen(date: state.extra as String? ?? ''),
+        ),
       ),
       GoRoute(
         path: '/employee/:id',

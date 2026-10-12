@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../core/widgets/shimmer_loading.dart';
@@ -707,34 +708,65 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       floatingActionButton: (isAdmin && !_isHoliday)
           ? Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: FilledButton.icon(
-                onPressed: _saving ? null : () => _markRemainingPresent(),
-                icon: _saving
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        context.push('/attendance-bulk', extra: _dateStr);
+                      },
+                      icon: Icon(
+                        PhosphorIconsRegular.squaresFour,
+                        color: cs.primary,
+                      ),
+                      label: const Text(
+                        'Bulk Mode',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(64),
+                        backgroundColor: cs.surface,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                      )
-                    : const Icon(PhosphorIconsBold.checks),
-                label: Text(
-                  _saving ? 'Processing...' : 'Mark All Present',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
+                      ),
+                    ),
                   ),
-                ),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(64),
-                  backgroundColor: cs.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton.icon(
+                      onPressed: _saving ? null : () => _markRemainingPresent(),
+                      icon: _saving
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(PhosphorIconsBold.checks),
+                      label: Text(
+                        _saving ? 'Processing...' : 'Mark All Present',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
+                      ),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(64),
+                        backgroundColor: cs.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 8,
+                        shadowColor: cs.primary.withValues(alpha: 0.4),
+                      ),
+                    ),
                   ),
-                  elevation: 8,
-                  shadowColor: cs.primary.withValues(alpha: 0.4),
-                ),
+                ],
               ),
             )
           : null,

@@ -1,0 +1,15 @@
+{
+  "@@locale": "hi",
+  "splashTitle": "क्लियरवेज",
+  "splashSubtitle": "कर्मचारी प्रबंधन",
+  "home": "होम",
+  "more": "अधिक",
+  "greetingMorning": "सुप्रभात,",
+  "greetingAfternoon": "नमस्कार,",
+  "greetingEvening": "शुभ संध्या,",
+  "language": "भाषा",
+  "languageEnglish": "English",
+  "languageHindi": "हिन्दी",
+  "languageGujarati": "ગુજરાતી",
+  "languageApplied": "भाषा अपडेट हो गई"
+}

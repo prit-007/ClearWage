@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -64,7 +65,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const SizedBox(height: 32),
               Text(
-                'ClearWage',
+                AppLocalizations.of(context).splashTitle,
                 style: tt.displaySmall?.copyWith(
                   fontWeight: FontWeight.w900,
                   letterSpacing: -1.0,
@@ -72,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Workforce Management',
+                AppLocalizations.of(context).splashSubtitle,
                 style: tt.bodySmall?.copyWith(
                   color: cs.onSurfaceVariant,
                   fontWeight: FontWeight.w600,

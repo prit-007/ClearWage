@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'l10n/app_localizations.dart';
 
 import 'core/design_tokens.dart';
 import 'core/router.dart';
 import 'core/theme_provider.dart';
+import 'core/services/locale_service.dart';
 
 class ClearWageApp extends ConsumerWidget {
   const ClearWageApp({super.key});
@@ -13,11 +16,20 @@ class ClearWageApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final localeCode = ref.watch(localeCodeProvider);
     return MaterialApp.router(
       title: 'ClearWage',
       debugShowCheckedModeBanner: false,
       scrollBehavior: const _AppScrollBehavior(),
       themeMode: themeMode,
+      locale: resolveLocale(localeCode),
+      supportedLocales: supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

@@ -7,6 +7,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/design_tokens.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/responsive.dart';
+import '../../core/services/locale_service.dart';
 import '../../core/theme_provider.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 
@@ -15,12 +16,14 @@ class _HubItem {
   final String title;
   final String route;
   final Color color;
+  final VoidCallback? onTap;
 
   const _HubItem({
     required this.icon,
     required this.title,
     required this.route,
     required this.color,
+    this.onTap,
   });
 }
 
@@ -181,6 +184,10 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
                     section: section,
                     onItemTap: (item) {
                       HapticFeedback.lightImpact();
+                      if (item.onTap != null) {
+                        item.onTap!();
+                        return;
+                      }
                       _trackRecent(item.route);
                       context.push(item.route);
                     },
@@ -327,22 +334,29 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
     }
 
     sections.add(
-      const _HubSection(
+      _HubSection(
         label: 'App',
         items: [
           _HubItem(
+            icon: PhosphorIconsFill.translate,
+            title: 'Language',
+            route: '',
+            color: AppColors.info,
+            onTap: () => _showLanguageSheet(context),
+          ),
+          const _HubItem(
             icon: PhosphorIconsFill.key,
             title: 'App PIN',
             route: '/settings/pin',
             color: AppColors.warning,
           ),
-          _HubItem(
+          const _HubItem(
             icon: PhosphorIconsFill.cloudArrowUp,
             title: 'Sync Center',
             route: '/settings/sync',
             color: AppColors.success,
           ),
-          _HubItem(
+          const _HubItem(
             icon: PhosphorIconsFill.info,
             title: 'About',
             route: '/settings/about',
@@ -353,6 +367,91 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
     );
 
     return sections.where((s) => s.items.isNotEmpty).toList();
+  }
+
+  Future<void> _showLanguageSheet(BuildContext context) {
+    return showAdaptiveSheet<String>(
+      context: context,
+      builder: (ctx) => const _LanguageSheet(),
+    );
+  }
+}
+
+String _renderLanguageName(String code) {
+  switch (code) {
+    case 'hi':
+      return 'हिन्दी';
+    case 'gu':
+      return 'ગુજરાતી';
+    default:
+      return 'English';
+  }
+}
+
+class _LanguageSheet extends ConsumerStatefulWidget {
+  const _LanguageSheet();
+
+  @override
+  ConsumerState<_LanguageSheet> createState() => _LanguageSheetState();
+}
+
+class _LanguageSheetState extends ConsumerState<_LanguageSheet> {
+  late String _code = ref.read(localeCodeProvider);
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: cs.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Select Language',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            RadioGroup<String>(
+              groupValue: _code,
+              onChanged: (v) async {
+                if (v == null) return;
+                setState(() => _code = v);
+                await setLocale(ref, v);
+                if (context.mounted) Navigator.pop(context, v);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final code in const ['en', 'hi', 'gu'])
+                    RadioListTile<String>(
+                      value: code,
+                      title: Text(
+                        _renderLanguageName(code),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

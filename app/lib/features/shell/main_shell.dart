@@ -13,7 +13,9 @@ import '../../core/providers/sync_providers.dart';
 import '../../core/responsive.dart';
 import '../../core/services/connectivity_service.dart';
 import '../../core/services/fcm_service.dart';
+import '../../core/services/locale_service.dart';
 import '../../core/token_storage.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/widgets/notification_badge.dart';
 import '../../core/widgets/offline_banner.dart';
 import '../../core/widgets/app_lock_overlay.dart';
@@ -37,6 +39,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       _syncWatched = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         unawaited(refreshPendingSyncCount(ref));
+        unawaited(initLocale(ref));
       });
     }
     // Initialize FCM once after auth is confirmed
@@ -83,11 +86,13 @@ class _MainShellState extends ConsumerState<MainShell> {
       }
     });
 
+    final homeLabel = AppLocalizations.of(context).home;
+    final moreLabel = AppLocalizations.of(context).more;
     final navItems = <NavigationDestination>[
-      const NavigationDestination(
-        icon: Icon(Icons.home_outlined),
-        selectedIcon: Icon(Icons.home),
-        label: 'Home',
+      NavigationDestination(
+        icon: const Icon(Icons.home_outlined),
+        selectedIcon: const Icon(Icons.home),
+        label: homeLabel,
       ),
       if (isAdmin) ...[
         const NavigationDestination(
@@ -105,10 +110,10 @@ class _MainShellState extends ConsumerState<MainShell> {
           selectedIcon: Icon(Icons.account_balance_wallet),
           label: 'Ledger',
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.more_horiz_outlined),
-          selectedIcon: Icon(Icons.more_horiz),
-          label: 'More',
+        NavigationDestination(
+          icon: const Icon(Icons.more_horiz_outlined),
+          selectedIcon: const Icon(Icons.more_horiz),
+          label: moreLabel,
         ),
       ] else ...[
         const NavigationDestination(
@@ -126,10 +131,10 @@ class _MainShellState extends ConsumerState<MainShell> {
           selectedIcon: Icon(Icons.person),
           label: 'Profile',
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.more_horiz_outlined),
-          selectedIcon: Icon(Icons.more_horiz),
-          label: 'More',
+        NavigationDestination(
+          icon: const Icon(Icons.more_horiz_outlined),
+          selectedIcon: const Icon(Icons.more_horiz),
+          label: moreLabel,
         ),
       ],
     ];

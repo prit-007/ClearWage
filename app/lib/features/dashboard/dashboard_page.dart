@@ -17,6 +17,7 @@ import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/design_tokens.dart';
 import '../../core/providers/sync_providers.dart';
 import '../../core/services/connectivity_service.dart';
+import '../../l10n/app_localizations.dart';
 import 'employee_dashboard.dart';
 import 'broadcast_sheet.dart';
 
@@ -383,10 +384,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   String _getGreeting() {
+    final l10n = AppLocalizations.of(context);
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning,';
-    if (hour < 17) return 'Good Afternoon,';
-    return 'Good Evening,';
+    if (hour < 12) return l10n.greetingMorning;
+    if (hour < 17) return l10n.greetingAfternoon;
+    return l10n.greetingEvening;
   }
 }
 

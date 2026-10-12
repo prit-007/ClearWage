@@ -192,6 +192,20 @@ func (mr *MockQuerierMockRecorder) MarkPaidLeave(ctx, arg any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkPaidLeave", reflect.TypeOf((*MockQuerier)(nil).MarkPaidLeave), ctx, arg)
 }
 
+// UpdateTenantEmail mocks base method.
+func (m *MockQuerier) UpdateTenantEmail(ctx context.Context, arg repositories.UpdateTenantEmailParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTenantEmail", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateTenantEmail indicates an expected call of UpdateTenantEmail.
+func (mr *MockQuerierMockRecorder) UpdateTenantEmail(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTenantEmail", reflect.TypeOf((*MockQuerier)(nil).UpdateTenantEmail), ctx, arg)
+}
+
 // CountHolidaysByDate indicates an expected call of CountHolidaysByDate.
 func (mr *MockQuerierMockRecorder) CountHolidaysByDate(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()

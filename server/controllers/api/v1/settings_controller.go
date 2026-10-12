@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/rs/zerolog"
 	"github.com/clearwage/clearwage/config"
 	"github.com/clearwage/clearwage/middlewares"
 	"github.com/clearwage/clearwage/repositories"
 	"github.com/clearwage/clearwage/services"
 	"github.com/clearwage/clearwage/utils"
+	"github.com/rs/zerolog"
 )
 
 type SettingsController struct {
@@ -115,6 +115,7 @@ func (c *SettingsController) UpsertPayrollSettings(w http.ResponseWriter, r *htt
 }
 
 type upsertMailSettingsRequest struct {
+	AccountEmail    *string `json:"account_email"`
 	BrevoAPIKey     *string `json:"brevo_api_key"`
 	MailSenderEmail *string `json:"mail_sender_email"`
 	MailSenderName  *string `json:"mail_sender_name"`
@@ -133,14 +134,16 @@ func (c *SettingsController) GetMailSettings(w http.ResponseWriter, r *http.Requ
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to load mail settings")
 		return
 	}
+	var accountEmail = c.settingsSvc.GetAccountEmail(r.Context(), tenantID)
 	resp := map[string]any{
-		"tenant_id":         settings.TenantID,
-		"brevo_api_key":     settings.BrevoAPIKey,
-		"mail_sender_email": settings.MailSenderEmail,
-		"mail_sender_name":  settings.MailSenderName,
+		"tenant_id":          settings.TenantID,
+		"account_email":      accountEmail,
+		"brevo_api_key":      settings.BrevoAPIKey,
+		"mail_sender_email":  settings.MailSenderEmail,
+		"mail_sender_name":   settings.MailSenderName,
 		"mail_quota_per_day": settings.MailQuotaPerDay,
-		"mail_sent_today":   settings.MailSentToday,
-		"mail_sent_date":    settings.MailSentDate,
+		"mail_sent_today":    settings.MailSentToday,
+		"mail_sent_date":     settings.MailSentDate,
 	}
 	utils.JSONSuccess(w, http.StatusOK, resp)
 }
@@ -166,7 +169,7 @@ func (c *SettingsController) UpsertMailSettings(w http.ResponseWriter, r *http.R
 		MailSenderEmail: req.MailSenderEmail,
 		MailSenderName:  req.MailSenderName,
 		MailQuotaPerDay: req.MailQuotaPerDay,
-	})
+	}, req.AccountEmail)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to save mail settings")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to save mail settings")

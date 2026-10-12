@@ -455,6 +455,11 @@ type MarkPaidLeaveParams struct {
 	Date       string
 }
 
+type UpdateTenantEmailParams struct {
+	TenantID string
+	Email    *string
+}
+
 type UpdateSyncEventStatusParams struct {
 	ID           string  `json:"id"`
 	TenantID     string  `json:"tenant_id"`
@@ -636,4 +641,5 @@ type Querier interface {
 	ListLeaveRequestsByEmployee(ctx context.Context, arg ListLeaveRequestsByEmployeeParams) ([]LeaveRequest, error)
 	UpdateLeaveRequestStatus(ctx context.Context, arg UpdateLeaveRequestStatusParams) (LeaveRequest, error)
 	MarkPaidLeave(ctx context.Context, arg MarkPaidLeaveParams) error
+	UpdateTenantEmail(ctx context.Context, arg UpdateTenantEmailParams) error
 }

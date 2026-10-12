@@ -39,8 +39,9 @@ void main() {
   testWidgets('loads and renders mail settings', (tester) async {
     final svc = FakeSettingsService()
       ..setData({
+        'account_email': 'owner@factory.test',
         'brevo_api_key': 'xkeysample',
-        'mail_sender_email': 'owner@factory.test',
+        'mail_sender_email': 'noreply@factory.test',
         'mail_sender_name': 'Acme',
         'mail_quota_per_day': 300,
         'mail_sent_today': 12,
@@ -55,6 +56,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Email Settings'), findsOneWidget);
+    expect(find.text('Your Email (receives account emails)'), findsOneWidget);
+    expect(find.text('owner@factory.test'), findsOneWidget);
     expect(find.text('Sent today: 12'), findsOneWidget);
     expect(find.text('Save Settings'), findsOneWidget);
   });

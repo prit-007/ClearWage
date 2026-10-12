@@ -184,6 +184,7 @@ type Tenant struct {
 	ID        string    `json:"id" db:"id"`
 	Name      string    `json:"name" db:"name"`
 	Phone     string    `json:"phone" db:"phone"`
+	Email     *string   `json:"email" db:"email"`
 	Address   *string   `json:"address" db:"address"`
 	Timezone  string    `json:"timezone" db:"timezone"`
 	IsActive  bool      `json:"is_active" db:"is_active"`

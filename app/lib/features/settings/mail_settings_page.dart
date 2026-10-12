@@ -15,6 +15,7 @@ class MailSettingsPage extends ConsumerStatefulWidget {
 }
 
 class _MailSettingsPageState extends ConsumerState<MailSettingsPage> {
+  final _accountEmailCtrl = TextEditingController();
   final _keyCtrl = TextEditingController();
   final _senderEmailCtrl = TextEditingController();
   final _senderNameCtrl = TextEditingController();
@@ -32,6 +33,7 @@ class _MailSettingsPageState extends ConsumerState<MailSettingsPage> {
 
   @override
   void dispose() {
+    _accountEmailCtrl.dispose();
     _keyCtrl.dispose();
     _senderEmailCtrl.dispose();
     _senderNameCtrl.dispose();
@@ -43,6 +45,7 @@ class _MailSettingsPageState extends ConsumerState<MailSettingsPage> {
     try {
       final data = await ref.read(settingsServiceProvider).getMailSettings();
       final key = data['brevo_api_key'] as String?;
+      _accountEmailCtrl.text = data['account_email'] as String? ?? '';
       _hasTenantKey = key != null && key.isNotEmpty;
       _senderEmailCtrl.text = data['mail_sender_email'] as String? ?? '';
       _senderNameCtrl.text = data['mail_sender_name'] as String? ?? '';
@@ -66,6 +69,9 @@ class _MailSettingsPageState extends ConsumerState<MailSettingsPage> {
     setState(() => _saving = true);
     try {
       final body = <String, dynamic>{
+        'account_email': _accountEmailCtrl.text.trim().isEmpty
+            ? null
+            : _accountEmailCtrl.text.trim(),
         'brevo_api_key': _keyCtrl.text.trim().isEmpty
             ? null
             : _keyCtrl.text.trim(),
@@ -153,6 +159,13 @@ class _MailSettingsPageState extends ConsumerState<MailSettingsPage> {
                       ),
                     ],
                     const SizedBox(height: 24),
+                    _EditorField(
+                      controller: _accountEmailCtrl,
+                      label: 'Your Email (receives account emails)',
+                      icon: PhosphorIconsRegular.userCircleGear,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
                     _EditorField(
                       controller: _keyCtrl,
                       label: _hasTenantKey

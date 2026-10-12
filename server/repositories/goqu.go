@@ -584,6 +584,14 @@ func (q *GoquQuerier) MarkPaidLeave(ctx context.Context, arg MarkPaidLeaveParams
 	return err
 }
 
+func (q *GoquQuerier) UpdateTenantEmail(ctx context.Context, arg UpdateTenantEmailParams) error {
+	_, err := q.db.Update("tenants").Set(goqu.Record{
+		"email":      arg.Email,
+		"updated_at": goqu.L("now()"),
+	}).Where(goqu.C("id").Eq(arg.TenantID)).Executor().ExecContext(ctx)
+	return err
+}
+
 func (q *GoquQuerier) DeleteShift(ctx context.Context, arg DeleteShiftParams) error {
 	_, err := q.db.Delete("shifts").Where(
 		goqu.C("id").Eq(arg.ID),

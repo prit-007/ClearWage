@@ -164,7 +164,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			leaveSvc := services.NewLeaveRequestService(querier)
 			leaveSvc.SetTriggers(triggers)
 			leaveCtrl := ctrl.NewLeaveRequestController(leaveSvc, logger, cfg)
-			services.WireMailer(mailer, staffSvc, disputeSvc, advReqSvc, leaveSvc)
+			services.WireMailer(mailer, staffSvc, disputeSvc, advReqSvc, leaveSvc, payrollSvc)
 
 			shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
 			uploadCtrl := ctrl.NewUploadController(staffSvc, logger, cfg)

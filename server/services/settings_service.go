@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/shopspring/decimal"
 	"github.com/clearwage/clearwage/repositories"
+	"github.com/shopspring/decimal"
 )
 
 type SettingsService struct {
@@ -44,6 +44,19 @@ func (s *SettingsService) GetMailSettings(ctx context.Context, tenantID string) 
 	return cfg, err
 }
 
-func (s *SettingsService) UpsertMailSettings(ctx context.Context, arg repositories.UpsertTenantConfigParams) (repositories.TenantConfig, error) {
+func (s *SettingsService) GetAccountEmail(ctx context.Context, tenantID string) *string {
+	tenant, err := s.querier.FindTenantByID(ctx, tenantID)
+	if err != nil {
+		return nil
+	}
+	return tenant.Email
+}
+
+func (s *SettingsService) UpsertMailSettings(ctx context.Context, arg repositories.UpsertTenantConfigParams, accountEmail *string) (repositories.TenantConfig, error) {
+	if accountEmail != nil {
+		if err := s.querier.UpdateTenantEmail(ctx, repositories.UpdateTenantEmailParams{TenantID: arg.TenantID, Email: accountEmail}); err != nil {
+			return repositories.TenantConfig{}, err
+		}
+	}
 	return s.querier.UpsertTenantConfig(ctx, arg)
 }

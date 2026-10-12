@@ -20,16 +20,20 @@ func (s *DisputeService) SetTriggers(t *NotificationTriggers) {
 	s.triggers = t
 }
 
-func (s *DisputeService) Create(ctx context.Context, tenantID, ledgerID, employeeID, raisedBy, reason string) (repositories.LedgerDispute, error) {
+func (s *DisputeService) Create(ctx context.Context, tenantID, ledgerID, attendanceID, employeeID, raisedBy, reason string) (repositories.LedgerDispute, error) {
 	if reason == "" {
 		return repositories.LedgerDispute{}, errors.New("reason is required")
 	}
+	if ledgerID == "" && attendanceID == "" {
+		return repositories.LedgerDispute{}, errors.New("ledger_id or attendance_id is required")
+	}
 	dispute, err := s.querier.CreateDispute(ctx, repositories.CreateDisputeParams{
-		TenantID:   tenantID,
-		LedgerID:   ledgerID,
-		EmployeeID: employeeID,
-		RaisedBy:   raisedBy,
-		Reason:     reason,
+		TenantID:     tenantID,
+		LedgerID:     ledgerID,
+		AttendanceID: attendanceID,
+		EmployeeID:   employeeID,
+		RaisedBy:     raisedBy,
+		Reason:       reason,
 	})
 	if err == nil && s.triggers != nil {
 		emp, empErr := s.querier.FindEmployeeByID(ctx, repositories.FindEmployeeByIDParams{

@@ -423,6 +423,7 @@ type LedgerDispute struct {
 	ID             string  `json:"id"`
 	TenantID       string  `json:"tenant_id"`
 	LedgerID       string  `json:"ledger_id"`
+	AttendanceID   string  `json:"attendance_id"`
 	EmployeeID     string  `json:"employee_id"`
 	RaisedBy       string  `json:"raised_by"`
 	Reason         string  `json:"reason"`
@@ -434,11 +435,12 @@ type LedgerDispute struct {
 }
 
 type CreateDisputeParams struct {
-	TenantID   string `json:"tenant_id"`
-	LedgerID   string `json:"ledger_id"`
-	EmployeeID string `json:"employee_id"`
-	RaisedBy   string `json:"raised_by"`
-	Reason     string `json:"reason"`
+	TenantID     string `json:"tenant_id"`
+	LedgerID     string `json:"ledger_id"`
+	AttendanceID string `json:"attendance_id"`
+	EmployeeID   string `json:"employee_id"`
+	RaisedBy     string `json:"raised_by"`
+	Reason       string `json:"reason"`
 }
 
 type ListDisputesByTenantParams struct {
@@ -452,6 +454,7 @@ type ListDisputesByTenantRow struct {
 	ID             string    `json:"id"`
 	TenantID       string    `json:"tenant_id"`
 	LedgerID       string    `json:"ledger_id"`
+	AttendanceID   string    `json:"attendance_id"`
 	EmployeeID     string    `json:"employee_id"`
 	RaisedBy       string    `json:"raised_by"`
 	Reason         string    `json:"reason"`

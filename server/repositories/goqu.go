@@ -1275,14 +1275,29 @@ func parseUUID(s string) (uuid.UUID, error) {
 	return u, nil
 }
 
+func parseNullableUUID(s string) (uuid.NullUUID, error) {
+	if s == "" {
+		return uuid.NullUUID{}, nil
+	}
+	u, err := parseUUID(s)
+	if err != nil {
+		return uuid.NullUUID{}, err
+	}
+	return uuid.NullUUID{UUID: u, Valid: true}, nil
+}
+
 func (q *GoquQuerier) CreateDispute(ctx context.Context, arg CreateDisputeParams) (LedgerDispute, error) {
 	tenantUUID, err := parseUUID(arg.TenantID)
 	if err != nil {
 		return LedgerDispute{}, fmt.Errorf("invalid tenant_id: %w", err)
 	}
-	ledgerUUID, err := parseUUID(arg.LedgerID)
+	ledgerUUID, err := parseNullableUUID(arg.LedgerID)
 	if err != nil {
 		return LedgerDispute{}, fmt.Errorf("invalid ledger_id: %w", err)
+	}
+	attendanceUUID, err := parseNullableUUID(arg.AttendanceID)
+	if err != nil {
+		return LedgerDispute{}, fmt.Errorf("invalid attendance_id: %w", err)
 	}
 	empUUID, err := parseUUID(arg.EmployeeID)
 	if err != nil {
@@ -1293,27 +1308,48 @@ func (q *GoquQuerier) CreateDispute(ctx context.Context, arg CreateDisputeParams
 		return LedgerDispute{}, fmt.Errorf("invalid raised_by: %w", err)
 	}
 	dbArg := db.CreateDisputeParams{
-		TenantID:   tenantUUID,
-		LedgerID:   ledgerUUID,
-		EmployeeID: empUUID,
-		RaisedBy:   raisedUUID,
-		Reason:     arg.Reason,
+		TenantID:     tenantUUID,
+		LedgerID:     ledgerUUID,
+		AttendanceID: attendanceUUID,
+		EmployeeID:   empUUID,
+		RaisedBy:     raisedUUID,
+		Reason:       arg.Reason,
 	}
 	d, err := q.sqlc.CreateDispute(ctx, dbArg)
 	if err != nil {
 		return LedgerDispute{}, err
 	}
-	return LedgerDispute{
-		ID:         d.ID.String(),
-		TenantID:   d.TenantID.String(),
-		LedgerID:   d.LedgerID.String(),
-		EmployeeID: d.EmployeeID.String(),
-		RaisedBy:   d.RaisedBy.String(),
-		Reason:     d.Reason,
-		Status:     d.Status,
-		CreatedAt:  d.CreatedAt,
-		UpdatedAt:  d.UpdatedAt,
-	}, nil
+	return disputeFromDB(d), nil
+}
+
+func nullUUIDStr(u uuid.NullUUID) string {
+	if u.Valid {
+		return u.UUID.String()
+	}
+	return ""
+}
+
+func disputeFromDB(d db.LedgerDispute) LedgerDispute {
+	dispute := LedgerDispute{
+		ID:           d.ID.String(),
+		TenantID:     d.TenantID.String(),
+		EmployeeID:   d.EmployeeID.String(),
+		RaisedBy:     d.RaisedBy.String(),
+		Reason:       d.Reason,
+		Status:       d.Status,
+		CreatedAt:    d.CreatedAt,
+		UpdatedAt:    d.UpdatedAt,
+		LedgerID:     nullUUIDStr(d.LedgerID),
+		AttendanceID: nullUUIDStr(d.AttendanceID),
+	}
+	if d.ResolvedBy.Valid {
+		s := d.ResolvedBy.UUID.String()
+		dispute.ResolvedBy = &s
+	}
+	if d.ResolutionNote.Valid {
+		dispute.ResolutionNote = &d.ResolutionNote.String
+	}
+	return dispute
 }
 
 func (q *GoquQuerier) ListDisputesByTenant(ctx context.Context, arg ListDisputesByTenantParams) ([]ListDisputesByTenantRow, error) {
@@ -1334,15 +1370,16 @@ func (q *GoquQuerier) ListDisputesByTenant(ctx context.Context, arg ListDisputes
 	var result []ListDisputesByTenantRow
 	for _, r := range rows {
 		row := ListDisputesByTenantRow{
-			ID:         r.ID.String(),
-			TenantID:   r.TenantID.String(),
-			LedgerID:   r.LedgerID.String(),
-			EmployeeID: r.EmployeeID.String(),
-			RaisedBy:   r.RaisedBy.String(),
-			Reason:     r.Reason,
-			Status:     r.Status,
-			CreatedAt:  r.CreatedAt,
-			UpdatedAt:  r.UpdatedAt,
+			ID:           r.ID.String(),
+			TenantID:     r.TenantID.String(),
+			LedgerID:     nullUUIDStr(r.LedgerID),
+			AttendanceID: nullUUIDStr(r.AttendanceID),
+			EmployeeID:   r.EmployeeID.String(),
+			RaisedBy:     r.RaisedBy.String(),
+			Reason:       r.Reason,
+			Status:       r.Status,
+			CreatedAt:    r.CreatedAt,
+			UpdatedAt:    r.UpdatedAt,
 		}
 		if r.ResolvedBy.Valid {
 			s := r.ResolvedBy.UUID.String()
@@ -1384,17 +1421,7 @@ func (q *GoquQuerier) ResolveDispute(ctx context.Context, arg ResolveDisputePara
 	if err != nil {
 		return LedgerDispute{}, err
 	}
-	return LedgerDispute{
-		ID:         d.ID.String(),
-		TenantID:   d.TenantID.String(),
-		LedgerID:   d.LedgerID.String(),
-		EmployeeID: d.EmployeeID.String(),
-		RaisedBy:   d.RaisedBy.String(),
-		Reason:     d.Reason,
-		Status:     d.Status,
-		CreatedAt:  d.CreatedAt,
-		UpdatedAt:  d.UpdatedAt,
-	}, nil
+	return disputeFromDB(d), nil
 }
 
 func (q *GoquQuerier) RejectDispute(ctx context.Context, arg RejectDisputeParams) (LedgerDispute, error) {
@@ -1422,17 +1449,7 @@ func (q *GoquQuerier) RejectDispute(ctx context.Context, arg RejectDisputeParams
 	if err != nil {
 		return LedgerDispute{}, err
 	}
-	return LedgerDispute{
-		ID:         d.ID.String(),
-		TenantID:   d.TenantID.String(),
-		LedgerID:   d.LedgerID.String(),
-		EmployeeID: d.EmployeeID.String(),
-		RaisedBy:   d.RaisedBy.String(),
-		Reason:     d.Reason,
-		Status:     d.Status,
-		CreatedAt:  d.CreatedAt,
-		UpdatedAt:  d.UpdatedAt,
-	}, nil
+	return disputeFromDB(d), nil
 }
 
 func (q *GoquQuerier) HasPendingAdvanceRequest(ctx context.Context, arg HasPendingAdvanceRequestParams) (bool, error) {

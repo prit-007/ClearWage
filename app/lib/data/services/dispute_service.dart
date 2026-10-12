@@ -7,7 +7,8 @@ class DisputeService {
   DisputeService(this._client);
 
   Future<Dispute> create({
-    required String ledgerId,
+    String? ledgerId,
+    String? attendanceId,
     required String employeeId,
     required String reason,
   }) async {
@@ -15,6 +16,7 @@ class DisputeService {
       '/api/v1/disputes',
       body: {
         'ledger_id': ledgerId,
+        'attendance_id': attendanceId,
         'employee_id': employeeId,
         'reason': reason,
       },

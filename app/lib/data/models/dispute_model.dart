@@ -1,6 +1,7 @@
 class Dispute {
   final String id;
-  final String ledgerId;
+  final String? ledgerId;
+  final String? attendanceId;
   final String employeeId;
   final String raisedBy;
   final String reason;
@@ -12,7 +13,8 @@ class Dispute {
 
   Dispute({
     required this.id,
-    required this.ledgerId,
+    this.ledgerId,
+    this.attendanceId,
     required this.employeeId,
     required this.raisedBy,
     required this.reason,
@@ -25,7 +27,8 @@ class Dispute {
 
   factory Dispute.fromJson(Map<String, dynamic> json) => Dispute(
     id: json['id']?.toString() ?? '',
-    ledgerId: json['ledger_id']?.toString() ?? '',
+    ledgerId: json['ledger_id']?.toString(),
+    attendanceId: json['attendance_id']?.toString(),
     employeeId: json['employee_id']?.toString() ?? '',
     raisedBy: json['raised_by']?.toString() ?? '',
     reason: json['reason']?.toString() ?? '',
@@ -42,6 +45,7 @@ class Dispute {
 
   Map<String, dynamic> toJson() => {
     'ledger_id': ledgerId,
+    'attendance_id': attendanceId,
     'employee_id': employeeId,
     'reason': reason,
   };

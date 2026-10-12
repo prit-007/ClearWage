@@ -151,7 +151,7 @@ type Ledger struct {
 type LedgerDispute struct {
 	ID             uuid.UUID      `json:"id"`
 	TenantID       uuid.UUID      `json:"tenant_id"`
-	LedgerID       uuid.UUID      `json:"ledger_id"`
+	LedgerID       uuid.NullUUID  `json:"ledger_id"`
 	EmployeeID     uuid.UUID      `json:"employee_id"`
 	RaisedBy       uuid.UUID      `json:"raised_by"`
 	Reason         string         `json:"reason"`
@@ -160,6 +160,7 @@ type LedgerDispute struct {
 	ResolutionNote sql.NullString `json:"resolution_note"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
+	AttendanceID   uuid.NullUUID  `json:"attendance_id"`
 }
 
 type Notification struct {

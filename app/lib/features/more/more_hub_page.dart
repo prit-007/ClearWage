@@ -337,6 +337,12 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
             color: AppColors.warning,
           ),
           _HubItem(
+            icon: PhosphorIconsFill.cloudArrowUp,
+            title: 'Sync Center',
+            route: '/settings/sync',
+            color: AppColors.success,
+          ),
+          _HubItem(
             icon: PhosphorIconsFill.info,
             title: 'About',
             route: '/settings/about',

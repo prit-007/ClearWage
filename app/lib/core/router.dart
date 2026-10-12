@@ -33,6 +33,7 @@ import '../features/reports/payroll_preview_page.dart';
 import '../features/more/more_hub_page.dart';
 import '../features/settings/payroll_settings_page.dart';
 import '../features/settings/settings_about_page.dart';
+import '../features/settings/sync_center_page.dart';
 import '../features/settings/pin_setup_page.dart';
 import '../features/shell/main_shell.dart';
 import '../features/shifts/my_shifts_page.dart';
@@ -363,6 +364,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/pin',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const PinSetupPage()),
+      ),
+      GoRoute(
+        path: '/settings/sync',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const SyncCenterPage()),
       ),
       GoRoute(
         path: '/reports/payroll',

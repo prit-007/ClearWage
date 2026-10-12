@@ -56,6 +56,14 @@ class StaffService {
     return res['data'] as Map<String, dynamic>? ?? {};
   }
 
+  Future<List<Map<String, dynamic>>> getAuditLogs(String id) async {
+    final res = await _client.get('/api/v1/staff/$id/audit');
+    return (res['data'] as List<dynamic>?)
+            ?.map((e) => e as Map<String, dynamic>)
+            .toList() ??
+        [];
+  }
+
   Future<String> uploadPhoto(String id, String filePath) async {
     final file = await http.MultipartFile.fromPath('file', filePath);
     final res = await _client.postMultipart(

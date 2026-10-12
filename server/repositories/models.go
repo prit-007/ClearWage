@@ -33,6 +33,22 @@ type AdvanceRequest struct {
 	UpdatedAt     time.Time       `json:"updated_at" db:"updated_at"`
 }
 
+type LeaveRequest struct {
+	ID           string    `json:"id" db:"id"`
+	TenantID     string    `json:"tenant_id" db:"tenant_id"`
+	EmployeeID   string    `json:"employee_id" db:"employee_id"`
+	LeaveType    string    `json:"leave_type" db:"leave_type"`
+	FromDate     string    `json:"from_date" db:"from_date"`
+	ToDate       string    `json:"to_date" db:"to_date"`
+	Reason       *string   `json:"reason" db:"reason"`
+	Status       string    `json:"status" db:"status"`
+	ApprovedBy   *string   `json:"approved_by" db:"approved_by"`
+	DenyReason   *string   `json:"deny_reason" db:"deny_reason"`
+	EmployeeName *string   `json:"employee_name" db:"employee_name"`
+	CreatedAt    time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
+}
+
 type Attendance struct {
 	ID                     string     `json:"id" db:"id"`
 	TenantID               string     `json:"tenant_id" db:"tenant_id"`
@@ -62,6 +78,8 @@ type Employee struct {
 	Name                  string          `json:"name" db:"name"`
 	Phone                 string          `json:"phone" db:"phone"`
 	Designation           *string         `json:"designation" db:"designation"`
+	Department            *string         `json:"department" db:"department"`
+	Email                 *string         `json:"email" db:"email"`
 	WageType              string          `json:"wage_type" db:"wage_type"`
 	WageAmount            decimal.Decimal `json:"wage_amount" db:"wage_amount"`
 	DefaultShiftID        *string         `json:"default_shift_id" db:"default_shift_id"`
@@ -166,8 +184,10 @@ type Tenant struct {
 	ID        string    `json:"id" db:"id"`
 	Name      string    `json:"name" db:"name"`
 	Phone     string    `json:"phone" db:"phone"`
+	Email     *string   `json:"email" db:"email"`
 	Address   *string   `json:"address" db:"address"`
 	Timezone  string    `json:"timezone" db:"timezone"`
+	IsActive  bool      `json:"is_active" db:"is_active"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
@@ -221,6 +241,12 @@ type TenantConfig struct {
 	WageBasis           string          `json:"wage_basis" db:"wage_basis"`
 	WeekOffPaid         bool            `json:"week_off_paid" db:"week_off_paid"`
 	WeeklyOffs          string          `json:"weekly_offs" db:"weekly_offs"`
+	BrevoAPIKey         *string         `json:"brevo_api_key" db:"brevo_api_key"`
+	MailSenderEmail     *string         `json:"mail_sender_email" db:"mail_sender_email"`
+	MailSenderName      *string         `json:"mail_sender_name" db:"mail_sender_name"`
+	MailQuotaPerDay     int32           `json:"mail_quota_per_day" db:"mail_quota_per_day"`
+	MailSentToday       int32           `json:"mail_sent_today" db:"mail_sent_today"`
+	MailSentDate        *string         `json:"mail_sent_date" db:"mail_sent_date"`
 	CreatedAt           time.Time       `json:"created_at" db:"created_at"`
 	UpdatedAt           time.Time       `json:"updated_at" db:"updated_at"`
 }

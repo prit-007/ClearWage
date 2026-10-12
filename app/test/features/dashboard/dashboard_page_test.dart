@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/api_client.dart';
+import 'package:clearwage/core/services/connectivity_service.dart';
+import 'package:clearwage/core/services/locale_service.dart';
 import 'package:clearwage/core/widgets/shimmer_loading.dart';
 import 'package:clearwage/core/providers/app_providers.dart';
 import 'package:clearwage/core/providers/services.dart';
@@ -11,6 +14,14 @@ import 'package:clearwage/data/models/report_models.dart';
 import 'package:clearwage/data/services/dashboard_service.dart';
 import 'package:clearwage/data/services/profile_service.dart';
 import 'package:clearwage/features/dashboard/dashboard_page.dart';
+import 'package:clearwage/l10n/app_localizations.dart';
+
+class FakeConnectivity extends ConnectivityNotifier {
+  @override
+  Stream<bool> build() async* {
+    yield true;
+  }
+}
 
 class _NoOpApiClient extends ApiClient {
   _NoOpApiClient() : super(baseUrl: 'http://localhost');
@@ -71,8 +82,19 @@ Widget _buildApp(FakeDashboardService fakeService, {bool isAdmin = true}) {
           role: isAdmin ? 'owner' : 'employee',
         ),
       ),
+      connectivityProvider.overrideWith(FakeConnectivity.new),
     ],
-    child: const MaterialApp(home: DashboardScreen()),
+    child: const MaterialApp(
+      locale: Locale('en'),
+      supportedLocales: supportedLocales,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: DashboardScreen(),
+    ),
   );
 }
 
@@ -134,6 +156,27 @@ void main() {
       expect(find.text('₹15000'), findsOneWidget);
       expect(find.text('Defaulters'), findsOneWidget);
       expect(find.text('3'), findsOneWidget);
+    });
+
+    testWidgets('shows Add Jama/Udhaar quick action for admin', (tester) async {
+      fakeService.setData(_makeData());
+      await tester.pumpWidget(_buildApp(fakeService));
+      await tester.pumpAndSettle();
+
+      final scrollable = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(
+        find.text('Add\nJama/Udhaar'),
+        200,
+        scrollable: scrollable,
+      );
+      expect(find.text('Add\nJama/Udhaar'), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.text('Broadcast'),
+        200,
+        scrollable: scrollable,
+      );
+      expect(find.text('Broadcast'), findsOneWidget);
     });
 
     testWidgets('shows error state on fetch failure', (tester) async {

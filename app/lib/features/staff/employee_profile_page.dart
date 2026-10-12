@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:async';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,9 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/services/document_upload_queue.dart';
+import '../../core/services/media_service.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/providers/services.dart';
 import '../dashboard/providers/dashboard_providers.dart';
@@ -17,13 +22,13 @@ import '../../data/models/employee_model.dart';
 import '../../core/app_config.dart';
 import '../../core/helpers.dart';
 import '../../core/logger.dart';
+import '../../core/api_exceptions.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/responsive.dart';
 import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/currency_format.dart';
-import 'dart:async';
 
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -42,11 +47,13 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
   List<Map<String, dynamic>>? _ledger;
   double? _balance;
   bool _loading = true;
+  List<Map<String, dynamic>> _auditLogs = [];
 
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 3, vsync: this);
+    final isAdmin = ref.read(userInfoProvider)?.isAdmin ?? false;
+    _tabCtrl = TabController(length: isAdmin ? 4 : 3, vsync: this);
     _tabCtrl.addListener(() {
       if (!_tabCtrl.indexIsChanging) HapticFeedback.selectionClick();
     });
@@ -93,6 +100,18 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
         _balance = bal;
         _loading = false;
       });
+    }
+    if (mounted && (ref.read(userInfoProvider)?.isAdmin ?? false)) {
+      unawaited(_loadAudit());
+    }
+  }
+
+  Future<void> _loadAudit() async {
+    final logs = await _fetch(
+      () => ref.read(staffServiceProvider).getAuditLogs(widget.employeeId),
+    );
+    if (logs != null && mounted) {
+      setState(() => _auditLogs = logs);
     }
   }
 
@@ -317,6 +336,29 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                     ),
                     canEditPhoto: isAdmin,
                     onEditPhoto: _pickAndUploadPhoto,
+                    onMessage: (phone.isEmpty)
+                        ? null
+                        : () => unawaited(
+                            ref
+                                .read(whatsappServiceProvider)
+                                .launch(phone: phone, text: 'નમસ્તે $name!')
+                                .then((ok) {
+                                  if (!ok && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Could not open WhatsApp',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }),
+                          ),
+                    onCall: (phone.isEmpty)
+                        ? null
+                        : () => unawaited(
+                            launchUrl(Uri(scheme: 'tel', path: phone)),
+                          ),
                   ),
                 ),
               ),
@@ -357,10 +399,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                         fontSize: 13,
                       ),
                       dividerColor: Colors.transparent,
-                      tabs: const [
-                        Tab(text: 'Profile'),
-                        Tab(text: 'Attendance'),
-                        Tab(text: 'Ledger'),
+                      tabs: [
+                        const Tab(text: 'Profile'),
+                        const Tab(text: 'Attendance'),
+                        const Tab(text: 'Ledger'),
+                        if (isAdmin) const Tab(text: 'Audit'),
                       ],
                     ),
                   ),
@@ -391,6 +434,7 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                   ledgerList: _ledger,
                   balance: _balance,
                 ),
+                if (isAdmin) _AuditTab(cs: cs, tt: tt, logs: _auditLogs),
               ],
             ),
           ),
@@ -510,6 +554,8 @@ class _EditorialProfileHeader extends StatelessWidget {
   final String photoUrl;
   final bool canEditPhoto;
   final VoidCallback onEditPhoto;
+  final VoidCallback? onMessage;
+  final VoidCallback? onCall;
   const _EditorialProfileHeader({
     required this.cs,
     required this.tt,
@@ -520,6 +566,8 @@ class _EditorialProfileHeader extends StatelessWidget {
     required this.photoUrl,
     required this.canEditPhoto,
     required this.onEditPhoto,
+    this.onMessage,
+    this.onCall,
   });
 
   @override
@@ -608,7 +656,65 @@ class _EditorialProfileHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
+        if (onCall != null || onMessage != null) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (onCall != null) ...[
+                _ContactActionButton(
+                  cs: cs,
+                  icon: PhosphorIconsFill.phone,
+                  tooltip: 'Call',
+                  onTap: onCall!,
+                ),
+                const SizedBox(width: 16),
+              ],
+              if (onMessage != null) ...[
+                _ContactActionButton(
+                  cs: cs,
+                  icon: PhosphorIconsFill.whatsappLogo,
+                  tooltip: 'WhatsApp',
+                  onTap: onMessage!,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 24),
+        ],
       ],
+    );
+  }
+}
+
+class _ContactActionButton extends StatelessWidget {
+  final ColorScheme cs;
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _ContactActionButton({
+    required this.cs,
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: cs.primaryContainer.withValues(alpha: 0.4),
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Icon(icon, color: cs.primary, size: 20),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -769,6 +875,7 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
           _loading = false;
         });
       }
+      unawaited(_flushPendingUploads());
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -777,6 +884,34 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
         });
       }
     }
+  }
+
+  bool _isConnectivityError(Object e) =>
+      e is SocketException ||
+      e is http.ClientException ||
+      e is TimeoutException ||
+      (e is ApiException && e.statusCode == null);
+
+  Future<void> _flushPendingUploads() async {
+    try {
+      final queue = ref.read(documentUploadQueueProvider);
+      final pending = await queue.pending();
+      for (final item in pending) {
+        if (item.employeeId != widget.employeeId) continue;
+        try {
+          await ref
+              .read(documentServiceProvider)
+              .uploadDocument(
+                employeeId: item.employeeId,
+                docType: item.docType,
+                filePath: item.filePath,
+              );
+          await queue.remove(item.employeeId, item.docType);
+        } catch (_) {
+          // Leave queued; it will retry on the next open.
+        }
+      }
+    } catch (_) {}
   }
 
   Map<String, dynamic>? _docFor(String type) {
@@ -883,6 +1018,14 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
     }
     if (path == null || !mounted) return;
 
+    var uploadPath = path;
+    if (source == 'camera' || source == 'gallery') {
+      if (MediaService.needsCompression(path)) {
+        final compressed = await MediaService.compressImage(path);
+        if (compressed != null) uploadPath = compressed;
+      }
+    }
+
     setState(() => _uploadingType = type);
     try {
       await ref
@@ -890,8 +1033,11 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
           .uploadDocument(
             employeeId: widget.employeeId,
             docType: type,
-            filePath: path,
+            filePath: uploadPath,
           );
+      await ref
+          .read(documentUploadQueueProvider)
+          .remove(widget.employeeId, type);
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -899,7 +1045,26 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
         unawaited(_load());
       }
     } catch (e) {
-      if (mounted) showError(context, e);
+      if (_isConnectivityError(e)) {
+        await ref
+            .read(documentUploadQueueProvider)
+            .enqueue(
+              PendingDocument(
+                employeeId: widget.employeeId,
+                docType: type,
+                filePath: uploadPath,
+              ),
+            );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Queued: document will upload when back online'),
+            ),
+          );
+        }
+      } else if (mounted) {
+        showError(context, e);
+      }
     } finally {
       if (mounted) setState(() => _uploadingType = null);
     }
@@ -1713,6 +1878,90 @@ class _LedgerEntryRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AuditTab extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final List<Map<String, dynamic>> logs;
+
+  const _AuditTab({required this.cs, required this.tt, required this.logs});
+
+  String _when(String? iso) {
+    if (iso == null || iso.isEmpty) return '';
+    final dt = DateTime.tryParse(iso);
+    if (dt == null) return iso;
+    final d = dt.toLocal();
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')} '
+        '${d.hour.toString().padLeft(2, '0')}:'
+        '${d.minute.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (logs.isEmpty) {
+      return const Center(child: Text('No audit activity recorded'));
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 160),
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: logs.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final log = logs[index];
+        final action = (log['action'] as String? ?? 'action')
+            .replaceAll('_', ' ')
+            .toUpperCase();
+        final entity = log['entity_type'] as String? ?? '';
+        final when = _when(log['created_at'] as String?);
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: cs.primaryContainer.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  PhosphorIconsRegular.clockCounterClockwise,
+                  size: 18,
+                  color: cs.primary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      action,
+                      style: tt.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      [entity, when].where((s) => s.isNotEmpty).join(' · '),
+                      style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

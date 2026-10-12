@@ -6,8 +6,10 @@ import '../../data/services/dispute_service.dart';
 Future<void> showRaiseDisputeDialog(
   BuildContext context, {
   required DisputeService disputeService,
-  required String ledgerId,
+  String? ledgerId,
+  String? attendanceId,
   required String employeeId,
+  String subject = 'ledger entry',
 }) async {
   final controller = TextEditingController();
   final confirmed = await showDialog<bool>(
@@ -17,7 +19,7 @@ Future<void> showRaiseDisputeDialog(
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Describe the issue with this ledger entry:'),
+          Text('Describe the issue with this $subject:'),
           const SizedBox(height: 12),
           TextField(
             controller: controller,
@@ -56,6 +58,7 @@ Future<void> showRaiseDisputeDialog(
     try {
       await disputeService.create(
         ledgerId: ledgerId,
+        attendanceId: attendanceId,
         employeeId: employeeId,
         reason: controller.text.trim(),
       );

@@ -1,0 +1,15 @@
+{
+  "@@locale": "en",
+  "splashTitle": "ClearWage",
+  "splashSubtitle": "Workforce Management",
+  "home": "Home",
+  "more": "More",
+  "greetingMorning": "Good Morning,",
+  "greetingAfternoon": "Good Afternoon,",
+  "greetingEvening": "Good Evening,",
+  "language": "Language",
+  "languageEnglish": "English",
+  "languageHindi": "हिन्दी",
+  "languageGujarati": "ગુજરાતી",
+  "languageApplied": "Language updated"
+}

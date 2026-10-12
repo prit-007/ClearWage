@@ -65,6 +65,147 @@ func (m *MockQuerier) CountHolidaysByDate(ctx context.Context, arg repositories.
 	return ret0, ret1
 }
 
+// ListTenants mocks base method.
+func (m *MockQuerier) ListTenants(ctx context.Context) ([]repositories.Tenant, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListTenants", ctx)
+	ret0, _ := ret[0].([]repositories.Tenant)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListTenants indicates an expected call of ListTenants.
+func (mr *MockQuerierMockRecorder) ListTenants(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTenants", reflect.TypeOf((*MockQuerier)(nil).ListTenants), ctx)
+}
+
+// IsTenantActive mocks base method.
+func (m *MockQuerier) IsTenantActive(ctx context.Context, tenantID string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsTenantActive", ctx, tenantID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsTenantActive indicates an expected call of IsTenantActive.
+func (mr *MockQuerierMockRecorder) IsTenantActive(ctx, tenantID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTenantActive", reflect.TypeOf((*MockQuerier)(nil).IsTenantActive), ctx, tenantID)
+}
+
+// SetTenantActive mocks base method.
+func (m *MockQuerier) SetTenantActive(ctx context.Context, tenantID string, active bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetTenantActive", ctx, tenantID, active)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetTenantActive indicates an expected call of SetTenantActive.
+func (mr *MockQuerierMockRecorder) SetTenantActive(ctx, tenantID, active any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTenantActive", reflect.TypeOf((*MockQuerier)(nil).SetTenantActive), ctx, tenantID, active)
+}
+
+// IncrementMailCount mocks base method.
+func (m *MockQuerier) IncrementMailCount(ctx context.Context, arg repositories.IncrementMailCountParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrementMailCount", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncrementMailCount indicates an expected call of IncrementMailCount.
+func (mr *MockQuerierMockRecorder) IncrementMailCount(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementMailCount", reflect.TypeOf((*MockQuerier)(nil).IncrementMailCount), ctx, arg)
+}
+
+// CreateLeaveRequest mocks base method.
+func (m *MockQuerier) CreateLeaveRequest(ctx context.Context, arg repositories.CreateLeaveRequestParams) (repositories.LeaveRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateLeaveRequest", ctx, arg)
+	ret0, _ := ret[0].(repositories.LeaveRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockQuerierMockRecorder) CreateLeaveRequest(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLeaveRequest", reflect.TypeOf((*MockQuerier)(nil).CreateLeaveRequest), ctx, arg)
+}
+
+// ListLeaveRequestsByTenant mocks base method.
+func (m *MockQuerier) ListLeaveRequestsByTenant(ctx context.Context, arg repositories.ListLeaveRequestsByTenantParams) ([]repositories.LeaveRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListLeaveRequestsByTenant", ctx, arg)
+	ret0, _ := ret[0].([]repositories.LeaveRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockQuerierMockRecorder) ListLeaveRequestsByTenant(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLeaveRequestsByTenant", reflect.TypeOf((*MockQuerier)(nil).ListLeaveRequestsByTenant), ctx, arg)
+}
+
+// ListLeaveRequestsByEmployee mocks base method.
+func (m *MockQuerier) ListLeaveRequestsByEmployee(ctx context.Context, arg repositories.ListLeaveRequestsByEmployeeParams) ([]repositories.LeaveRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListLeaveRequestsByEmployee", ctx, arg)
+	ret0, _ := ret[0].([]repositories.LeaveRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockQuerierMockRecorder) ListLeaveRequestsByEmployee(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLeaveRequestsByEmployee", reflect.TypeOf((*MockQuerier)(nil).ListLeaveRequestsByEmployee), ctx, arg)
+}
+
+// UpdateLeaveRequestStatus mocks base method.
+func (m *MockQuerier) UpdateLeaveRequestStatus(ctx context.Context, arg repositories.UpdateLeaveRequestStatusParams) (repositories.LeaveRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLeaveRequestStatus", ctx, arg)
+	ret0, _ := ret[0].(repositories.LeaveRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockQuerierMockRecorder) UpdateLeaveRequestStatus(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLeaveRequestStatus", reflect.TypeOf((*MockQuerier)(nil).UpdateLeaveRequestStatus), ctx, arg)
+}
+
+// MarkPaidLeave mocks base method.
+func (m *MockQuerier) MarkPaidLeave(ctx context.Context, arg repositories.MarkPaidLeaveParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkPaidLeave", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (mr *MockQuerierMockRecorder) MarkPaidLeave(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkPaidLeave", reflect.TypeOf((*MockQuerier)(nil).MarkPaidLeave), ctx, arg)
+}
+
+// UpdateTenantEmail mocks base method.
+func (m *MockQuerier) UpdateTenantEmail(ctx context.Context, arg repositories.UpdateTenantEmailParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTenantEmail", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateTenantEmail indicates an expected call of UpdateTenantEmail.
+func (mr *MockQuerierMockRecorder) UpdateTenantEmail(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTenantEmail", reflect.TypeOf((*MockQuerier)(nil).UpdateTenantEmail), ctx, arg)
+}
+
 // CountHolidaysByDate indicates an expected call of CountHolidaysByDate.
 func (mr *MockQuerierMockRecorder) CountHolidaysByDate(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
@@ -664,6 +805,21 @@ func (m *MockQuerier) ListActivityLogsByTenant(ctx context.Context, arg reposito
 func (mr *MockQuerierMockRecorder) ListActivityLogsByTenant(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListActivityLogsByTenant", reflect.TypeOf((*MockQuerier)(nil).ListActivityLogsByTenant), ctx, arg)
+}
+
+// ListActivityLogsByEmployee mocks base method.
+func (m *MockQuerier) ListActivityLogsByEmployee(ctx context.Context, arg repositories.ListActivityLogsByEmployeeParams) ([]repositories.ActivityLog, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListActivityLogsByEmployee", ctx, arg)
+	ret0, _ := ret[0].([]repositories.ActivityLog)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListActivityLogsByEmployee indicates an expected call of ListActivityLogsByEmployee.
+func (mr *MockQuerierMockRecorder) ListActivityLogsByEmployee(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListActivityLogsByEmployee", reflect.TypeOf((*MockQuerier)(nil).ListActivityLogsByEmployee), ctx, arg)
 }
 
 // ListAdvanceRequestsByTenant mocks base method.

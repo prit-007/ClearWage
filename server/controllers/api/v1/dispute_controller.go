@@ -26,9 +26,10 @@ func NewDisputeController(disputeService *services.DisputeService, logger *zerol
 }
 
 type createDisputeRequest struct {
-	LedgerID   string `json:"ledger_id"`
-	EmployeeID string `json:"employee_id"`
-	Reason     string `json:"reason"`
+	LedgerID     string `json:"ledger_id"`
+	AttendanceID string `json:"attendance_id"`
+	EmployeeID   string `json:"employee_id"`
+	Reason       string `json:"reason"`
 }
 
 func (c *DisputeController) Create(w http.ResponseWriter, r *http.Request) {
@@ -44,8 +45,12 @@ func (c *DisputeController) Create(w http.ResponseWriter, r *http.Request) {
 		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
-	if req.LedgerID == "" || req.EmployeeID == "" || req.Reason == "" {
-		utils.JSONFail(w, http.StatusBadRequest, "ledger_id, employee_id, and reason are required")
+	if req.LedgerID == "" && req.AttendanceID == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "ledger_id or attendance_id is required")
+		return
+	}
+	if req.EmployeeID == "" || req.Reason == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "employee_id and reason are required")
 		return
 	}
 
@@ -59,7 +64,7 @@ func (c *DisputeController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dispute, err := c.disputeService.Create(r.Context(), tenantID, req.LedgerID, req.EmployeeID, claims.EmployeeID, req.Reason)
+	dispute, err := c.disputeService.Create(r.Context(), tenantID, req.LedgerID, req.AttendanceID, req.EmployeeID, claims.EmployeeID, req.Reason)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to create dispute")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to create dispute")

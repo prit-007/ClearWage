@@ -20,6 +20,7 @@ type StaffService struct {
 	cache    *cache.TTL
 	sf       singleflight.Group
 	triggers *NotificationTriggers
+	mailer   *MailService
 }
 
 func NewStaffService(querier repositories.Querier) *StaffService {
@@ -33,9 +34,14 @@ func (s *StaffService) SetTriggers(t *NotificationTriggers) {
 	s.triggers = t
 }
 
+func (s *StaffService) SetMailer(m *MailService) {
+	s.mailer = m
+}
+
 // EmployeeProfileDetails carries optional KYC/personal fields for an employee.
 // On update, nil fields leave the existing value untouched.
 type EmployeeProfileDetails struct {
+	Email                 *string
 	DateOfJoining         *string
 	PanNumber             *string
 	AadhaarNumber         *string
@@ -50,7 +56,7 @@ type EmployeeProfileDetails struct {
 	PermanentAddress      *string
 }
 
-func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designation, wageType, wageAmount, role, tenantID, employeeID string, dailyTargetUnits *int32, kyc EmployeeProfileDetails) (repositories.Employee, error) {
+func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designation, department, wageType, wageAmount, role, tenantID, employeeID string, dailyTargetUnits *int32, kyc EmployeeProfileDetails) (repositories.Employee, error) {
 	wageAmt, err := strconv.ParseFloat(wageAmount, 64)
 	if err != nil {
 		return repositories.Employee{}, fmt.Errorf("invalid wage_amount: %w", err)
@@ -58,6 +64,10 @@ func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designat
 	var desig *string
 	if designation != "" {
 		desig = &designation
+	}
+	var dep *string
+	if department != "" {
+		dep = &department
 	}
 	if role == "" {
 		role = "employee"
@@ -67,6 +77,8 @@ func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designat
 		Name:                  name,
 		Phone:                 phone,
 		Designation:           desig,
+		Department:            dep,
+		Email:                 kyc.Email,
 		WageType:              wageType,
 		WageAmount:            wageAmt,
 		DailyTargetUnits:      dailyTargetUnits,
@@ -94,6 +106,10 @@ func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designat
 			}
 			s.triggers.NotifyWelcome(ctx, tenantID, emp.ID, tenantName)
 		}
+		if s.mailer != nil && emp.Email != nil && *emp.Email != "" {
+			body := fmt.Sprintf("નમસ્તે %s,\n\nYour ClearWage employee account is ready. Please connect with your supervisor for app access and your schedule.", emp.Name)
+			_ = s.mailer.Send(ctx, tenantID, *emp.Email, "Welcome to ClearWage", body)
+		}
 	}
 	return emp, err
 }
@@ -105,7 +121,7 @@ func (s *StaffService) GetEmployee(ctx context.Context, employeeID, tenantID str
 	})
 }
 
-func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID, name, phone, designation, wageType, wageAmount, role string, dailyTargetUnits *int32, kyc EmployeeProfileDetails) (repositories.Employee, error) {
+func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID, name, phone, designation, department, wageType, wageAmount, role string, dailyTargetUnits *int32, kyc EmployeeProfileDetails) (repositories.Employee, error) {
 	existing, err := s.querier.FindEmployeeByID(ctx, repositories.FindEmployeeByIDParams{
 		ID:       employeeID,
 		TenantID: tenantID,
@@ -135,6 +151,13 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 		desig = existing.Designation
 	}
 
+	var dep *string
+	if department != "" {
+		dep = &department
+	} else {
+		dep = existing.Department
+	}
+
 	if dailyTargetUnits == nil {
 		dailyTargetUnits = existing.DailyTargetUnits
 	}
@@ -146,6 +169,10 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 	dateOfJoining := existing.DateOfJoining
 	if kyc.DateOfJoining != nil {
 		dateOfJoining = kyc.DateOfJoining
+	}
+	email := existing.Email
+	if kyc.Email != nil {
+		email = kyc.Email
 	}
 	panNumber := existing.PanNumber
 	if kyc.PanNumber != nil {
@@ -198,6 +225,8 @@ func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID,
 		Name:                  name,
 		Phone:                 phone,
 		Designation:           desig,
+		Department:            dep,
+		Email:                 email,
 		WageType:              wageType,
 		WageAmount:            wageAmt,
 		DefaultShiftID:        existing.DefaultShiftID,

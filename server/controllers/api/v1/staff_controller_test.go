@@ -9,16 +9,17 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/rs/zerolog"
-	"github.com/shopspring/decimal"
 	"github.com/clearwage/clearwage/config"
 	"github.com/clearwage/clearwage/middlewares"
 	"github.com/clearwage/clearwage/mocks"
 	"github.com/clearwage/clearwage/pkg"
 	"github.com/clearwage/clearwage/repositories"
 	"github.com/clearwage/clearwage/services"
+	"github.com/go-chi/chi/v5"
+	"github.com/rs/zerolog"
+	"github.com/shopspring/decimal"
 	"go.uber.org/mock/gomock"
 )
 
@@ -58,7 +59,7 @@ func setupStaffTest(t *testing.T) (*StaffController, *mocks.MockQuerier, func())
 	logger := zerolog.Nop()
 	cfg := config.AppConfig{Secret: "test-secret"}
 	svc := services.NewStaffService(mockQuerier)
-	staffCtrl := NewStaffController(svc, &logger, cfg)
+	staffCtrl := NewStaffController(svc, services.NewActivityService(mockQuerier), &logger, cfg)
 	return staffCtrl, mockQuerier, ctrl.Finish
 }
 
@@ -772,5 +773,51 @@ func TestStaffUpdate_WithDefaultShift(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestStaffAudit_ListsActivityForAdmin(t *testing.T) {
+	staffCtrl, mockQuerier, cleanup := setupStaffTest(t)
+	defer cleanup()
+
+	mockQuerier.EXPECT().
+		ListActivityLogsByEmployee(gomock.Any(), gomock.Any()).
+		Return([]repositories.ActivityLog{
+			{ID: "a1", TenantID: "t1", Action: "attendance_updated", EntityType: "attendance", CreatedBy: "00000000-0000-0000-0000-000000000001", CreatedAt: time.Now()},
+		}, nil)
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/staff/{id}/audit", staffCtrl.Audit)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff/00000000-0000-0000-0000-000000000002/audit", nil)
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "e1", "owner"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var resp map[string]interface{}
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
+	items, ok := resp["data"].([]interface{})
+	if !ok || len(items) != 1 {
+		t.Errorf("expected 1 audit log, got %v", resp["data"])
+	}
+}
+
+func TestStaffAudit_ForbiddenForEmployee(t *testing.T) {
+	staffCtrl, _, cleanup := setupStaffTest(t)
+	defer cleanup()
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/staff/{id}/audit", staffCtrl.Audit)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff/00000000-0000-0000-0000-000000000002/audit", nil)
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "e1", "employee"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("expected 403, got %d", rec.Code)
 	}
 }

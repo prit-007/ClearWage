@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +15,11 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/design_tokens.dart';
+import '../../core/providers/sync_providers.dart';
+import '../../core/services/connectivity_service.dart';
+import '../../l10n/app_localizations.dart';
 import 'employee_dashboard.dart';
+import 'broadcast_sheet.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -149,6 +154,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
                         _AttendanceOverviewCard(cs: cs, tt: tt, data: data),
+                        const SizedBox(height: 12),
+                        const _PendingSyncTile(),
                         const SizedBox(height: 16),
                         if (isAdmin)
                           ResponsiveStatRow(
@@ -264,6 +271,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                       ).goBranch(2);
                                     },
                                   ),
+                                  _QuickActionTile(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsRegular.coins,
+                                    label: 'Add\nJama/Udhaar',
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      context.push('/new-ledger');
+                                    },
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 16),
@@ -279,6 +296,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                       StatefulNavigationShell.of(
                                         context,
                                       ).goBranch(1);
+                                    },
+                                  ),
+                                  _QuickActionTile(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsFill.whatsappLogo,
+                                    label: 'Broadcast',
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      unawaited(showBroadcastSheet(context));
                                     },
                                   ),
                                   _QuickActionTile(
@@ -357,10 +384,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   String _getGreeting() {
+    final l10n = AppLocalizations.of(context);
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning,';
-    if (hour < 17) return 'Good Afternoon,';
-    return 'Good Evening,';
+    if (hour < 12) return l10n.greetingMorning;
+    if (hour < 17) return l10n.greetingAfternoon;
+    return l10n.greetingEvening;
   }
 }
 
@@ -1004,6 +1032,66 @@ class _DotLegend extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _PendingSyncTile extends ConsumerStatefulWidget {
+  const _PendingSyncTile();
+
+  @override
+  ConsumerState<_PendingSyncTile> createState() => _PendingSyncTileState();
+}
+
+class _PendingSyncTileState extends ConsumerState<_PendingSyncTile> {
+  bool _syncing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final pending = ref.watch(pendingSyncCountProvider);
+    final online = ref.watch(connectivityProvider).value ?? false;
+    if (pending <= 0) return const SizedBox.shrink();
+
+    return Material(
+      color: online
+          ? cs.tertiaryContainer.withValues(alpha: 0.4)
+          : cs.errorContainer.withValues(alpha: 0.3),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () async {
+          if (_syncing) return;
+          setState(() => _syncing = true);
+          await ref.read(syncServiceProvider).flush();
+          await refreshPendingSyncCount(ref);
+          if (mounted) setState(() => _syncing = false);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(
+                _syncing
+                    ? PhosphorIconsRegular.cloudArrowDown
+                    : PhosphorIconsRegular.cloudSlash,
+                size: 20,
+                color: online ? cs.primary : cs.error,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _syncing
+                      ? 'Syncing…'
+                      : '$pending change${pending == 1 ? '' : 's'} saved offline — tap to sync now',
+                  style: tt.bodySmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -5,6 +5,8 @@ class Employee {
   final String name;
   final String phone;
   final String? designation;
+  final String? department;
+  final String? email;
   final String wageType;
   final double wageAmount;
   final String? defaultShiftId;
@@ -36,6 +38,8 @@ class Employee {
     required this.name,
     required this.phone,
     this.designation,
+    this.department,
+    this.email,
     required this.wageType,
     required this.wageAmount,
     this.defaultShiftId,
@@ -68,6 +72,8 @@ class Employee {
     name: json['name'] as String? ?? '',
     phone: json['phone'] as String? ?? '',
     designation: json['designation'] as String?,
+    department: json['department'] as String?,
+    email: json['email'] as String?,
     wageType: json['wage_type'] as String? ?? '',
     wageAmount: safeToDouble(json['wage_amount']),
     defaultShiftId: json['default_shift_id'] as String?,
@@ -108,6 +114,8 @@ class Employee {
     'name': name,
     'phone': phone,
     'designation': designation,
+    'department': department,
+    'email': email,
     'wage_type': wageType,
     'wage_amount': wageAmount,
     'default_shift_id': defaultShiftId,

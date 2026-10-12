@@ -18,17 +18,19 @@ import (
 // All methods enforce tenant isolation via the TenantMiddleware.
 // RBAC rules: Update blocks the "employee" role; Delete requires the "owner" role.
 type StaffController struct {
-	staffService *services.StaffService
-	logger       *zerolog.Logger
-	config       config.AppConfig
+	staffService   *services.StaffService
+	activityService *services.ActivityService
+	logger         *zerolog.Logger
+	config         config.AppConfig
 }
 
 // NewStaffController creates a StaffController wired to the given service, logger, and config.
-func NewStaffController(staffService *services.StaffService, logger *zerolog.Logger, cfg config.AppConfig) *StaffController {
+func NewStaffController(staffService *services.StaffService, activityService *services.ActivityService, logger *zerolog.Logger, cfg config.AppConfig) *StaffController {
 	return &StaffController{
-		staffService: staffService,
-		logger:       logger,
-		config:       cfg,
+		staffService:    staffService,
+		activityService: activityService,
+		logger:          logger,
+		config:          cfg,
 	}
 }
 
@@ -36,6 +38,8 @@ type createStaffRequest struct {
 	Name                  string  `json:"name"`
 	Phone                 string  `json:"phone"`
 	Designation           string  `json:"designation,omitempty"`
+	Department            string  `json:"department,omitempty"`
+	Email                 *string `json:"email,omitempty"`
 	WageType              string  `json:"wage_type"`
 	WageAmount            string  `json:"wage_amount"`
 	Role                  string  `json:"role,omitempty"`
@@ -57,6 +61,7 @@ type createStaffRequest struct {
 
 func (r createStaffRequest) kyc() services.EmployeeProfileDetails {
 	return services.EmployeeProfileDetails{
+		Email:                 r.Email,
 		DateOfJoining:         r.DateOfJoining,
 		PanNumber:             r.PanNumber,
 		AadhaarNumber:         r.AadhaarNumber,
@@ -149,7 +154,7 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 
 	employeeID := claims.EmployeeID
 
-	employee, err := ctrl.staffService.CreateEmployee(r.Context(), req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, req.Role, tenantID, employeeID, req.DailyTargetUnits, req.kyc())
+	employee, err := ctrl.staffService.CreateEmployee(r.Context(), req.Name, req.Phone, req.Designation, req.Department, req.WageType, req.WageAmount, req.Role, tenantID, employeeID, req.DailyTargetUnits, req.kyc())
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("failed to create employee")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to create employee")
@@ -298,6 +303,29 @@ func (ctrl *StaffController) Overview(w http.ResponseWriter, r *http.Request) {
 	utils.JSONSuccess(w, http.StatusOK, overview)
 }
 
+// Audit returns the activity log trail for an employee (owner/supervisor only).
+func (ctrl *StaffController) Audit(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	claims := middlewares.GetClaims(r.Context())
+	if tenantID == "" || claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	employeeID := chi.URLParam(r, "id")
+	logs, err := ctrl.activityService.ListByEmployee(r.Context(), tenantID, employeeID, 100, 0)
+	if err != nil {
+		ctrl.logger.Error().Err(err).Msg("failed to list audit logs")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to list audit logs")
+		return
+	}
+	utils.JSONSuccess(w, http.StatusOK, logs)
+}
+
 // AssignManager sets the reporting manager for an employee.
 // Only callers with roles other than "employee" are permitted.
 // Set manager_id to empty string to unassign.
@@ -406,7 +434,7 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	employee, err := ctrl.staffService.UpdateEmployee(r.Context(), employeeID, tenantID, req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, req.Role, req.DailyTargetUnits, req.kyc())
+	employee, err := ctrl.staffService.UpdateEmployee(r.Context(), employeeID, tenantID, req.Name, req.Phone, req.Designation, req.Department, req.WageType, req.WageAmount, req.Role, req.DailyTargetUnits, req.kyc())
 	if err != nil {
 		if err == repositories.ErrConcurrentModification {
 			utils.JSONFail(w, http.StatusConflict, "Record was modified by another user. Please refresh and try again.")

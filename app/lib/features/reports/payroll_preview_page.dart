@@ -6,6 +6,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/providers/services.dart';
 import '../dashboard/providers/dashboard_providers.dart';
 import '../ledger/providers/ledger_providers.dart';
+import '../staff/providers/staff_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/logger.dart';
 import '../../core/design_tokens.dart';
@@ -211,6 +212,11 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
     final monthLabel =
         '${_start.year}-${_start.month.toString().padLeft(2, '0')}';
 
+    final employees = ref.watch(employeeListProvider).valueOrNull ?? [];
+    final phoneByEmployee = <String, String>{
+      for (final e in employees) e.id: e.phone,
+    };
+
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
@@ -388,6 +394,43 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                             ),
                             controller: _rowControllers[index],
                             calculatedNet: safeToDouble(emp['net_payable']),
+                            onWhatsApp:
+                                phoneByEmployee[emp['employee_id']]
+                                        ?.isNotEmpty ==
+                                    true
+                                ? () async {
+                                    final ok = await ref
+                                        .read(whatsappServiceProvider)
+                                        .launch(
+                                          phone:
+                                              phoneByEmployee[emp['employee_id']]!,
+                                          text: ref
+                                              .read(whatsappServiceProvider)
+                                              .salaryMessage(
+                                                name:
+                                                    emp['name'] as String? ??
+                                                    '',
+                                                salary: safeToDouble(
+                                                  emp['net_payable'],
+                                                ),
+                                                balance: safeToDouble(
+                                                  emp['total_udhaar'],
+                                                ),
+                                              ),
+                                        );
+                                    if (!ok && context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Could not open WhatsApp',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                : null,
                           );
                         },
                         childCount:
@@ -554,6 +597,7 @@ class _EditablePayrollRow extends StatefulWidget {
   final String? photoUrl;
   final TextEditingController controller;
   final double calculatedNet;
+  final VoidCallback? onWhatsApp;
 
   const _EditablePayrollRow({
     required this.cs,
@@ -563,6 +607,7 @@ class _EditablePayrollRow extends StatefulWidget {
     this.photoUrl,
     required this.controller,
     required this.calculatedNet,
+    this.onWhatsApp,
   });
 
   @override
@@ -646,6 +691,20 @@ class _EditablePayrollRowState extends State<_EditablePayrollRow> {
                 ],
               ),
             ),
+            if (widget.onWhatsApp != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: IconButton(
+                  onPressed: widget.onWhatsApp,
+                  tooltip: 'Send payslip on WhatsApp',
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    PhosphorIconsFill.whatsappLogo,
+                    size: 20,
+                    color: widget.cs.primary,
+                  ),
+                ),
+              ),
             Container(
               constraints: const BoxConstraints(maxWidth: 100),
               padding: const EdgeInsets.symmetric(horizontal: 8),

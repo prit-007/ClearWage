@@ -7,6 +7,7 @@ import 'package:clearwage/core/widgets/shimmer_loading.dart';
 import 'package:clearwage/core/providers/services.dart';
 import 'package:clearwage/data/models/attendance_model.dart';
 import 'package:clearwage/data/services/profile_service.dart';
+import 'package:table_calendar/table_calendar.dart';
 import 'package:clearwage/features/attendance/my_attendance_page.dart';
 
 class _NoOpApiClient extends ApiClient {
@@ -126,6 +127,9 @@ void main() {
       await tester.pumpWidget(_buildApp(fakeService));
       await tester.pumpAndSettle();
 
+      await tester.drag(find.text('Monthly Log'), const Offset(0, -400));
+      await tester.pumpAndSettle();
+
       expect(find.text('Present'), findsOneWidget);
       expect(find.text('Absent'), findsOneWidget);
       expect(find.text('Morning'), findsWidgets);
@@ -210,6 +214,34 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No shift'), findsOneWidget);
+    });
+
+    testWidgets('renders calendar and Report Error for selected day', (
+      tester,
+    ) async {
+      final now = DateTime.now();
+      final today =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      fakeService.setAttendance([
+        Attendance(
+          id: 'att-today',
+          employeeId: 'emp-1',
+          employeeName: 'Rahul',
+          date: today,
+          shiftId: 's1',
+          status: 'present',
+          overtimeHours: 2,
+          computedWage: 700,
+          isLocked: false,
+          shiftName: 'Morning',
+        ),
+      ]);
+      await tester.pumpWidget(_buildApp(fakeService));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TableCalendar), findsOneWidget);
+      expect(find.text('Report Error'), findsOneWidget);
+      expect(find.textContaining('Present · Morning'), findsOneWidget);
     });
   });
 }

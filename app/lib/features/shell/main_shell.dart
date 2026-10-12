@@ -8,10 +8,14 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/app_info.dart';
 import '../../core/helpers.dart';
 import '../../core/providers/app_providers.dart';
-import '../../core/responsive.dart';
 import '../../core/providers/services.dart';
+import '../../core/providers/sync_providers.dart';
+import '../../core/responsive.dart';
+import '../../core/services/connectivity_service.dart';
 import '../../core/services/fcm_service.dart';
+import '../../core/services/locale_service.dart';
 import '../../core/token_storage.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/widgets/notification_badge.dart';
 import '../../core/widgets/offline_banner.dart';
 import '../../core/widgets/app_lock_overlay.dart';
@@ -26,15 +30,35 @@ class MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<MainShell> {
   bool _fcmInitialized = false;
+  bool _syncWatched = false;
+  bool _prevOnline = true;
 
   @override
   Widget build(BuildContext context) {
+    if (!_syncWatched) {
+      _syncWatched = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(refreshPendingSyncCount(ref));
+        unawaited(initLocale(ref));
+      });
+    }
     // Initialize FCM once after auth is confirmed
     if (!_fcmInitialized) {
       _fcmInitialized = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(fcmServiceProvider).initialize(ref);
       });
+    }
+
+    final online = ref.watch(connectivityProvider).value ?? true;
+    if (online && !_prevOnline) {
+      _prevOnline = online;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(ref.read(syncServiceProvider).flush());
+        unawaited(refreshPendingSyncCount(ref));
+      });
+    } else if (!online) {
+      _prevOnline = online;
     }
 
     final cs = Theme.of(context).colorScheme;
@@ -62,11 +86,13 @@ class _MainShellState extends ConsumerState<MainShell> {
       }
     });
 
+    final homeLabel = AppLocalizations.of(context).home;
+    final moreLabel = AppLocalizations.of(context).more;
     final navItems = <NavigationDestination>[
-      const NavigationDestination(
-        icon: Icon(Icons.home_outlined),
-        selectedIcon: Icon(Icons.home),
-        label: 'Home',
+      NavigationDestination(
+        icon: const Icon(Icons.home_outlined),
+        selectedIcon: const Icon(Icons.home),
+        label: homeLabel,
       ),
       if (isAdmin) ...[
         const NavigationDestination(
@@ -84,10 +110,10 @@ class _MainShellState extends ConsumerState<MainShell> {
           selectedIcon: Icon(Icons.account_balance_wallet),
           label: 'Ledger',
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.more_horiz_outlined),
-          selectedIcon: Icon(Icons.more_horiz),
-          label: 'More',
+        NavigationDestination(
+          icon: const Icon(Icons.more_horiz_outlined),
+          selectedIcon: const Icon(Icons.more_horiz),
+          label: moreLabel,
         ),
       ] else ...[
         const NavigationDestination(
@@ -105,10 +131,10 @@ class _MainShellState extends ConsumerState<MainShell> {
           selectedIcon: Icon(Icons.person),
           label: 'Profile',
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.more_horiz_outlined),
-          selectedIcon: Icon(Icons.more_horiz),
-          label: 'More',
+        NavigationDestination(
+          icon: const Icon(Icons.more_horiz_outlined),
+          selectedIcon: const Icon(Icons.more_horiz),
+          label: moreLabel,
         ),
       ],
     ];

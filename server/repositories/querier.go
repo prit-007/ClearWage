@@ -52,6 +52,8 @@ type CreateEmployeeParams struct {
 	Name                  string  `json:"name"`
 	Phone                 string  `json:"phone"`
 	Designation           *string `json:"designation"`
+	Department            *string `json:"department"`
+	Email                 *string `json:"email"`
 	WageType              string  `json:"wage_type"`
 	WageAmount            float64 `json:"wage_amount"`
 	DailyTargetUnits      *int32  `json:"daily_target_units"`
@@ -257,6 +259,13 @@ type ListActivityLogsByTenantParams struct {
 	Offset   int32  `json:"offset"`
 }
 
+type ListActivityLogsByEmployeeParams struct {
+	TenantID   string `json:"tenant_id"`
+	EmployeeID string `json:"employee_id"`
+	Limit      int32  `json:"limit"`
+	Offset     int32  `json:"offset"`
+}
+
 type ListAdvanceRequestsByTenantParams struct {
 	TenantID string `json:"tenant_id"`
 	Status   string `json:"status"`
@@ -333,6 +342,8 @@ type UpdateEmployeeParams struct {
 	Name                  string   `json:"name"`
 	Phone                 string   `json:"phone"`
 	Designation           *string  `json:"designation"`
+	Department            *string  `json:"department"`
+	Email                 *string  `json:"email"`
 	WageType              string   `json:"wage_type"`
 	WageAmount            float64  `json:"wage_amount"`
 	DefaultShiftID        *string  `json:"default_shift_id"`
@@ -396,6 +407,57 @@ type UpsertTenantConfigParams struct {
 	WageBasis           string  `json:"wage_basis"`
 	WeekOffPaid         bool    `json:"week_off_paid"`
 	WeeklyOffs          string  `json:"weekly_offs"`
+	BrevoAPIKey         *string `json:"brevo_api_key"`
+	MailSenderEmail     *string `json:"mail_sender_email"`
+	MailSenderName      *string `json:"mail_sender_name"`
+	MailQuotaPerDay     *int32  `json:"mail_quota_per_day"`
+}
+
+type IncrementMailCountParams struct {
+	TenantID string
+	Date     string
+}
+
+type CreateLeaveRequestParams struct {
+	TenantID   string
+	EmployeeID string
+	LeaveType  string
+	FromDate   string
+	ToDate     string
+	Reason     *string
+}
+
+type ListLeaveRequestsByTenantParams struct {
+	TenantID string
+	Status   string
+	Limit    int32
+	Offset   int32
+}
+
+type ListLeaveRequestsByEmployeeParams struct {
+	TenantID   string
+	EmployeeID string
+	Limit      int32
+	Offset     int32
+}
+
+type UpdateLeaveRequestStatusParams struct {
+	ID         string
+	TenantID   string
+	Status     string
+	ApprovedBy *string
+	DenyReason *string
+}
+
+type MarkPaidLeaveParams struct {
+	TenantID   string
+	EmployeeID string
+	Date       string
+}
+
+type UpdateTenantEmailParams struct {
+	TenantID string
+	Email    *string
 }
 
 type UpdateSyncEventStatusParams struct {
@@ -423,6 +485,7 @@ type LedgerDispute struct {
 	ID             string  `json:"id"`
 	TenantID       string  `json:"tenant_id"`
 	LedgerID       string  `json:"ledger_id"`
+	AttendanceID   string  `json:"attendance_id"`
 	EmployeeID     string  `json:"employee_id"`
 	RaisedBy       string  `json:"raised_by"`
 	Reason         string  `json:"reason"`
@@ -434,11 +497,12 @@ type LedgerDispute struct {
 }
 
 type CreateDisputeParams struct {
-	TenantID   string `json:"tenant_id"`
-	LedgerID   string `json:"ledger_id"`
-	EmployeeID string `json:"employee_id"`
-	RaisedBy   string `json:"raised_by"`
-	Reason     string `json:"reason"`
+	TenantID     string `json:"tenant_id"`
+	LedgerID     string `json:"ledger_id"`
+	AttendanceID string `json:"attendance_id"`
+	EmployeeID   string `json:"employee_id"`
+	RaisedBy     string `json:"raised_by"`
+	Reason       string `json:"reason"`
 }
 
 type ListDisputesByTenantParams struct {
@@ -452,6 +516,7 @@ type ListDisputesByTenantRow struct {
 	ID             string    `json:"id"`
 	TenantID       string    `json:"tenant_id"`
 	LedgerID       string    `json:"ledger_id"`
+	AttendanceID   string    `json:"attendance_id"`
 	EmployeeID     string    `json:"employee_id"`
 	RaisedBy       string    `json:"raised_by"`
 	Reason         string    `json:"reason"`
@@ -527,6 +592,7 @@ type Querier interface {
 	GetDailySummary(ctx context.Context, tenantID, date string) (DailySummary, error)
 	GetWageBillTrends(ctx context.Context, tenantID, startDate, endDate string) ([]WageBillTrend, error)
 	ListActivityLogsByTenant(ctx context.Context, arg ListActivityLogsByTenantParams) ([]ActivityLog, error)
+	ListActivityLogsByEmployee(ctx context.Context, arg ListActivityLogsByEmployeeParams) ([]ActivityLog, error)
 	ListAdvanceRequestsByTenant(ctx context.Context, arg ListAdvanceRequestsByTenantParams) ([]AdvanceRequest, error)
 	ListAttendanceByDate(ctx context.Context, arg ListAttendanceByDateParams) ([]Attendance, error)
 	ListAttendanceByDateRange(ctx context.Context, arg ListAttendanceByDateRangeParams) ([]Attendance, error)
@@ -566,4 +632,14 @@ type Querier interface {
 	SettleEmployeeAtomic(ctx context.Context, employeeID, tenantID, date, createdBy string) (Ledger, error)
 	HasPendingAdvanceRequest(ctx context.Context, arg HasPendingAdvanceRequestParams) (bool, error)
 	CountHolidaysByDate(ctx context.Context, arg CountHolidaysByDateParams) (int64, error)
+	ListTenants(ctx context.Context) ([]Tenant, error)
+	IsTenantActive(ctx context.Context, tenantID string) (bool, error)
+	SetTenantActive(ctx context.Context, tenantID string, active bool) error
+	IncrementMailCount(ctx context.Context, arg IncrementMailCountParams) error
+	CreateLeaveRequest(ctx context.Context, arg CreateLeaveRequestParams) (LeaveRequest, error)
+	ListLeaveRequestsByTenant(ctx context.Context, arg ListLeaveRequestsByTenantParams) ([]LeaveRequest, error)
+	ListLeaveRequestsByEmployee(ctx context.Context, arg ListLeaveRequestsByEmployeeParams) ([]LeaveRequest, error)
+	UpdateLeaveRequestStatus(ctx context.Context, arg UpdateLeaveRequestStatusParams) (LeaveRequest, error)
+	MarkPaidLeave(ctx context.Context, arg MarkPaidLeaveParams) error
+	UpdateTenantEmail(ctx context.Context, arg UpdateTenantEmailParams) error
 }

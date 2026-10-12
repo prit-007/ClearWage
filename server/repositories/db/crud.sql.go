@@ -15,23 +15,25 @@ import (
 )
 
 const createDispute = `-- name: CreateDispute :one
-INSERT INTO ledger_disputes (tenant_id, ledger_id, employee_id, raised_by, reason)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, tenant_id, ledger_id, employee_id, raised_by, reason, status, resolved_by, resolution_note, created_at, updated_at
+INSERT INTO ledger_disputes (tenant_id, ledger_id, attendance_id, employee_id, raised_by, reason)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, tenant_id, ledger_id, employee_id, raised_by, reason, status, resolved_by, resolution_note, created_at, updated_at, attendance_id
 `
 
 type CreateDisputeParams struct {
-	TenantID   uuid.UUID `json:"tenant_id"`
-	LedgerID   uuid.UUID `json:"ledger_id"`
-	EmployeeID uuid.UUID `json:"employee_id"`
-	RaisedBy   uuid.UUID `json:"raised_by"`
-	Reason     string    `json:"reason"`
+	TenantID     uuid.UUID     `json:"tenant_id"`
+	LedgerID     uuid.NullUUID `json:"ledger_id"`
+	AttendanceID uuid.NullUUID `json:"attendance_id"`
+	EmployeeID   uuid.UUID     `json:"employee_id"`
+	RaisedBy     uuid.UUID     `json:"raised_by"`
+	Reason       string        `json:"reason"`
 }
 
 func (q *Queries) CreateDispute(ctx context.Context, arg CreateDisputeParams) (LedgerDispute, error) {
 	row := q.db.QueryRowContext(ctx, createDispute,
 		arg.TenantID,
 		arg.LedgerID,
+		arg.AttendanceID,
 		arg.EmployeeID,
 		arg.RaisedBy,
 		arg.Reason,
@@ -49,6 +51,7 @@ func (q *Queries) CreateDispute(ctx context.Context, arg CreateDisputeParams) (L
 		&i.ResolutionNote,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.AttendanceID,
 	)
 	return i, err
 }
@@ -251,7 +254,7 @@ func (q *Queries) ListAttendanceByEmployeeMonthExplicit(ctx context.Context, arg
 }
 
 const listDisputesByTenant = `-- name: ListDisputesByTenant :many
-SELECT ld.id, ld.tenant_id, ld.ledger_id, ld.employee_id, ld.raised_by, ld.reason, ld.status, ld.resolved_by, ld.resolution_note, ld.created_at, ld.updated_at, emp.name AS raised_by_name
+SELECT ld.id, ld.tenant_id, ld.ledger_id, ld.employee_id, ld.raised_by, ld.reason, ld.status, ld.resolved_by, ld.resolution_note, ld.created_at, ld.updated_at, ld.attendance_id, emp.name AS raised_by_name
 FROM ledger_disputes ld
 LEFT JOIN employees emp ON ld.raised_by = emp.id
 WHERE ld.tenant_id = $1 AND ld.status = $2
@@ -269,7 +272,7 @@ type ListDisputesByTenantParams struct {
 type ListDisputesByTenantRow struct {
 	ID             uuid.UUID      `json:"id"`
 	TenantID       uuid.UUID      `json:"tenant_id"`
-	LedgerID       uuid.UUID      `json:"ledger_id"`
+	LedgerID       uuid.NullUUID  `json:"ledger_id"`
 	EmployeeID     uuid.UUID      `json:"employee_id"`
 	RaisedBy       uuid.UUID      `json:"raised_by"`
 	Reason         string         `json:"reason"`
@@ -278,6 +281,7 @@ type ListDisputesByTenantRow struct {
 	ResolutionNote sql.NullString `json:"resolution_note"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
+	AttendanceID   uuid.NullUUID  `json:"attendance_id"`
 	RaisedByName   sql.NullString `json:"raised_by_name"`
 }
 
@@ -307,6 +311,7 @@ func (q *Queries) ListDisputesByTenant(ctx context.Context, arg ListDisputesByTe
 			&i.ResolutionNote,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.AttendanceID,
 			&i.RaisedByName,
 		); err != nil {
 			return nil, err
@@ -599,7 +604,7 @@ const rejectDispute = `-- name: RejectDispute :one
 UPDATE ledger_disputes
 SET status = 'rejected', resolved_by = $2, resolution_note = $3, updated_at = now()
 WHERE id = $1 AND tenant_id = $4
-RETURNING id, tenant_id, ledger_id, employee_id, raised_by, reason, status, resolved_by, resolution_note, created_at, updated_at
+RETURNING id, tenant_id, ledger_id, employee_id, raised_by, reason, status, resolved_by, resolution_note, created_at, updated_at, attendance_id
 `
 
 type RejectDisputeParams struct {
@@ -629,6 +634,7 @@ func (q *Queries) RejectDispute(ctx context.Context, arg RejectDisputeParams) (L
 		&i.ResolutionNote,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.AttendanceID,
 	)
 	return i, err
 }
@@ -637,7 +643,7 @@ const resolveDispute = `-- name: ResolveDispute :one
 UPDATE ledger_disputes
 SET status = 'resolved', resolved_by = $2, resolution_note = $3, updated_at = now()
 WHERE id = $1 AND tenant_id = $4
-RETURNING id, tenant_id, ledger_id, employee_id, raised_by, reason, status, resolved_by, resolution_note, created_at, updated_at
+RETURNING id, tenant_id, ledger_id, employee_id, raised_by, reason, status, resolved_by, resolution_note, created_at, updated_at, attendance_id
 `
 
 type ResolveDisputeParams struct {
@@ -667,6 +673,7 @@ func (q *Queries) ResolveDispute(ctx context.Context, arg ResolveDisputeParams) 
 		&i.ResolutionNote,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.AttendanceID,
 	)
 	return i, err
 }

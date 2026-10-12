@@ -3,12 +3,15 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:clearwage/core/api_client.dart';
 import 'package:clearwage/core/providers/app_providers.dart';
 import 'package:clearwage/core/providers/services.dart';
+import 'package:clearwage/core/services/connectivity_service.dart';
+import 'package:clearwage/l10n/app_localizations.dart';
 import 'package:clearwage/data/models/advance_request_model.dart';
 import 'package:clearwage/data/models/attendance_model.dart';
 import 'package:clearwage/data/models/auth_model.dart';
@@ -63,6 +66,13 @@ import 'package:clearwage/features/more/more_hub_page.dart';
 
 class _Nop extends ApiClient {
   _Nop() : super(baseUrl: 'http://localhost');
+}
+
+class _Connectivity extends ConnectivityNotifier {
+  @override
+  Stream<bool> build() async* {
+    yield true;
+  }
 }
 
 class _Fake<T> {
@@ -574,8 +584,19 @@ void main() {
             dashboardServiceProvider.overrideWithValue(_DashSvc(dashF)),
             profileServiceProvider.overrideWithValue(_ProfSvc(ovF)),
             userInfoProvider.overrideWith((ref) => _admin()),
+            connectivityProvider.overrideWith(() => _Connectivity()),
           ],
-          child: const MaterialApp(home: DashboardScreen()),
+          child: const MaterialApp(
+            locale: Locale('en'),
+            supportedLocales: [Locale('en'), Locale('hi'), Locale('gu')],
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: DashboardScreen(),
+          ),
         ),
       );
     });

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/providers/services.dart';
+import '../../core/providers/sync_providers.dart';
+import '../../core/services/connectivity_service.dart';
 import '../../data/models/ledger_model.dart';
 import 'providers/ledger_providers.dart';
 import '../staff/providers/staff_providers.dart';
@@ -98,8 +100,20 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
       };
       if (_isEditing) {
         await ref.read(ledgerServiceProvider).update(widget.entry!.id, body);
-      } else {
+      } else if (ref.read(connectivityProvider).value ?? true) {
         await ref.read(ledgerServiceProvider).create(body);
+      } else {
+        await ref
+            .read(syncServiceProvider)
+            .enqueue(kind: 'ledger', payload: body);
+        await refreshPendingSyncCount(ref);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Saved offline — will sync when back online'),
+            ),
+          );
+        }
       }
       ref.read(ledgerRefreshProvider.notifier).state++;
       if (mounted) Navigator.pop(context, true);

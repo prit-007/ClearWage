@@ -81,8 +81,8 @@ ORDER BY l.date ASC
 LIMIT $5 OFFSET $6;
 
 -- name: CreateDispute :one
-INSERT INTO ledger_disputes (tenant_id, ledger_id, employee_id, raised_by, reason)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO ledger_disputes (tenant_id, ledger_id, attendance_id, employee_id, raised_by, reason)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: ListDisputesByTenant :many

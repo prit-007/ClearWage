@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/clearwage/clearwage/repositories"
 	"github.com/jung-kurt/gofpdf"
 	"github.com/rs/zerolog/log"
 	"github.com/shopspring/decimal"
-	"github.com/clearwage/clearwage/repositories"
 )
 
 type PayrollEntry struct {
@@ -46,6 +46,7 @@ type PayrollAdjustment struct {
 type PayrollService struct {
 	querier  repositories.Querier
 	triggers *NotificationTriggers
+	mailer   *MailService
 }
 
 func NewPayrollService(querier repositories.Querier) *PayrollService {
@@ -54,6 +55,10 @@ func NewPayrollService(querier repositories.Querier) *PayrollService {
 
 func (s *PayrollService) SetTriggers(t *NotificationTriggers) {
 	s.triggers = t
+}
+
+func (s *PayrollService) SetMailer(m *MailService) {
+	s.mailer = m
 }
 
 func payrollMonth(startDate string) string {
@@ -205,8 +210,8 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 				case "after_shift_end":
 					fallthrough
 				default:
-				if otHours > tc.OTThresholdHours.InexactFloat64() {
-					computedOTHours = otHours - tc.OTThresholdHours.InexactFloat64()
+					if otHours > tc.OTThresholdHours.InexactFloat64() {
+						computedOTHours = otHours - tc.OTThresholdHours.InexactFloat64()
 					}
 				}
 
@@ -215,13 +220,13 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 					otPay = computedOTHours * hourlyRate * tc.OTMultiplierDefault.InexactFloat64()
 				}
 
-			if tc.OTRounding > 0 && computedOTHours > 0 {
-				minutes := computedOTHours * 60.0
-				rounded := math.Round(minutes/float64(tc.OTRounding)) * float64(tc.OTRounding)
-				computedOTHours = rounded / 60.0
-				hourlyRate := dailyWageRate / 8.0
-				otPay = computedOTHours * hourlyRate * tc.OTMultiplierDefault.InexactFloat64()
-			}
+				if tc.OTRounding > 0 && computedOTHours > 0 {
+					minutes := computedOTHours * 60.0
+					rounded := math.Round(minutes/float64(tc.OTRounding)) * float64(tc.OTRounding)
+					computedOTHours = rounded / 60.0
+					hourlyRate := dailyWageRate / 8.0
+					otPay = computedOTHours * hourlyRate * tc.OTMultiplierDefault.InexactFloat64()
+				}
 			}
 
 			computedWage := dayWage + otPay
@@ -342,6 +347,7 @@ func (s *PayrollService) FinalizeAndLock(ctx context.Context, tenantID, startDat
 	if s.triggers != nil {
 		s.triggers.NotifyPayrollLocked(ctx, tenantID, startDate, endDate)
 	}
+	s.mailPayrollSummary(ctx, tenantID, result, month)
 	return nil
 }
 
@@ -372,6 +378,18 @@ func (s *PayrollService) finalizeAndLockNoTx(ctx context.Context, result Payroll
 		s.triggers.NotifyPayrollLocked(ctx, tenantID, startDate, endDate)
 	}
 	return err
+}
+
+func (s *PayrollService) mailPayrollSummary(ctx context.Context, tenantID string, result PayrollResult, month string) {
+	if s.mailer == nil {
+		return
+	}
+	tenant, err := s.querier.FindTenantByID(ctx, tenantID)
+	if err != nil || tenant.Email == nil || *tenant.Email == "" {
+		return
+	}
+	body := fmt.Sprintf("Payroll for %s has been finalized and locked.\n\nTotal wage bill: %.2f", month, result.TotalWage)
+	_ = s.mailer.Send(ctx, tenantID, *tenant.Email, "Payroll finalized — "+month, body)
 }
 
 func (s *PayrollService) GeneratePayslip(ctx context.Context, tenantID, employeeID, startDate, endDate string) ([]byte, string, error) {

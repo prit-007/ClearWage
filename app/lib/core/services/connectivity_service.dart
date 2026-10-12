@@ -11,16 +11,17 @@ final connectivityProvider = StreamNotifierProvider<ConnectivityNotifier, bool>(
 );
 
 class ConnectivityNotifier extends StreamNotifier<bool> {
-  final _connectivity = Connectivity();
+  Connectivity? _connectivity;
 
   @override
   Stream<bool> build() async* {
+    final connectivity = _connectivity ??= Connectivity();
     // Emit initial state
-    final result = await _connectivity.checkConnectivity();
+    final result = await connectivity.checkConnectivity();
     yield _isConnected(result);
 
     // Listen for changes
-    yield* _connectivity.onConnectivityChanged.map((result) {
+    yield* connectivity.onConnectivityChanged.map((result) {
       final connected = _isConnected(result);
       AppLogger.info(connected ? 'Network connected' : 'Network disconnected');
       return connected;

@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app_providers.dart';
+import '../../core/services/whatsapp_service.dart';
+import '../../core/services/document_upload_queue.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/staff_service.dart';
 import '../../data/services/attendance_service.dart';
@@ -9,6 +11,7 @@ import '../../data/services/shift_service.dart';
 import '../../data/services/report_service.dart';
 import '../../data/services/holiday_service.dart';
 import '../../data/services/leave_policy_service.dart';
+import '../../data/services/leave_request_service.dart';
 import '../../data/services/advance_request_service.dart';
 import '../../data/services/payroll_service.dart';
 import '../../data/services/settings_service.dart';
@@ -61,6 +64,10 @@ final leavePolicyServiceProvider = Provider<LeavePolicyService>((ref) {
   return LeavePolicyService(ref.watch(apiClientProvider));
 });
 
+final leaveRequestServiceProvider = Provider<LeaveRequestService>((ref) {
+  return LeaveRequestService(ref.watch(apiClientProvider));
+});
+
 final advanceRequestServiceProvider = Provider<AdvanceRequestService>((ref) {
   return AdvanceRequestService(ref.watch(apiClientProvider));
 });
@@ -87,4 +94,12 @@ final onboardingServiceProvider = Provider<OnboardingService>((ref) {
 
 final notificationApiServiceProvider = Provider<NotificationApiService>((ref) {
   return NotificationApiService(ref.watch(apiClientProvider));
+});
+
+final whatsappServiceProvider = Provider<WhatsappService>((ref) {
+  return WhatsappService();
+});
+
+final documentUploadQueueProvider = Provider<DocumentUploadQueue>((ref) {
+  return DocumentUploadQueue();
 });

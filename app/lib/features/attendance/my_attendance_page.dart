@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 import '../../core/providers/services.dart';
 import '../../core/responsive.dart';
 import '../../core/helpers.dart';
@@ -11,6 +12,8 @@ import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/design_tokens.dart';
 import '../../data/models/attendance_model.dart';
+import '../disputes/raise_dispute_dialog.dart';
+import 'request_leave_sheet.dart';
 
 class MyAttendancePage extends ConsumerStatefulWidget {
   const MyAttendancePage({super.key});
@@ -21,6 +24,7 @@ class MyAttendancePage extends ConsumerStatefulWidget {
 
 class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
   late DateTime _selectedMonth;
+  late DateTime _selectedDay;
   List<Attendance> _records = [];
   bool _loading = true;
   String? _error;
@@ -30,6 +34,7 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
     super.initState();
     final now = DateTime.now();
     _selectedMonth = DateTime(now.year, now.month);
+    _selectedDay = now;
     _loadAttendance();
   }
 
@@ -65,27 +70,38 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
     }
   }
 
-  void _prevMonth() {
-    setState(() {
-      _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month - 1);
-    });
-    _loadAttendance();
-  }
-
-  void _nextMonth() {
-    final now = DateTime.now();
-    final next = DateTime(_selectedMonth.year, _selectedMonth.month + 1);
-    if (next.isAfter(DateTime(now.year, now.month + 1))) return;
+  void _goMonth(int delta) {
+    final next = DateTime(_selectedMonth.year, _selectedMonth.month + delta);
+    if (next.isAfter(DateTime(DateTime.now().year, DateTime.now().month))) {
+      return;
+    }
     setState(() {
       _selectedMonth = next;
     });
     _loadAttendance();
   }
 
+  Map<String, Attendance> get _byDate => {for (final a in _records) a.date: a};
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'present':
+        return AppColors.success;
+      case 'absent':
+        return AppColors.danger;
+      case 'half_day':
+        return AppColors.warning;
+      default:
+        return AppColors.info;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final selectedRecord =
+        _byDate[DateFormat('yyyy-MM-dd').format(_selectedDay)];
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
@@ -123,15 +139,25 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
                   ),
                 ),
               ),
+              actions: [
+                IconButton(
+                  tooltip: 'Request Leave',
+                  icon: Icon(
+                    PhosphorIconsRegular.calendarPlus,
+                    color: cs.onSurfaceVariant,
+                  ),
+                  onPressed: () => showRequestLeaveDialog(context),
+                ),
+              ],
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      onPressed: _prevMonth,
+                      onPressed: () => _goMonth(-1),
                       icon: Icon(
                         PhosphorIconsRegular.caretLeft,
                         color: cs.primary,
@@ -144,7 +170,7 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
                       ),
                     ),
                     IconButton(
-                      onPressed: _nextMonth,
+                      onPressed: () => _goMonth(1),
                       icon: Icon(
                         PhosphorIconsRegular.caretRight,
                         color: cs.primary,
@@ -154,13 +180,72 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
                 ),
               ),
             ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+                child: _AttendanceCalendar(
+                  cs: cs,
+                  tt: tt,
+                  focusedMonth: _selectedMonth,
+                  selectedDay: _selectedDay,
+                  markers: {
+                    for (final a in _records)
+                      DateTime(
+                        int.parse(a.date.substring(0, 4)),
+                        int.parse(a.date.substring(5, 7)),
+                        int.parse(a.date.substring(8, 10)),
+                      ): _statusColor(
+                        a.status,
+                      ),
+                  },
+                  onDaySelected: (day) {
+                    setState(() => _selectedDay = day);
+                  },
+                  onPageChanged: (month) {
+                    final newMonth = DateTime(month.year, month.month);
+                    if (newMonth != _selectedMonth) {
+                      setState(() => _selectedMonth = newMonth);
+                      _loadAttendance();
+                    }
+                  },
+                ),
+              ),
+            ),
+            if (selectedRecord != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 4, 24, 0),
+                  child: _DayDetailCard(
+                    cs: cs,
+                    tt: tt,
+                    attendance: selectedRecord,
+                    onReportError: () => showRaiseDisputeDialog(
+                      context,
+                      disputeService: ref.read(disputeServiceProvider),
+                      attendanceId: selectedRecord.id,
+                      employeeId: selectedRecord.employeeId,
+                      subject: 'attendance record',
+                    ),
+                  ),
+                ),
+              ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+                child: Text(
+                  'Monthly Log',
+                  style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
             if (_loading)
               const ShimmerLoading(itemCount: 6, height: 72)
             else if (_error != null)
-              SliverFillRemaining(
-                child: Center(
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       PhosphorIcon(
                         PhosphorIconsRegular.warningCircle,
@@ -180,11 +265,14 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
                 ),
               )
             else if (_records.isEmpty)
-              const SliverFillRemaining(
-                child: EmptyState(
-                  icon: PhosphorIconsRegular.calendarBlank,
-                  title: 'No Records',
-                  subtitle: 'No attendance records for this month.',
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(24, 40, 24, 40),
+                  child: EmptyState(
+                    icon: PhosphorIconsRegular.calendarBlank,
+                    title: 'No Records',
+                    subtitle: 'No attendance records for this month.',
+                  ),
                 ),
               )
             else
@@ -210,6 +298,255 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
     );
   }
 }
+
+class _AttendanceCalendar extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final DateTime focusedMonth;
+  final DateTime selectedDay;
+  final Map<DateTime, Color> markers;
+  final ValueChanged<DateTime> onDaySelected;
+  final ValueChanged<DateTime> onPageChanged;
+
+  const _AttendanceCalendar({
+    required this.cs,
+    required this.tt,
+    required this.focusedMonth,
+    required this.selectedDay,
+    required this.markers,
+    required this.onDaySelected,
+    required this.onPageChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: TableCalendar(
+        firstDay: DateTime(2024),
+        lastDay: DateTime(now.year + 1, 12, 31),
+        focusedDay: focusedMonth,
+        headerVisible: false,
+        calendarFormat: CalendarFormat.month,
+        selectedDayPredicate: (day) =>
+            isSameDay(day, selectedDay) && _isSameMonth(day, focusedMonth),
+        onDaySelected: (selected, focused) => onDaySelected(selected),
+        onPageChanged: (focused) => onPageChanged(focused),
+        calendarStyle: CalendarStyle(
+          todayDecoration: BoxDecoration(
+            color: cs.primaryContainer.withValues(alpha: 0.5),
+            shape: BoxShape.circle,
+          ),
+          todayTextStyle: TextStyle(
+            color: cs.primary,
+            fontWeight: FontWeight.w900,
+          ),
+          selectedDecoration: BoxDecoration(
+            color: cs.primary,
+            shape: BoxShape.circle,
+          ),
+          selectedTextStyle: TextStyle(
+            color: cs.onPrimary,
+            fontWeight: FontWeight.w900,
+          ),
+          outsideDaysVisible: false,
+        ),
+        daysOfWeekStyle: DaysOfWeekStyle(
+          weekdayStyle: TextStyle(
+            color: cs.onSurfaceVariant,
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
+          ),
+          weekendStyle: TextStyle(
+            color: cs.primary,
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
+          ),
+        ),
+        calendarBuilders: CalendarBuilders(
+          defaultBuilder: (context, day, focused) {
+            final color = markers[day];
+            return _DayCell(
+              cs: cs,
+              tt: tt,
+              day: day,
+              markerColor: color,
+              selected:
+                  isSameDay(day, selectedDay) &&
+                  _isSameMonth(day, focusedMonth),
+              today: isSameDay(day, now),
+            );
+          },
+          outsideBuilder: (context, day, focused) => const SizedBox.shrink(),
+        ),
+      ),
+    );
+  }
+}
+
+class _DayCell extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final DateTime day;
+  final Color? markerColor;
+  final bool selected;
+  final bool today;
+
+  const _DayCell({
+    required this.cs,
+    required this.tt,
+    required this.day,
+    required this.markerColor,
+    required this.selected,
+    required this.today,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = selected
+        ? cs.primary
+        : today
+        ? cs.primaryContainer.withValues(alpha: 0.5)
+        : Colors.transparent;
+    final fg = selected
+        ? cs.onPrimary
+        : today
+        ? cs.primary
+        : cs.onSurface;
+    return Container(
+      margin: const EdgeInsets.all(2),
+      decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+      child: Stack(
+        children: [
+          Center(
+            child: Text(
+              '${day.day}',
+              style: TextStyle(
+                color: fg,
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          if (markerColor != null)
+            Positioned(
+              bottom: 2,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: markerColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DayDetailCard extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final Attendance attendance;
+  final VoidCallback onReportError;
+
+  const _DayDetailCard({
+    required this.cs,
+    required this.tt,
+    required this.attendance,
+    required this.onReportError,
+  });
+
+  String _statusLabel() {
+    switch (attendance.status) {
+      case 'present':
+        return 'Present';
+      case 'absent':
+        return 'Absent';
+      case 'half_day':
+        return 'Half Day';
+      default:
+        return attendance.status;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _dayColor(attendance.status, cs);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  formatDate(attendance.date),
+                  style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_statusLabel()} · ${attendance.shiftName ?? 'No shift'}'
+                  '${attendance.overtimeHours > 0 ? ' · OT ${attendance.overtimeHours}h' : ''}',
+                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 12),
+          TextButton.icon(
+            onPressed: onReportError,
+            icon: Icon(
+              PhosphorIconsRegular.sealQuestion,
+              size: 16,
+              color: cs.primary,
+            ),
+            label: const Text('Report Error'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Color _dayColor(String status, ColorScheme cs) {
+  switch (status) {
+    case 'present':
+      return AppColors.success;
+    case 'absent':
+      return AppColors.danger;
+    case 'half_day':
+      return AppColors.warning;
+    default:
+      return cs.onSurfaceVariant;
+  }
+}
+
+bool _isSameMonth(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month;
 
 class _AttendanceRecordTile extends StatelessWidget {
   final ColorScheme cs;

@@ -21,3 +21,12 @@ func (s *ActivityService) ListRecent(ctx context.Context, tenantID string, limit
 		Offset:   offset,
 	})
 }
+
+func (s *ActivityService) ListByEmployee(ctx context.Context, tenantID, employeeID string, limit, offset int32) ([]repositories.ActivityLog, error) {
+	return s.querier.ListActivityLogsByEmployee(ctx, repositories.ListActivityLogsByEmployeeParams{
+		TenantID:   tenantID,
+		EmployeeID: employeeID,
+		Limit:      limit,
+		Offset:     offset,
+	})
+}

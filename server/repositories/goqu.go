@@ -202,6 +202,8 @@ func (q *GoquQuerier) CreateEmployee(ctx context.Context, arg CreateEmployeePara
 		"name":                    arg.Name,
 		"phone":                   arg.Phone,
 		"designation":             arg.Designation,
+		"department":              arg.Department,
+		"email":                   arg.Email,
 		"wage_type":               arg.WageType,
 		"wage_amount":             arg.WageAmount,
 		"daily_target_units":      arg.DailyTargetUnits,
@@ -469,6 +471,124 @@ func (q *GoquQuerier) DeleteTenant(ctx context.Context, tenantID string) error {
 	_, err := q.db.Delete("tenants").Where(
 		goqu.C("id").Eq(tenantID),
 	).Executor().ExecContext(ctx)
+	return err
+}
+
+func (q *GoquQuerier) ListTenants(ctx context.Context) ([]Tenant, error) {
+	var items []Tenant
+	err := q.db.From("tenants").Order(goqu.C("created_at").Desc()).ScanStructsContext(ctx, &items)
+	return items, err
+}
+
+func (q *GoquQuerier) IsTenantActive(ctx context.Context, tenantID string) (bool, error) {
+	var active bool
+	found, err := q.db.From("tenants").Select(goqu.C("is_active")).Where(
+		goqu.C("id").Eq(tenantID),
+	).ScanValContext(ctx, &active)
+	if err != nil {
+		return false, err
+	}
+	if !found {
+		return false, ErrNotFound
+	}
+	return active, nil
+}
+
+func (q *GoquQuerier) SetTenantActive(ctx context.Context, tenantID string, active bool) error {
+	_, err := q.db.Update("tenants").Set(goqu.Record{
+		"is_active":  active,
+		"updated_at": goqu.L("now()"),
+	}).Where(goqu.C("id").Eq(tenantID)).Executor().ExecContext(ctx)
+	return err
+}
+
+func (q *GoquQuerier) IncrementMailCount(ctx context.Context, arg IncrementMailCountParams) error {
+	if q.sqlDB == nil {
+		return errors.New("sqlDB unavailable for raw query")
+	}
+	_, err := q.sqlDB.ExecContext(ctx, `
+		UPDATE tenant_config
+		SET mail_sent_today = CASE WHEN mail_sent_date = $1 THEN mail_sent_today + 1 ELSE 1 END,
+		    mail_sent_date = $1,
+		    updated_at = now()
+		WHERE tenant_id = $2
+	`, arg.Date, arg.TenantID)
+	return err
+}
+
+func (q *GoquQuerier) CreateLeaveRequest(ctx context.Context, arg CreateLeaveRequestParams) (LeaveRequest, error) {
+	var lr LeaveRequest
+	_, err := q.db.Insert("leave_requests").Rows(goqu.Record{
+		"tenant_id":   arg.TenantID,
+		"employee_id": arg.EmployeeID,
+		"leave_type":  arg.LeaveType,
+		"from_date":   arg.FromDate,
+		"to_date":     arg.ToDate,
+		"reason":      arg.Reason,
+	}).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &lr)
+	return lr, err
+}
+
+func (q *GoquQuerier) ListLeaveRequestsByTenant(ctx context.Context, arg ListLeaveRequestsByTenantParams) ([]LeaveRequest, error) {
+	return q.listLeaveRequests(ctx, arg.TenantID, "", arg.Status, arg.Limit, arg.Offset)
+}
+
+func (q *GoquQuerier) ListLeaveRequestsByEmployee(ctx context.Context, arg ListLeaveRequestsByEmployeeParams) ([]LeaveRequest, error) {
+	return q.listLeaveRequests(ctx, arg.TenantID, arg.EmployeeID, "", arg.Limit, arg.Offset)
+}
+
+func (q *GoquQuerier) listLeaveRequests(ctx context.Context, tenantID, employeeID, status string, limit, offset int32) ([]LeaveRequest, error) {
+	var items []LeaveRequest
+	ds := q.db.From("leave_requests").
+		LeftJoin(goqu.T("employees"), goqu.On(goqu.I("leave_requests.employee_id").Eq(goqu.I("employees.id")))).
+		Select(goqu.L("leave_requests.*"), goqu.I("employees.name").As("employee_name")).
+		Where(goqu.C("tenant_id").Eq(tenantID))
+	if employeeID != "" {
+		ds = ds.Where(goqu.C("employee_id").Eq(employeeID))
+	}
+	if status != "" {
+		ds = ds.Where(goqu.I("leave_requests.status").Eq(status))
+	}
+	err := ds.Order(goqu.I("leave_requests.created_at").Desc()).Limit(uint(limit)).Offset(uint(offset)).ScanStructsContext(ctx, &items)
+	return items, err
+}
+
+func (q *GoquQuerier) UpdateLeaveRequestStatus(ctx context.Context, arg UpdateLeaveRequestStatusParams) (LeaveRequest, error) {
+	record := goqu.Record{
+		"status":     arg.Status,
+		"updated_at": goqu.L("now()"),
+	}
+	if arg.ApprovedBy != nil {
+		record["approved_by"] = arg.ApprovedBy
+	}
+	if arg.DenyReason != nil {
+		record["deny_reason"] = arg.DenyReason
+	}
+	var lr LeaveRequest
+	_, err := q.db.Update("leave_requests").Set(record).Where(
+		goqu.C("id").Eq(arg.ID),
+		goqu.C("tenant_id").Eq(arg.TenantID),
+	).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &lr)
+	return lr, err
+}
+
+func (q *GoquQuerier) MarkPaidLeave(ctx context.Context, arg MarkPaidLeaveParams) error {
+	if q.sqlDB == nil {
+		return errors.New("sqlDB unavailable for raw query")
+	}
+	_, err := q.sqlDB.ExecContext(ctx, `
+		INSERT INTO attendance (tenant_id, employee_id, date, shift_id, status, overtime_hours)
+		VALUES ($1, $2, $3, NULL, 'paid_leave', 0)
+		ON CONFLICT (tenant_id, employee_id, date) DO UPDATE SET status = 'paid_leave', updated_at = now()
+	`, arg.TenantID, arg.EmployeeID, arg.Date)
+	return err
+}
+
+func (q *GoquQuerier) UpdateTenantEmail(ctx context.Context, arg UpdateTenantEmailParams) error {
+	_, err := q.db.Update("tenants").Set(goqu.Record{
+		"email":      arg.Email,
+		"updated_at": goqu.L("now()"),
+	}).Where(goqu.C("id").Eq(arg.TenantID)).Executor().ExecContext(ctx)
 	return err
 }
 
@@ -852,6 +972,15 @@ func (q *GoquQuerier) ListActivityLogsByTenant(ctx context.Context, arg ListActi
 	return items, err
 }
 
+func (q *GoquQuerier) ListActivityLogsByEmployee(ctx context.Context, arg ListActivityLogsByEmployeeParams) ([]ActivityLog, error) {
+	var items []ActivityLog
+	err := q.db.From("activity_logs").Where(
+		goqu.C("tenant_id").Eq(arg.TenantID),
+		goqu.C("employee_id").Eq(arg.EmployeeID),
+	).Order(goqu.C("created_at").Desc()).Limit(uint(arg.Limit)).Offset(uint(arg.Offset)).ScanStructsContext(ctx, &items)
+	return items, err
+}
+
 func (q *GoquQuerier) GetDailyJamaTotal(ctx context.Context, tenantID string, date string) (float64, error) {
 	var total float64
 	found, err := q.db.From("ledger").
@@ -1061,6 +1190,8 @@ func (q *GoquQuerier) UpdateEmployee(ctx context.Context, arg UpdateEmployeePara
 		"name":                    arg.Name,
 		"phone":                   arg.Phone,
 		"designation":             arg.Designation,
+		"department":              arg.Department,
+		"email":                   arg.Email,
 		"wage_type":               arg.WageType,
 		"wage_amount":             arg.WageAmount,
 		"default_shift_id":        arg.DefaultShiftID,
@@ -1245,18 +1376,35 @@ func (q *GoquQuerier) UpsertTenantConfig(ctx context.Context, arg UpsertTenantCo
 		"week_off_paid":         arg.WeekOffPaid,
 		"weekly_offs":           arg.WeeklyOffs,
 	}
+	update := goqu.Record{
+		"ot_trigger":            arg.OTTrigger,
+		"ot_threshold_hours":    arg.OTThresholdHours,
+		"ot_multiplier_default": arg.OTMultiplierDefault,
+		"ot_rounding":           arg.OTRounding,
+		"wage_basis":            arg.WageBasis,
+		"week_off_paid":         arg.WeekOffPaid,
+		"weekly_offs":           arg.WeeklyOffs,
+		"updated_at":            goqu.L("now()"),
+	}
+	if arg.BrevoAPIKey != nil {
+		row["brevo_api_key"] = arg.BrevoAPIKey
+		update["brevo_api_key"] = goqu.L("EXCLUDED.brevo_api_key")
+	}
+	if arg.MailSenderEmail != nil {
+		row["mail_sender_email"] = arg.MailSenderEmail
+		update["mail_sender_email"] = goqu.L("EXCLUDED.mail_sender_email")
+	}
+	if arg.MailSenderName != nil {
+		row["mail_sender_name"] = arg.MailSenderName
+		update["mail_sender_name"] = goqu.L("EXCLUDED.mail_sender_name")
+	}
+	if arg.MailQuotaPerDay != nil {
+		row["mail_quota_per_day"] = *arg.MailQuotaPerDay
+		update["mail_quota_per_day"] = goqu.L("EXCLUDED.mail_quota_per_day")
+	}
 	var tc TenantConfig
 	found, err := q.db.Insert("tenant_config").Rows(row).
-		OnConflict(goqu.DoUpdate("tenant_id", goqu.Record{
-			"ot_trigger":            arg.OTTrigger,
-			"ot_threshold_hours":    arg.OTThresholdHours,
-			"ot_multiplier_default": arg.OTMultiplierDefault,
-			"ot_rounding":           arg.OTRounding,
-			"wage_basis":            arg.WageBasis,
-			"week_off_paid":         arg.WeekOffPaid,
-			"weekly_offs":           arg.WeeklyOffs,
-			"updated_at":            goqu.L("now()"),
-		})).
+		OnConflict(goqu.DoUpdate("tenant_id", update)).
 		Returning(goqu.Star()).Executor().ScanStructContext(ctx, &tc)
 	if err != nil {
 		return TenantConfig{}, err
@@ -1275,14 +1423,29 @@ func parseUUID(s string) (uuid.UUID, error) {
 	return u, nil
 }
 
+func parseNullableUUID(s string) (uuid.NullUUID, error) {
+	if s == "" {
+		return uuid.NullUUID{}, nil
+	}
+	u, err := parseUUID(s)
+	if err != nil {
+		return uuid.NullUUID{}, err
+	}
+	return uuid.NullUUID{UUID: u, Valid: true}, nil
+}
+
 func (q *GoquQuerier) CreateDispute(ctx context.Context, arg CreateDisputeParams) (LedgerDispute, error) {
 	tenantUUID, err := parseUUID(arg.TenantID)
 	if err != nil {
 		return LedgerDispute{}, fmt.Errorf("invalid tenant_id: %w", err)
 	}
-	ledgerUUID, err := parseUUID(arg.LedgerID)
+	ledgerUUID, err := parseNullableUUID(arg.LedgerID)
 	if err != nil {
 		return LedgerDispute{}, fmt.Errorf("invalid ledger_id: %w", err)
+	}
+	attendanceUUID, err := parseNullableUUID(arg.AttendanceID)
+	if err != nil {
+		return LedgerDispute{}, fmt.Errorf("invalid attendance_id: %w", err)
 	}
 	empUUID, err := parseUUID(arg.EmployeeID)
 	if err != nil {
@@ -1293,27 +1456,48 @@ func (q *GoquQuerier) CreateDispute(ctx context.Context, arg CreateDisputeParams
 		return LedgerDispute{}, fmt.Errorf("invalid raised_by: %w", err)
 	}
 	dbArg := db.CreateDisputeParams{
-		TenantID:   tenantUUID,
-		LedgerID:   ledgerUUID,
-		EmployeeID: empUUID,
-		RaisedBy:   raisedUUID,
-		Reason:     arg.Reason,
+		TenantID:     tenantUUID,
+		LedgerID:     ledgerUUID,
+		AttendanceID: attendanceUUID,
+		EmployeeID:   empUUID,
+		RaisedBy:     raisedUUID,
+		Reason:       arg.Reason,
 	}
 	d, err := q.sqlc.CreateDispute(ctx, dbArg)
 	if err != nil {
 		return LedgerDispute{}, err
 	}
-	return LedgerDispute{
-		ID:         d.ID.String(),
-		TenantID:   d.TenantID.String(),
-		LedgerID:   d.LedgerID.String(),
-		EmployeeID: d.EmployeeID.String(),
-		RaisedBy:   d.RaisedBy.String(),
-		Reason:     d.Reason,
-		Status:     d.Status,
-		CreatedAt:  d.CreatedAt,
-		UpdatedAt:  d.UpdatedAt,
-	}, nil
+	return disputeFromDB(d), nil
+}
+
+func nullUUIDStr(u uuid.NullUUID) string {
+	if u.Valid {
+		return u.UUID.String()
+	}
+	return ""
+}
+
+func disputeFromDB(d db.LedgerDispute) LedgerDispute {
+	dispute := LedgerDispute{
+		ID:           d.ID.String(),
+		TenantID:     d.TenantID.String(),
+		EmployeeID:   d.EmployeeID.String(),
+		RaisedBy:     d.RaisedBy.String(),
+		Reason:       d.Reason,
+		Status:       d.Status,
+		CreatedAt:    d.CreatedAt,
+		UpdatedAt:    d.UpdatedAt,
+		LedgerID:     nullUUIDStr(d.LedgerID),
+		AttendanceID: nullUUIDStr(d.AttendanceID),
+	}
+	if d.ResolvedBy.Valid {
+		s := d.ResolvedBy.UUID.String()
+		dispute.ResolvedBy = &s
+	}
+	if d.ResolutionNote.Valid {
+		dispute.ResolutionNote = &d.ResolutionNote.String
+	}
+	return dispute
 }
 
 func (q *GoquQuerier) ListDisputesByTenant(ctx context.Context, arg ListDisputesByTenantParams) ([]ListDisputesByTenantRow, error) {
@@ -1334,15 +1518,16 @@ func (q *GoquQuerier) ListDisputesByTenant(ctx context.Context, arg ListDisputes
 	var result []ListDisputesByTenantRow
 	for _, r := range rows {
 		row := ListDisputesByTenantRow{
-			ID:         r.ID.String(),
-			TenantID:   r.TenantID.String(),
-			LedgerID:   r.LedgerID.String(),
-			EmployeeID: r.EmployeeID.String(),
-			RaisedBy:   r.RaisedBy.String(),
-			Reason:     r.Reason,
-			Status:     r.Status,
-			CreatedAt:  r.CreatedAt,
-			UpdatedAt:  r.UpdatedAt,
+			ID:           r.ID.String(),
+			TenantID:     r.TenantID.String(),
+			LedgerID:     nullUUIDStr(r.LedgerID),
+			AttendanceID: nullUUIDStr(r.AttendanceID),
+			EmployeeID:   r.EmployeeID.String(),
+			RaisedBy:     r.RaisedBy.String(),
+			Reason:       r.Reason,
+			Status:       r.Status,
+			CreatedAt:    r.CreatedAt,
+			UpdatedAt:    r.UpdatedAt,
 		}
 		if r.ResolvedBy.Valid {
 			s := r.ResolvedBy.UUID.String()
@@ -1384,17 +1569,7 @@ func (q *GoquQuerier) ResolveDispute(ctx context.Context, arg ResolveDisputePara
 	if err != nil {
 		return LedgerDispute{}, err
 	}
-	return LedgerDispute{
-		ID:         d.ID.String(),
-		TenantID:   d.TenantID.String(),
-		LedgerID:   d.LedgerID.String(),
-		EmployeeID: d.EmployeeID.String(),
-		RaisedBy:   d.RaisedBy.String(),
-		Reason:     d.Reason,
-		Status:     d.Status,
-		CreatedAt:  d.CreatedAt,
-		UpdatedAt:  d.UpdatedAt,
-	}, nil
+	return disputeFromDB(d), nil
 }
 
 func (q *GoquQuerier) RejectDispute(ctx context.Context, arg RejectDisputeParams) (LedgerDispute, error) {
@@ -1422,17 +1597,7 @@ func (q *GoquQuerier) RejectDispute(ctx context.Context, arg RejectDisputeParams
 	if err != nil {
 		return LedgerDispute{}, err
 	}
-	return LedgerDispute{
-		ID:         d.ID.String(),
-		TenantID:   d.TenantID.String(),
-		LedgerID:   d.LedgerID.String(),
-		EmployeeID: d.EmployeeID.String(),
-		RaisedBy:   d.RaisedBy.String(),
-		Reason:     d.Reason,
-		Status:     d.Status,
-		CreatedAt:  d.CreatedAt,
-		UpdatedAt:  d.UpdatedAt,
-	}, nil
+	return disputeFromDB(d), nil
 }
 
 func (q *GoquQuerier) HasPendingAdvanceRequest(ctx context.Context, arg HasPendingAdvanceRequestParams) (bool, error) {

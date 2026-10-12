@@ -28,7 +28,9 @@ class AddEmployeeScreen extends ConsumerStatefulWidget {
 class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
   final _desigCtrl = TextEditingController();
+  final _deptCtrl = TextEditingController();
   final _wageCtrl = TextEditingController();
   final _dojCtrl = TextEditingController();
   final _panCtrl = TextEditingController();
@@ -49,17 +51,22 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   List<Shift> _shifts = [];
   String? _shiftsError;
   String? _selectedShiftId;
+  List<Employee> _managers = [];
+  String? _managerId;
   final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
     _loadShifts();
+    _loadManagers();
     final e = widget.employee;
     if (e != null) {
       _nameCtrl.text = e.name;
       _phoneCtrl.text = e.phone;
+      _emailCtrl.text = e.email ?? '';
       _desigCtrl.text = e.designation ?? '';
+      _deptCtrl.text = e.department ?? '';
       _wageCtrl.text = e.wageAmount == 0 ? '' : e.wageAmount.toStringAsFixed(0);
       _dojCtrl.text = e.dateOfJoining ?? '';
       _panCtrl.text = e.panNumber ?? '';
@@ -76,10 +83,25 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       _wageType = e.wageType.isEmpty ? 'daily' : e.wageType;
       _role = e.role;
       _selectedShiftId = e.defaultShiftId;
+      _managerId = e.managerId;
     } else {
       _wageType = 'daily';
       _role = 'employee';
     }
+  }
+
+  Future<void> _loadManagers() async {
+    try {
+      final all = await ref.read(staffServiceProvider).list(limit: 200);
+      if (mounted) {
+        setState(() {
+          _managers = all
+              .where((e) => e.isActive && e.role != 'employee')
+              .where((e) => e.id != widget.employee?.id)
+              .toList();
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadShifts() async {
@@ -100,7 +122,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
+    _emailCtrl.dispose();
     _desigCtrl.dispose();
+    _deptCtrl.dispose();
     _wageCtrl.dispose();
     _dojCtrl.dispose();
     _panCtrl.dispose();
@@ -223,13 +247,18 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       final body = {
         'name': _nameCtrl.text.trim(),
         'phone': _phoneCtrl.text.trim(),
+        'email': _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
         'designation': _desigCtrl.text.trim().isEmpty
             ? null
             : _desigCtrl.text.trim(),
+        'department': _deptCtrl.text.trim().isEmpty
+            ? null
+            : _deptCtrl.text.trim(),
         'wage_type': _wageType,
         'wage_amount': _wageCtrl.text.trim(),
         'role': _role,
         'default_shift_id': _selectedShiftId,
+        'manager_id': _managerId,
         'date_of_joining': _dojCtrl.text.trim().isEmpty
             ? null
             : _dojCtrl.text.trim(),
@@ -308,9 +337,12 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       return _nameCtrl.text.isNotEmpty ||
           _phoneCtrl.text.isNotEmpty ||
           _desigCtrl.text.isNotEmpty ||
+          _deptCtrl.text.isNotEmpty ||
+          _emailCtrl.text.isNotEmpty ||
           _wageCtrl.text.isNotEmpty ||
           _photoPath != null ||
           _selectedShiftId != null ||
+          _managerId != null ||
           _dojCtrl.text.isNotEmpty ||
           _panCtrl.text.isNotEmpty ||
           _aadhaarCtrl.text.isNotEmpty ||
@@ -326,7 +358,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     }
     return differs(_nameCtrl.text, e.name) ||
         differs(_phoneCtrl.text, e.phone) ||
+        differs(_emailCtrl.text, e.email) ||
         differs(_desigCtrl.text, e.designation) ||
+        differs(_deptCtrl.text, e.department) ||
         differs(
           _wageCtrl.text,
           e.wageAmount == 0 ? '' : e.wageAmount.toStringAsFixed(0),
@@ -334,6 +368,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
         _photoPath != null ||
         _selectedShiftId != e.defaultShiftId ||
         _wageType != e.wageType ||
+        _managerId != e.managerId ||
         differs(_dojCtrl.text, e.dateOfJoining) ||
         differs(_panCtrl.text, e.panNumber) ||
         differs(_aadhaarCtrl.text, e.aadhaarNumber) ||
@@ -544,11 +579,28 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     ),
                   ),
                   FluidSlideIn(
+                    delay: 220,
+                    child: ValidatedField(
+                      controller: _emailCtrl,
+                      label: 'Email (Optional)',
+                      prefixIcon: PhosphorIconsDuotone.envelope,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                  ),
+                  FluidSlideIn(
                     delay: 250,
                     child: ValidatedField(
                       controller: _desigCtrl,
                       label: 'Designation / Title (Optional)',
                       prefixIcon: PhosphorIconsDuotone.briefcase,
+                    ),
+                  ),
+                  FluidSlideIn(
+                    delay: 270,
+                    child: ValidatedField(
+                      controller: _deptCtrl,
+                      label: 'Department (Optional)',
+                      prefixIcon: PhosphorIconsDuotone.buildings,
                     ),
                   ),
 
@@ -637,6 +689,17 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                         onChanged: (r) => setState(() => _role = r),
                       ),
                     ),
+                    if (_role == 'employee') ...[
+                      const SizedBox(height: 16),
+                      FluidSlideIn(
+                        delay: 520,
+                        child: _ManagerSelector(
+                          managers: _managers,
+                          selectedId: _managerId,
+                          onChanged: (id) => setState(() => _managerId = id),
+                        ),
+                      ),
+                    ],
                   ],
 
                   const SizedBox(height: 48),
@@ -1158,6 +1221,81 @@ class _RoleSelector extends StatelessWidget {
               onChanged: (v) {
                 if (v != null) onChanged(v);
               },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ManagerSelector extends StatelessWidget {
+  final List<Employee> managers;
+  final String? selectedId;
+  final ValueChanged<String?> onChanged;
+
+  const _ManagerSelector({
+    required this.managers,
+    required this.selectedId,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Reporting Manager',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+            color: cs.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String?>(
+              value: selectedId,
+              isExpanded: true,
+              hint: Text(
+                managers.isEmpty ? 'No supervisors available' : 'Select…',
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              icon: Icon(
+                PhosphorIconsRegular.caretDown,
+                color: cs.onSurfaceVariant,
+              ),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text(
+                    'None',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                for (final m in managers)
+                  DropdownMenuItem<String?>(
+                    value: m.id,
+                    child: Text(
+                      m.name,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+              onChanged: managers.isEmpty ? null : onChanged,
             ),
           ),
         ),

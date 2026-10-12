@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 import '../features/advance_requests/advance_requests_page.dart';
+import '../features/leave_requests/leave_requests_page.dart';
 import '../features/advance_requests/my_advance_requests_page.dart';
 import '../features/attendance/attendance_roster_page.dart';
+import '../features/attendance/attendance_bulk_page.dart';
 import '../features/attendance/my_attendance_page.dart';
 import '../features/auth/auth_gate.dart';
 import '../features/auth/login_page.dart';
@@ -26,11 +28,15 @@ import '../features/profile/my_profile_page.dart';
 import '../features/profile/profile_hub_page.dart';
 import '../features/reports/daily_summary_page.dart';
 import '../features/reports/defaulters_page.dart';
+import '../features/reports/wage_bill_trends_page.dart';
 import '../features/reports/my_reports_page.dart';
 import '../features/reports/payroll_preview_page.dart';
 import '../features/more/more_hub_page.dart';
 import '../features/settings/payroll_settings_page.dart';
 import '../features/settings/settings_about_page.dart';
+import '../features/settings/sync_center_page.dart';
+import '../features/settings/mail_settings_page.dart';
+import '../features/settings/pin_setup_page.dart';
 import '../features/shell/main_shell.dart';
 import '../features/shifts/my_shifts_page.dart';
 import '../features/shifts/shifts_management_page.dart';
@@ -298,6 +304,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             _slideUpPage(state, const AddEmployeeScreen()),
       ),
       GoRoute(
+        path: '/attendance-bulk',
+        pageBuilder: (context, state) => _slideUpPage(
+          state,
+          AttendanceBulkScreen(date: state.extra as String? ?? ''),
+        ),
+      ),
+      GoRoute(
         path: '/employee/:id',
         pageBuilder: (context, state) => _slideUpPage(
           state,
@@ -330,6 +343,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             _slideUpPage(state, const AdvanceRequestsScreen()),
       ),
       GoRoute(
+        path: '/leave-requests',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const LeaveRequestsScreen()),
+      ),
+      GoRoute(
         path: '/my-advance-requests',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const MyAdvanceRequestsPage()),
@@ -350,6 +368,21 @@ final routerProvider = Provider<GoRouter>((ref) {
             _slideUpPage(state, const SettingsAboutPage()),
       ),
       GoRoute(
+        path: '/settings/pin',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const PinSetupPage()),
+      ),
+      GoRoute(
+        path: '/settings/mail',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const MailSettingsPage()),
+      ),
+      GoRoute(
+        path: '/settings/sync',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const SyncCenterPage()),
+      ),
+      GoRoute(
         path: '/reports/payroll',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const PayrollPreviewScreen()),
@@ -358,6 +391,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/reports/daily-summary',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const DailySummaryScreen()),
+      ),
+      GoRoute(
+        path: '/reports/wage-bill-trends',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const WageBillTrendsScreen()),
       ),
       GoRoute(
         path: '/reports/defaulters',

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 import '../features/advance_requests/advance_requests_page.dart';
+import '../features/leave_requests/leave_requests_page.dart';
 import '../features/advance_requests/my_advance_requests_page.dart';
 import '../features/attendance/attendance_roster_page.dart';
 import '../features/attendance/attendance_bulk_page.dart';
@@ -340,6 +341,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/advance-requests',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const AdvanceRequestsScreen()),
+      ),
+      GoRoute(
+        path: '/leave-requests',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const LeaveRequestsScreen()),
       ),
       GoRoute(
         path: '/my-advance-requests',

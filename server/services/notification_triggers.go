@@ -175,3 +175,19 @@ func (t *NotificationTriggers) NotifyWelcome(ctx context.Context, tenantID, empl
 		Body:  fmt.Sprintf("Welcome! Your account at %s is ready to use", tenantName),
 	})
 }
+
+func (t *NotificationTriggers) NotifyLeaveStatus(ctx context.Context, tenantID, employeeID, status string) {
+	if !t.enabled() {
+		return
+	}
+	title := "Leave Approved"
+	if status == "denied" {
+		title = "Leave Denied"
+	}
+	go t.notifSvc.CreateAndPush(ctx, tenantID, employeeID, NotificationOpts{
+		Type:       "leave",
+		Title:      title,
+		Body:       "Your leave request has been " + status,
+		EntityType: "leave_request",
+	})
+}

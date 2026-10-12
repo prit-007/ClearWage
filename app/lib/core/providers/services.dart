@@ -11,6 +11,7 @@ import '../../data/services/shift_service.dart';
 import '../../data/services/report_service.dart';
 import '../../data/services/holiday_service.dart';
 import '../../data/services/leave_policy_service.dart';
+import '../../data/services/leave_request_service.dart';
 import '../../data/services/advance_request_service.dart';
 import '../../data/services/payroll_service.dart';
 import '../../data/services/settings_service.dart';
@@ -61,6 +62,10 @@ final holidayServiceProvider = Provider<HolidayService>((ref) {
 
 final leavePolicyServiceProvider = Provider<LeavePolicyService>((ref) {
   return LeavePolicyService(ref.watch(apiClientProvider));
+});
+
+final leaveRequestServiceProvider = Provider<LeaveRequestService>((ref) {
+  return LeaveRequestService(ref.watch(apiClientProvider));
 });
 
 final advanceRequestServiceProvider = Provider<AdvanceRequestService>((ref) {

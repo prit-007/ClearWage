@@ -418,6 +418,43 @@ type IncrementMailCountParams struct {
 	Date     string
 }
 
+type CreateLeaveRequestParams struct {
+	TenantID   string
+	EmployeeID string
+	LeaveType  string
+	FromDate   string
+	ToDate     string
+	Reason     *string
+}
+
+type ListLeaveRequestsByTenantParams struct {
+	TenantID string
+	Status   string
+	Limit    int32
+	Offset   int32
+}
+
+type ListLeaveRequestsByEmployeeParams struct {
+	TenantID   string
+	EmployeeID string
+	Limit      int32
+	Offset     int32
+}
+
+type UpdateLeaveRequestStatusParams struct {
+	ID         string
+	TenantID   string
+	Status     string
+	ApprovedBy *string
+	DenyReason *string
+}
+
+type MarkPaidLeaveParams struct {
+	TenantID   string
+	EmployeeID string
+	Date       string
+}
+
 type UpdateSyncEventStatusParams struct {
 	ID           string  `json:"id"`
 	TenantID     string  `json:"tenant_id"`
@@ -594,4 +631,9 @@ type Querier interface {
 	IsTenantActive(ctx context.Context, tenantID string) (bool, error)
 	SetTenantActive(ctx context.Context, tenantID string, active bool) error
 	IncrementMailCount(ctx context.Context, arg IncrementMailCountParams) error
+	CreateLeaveRequest(ctx context.Context, arg CreateLeaveRequestParams) (LeaveRequest, error)
+	ListLeaveRequestsByTenant(ctx context.Context, arg ListLeaveRequestsByTenantParams) ([]LeaveRequest, error)
+	ListLeaveRequestsByEmployee(ctx context.Context, arg ListLeaveRequestsByEmployeeParams) ([]LeaveRequest, error)
+	UpdateLeaveRequestStatus(ctx context.Context, arg UpdateLeaveRequestStatusParams) (LeaveRequest, error)
+	MarkPaidLeave(ctx context.Context, arg MarkPaidLeaveParams) error
 }

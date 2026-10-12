@@ -272,6 +272,13 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
               route: '/leave-policy',
               color: AppColors.purple,
             ),
+          if (isAdmin)
+            const _HubItem(
+              icon: PhosphorIconsFill.calendarX,
+              title: 'Leave Requests',
+              route: '/leave-requests',
+              color: AppColors.danger,
+            ),
         ],
       ),
       _HubSection(

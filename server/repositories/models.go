@@ -33,6 +33,22 @@ type AdvanceRequest struct {
 	UpdatedAt     time.Time       `json:"updated_at" db:"updated_at"`
 }
 
+type LeaveRequest struct {
+	ID           string    `json:"id" db:"id"`
+	TenantID     string    `json:"tenant_id" db:"tenant_id"`
+	EmployeeID   string    `json:"employee_id" db:"employee_id"`
+	LeaveType    string    `json:"leave_type" db:"leave_type"`
+	FromDate     string    `json:"from_date" db:"from_date"`
+	ToDate       string    `json:"to_date" db:"to_date"`
+	Reason       *string   `json:"reason" db:"reason"`
+	Status       string    `json:"status" db:"status"`
+	ApprovedBy   *string   `json:"approved_by" db:"approved_by"`
+	DenyReason   *string   `json:"deny_reason" db:"deny_reason"`
+	EmployeeName *string   `json:"employee_name" db:"employee_name"`
+	CreatedAt    time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
+}
+
 type Attendance struct {
 	ID                     string     `json:"id" db:"id"`
 	TenantID               string     `json:"tenant_id" db:"tenant_id"`

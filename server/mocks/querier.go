@@ -123,6 +123,75 @@ func (mr *MockQuerierMockRecorder) IncrementMailCount(ctx, arg any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementMailCount", reflect.TypeOf((*MockQuerier)(nil).IncrementMailCount), ctx, arg)
 }
 
+// CreateLeaveRequest mocks base method.
+func (m *MockQuerier) CreateLeaveRequest(ctx context.Context, arg repositories.CreateLeaveRequestParams) (repositories.LeaveRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateLeaveRequest", ctx, arg)
+	ret0, _ := ret[0].(repositories.LeaveRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockQuerierMockRecorder) CreateLeaveRequest(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLeaveRequest", reflect.TypeOf((*MockQuerier)(nil).CreateLeaveRequest), ctx, arg)
+}
+
+// ListLeaveRequestsByTenant mocks base method.
+func (m *MockQuerier) ListLeaveRequestsByTenant(ctx context.Context, arg repositories.ListLeaveRequestsByTenantParams) ([]repositories.LeaveRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListLeaveRequestsByTenant", ctx, arg)
+	ret0, _ := ret[0].([]repositories.LeaveRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockQuerierMockRecorder) ListLeaveRequestsByTenant(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLeaveRequestsByTenant", reflect.TypeOf((*MockQuerier)(nil).ListLeaveRequestsByTenant), ctx, arg)
+}
+
+// ListLeaveRequestsByEmployee mocks base method.
+func (m *MockQuerier) ListLeaveRequestsByEmployee(ctx context.Context, arg repositories.ListLeaveRequestsByEmployeeParams) ([]repositories.LeaveRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListLeaveRequestsByEmployee", ctx, arg)
+	ret0, _ := ret[0].([]repositories.LeaveRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockQuerierMockRecorder) ListLeaveRequestsByEmployee(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLeaveRequestsByEmployee", reflect.TypeOf((*MockQuerier)(nil).ListLeaveRequestsByEmployee), ctx, arg)
+}
+
+// UpdateLeaveRequestStatus mocks base method.
+func (m *MockQuerier) UpdateLeaveRequestStatus(ctx context.Context, arg repositories.UpdateLeaveRequestStatusParams) (repositories.LeaveRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLeaveRequestStatus", ctx, arg)
+	ret0, _ := ret[0].(repositories.LeaveRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockQuerierMockRecorder) UpdateLeaveRequestStatus(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLeaveRequestStatus", reflect.TypeOf((*MockQuerier)(nil).UpdateLeaveRequestStatus), ctx, arg)
+}
+
+// MarkPaidLeave mocks base method.
+func (m *MockQuerier) MarkPaidLeave(ctx context.Context, arg repositories.MarkPaidLeaveParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkPaidLeave", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (mr *MockQuerierMockRecorder) MarkPaidLeave(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkPaidLeave", reflect.TypeOf((*MockQuerier)(nil).MarkPaidLeave), ctx, arg)
+}
+
 // CountHolidaysByDate indicates an expected call of CountHolidaysByDate.
 func (mr *MockQuerierMockRecorder) CountHolidaysByDate(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()

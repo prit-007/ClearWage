@@ -161,7 +161,10 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			payrollSvc.SetTriggers(triggers)
 			advReqSvc := services.NewAdvanceRequestService(querier)
 			advReqSvc.SetTriggers(triggers)
-			services.WireMailer(mailer, staffSvc, disputeSvc, advReqSvc)
+			leaveSvc := services.NewLeaveRequestService(querier)
+			leaveSvc.SetTriggers(triggers)
+			leaveCtrl := ctrl.NewLeaveRequestController(leaveSvc, logger, cfg)
+			services.WireMailer(mailer, staffSvc, disputeSvc, advReqSvc, leaveSvc)
 
 			shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
 			uploadCtrl := ctrl.NewUploadController(staffSvc, logger, cfg)
@@ -324,6 +327,17 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Get("/", advReqCtrl.List)
 				r.Put("/{id}/approve", advReqCtrl.Approve)
 				r.Put("/{id}/deny", advReqCtrl.Deny)
+			})
+
+			r.Route("/api/v1/leave/requests", func(r chi.Router) {
+				r.Use(mw.AuthMiddleware(cfg))
+				r.Use(mw.TenantMiddleware())
+				r.Use(mw.TenantStatusMiddleware(querier))
+				r.Get("/", leaveCtrl.List)
+				r.Get("/mine", leaveCtrl.My)
+				r.Post("/", leaveCtrl.Create)
+				r.Put("/{id}/approve", leaveCtrl.Approve)
+				r.Put("/{id}/deny", leaveCtrl.Deny)
 			})
 
 			r.With(mw.AuthMiddleware(cfg), mw.TenantMiddleware()).Get("/uploads/{file}", uploadCtrl.ServeFile)

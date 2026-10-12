@@ -516,6 +516,74 @@ func (q *GoquQuerier) IncrementMailCount(ctx context.Context, arg IncrementMailC
 	return err
 }
 
+func (q *GoquQuerier) CreateLeaveRequest(ctx context.Context, arg CreateLeaveRequestParams) (LeaveRequest, error) {
+	var lr LeaveRequest
+	_, err := q.db.Insert("leave_requests").Rows(goqu.Record{
+		"tenant_id":   arg.TenantID,
+		"employee_id": arg.EmployeeID,
+		"leave_type":  arg.LeaveType,
+		"from_date":   arg.FromDate,
+		"to_date":     arg.ToDate,
+		"reason":      arg.Reason,
+	}).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &lr)
+	return lr, err
+}
+
+func (q *GoquQuerier) ListLeaveRequestsByTenant(ctx context.Context, arg ListLeaveRequestsByTenantParams) ([]LeaveRequest, error) {
+	return q.listLeaveRequests(ctx, arg.TenantID, "", arg.Status, arg.Limit, arg.Offset)
+}
+
+func (q *GoquQuerier) ListLeaveRequestsByEmployee(ctx context.Context, arg ListLeaveRequestsByEmployeeParams) ([]LeaveRequest, error) {
+	return q.listLeaveRequests(ctx, arg.TenantID, arg.EmployeeID, "", arg.Limit, arg.Offset)
+}
+
+func (q *GoquQuerier) listLeaveRequests(ctx context.Context, tenantID, employeeID, status string, limit, offset int32) ([]LeaveRequest, error) {
+	var items []LeaveRequest
+	ds := q.db.From("leave_requests").
+		LeftJoin(goqu.T("employees"), goqu.On(goqu.I("leave_requests.employee_id").Eq(goqu.I("employees.id")))).
+		Select(goqu.L("leave_requests.*"), goqu.I("employees.name").As("employee_name")).
+		Where(goqu.C("tenant_id").Eq(tenantID))
+	if employeeID != "" {
+		ds = ds.Where(goqu.C("employee_id").Eq(employeeID))
+	}
+	if status != "" {
+		ds = ds.Where(goqu.I("leave_requests.status").Eq(status))
+	}
+	err := ds.Order(goqu.I("leave_requests.created_at").Desc()).Limit(uint(limit)).Offset(uint(offset)).ScanStructsContext(ctx, &items)
+	return items, err
+}
+
+func (q *GoquQuerier) UpdateLeaveRequestStatus(ctx context.Context, arg UpdateLeaveRequestStatusParams) (LeaveRequest, error) {
+	record := goqu.Record{
+		"status":     arg.Status,
+		"updated_at": goqu.L("now()"),
+	}
+	if arg.ApprovedBy != nil {
+		record["approved_by"] = arg.ApprovedBy
+	}
+	if arg.DenyReason != nil {
+		record["deny_reason"] = arg.DenyReason
+	}
+	var lr LeaveRequest
+	_, err := q.db.Update("leave_requests").Set(record).Where(
+		goqu.C("id").Eq(arg.ID),
+		goqu.C("tenant_id").Eq(arg.TenantID),
+	).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &lr)
+	return lr, err
+}
+
+func (q *GoquQuerier) MarkPaidLeave(ctx context.Context, arg MarkPaidLeaveParams) error {
+	if q.sqlDB == nil {
+		return errors.New("sqlDB unavailable for raw query")
+	}
+	_, err := q.sqlDB.ExecContext(ctx, `
+		INSERT INTO attendance (tenant_id, employee_id, date, shift_id, status, overtime_hours)
+		VALUES ($1, $2, $3, NULL, 'paid_leave', 0)
+		ON CONFLICT (tenant_id, employee_id, date) DO UPDATE SET status = 'paid_leave', updated_at = now()
+	`, arg.TenantID, arg.EmployeeID, arg.Date)
+	return err
+}
+
 func (q *GoquQuerier) DeleteShift(ctx context.Context, arg DeleteShiftParams) error {
 	_, err := q.db.Delete("shifts").Where(
 		goqu.C("id").Eq(arg.ID),

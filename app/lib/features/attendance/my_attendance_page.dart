@@ -13,6 +13,7 @@ import '../../core/widgets/shimmer_loading.dart';
 import '../../core/design_tokens.dart';
 import '../../data/models/attendance_model.dart';
 import '../disputes/raise_dispute_dialog.dart';
+import 'request_leave_sheet.dart';
 
 class MyAttendancePage extends ConsumerStatefulWidget {
   const MyAttendancePage({super.key});
@@ -138,6 +139,16 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
                   ),
                 ),
               ),
+              actions: [
+                IconButton(
+                  tooltip: 'Request Leave',
+                  icon: Icon(
+                    PhosphorIconsRegular.calendarPlus,
+                    color: cs.onSurfaceVariant,
+                  ),
+                  onPressed: () => showRequestLeaveDialog(context),
+                ),
+              ],
             ),
             SliverToBoxAdapter(
               child: Padding(

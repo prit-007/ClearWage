@@ -92,6 +92,7 @@ type Employee struct {
 	DailyTargetUnits      sql.NullInt32   `json:"daily_target_units"`
 	Version               int32           `json:"version"`
 	Department            sql.NullString  `json:"department"`
+	Email                 sql.NullString  `json:"email"`
 }
 
 type EmployeeDocument struct {
@@ -132,6 +133,21 @@ type LeavePolicy struct {
 	UnpaidLeaveDaysPerYear int32     `json:"unpaid_leave_days_per_year"`
 	CreatedAt              time.Time `json:"created_at"`
 	UpdatedAt              time.Time `json:"updated_at"`
+}
+
+type LeaveRequest struct {
+	ID         uuid.UUID      `json:"id"`
+	TenantID   uuid.UUID      `json:"tenant_id"`
+	EmployeeID uuid.UUID      `json:"employee_id"`
+	LeaveType  string         `json:"leave_type"`
+	FromDate   time.Time      `json:"from_date"`
+	ToDate     time.Time      `json:"to_date"`
+	Reason     sql.NullString `json:"reason"`
+	Status     string         `json:"status"`
+	ApprovedBy uuid.NullUUID  `json:"approved_by"`
+	DenyReason sql.NullString `json:"deny_reason"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
 }
 
 type Ledger struct {
@@ -211,6 +227,8 @@ type Tenant struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	Address   sql.NullString `json:"address"`
 	Timezone  string         `json:"timezone"`
+	IsActive  bool           `json:"is_active"`
+	Email     sql.NullString `json:"email"`
 }
 
 type TenantConfig struct {
@@ -224,4 +242,10 @@ type TenantConfig struct {
 	CreatedAt           time.Time       `json:"created_at"`
 	UpdatedAt           time.Time       `json:"updated_at"`
 	WeeklyOffs          string          `json:"weekly_offs"`
+	BrevoApiKey         sql.NullString  `json:"brevo_api_key"`
+	MailSenderEmail     sql.NullString  `json:"mail_sender_email"`
+	MailSenderName      sql.NullString  `json:"mail_sender_name"`
+	MailQuotaPerDay     int32           `json:"mail_quota_per_day"`
+	MailSentToday       int32           `json:"mail_sent_today"`
+	MailSentDate        sql.NullTime    `json:"mail_sent_date"`
 }

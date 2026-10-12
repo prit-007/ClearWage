@@ -63,6 +63,7 @@ type Employee struct {
 	Phone                 string          `json:"phone" db:"phone"`
 	Designation           *string         `json:"designation" db:"designation"`
 	Department            *string         `json:"department" db:"department"`
+	Email                 *string         `json:"email" db:"email"`
 	WageType              string          `json:"wage_type" db:"wage_type"`
 	WageAmount            decimal.Decimal `json:"wage_amount" db:"wage_amount"`
 	DefaultShiftID        *string         `json:"default_shift_id" db:"default_shift_id"`
@@ -223,6 +224,12 @@ type TenantConfig struct {
 	WageBasis           string          `json:"wage_basis" db:"wage_basis"`
 	WeekOffPaid         bool            `json:"week_off_paid" db:"week_off_paid"`
 	WeeklyOffs          string          `json:"weekly_offs" db:"weekly_offs"`
+	BrevoAPIKey         *string         `json:"brevo_api_key" db:"brevo_api_key"`
+	MailSenderEmail     *string         `json:"mail_sender_email" db:"mail_sender_email"`
+	MailSenderName      *string         `json:"mail_sender_name" db:"mail_sender_name"`
+	MailQuotaPerDay     int32           `json:"mail_quota_per_day" db:"mail_quota_per_day"`
+	MailSentToday       int32           `json:"mail_sent_today" db:"mail_sent_today"`
+	MailSentDate        *string         `json:"mail_sent_date" db:"mail_sent_date"`
 	CreatedAt           time.Time       `json:"created_at" db:"created_at"`
 	UpdatedAt           time.Time       `json:"updated_at" db:"updated_at"`
 }

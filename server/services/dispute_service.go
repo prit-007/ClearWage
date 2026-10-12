@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/clearwage/clearwage/repositories"
 )
@@ -10,6 +11,7 @@ import (
 type DisputeService struct {
 	querier  repositories.Querier
 	triggers *NotificationTriggers
+	mailer   *MailService
 }
 
 func NewDisputeService(querier repositories.Querier) *DisputeService {
@@ -18,6 +20,10 @@ func NewDisputeService(querier repositories.Querier) *DisputeService {
 
 func (s *DisputeService) SetTriggers(t *NotificationTriggers) {
 	s.triggers = t
+}
+
+func (s *DisputeService) SetMailer(m *MailService) {
+	s.mailer = m
 }
 
 func (s *DisputeService) Create(ctx context.Context, tenantID, ledgerID, attendanceID, employeeID, raisedBy, reason string) (repositories.LedgerDispute, error) {
@@ -67,6 +73,7 @@ func (s *DisputeService) Resolve(ctx context.Context, tenantID, disputeID, resol
 	if err == nil && s.triggers != nil {
 		s.triggers.NotifyDisputeResolved(ctx, tenantID, dispute.EmployeeID)
 	}
+	s.mailDisputeStatus(ctx, tenantID, dispute.EmployeeID, "resolved", dispute.Reason)
 	return dispute, err
 }
 
@@ -80,5 +87,24 @@ func (s *DisputeService) Reject(ctx context.Context, tenantID, disputeID, resolv
 	if err == nil && s.triggers != nil {
 		s.triggers.NotifyDisputeRejected(ctx, tenantID, dispute.EmployeeID)
 	}
+	s.mailDisputeStatus(ctx, tenantID, dispute.EmployeeID, "rejected", dispute.Reason)
 	return dispute, err
+}
+
+func (s *DisputeService) mailDisputeStatus(ctx context.Context, tenantID, employeeID, status, reason string) {
+	if s.mailer == nil {
+		return
+	}
+	emp, err := s.querier.FindEmployeeByID(ctx, repositories.FindEmployeeByIDParams{
+		ID: employeeID, TenantID: tenantID,
+	})
+	if err != nil || emp.Email == nil || *emp.Email == "" {
+		return
+	}
+	subject := "Your dispute was " + status
+	body := fmt.Sprintf("Hello %s,\n\nYour reported dispute has been %s.", emp.Name, status)
+	if reason != "" {
+		body += "\n\nDetails: " + reason
+	}
+	_ = s.mailer.Send(ctx, tenantID, *emp.Email, subject, body)
 }

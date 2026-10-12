@@ -203,6 +203,7 @@ func (q *GoquQuerier) CreateEmployee(ctx context.Context, arg CreateEmployeePara
 		"phone":                   arg.Phone,
 		"designation":             arg.Designation,
 		"department":              arg.Department,
+		"email":                   arg.Email,
 		"wage_type":               arg.WageType,
 		"wage_amount":             arg.WageAmount,
 		"daily_target_units":      arg.DailyTargetUnits,
@@ -498,6 +499,20 @@ func (q *GoquQuerier) SetTenantActive(ctx context.Context, tenantID string, acti
 		"is_active":  active,
 		"updated_at": goqu.L("now()"),
 	}).Where(goqu.C("id").Eq(tenantID)).Executor().ExecContext(ctx)
+	return err
+}
+
+func (q *GoquQuerier) IncrementMailCount(ctx context.Context, arg IncrementMailCountParams) error {
+	if q.sqlDB == nil {
+		return errors.New("sqlDB unavailable for raw query")
+	}
+	_, err := q.sqlDB.ExecContext(ctx, `
+		UPDATE tenant_config
+		SET mail_sent_today = CASE WHEN mail_sent_date = $1 THEN mail_sent_today + 1 ELSE 1 END,
+		    mail_sent_date = $1,
+		    updated_at = now()
+		WHERE tenant_id = $2
+	`, arg.Date, arg.TenantID)
 	return err
 }
 
@@ -1100,6 +1115,7 @@ func (q *GoquQuerier) UpdateEmployee(ctx context.Context, arg UpdateEmployeePara
 		"phone":                   arg.Phone,
 		"designation":             arg.Designation,
 		"department":              arg.Department,
+		"email":                   arg.Email,
 		"wage_type":               arg.WageType,
 		"wage_amount":             arg.WageAmount,
 		"default_shift_id":        arg.DefaultShiftID,
@@ -1284,18 +1300,35 @@ func (q *GoquQuerier) UpsertTenantConfig(ctx context.Context, arg UpsertTenantCo
 		"week_off_paid":         arg.WeekOffPaid,
 		"weekly_offs":           arg.WeeklyOffs,
 	}
+	update := goqu.Record{
+		"ot_trigger":            arg.OTTrigger,
+		"ot_threshold_hours":    arg.OTThresholdHours,
+		"ot_multiplier_default": arg.OTMultiplierDefault,
+		"ot_rounding":           arg.OTRounding,
+		"wage_basis":            arg.WageBasis,
+		"week_off_paid":         arg.WeekOffPaid,
+		"weekly_offs":           arg.WeeklyOffs,
+		"updated_at":            goqu.L("now()"),
+	}
+	if arg.BrevoAPIKey != nil {
+		row["brevo_api_key"] = arg.BrevoAPIKey
+		update["brevo_api_key"] = goqu.L("EXCLUDED.brevo_api_key")
+	}
+	if arg.MailSenderEmail != nil {
+		row["mail_sender_email"] = arg.MailSenderEmail
+		update["mail_sender_email"] = goqu.L("EXCLUDED.mail_sender_email")
+	}
+	if arg.MailSenderName != nil {
+		row["mail_sender_name"] = arg.MailSenderName
+		update["mail_sender_name"] = goqu.L("EXCLUDED.mail_sender_name")
+	}
+	if arg.MailQuotaPerDay != nil {
+		row["mail_quota_per_day"] = *arg.MailQuotaPerDay
+		update["mail_quota_per_day"] = goqu.L("EXCLUDED.mail_quota_per_day")
+	}
 	var tc TenantConfig
 	found, err := q.db.Insert("tenant_config").Rows(row).
-		OnConflict(goqu.DoUpdate("tenant_id", goqu.Record{
-			"ot_trigger":            arg.OTTrigger,
-			"ot_threshold_hours":    arg.OTThresholdHours,
-			"ot_multiplier_default": arg.OTMultiplierDefault,
-			"ot_rounding":           arg.OTRounding,
-			"wage_basis":            arg.WageBasis,
-			"week_off_paid":         arg.WeekOffPaid,
-			"weekly_offs":           arg.WeeklyOffs,
-			"updated_at":            goqu.L("now()"),
-		})).
+		OnConflict(goqu.DoUpdate("tenant_id", update)).
 		Returning(goqu.Star()).Executor().ScanStructContext(ctx, &tc)
 	if err != nil {
 		return TenantConfig{}, err

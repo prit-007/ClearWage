@@ -5,12 +5,14 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/shopspring/decimal"
 	"github.com/clearwage/clearwage/repositories"
 )
 
 type AdvanceRequestService struct {
 	querier  repositories.Querier
 	triggers *NotificationTriggers
+	mailer   *MailService
 }
 
 func NewAdvanceRequestService(querier repositories.Querier) *AdvanceRequestService {
@@ -19,6 +21,10 @@ func NewAdvanceRequestService(querier repositories.Querier) *AdvanceRequestServi
 
 func (s *AdvanceRequestService) SetTriggers(t *NotificationTriggers) {
 	s.triggers = t
+}
+
+func (s *AdvanceRequestService) SetMailer(m *MailService) {
+	s.mailer = m
 }
 
 func (s *AdvanceRequestService) CreateRequest(ctx context.Context, tenantID, employeeID string, amount float64, note string) (repositories.AdvanceRequest, error) {
@@ -137,6 +143,7 @@ func (s *AdvanceRequestService) ApproveAndCreateLedger(ctx context.Context, id, 
 	if s.triggers != nil {
 		s.triggers.NotifyAdvanceApproved(ctx, tenantID, req.EmployeeID, req.Amount.InexactFloat64())
 	}
+	s.mailAdvanceStatus(ctx, tenantID, req.EmployeeID, "approved", req.Amount)
 	return ledger, nil
 }
 
@@ -157,7 +164,7 @@ func (s *AdvanceRequestService) approveAndCreateLedgerNoTx(ctx context.Context, 
 
 	entryType := "udhaar"
 	note := "Advance approved"
-	return s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
+	ledger, err := s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
 		TenantID:   tenantID,
 		EmployeeID: req.EmployeeID,
 		Date:       date,
@@ -166,4 +173,29 @@ func (s *AdvanceRequestService) approveAndCreateLedgerNoTx(ctx context.Context, 
 		Note:       &note,
 		CreatedBy:  approvedBy,
 	})
+	if err != nil {
+		return repositories.Ledger{}, err
+	}
+	s.mailAdvanceStatus(ctx, tenantID, req.EmployeeID, "approved", req.Amount)
+	return ledger, nil
+}
+
+// mailAdvanceStatus sends the employee an approval/denial email when their
+// advance request changes status (best-effort).
+func (s *AdvanceRequestService) mailAdvanceStatus(ctx context.Context, tenantID, employeeID, status string, amount decimal.Decimal) {
+	if s.mailer == nil {
+		return
+	}
+	emp, err := s.querier.FindEmployeeByID(ctx, repositories.FindEmployeeByIDParams{
+		ID: employeeID, TenantID: tenantID,
+	})
+	if err != nil || emp.Email == nil || *emp.Email == "" {
+		return
+	}
+	subject := "Advance request " + status
+	if status == "approved" {
+		subject = "Your advance request was approved"
+	}
+	body := fmt.Sprintf("Hello %s,\n\nYour advance request of amount %s has been %s.", emp.Name, amount.StringFixed(0), status)
+	_ = s.mailer.Send(ctx, tenantID, *emp.Email, subject, body)
 }

@@ -53,6 +53,7 @@ type CreateEmployeeParams struct {
 	Phone                 string  `json:"phone"`
 	Designation           *string `json:"designation"`
 	Department            *string `json:"department"`
+	Email                 *string `json:"email"`
 	WageType              string  `json:"wage_type"`
 	WageAmount            float64 `json:"wage_amount"`
 	DailyTargetUnits      *int32  `json:"daily_target_units"`
@@ -342,6 +343,7 @@ type UpdateEmployeeParams struct {
 	Phone                 string   `json:"phone"`
 	Designation           *string  `json:"designation"`
 	Department            *string  `json:"department"`
+	Email                 *string  `json:"email"`
 	WageType              string   `json:"wage_type"`
 	WageAmount            float64  `json:"wage_amount"`
 	DefaultShiftID        *string  `json:"default_shift_id"`
@@ -405,6 +407,15 @@ type UpsertTenantConfigParams struct {
 	WageBasis           string  `json:"wage_basis"`
 	WeekOffPaid         bool    `json:"week_off_paid"`
 	WeeklyOffs          string  `json:"weekly_offs"`
+	BrevoAPIKey         *string `json:"brevo_api_key"`
+	MailSenderEmail     *string `json:"mail_sender_email"`
+	MailSenderName      *string `json:"mail_sender_name"`
+	MailQuotaPerDay     *int32  `json:"mail_quota_per_day"`
+}
+
+type IncrementMailCountParams struct {
+	TenantID string
+	Date     string
 }
 
 type UpdateSyncEventStatusParams struct {
@@ -582,4 +593,5 @@ type Querier interface {
 	ListTenants(ctx context.Context) ([]Tenant, error)
 	IsTenantActive(ctx context.Context, tenantID string) (bool, error)
 	SetTenantActive(ctx context.Context, tenantID string, active bool) error
+	IncrementMailCount(ctx context.Context, arg IncrementMailCountParams) error
 }

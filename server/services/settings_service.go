@@ -35,3 +35,15 @@ func (s *SettingsService) GetPayrollSettings(ctx context.Context, tenantID strin
 func (s *SettingsService) UpsertPayrollSettings(ctx context.Context, arg repositories.UpsertTenantConfigParams) (repositories.TenantConfig, error) {
 	return s.querier.UpsertTenantConfig(ctx, arg)
 }
+
+func (s *SettingsService) GetMailSettings(ctx context.Context, tenantID string) (repositories.TenantConfig, error) {
+	cfg, err := s.querier.GetTenantConfig(ctx, tenantID)
+	if err != nil && errors.Is(err, repositories.ErrNotFound) {
+		return repositories.TenantConfig{TenantID: tenantID, MailQuotaPerDay: 300}, nil
+	}
+	return cfg, err
+}
+
+func (s *SettingsService) UpsertMailSettings(ctx context.Context, arg repositories.UpsertTenantConfigParams) (repositories.TenantConfig, error) {
+	return s.querier.UpsertTenantConfig(ctx, arg)
+}

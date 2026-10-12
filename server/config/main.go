@@ -35,6 +35,10 @@ type AppConfig struct {
 	RateLimitPerMinute       int    `envconfig:"RATE_LIMIT_PER_MINUTE" default:"100"`
 	AuthRateLimitPerMinute   int    `envconfig:"AUTH_RATE_LIMIT_PER_MINUTE" default:"20"`
 	SuperAdminPhone          string `envconfig:"SUPER_ADMIN_PHONE"`
+	BrevoAPIKey              string `envconfig:"BREVO_API_KEY"`
+	BrevoSenderEmail         string `envconfig:"BREVO_SENDER_EMAIL"`
+	BrevoSenderName          string `envconfig:"BREVO_SENDER_NAME" default:"ClearWage"`
+	BrevoDefaultQuota        int    `envconfig:"BREVO_DEFAULT_QUOTA" default:"300"`
 	MetricsEnabled          bool   `envconfig:"METRICS_ENABLED"`
 }
 

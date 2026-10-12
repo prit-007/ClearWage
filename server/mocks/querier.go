@@ -109,6 +109,20 @@ func (mr *MockQuerierMockRecorder) SetTenantActive(ctx, tenantID, active any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTenantActive", reflect.TypeOf((*MockQuerier)(nil).SetTenantActive), ctx, tenantID, active)
 }
 
+// IncrementMailCount mocks base method.
+func (m *MockQuerier) IncrementMailCount(ctx context.Context, arg repositories.IncrementMailCountParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrementMailCount", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncrementMailCount indicates an expected call of IncrementMailCount.
+func (mr *MockQuerierMockRecorder) IncrementMailCount(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementMailCount", reflect.TypeOf((*MockQuerier)(nil).IncrementMailCount), ctx, arg)
+}
+
 // CountHolidaysByDate indicates an expected call of CountHolidaysByDate.
 func (mr *MockQuerierMockRecorder) CountHolidaysByDate(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()

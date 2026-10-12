@@ -113,3 +113,64 @@ func (c *SettingsController) UpsertPayrollSettings(w http.ResponseWriter, r *htt
 
 	utils.JSONSuccess(w, http.StatusOK, settings)
 }
+
+type upsertMailSettingsRequest struct {
+	BrevoAPIKey     *string `json:"brevo_api_key"`
+	MailSenderEmail *string `json:"mail_sender_email"`
+	MailSenderName  *string `json:"mail_sender_name"`
+	MailQuotaPerDay *int32  `json:"mail_quota_per_day"`
+}
+
+func (c *SettingsController) GetMailSettings(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	settings, err := c.settingsSvc.GetMailSettings(r.Context(), tenantID)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to load mail settings")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to load mail settings")
+		return
+	}
+	resp := map[string]any{
+		"tenant_id":         settings.TenantID,
+		"brevo_api_key":     settings.BrevoAPIKey,
+		"mail_sender_email": settings.MailSenderEmail,
+		"mail_sender_name":  settings.MailSenderName,
+		"mail_quota_per_day": settings.MailQuotaPerDay,
+		"mail_sent_today":   settings.MailSentToday,
+		"mail_sent_date":    settings.MailSentDate,
+	}
+	utils.JSONSuccess(w, http.StatusOK, resp)
+}
+
+func (c *SettingsController) UpsertMailSettings(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if tenantID == "" || claims == nil {
+		return
+	}
+	var req upsertMailSettingsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+	if req.MailQuotaPerDay != nil && (*req.MailQuotaPerDay < 1 || *req.MailQuotaPerDay > 3000) {
+		utils.JSONFail(w, http.StatusBadRequest, "mail_quota_per_day must be between 1 and 3000")
+		return
+	}
+	settings, err := c.settingsSvc.UpsertMailSettings(r.Context(), repositories.UpsertTenantConfigParams{
+		TenantID:        tenantID,
+		BrevoAPIKey:     req.BrevoAPIKey,
+		MailSenderEmail: req.MailSenderEmail,
+		MailSenderName:  req.MailSenderName,
+		MailQuotaPerDay: req.MailQuotaPerDay,
+	})
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to save mail settings")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to save mail settings")
+		return
+	}
+	utils.JSONSuccess(w, http.StatusOK, settings)
+}

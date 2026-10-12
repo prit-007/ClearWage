@@ -144,6 +144,8 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			notifSvc := services.NewNotificationService(dbQueries, fcmSvc, logger)
 			triggers := services.NewNotificationTriggers(notifSvc)
 
+			mailer := services.NewMailService(querier, cfg, logger)
+
 			notifCtrl := ctrl.NewNotificationController(notifSvc, logger, cfg)
 
 			// Create services with triggers wired
@@ -159,6 +161,7 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 			payrollSvc.SetTriggers(triggers)
 			advReqSvc := services.NewAdvanceRequestService(querier)
 			advReqSvc.SetTriggers(triggers)
+			services.WireMailer(mailer, staffSvc, disputeSvc, advReqSvc)
 
 			shiftCtrl := ctrl.NewShiftController(services.NewShiftService(querier), logger, cfg)
 			uploadCtrl := ctrl.NewUploadController(staffSvc, logger, cfg)
@@ -342,6 +345,13 @@ func GetAPICommandDef(cfg config.AppConfig, logger *zerolog.Logger) cobra.Comman
 				r.Use(mw.TenantStatusMiddleware(querier))
 				r.Get("/", settingsCtrl.GetPayrollSettings)
 				r.Put("/", settingsCtrl.UpsertPayrollSettings)
+			})
+			r.Route("/api/v1/settings/mail", func(r chi.Router) {
+				r.Use(mw.AuthMiddleware(cfg))
+				r.Use(mw.TenantMiddleware())
+				r.Use(mw.TenantStatusMiddleware(querier))
+				r.Get("/", settingsCtrl.GetMailSettings)
+				r.Put("/", settingsCtrl.UpsertMailSettings)
 			})
 
 			onboardingCtrl := ctrl.NewOnboardingController(services.NewOnboardingService(querier), logger, cfg)

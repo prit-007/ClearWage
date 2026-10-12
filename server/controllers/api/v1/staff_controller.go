@@ -39,6 +39,7 @@ type createStaffRequest struct {
 	Phone                 string  `json:"phone"`
 	Designation           string  `json:"designation,omitempty"`
 	Department            string  `json:"department,omitempty"`
+	Email                 *string `json:"email,omitempty"`
 	WageType              string  `json:"wage_type"`
 	WageAmount            string  `json:"wage_amount"`
 	Role                  string  `json:"role,omitempty"`
@@ -60,6 +61,7 @@ type createStaffRequest struct {
 
 func (r createStaffRequest) kyc() services.EmployeeProfileDetails {
 	return services.EmployeeProfileDetails{
+		Email:                 r.Email,
 		DateOfJoining:         r.DateOfJoining,
 		PanNumber:             r.PanNumber,
 		AadhaarNumber:         r.AadhaarNumber,

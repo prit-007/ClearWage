@@ -335,3 +335,22 @@ subsequent release cycles.
 - [x] `app/pubspec.yaml` bumped to `1.1.5+18`.
 - [x] `fastlane` changelog `changelogs/18.txt`.
 - [x] Tag `v1.1.5` created and pushed.
+
+## Phase 16 — v1.2.0 blueprint feature pass
+
+### Features
+
+- [x] #54 WhatsApp dispatch · #55 balance chips · #56 Quick ledger action
+- [x] #57 Wage-bill trends/CSV · #58 reporting managers · #59 splash
+- [x] #60 attendance calendar + disputes · #61 bulk grid · #62 audit log
+- [x] #63 KYC compression + queue · #64 PIN lock · #65 department filter
+- [x] #66 offline sync · #67 Sync Center · #68 super-admin
+- [x] #69 i18n EN/HI/GU · #70 leave request workflow · #71 Postgres RLS
+- [x] Brevo email service (platform key, per-tenant quota/override, account email)
+
+### Release
+
+- [x] `CHANGELOG.md` entry for `[1.2.0]`.
+- [x] `app/pubspec.yaml` bumped to `1.2.0+19`.
+- [x] `fastlane` changelog `changelogs/19.txt`.
+- [ ] Tag `v1.2.0` created and pushed.

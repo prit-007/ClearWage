@@ -1,0 +1,14 @@
+v1.2.0 — Blueprint Features & Brevo Email
+
+New Features:
+- WhatsApp dispatch (profiles, payroll, dashboard broadcast)
+- Staff DUE/EXCESS balance indicators
+- Wage-bill trends report with CSV export
+- Attendance calendar with Report Error (disputes)
+- Bulk attendance grid (select all / mark remaining present)
+- Employee audit log, PIN lock fallback, department filter
+- Offline attendance/ledger sync + Sync Center
+- Leave request workflow (apply, approve, deny)
+- Languages: English / हिन्दी / ગુજરાતી
+- Super-admin tenant management
+- Brevo email service with per-tenant API key and daily quota

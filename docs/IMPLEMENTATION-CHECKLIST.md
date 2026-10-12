@@ -334,4 +334,4 @@ subsequent release cycles.
 - [x] `CHANGELOG.md` entry for `[1.1.5]`.
 - [x] `app/pubspec.yaml` bumped to `1.1.5+18`.
 - [x] `fastlane` changelog `changelogs/18.txt`.
-- [ ] Tag `v1.1.5` created and pushed.
+- [x] Tag `v1.1.5` created and pushed.

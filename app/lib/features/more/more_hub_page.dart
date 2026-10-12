@@ -222,6 +222,13 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
             ),
           if (isAdmin)
             const _HubItem(
+              icon: PhosphorIconsFill.chartLineUp,
+              title: 'Wage Bill Trends',
+              route: '/reports/wage-bill-trends',
+              color: AppColors.purple,
+            ),
+          if (isAdmin)
+            const _HubItem(
               icon: PhosphorIconsFill.wallet,
               title: 'Payroll Summary',
               route: '/reports/payroll',

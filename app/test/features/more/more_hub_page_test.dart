@@ -83,7 +83,7 @@ void main() {
       expect(find.text('Workforce'), findsOneWidget);
 
       final scrollable = find.byType(CustomScrollView);
-      await tester.drag(scrollable, const Offset(0, -300));
+      await tester.drag(scrollable, const Offset(0, -500));
       await tester.pumpAndSettle();
       expect(find.text('Financial'), findsOneWidget);
       expect(find.text('Leave Policy'), findsOneWidget);

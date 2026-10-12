@@ -26,6 +26,7 @@ import '../features/profile/my_profile_page.dart';
 import '../features/profile/profile_hub_page.dart';
 import '../features/reports/daily_summary_page.dart';
 import '../features/reports/defaulters_page.dart';
+import '../features/reports/wage_bill_trends_page.dart';
 import '../features/reports/my_reports_page.dart';
 import '../features/reports/payroll_preview_page.dart';
 import '../features/more/more_hub_page.dart';
@@ -358,6 +359,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/reports/daily-summary',
         pageBuilder: (context, state) =>
             _slideUpPage(state, const DailySummaryScreen()),
+      ),
+      GoRoute(
+        path: '/reports/wage-bill-trends',
+        pageBuilder: (context, state) =>
+            _slideUpPage(state, const WageBillTrendsScreen()),
       ),
       GoRoute(
         path: '/reports/defaulters',

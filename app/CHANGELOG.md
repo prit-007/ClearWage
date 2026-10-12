@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-12
+
+### Added
+
+- **WhatsApp dispatch** (`#54`): Send salary/greeting messages from employee
+  profiles, payroll rows, and a dashboard broadcast sheet.
+- **Staff balance indicators** (`#55`): DUE/EXCESS chips on the directory.
+- **Quick ledger entry** (`#56`): "Add Jama/Udhaar" dashboard action.
+- **Wage bill trends report** (`#57`): month-over-month chart + CSV export.
+- **Reporting managers** (`#58`): manager picker in the employee form.
+- **Animated splash** (`#59`): pulsing logo on startup.
+- **Attendance calendar** (`#60`): employee month grid + Report Error
+  (attendance disputes, nullable `ledger_disputes.attendance_id`).
+- **Bulk attendance grid** (`#61`): select-all / mark remaining present.
+- **Audit log tab** (`#62`): per-employee `GET /staff/{id}/audit`.
+- **KYC hardening** (`#63`): image compression + offline upload retry queue.
+- **PIN lock fallback** (`#64`): 4-digit PIN in addition to biometrics.
+- **Department** (`#65`): optional field + directory filter.
+- **Offline sync** (`#66`/`#67`): offline attendance/ledger queue,
+  auto-sync on reconnect, and a Sync Center page.
+- **Super-admin tenant management** (`#68`): list + suspend/activate workspaces.
+- **i18n** (`#69`): English / हिन्दी / ગુજરાતી language toggle (persisted).
+- **Leave requests** (`#70`): employee apply → owner approve/deny
+  (approval marks days as paid leave + notify/email).
+- **Postgres RLS** (`#71`): tenant row-level security policies.
+- **Brevo email service**: transactional mail with platform key, 300/day
+  quota, per-tenant API key/sender/quota, account email; sent on welcome,
+  advance approval, dispute resolution, leave status, and payroll lock.
+
+### Changed
+
+- `tenants.email`, `employees.email`, `tenants.is_active` columns added.
+- `background:sync` and `mail` settings under Settings.
+- `flutter_localizations` + gen-l10n localization pipeline.
+
 ## [1.1.5] - 2026-09-16
 
 ### Fixed

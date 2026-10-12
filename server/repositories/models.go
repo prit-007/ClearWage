@@ -62,6 +62,7 @@ type Employee struct {
 	Name                  string          `json:"name" db:"name"`
 	Phone                 string          `json:"phone" db:"phone"`
 	Designation           *string         `json:"designation" db:"designation"`
+	Department            *string         `json:"department" db:"department"`
 	WageType              string          `json:"wage_type" db:"wage_type"`
 	WageAmount            decimal.Decimal `json:"wage_amount" db:"wage_amount"`
 	DefaultShiftID        *string         `json:"default_shift_id" db:"default_shift_id"`

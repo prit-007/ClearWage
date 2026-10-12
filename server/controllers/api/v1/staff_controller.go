@@ -38,6 +38,7 @@ type createStaffRequest struct {
 	Name                  string  `json:"name"`
 	Phone                 string  `json:"phone"`
 	Designation           string  `json:"designation,omitempty"`
+	Department            string  `json:"department,omitempty"`
 	WageType              string  `json:"wage_type"`
 	WageAmount            string  `json:"wage_amount"`
 	Role                  string  `json:"role,omitempty"`
@@ -151,7 +152,7 @@ func (ctrl *StaffController) Create(w http.ResponseWriter, r *http.Request) {
 
 	employeeID := claims.EmployeeID
 
-	employee, err := ctrl.staffService.CreateEmployee(r.Context(), req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, req.Role, tenantID, employeeID, req.DailyTargetUnits, req.kyc())
+	employee, err := ctrl.staffService.CreateEmployee(r.Context(), req.Name, req.Phone, req.Designation, req.Department, req.WageType, req.WageAmount, req.Role, tenantID, employeeID, req.DailyTargetUnits, req.kyc())
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("failed to create employee")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to create employee")
@@ -431,7 +432,7 @@ func (ctrl *StaffController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	employee, err := ctrl.staffService.UpdateEmployee(r.Context(), employeeID, tenantID, req.Name, req.Phone, req.Designation, req.WageType, req.WageAmount, req.Role, req.DailyTargetUnits, req.kyc())
+	employee, err := ctrl.staffService.UpdateEmployee(r.Context(), employeeID, tenantID, req.Name, req.Phone, req.Designation, req.Department, req.WageType, req.WageAmount, req.Role, req.DailyTargetUnits, req.kyc())
 	if err != nil {
 		if err == repositories.ErrConcurrentModification {
 			utils.JSONFail(w, http.StatusConflict, "Record was modified by another user. Please refresh and try again.")

@@ -52,6 +52,7 @@ type CreateEmployeeParams struct {
 	Name                  string  `json:"name"`
 	Phone                 string  `json:"phone"`
 	Designation           *string `json:"designation"`
+	Department            *string `json:"department"`
 	WageType              string  `json:"wage_type"`
 	WageAmount            float64 `json:"wage_amount"`
 	DailyTargetUnits      *int32  `json:"daily_target_units"`
@@ -340,6 +341,7 @@ type UpdateEmployeeParams struct {
 	Name                  string   `json:"name"`
 	Phone                 string   `json:"phone"`
 	Designation           *string  `json:"designation"`
+	Department            *string  `json:"department"`
 	WageType              string   `json:"wage_type"`
 	WageAmount            float64  `json:"wage_amount"`
 	DefaultShiftID        *string  `json:"default_shift_id"`

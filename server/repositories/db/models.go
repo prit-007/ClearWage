@@ -91,6 +91,7 @@ type Employee struct {
 	ManagerID             uuid.NullUUID   `json:"manager_id"`
 	DailyTargetUnits      sql.NullInt32   `json:"daily_target_units"`
 	Version               int32           `json:"version"`
+	Department            sql.NullString  `json:"department"`
 }
 
 type EmployeeDocument struct {

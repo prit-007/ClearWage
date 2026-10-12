@@ -8,6 +8,7 @@ import 'package:clearwage/core/providers/services.dart';
 import 'package:clearwage/core/widgets/shimmer_loading.dart';
 import 'package:clearwage/data/models/auth_model.dart';
 import 'package:clearwage/data/models/employee_model.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:clearwage/data/services/ledger_service.dart';
 import 'package:clearwage/data/services/staff_service.dart';
 import 'package:clearwage/features/staff/staff_directory_page.dart';
@@ -215,6 +216,45 @@ void main() {
 
       expect(find.text('A'), findsOneWidget);
       expect(find.text('B'), findsOneWidget);
+    });
+
+    testWidgets('filters by department from the filter sheet', (tester) async {
+      fakeService.setEmployees([
+        Employee(
+          id: 'emp-1',
+          name: 'Rahul Kumar',
+          phone: '1111111111',
+          wageType: 'daily',
+          wageAmount: 500,
+          role: 'employee',
+          isActive: true,
+          department: 'Stitching',
+        ),
+        Employee(
+          id: 'emp-2',
+          name: 'Suresh Shah',
+          phone: '2222222222',
+          wageType: 'daily',
+          wageAmount: 400,
+          role: 'employee',
+          isActive: true,
+          department: 'Packing',
+        ),
+      ]);
+      await tester.pumpWidget(_buildApp(fakeService));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(PhosphorIconsRegular.slidersHorizontal));
+      await tester.pumpAndSettle();
+
+      expect(find.text('FILTER BY DEPARTMENT'), findsOneWidget);
+      await tester.tap(find.text('Stitching'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rahul Kumar'), findsOneWidget);
+      expect(find.text('Suresh Shah'), findsNothing);
     });
 
     testWidgets('shows DUE/EXCESS balance chip from balance summary', (

@@ -41,6 +41,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
   Timer? _debounce;
   Set<String> _roleFilters = {};
   Set<String> _wageFilters = {};
+  Set<String> _deptFilters = {};
   bool _showInactive = false;
   Map<String, double> _balances = {};
 
@@ -171,20 +172,32 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
 
   Future<void> _openFilters() async {
     unawaited(HapticFeedback.selectionClick());
+    final departments =
+        _allEmployees
+            .map((e) => e.department ?? '')
+            .where((d) => d.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
     final result = await showAdaptiveSheet<_FilterResult>(
       context: context,
       builder: (ctx) => _FilterSheet(
         roleFilters: _roleFilters,
         wageFilters: _wageFilters,
+        deptFilters: _deptFilters,
+        departments: departments,
         showInactive: _showInactive,
-        onApply: (roles, wages, showInactive) =>
-            Navigator.pop(ctx, _FilterResult(roles, wages, showInactive)),
+        onApply: (roles, wages, depts, showInactive) => Navigator.pop(
+          ctx,
+          _FilterResult(roles, wages, depts, showInactive),
+        ),
       ),
     );
     if (result == null || !mounted) return;
     setState(() {
       _roleFilters = result.roles;
       _wageFilters = result.wages;
+      _deptFilters = result.departments;
       _showInactive = result.showInactive;
     });
   }
@@ -195,6 +208,10 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
         return false;
       }
       if (_wageFilters.isNotEmpty && !_wageFilters.contains(e.wageType)) {
+        return false;
+      }
+      if (_deptFilters.isNotEmpty &&
+          !_deptFilters.contains(e.department ?? '')) {
         return false;
       }
       if (!_showInactive && !e.isActive) return false;
@@ -213,7 +230,10 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
     final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
     final grouped = _groupByLetter(_filtered);
     final hasActiveFilters =
-        _roleFilters.isNotEmpty || _wageFilters.isNotEmpty || _showInactive;
+        _roleFilters.isNotEmpty ||
+        _wageFilters.isNotEmpty ||
+        _deptFilters.isNotEmpty ||
+        _showInactive;
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
@@ -759,20 +779,30 @@ class _EmptySearchState extends StatelessWidget {
 class _FilterResult {
   final Set<String> roles;
   final Set<String> wages;
+  final Set<String> departments;
   final bool showInactive;
-  _FilterResult(this.roles, this.wages, this.showInactive);
+  _FilterResult(this.roles, this.wages, this.departments, this.showInactive);
 }
 
 class _FilterSheet extends StatefulWidget {
   final Set<String> roleFilters;
   final Set<String> wageFilters;
+  final Set<String> deptFilters;
+  final List<String> departments;
   final bool showInactive;
-  final void Function(Set<String> roles, Set<String> wages, bool showInactive)
+  final void Function(
+    Set<String> roles,
+    Set<String> wages,
+    Set<String> departments,
+    bool showInactive,
+  )
   onApply;
 
   const _FilterSheet({
     required this.roleFilters,
     required this.wageFilters,
+    required this.deptFilters,
+    required this.departments,
     required this.showInactive,
     required this.onApply,
   });
@@ -784,6 +814,7 @@ class _FilterSheet extends StatefulWidget {
 class _FilterSheetState extends State<_FilterSheet> {
   late Set<String> _roles;
   late Set<String> _wages;
+  late Set<String> _depts;
   late bool _inactive;
 
   @override
@@ -791,6 +822,7 @@ class _FilterSheetState extends State<_FilterSheet> {
     super.initState();
     _roles = Set.of(widget.roleFilters);
     _wages = Set.of(widget.wageFilters);
+    _depts = Set.of(widget.deptFilters);
     _inactive = widget.showInactive;
   }
 
@@ -908,6 +940,53 @@ class _FilterSheetState extends State<_FilterSheet> {
               }).toList(),
             ),
             const SizedBox(height: 20),
+            if (widget.departments.isNotEmpty) ...[
+              Text(
+                'FILTER BY DEPARTMENT',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: cs.primary,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: widget.departments.map((dept) {
+                  final selected = _depts.contains(dept);
+                  return FilterChip(
+                    label: Text(
+                      dept,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: selected ? cs.primary : cs.onSurfaceVariant,
+                      ),
+                    ),
+                    selected: selected,
+                    selectedColor: cs.primaryContainer.withValues(alpha: 0.4),
+                    checkmarkColor: cs.primary,
+                    side: BorderSide(
+                      color: selected
+                          ? cs.primary
+                          : cs.outlineVariant.withValues(alpha: 0.3),
+                    ),
+                    onSelected: (v) {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        if (v) {
+                          _depts.add(dept);
+                        } else {
+                          _depts.remove(dept);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -931,7 +1010,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                   child: OutlinedButton(
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      widget.onApply({}, {}, false);
+                      widget.onApply({}, {}, {}, false);
                     },
                     child: const Text(
                       'Reset',
@@ -944,7 +1023,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                   child: FilledButton(
                     onPressed: () {
                       HapticFeedback.mediumImpact();
-                      widget.onApply(_roles, _wages, _inactive);
+                      widget.onApply(_roles, _wages, _depts, _inactive);
                     },
                     child: const Text(
                       'Apply',

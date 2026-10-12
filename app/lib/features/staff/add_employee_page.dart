@@ -29,6 +29,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _desigCtrl = TextEditingController();
+  final _deptCtrl = TextEditingController();
   final _wageCtrl = TextEditingController();
   final _dojCtrl = TextEditingController();
   final _panCtrl = TextEditingController();
@@ -63,6 +64,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       _nameCtrl.text = e.name;
       _phoneCtrl.text = e.phone;
       _desigCtrl.text = e.designation ?? '';
+      _deptCtrl.text = e.department ?? '';
       _wageCtrl.text = e.wageAmount == 0 ? '' : e.wageAmount.toStringAsFixed(0);
       _dojCtrl.text = e.dateOfJoining ?? '';
       _panCtrl.text = e.panNumber ?? '';
@@ -119,6 +121,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _desigCtrl.dispose();
+    _deptCtrl.dispose();
     _wageCtrl.dispose();
     _dojCtrl.dispose();
     _panCtrl.dispose();
@@ -244,6 +247,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
         'designation': _desigCtrl.text.trim().isEmpty
             ? null
             : _desigCtrl.text.trim(),
+        'department': _deptCtrl.text.trim().isEmpty
+            ? null
+            : _deptCtrl.text.trim(),
         'wage_type': _wageType,
         'wage_amount': _wageCtrl.text.trim(),
         'role': _role,
@@ -327,6 +333,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       return _nameCtrl.text.isNotEmpty ||
           _phoneCtrl.text.isNotEmpty ||
           _desigCtrl.text.isNotEmpty ||
+          _deptCtrl.text.isNotEmpty ||
           _wageCtrl.text.isNotEmpty ||
           _photoPath != null ||
           _selectedShiftId != null ||
@@ -347,6 +354,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     return differs(_nameCtrl.text, e.name) ||
         differs(_phoneCtrl.text, e.phone) ||
         differs(_desigCtrl.text, e.designation) ||
+        differs(_deptCtrl.text, e.department) ||
         differs(
           _wageCtrl.text,
           e.wageAmount == 0 ? '' : e.wageAmount.toStringAsFixed(0),
@@ -570,6 +578,14 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                       controller: _desigCtrl,
                       label: 'Designation / Title (Optional)',
                       prefixIcon: PhosphorIconsDuotone.briefcase,
+                    ),
+                  ),
+                  FluidSlideIn(
+                    delay: 270,
+                    child: ValidatedField(
+                      controller: _deptCtrl,
+                      label: 'Department (Optional)',
+                      prefixIcon: PhosphorIconsDuotone.buildings,
                     ),
                   ),
 

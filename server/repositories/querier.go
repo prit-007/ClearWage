@@ -579,4 +579,7 @@ type Querier interface {
 	SettleEmployeeAtomic(ctx context.Context, employeeID, tenantID, date, createdBy string) (Ledger, error)
 	HasPendingAdvanceRequest(ctx context.Context, arg HasPendingAdvanceRequestParams) (bool, error)
 	CountHolidaysByDate(ctx context.Context, arg CountHolidaysByDateParams) (int64, error)
+	ListTenants(ctx context.Context) ([]Tenant, error)
+	IsTenantActive(ctx context.Context, tenantID string) (bool, error)
+	SetTenantActive(ctx context.Context, tenantID string, active bool) error
 }

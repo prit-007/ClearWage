@@ -169,6 +169,7 @@ type Tenant struct {
 	Phone     string    `json:"phone" db:"phone"`
 	Address   *string   `json:"address" db:"address"`
 	Timezone  string    `json:"timezone" db:"timezone"`
+	IsActive  bool      `json:"is_active" db:"is_active"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }

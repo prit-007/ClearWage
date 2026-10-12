@@ -473,6 +473,34 @@ func (q *GoquQuerier) DeleteTenant(ctx context.Context, tenantID string) error {
 	return err
 }
 
+func (q *GoquQuerier) ListTenants(ctx context.Context) ([]Tenant, error) {
+	var items []Tenant
+	err := q.db.From("tenants").Order(goqu.C("created_at").Desc()).ScanStructsContext(ctx, &items)
+	return items, err
+}
+
+func (q *GoquQuerier) IsTenantActive(ctx context.Context, tenantID string) (bool, error) {
+	var active bool
+	found, err := q.db.From("tenants").Select(goqu.C("is_active")).Where(
+		goqu.C("id").Eq(tenantID),
+	).ScanValContext(ctx, &active)
+	if err != nil {
+		return false, err
+	}
+	if !found {
+		return false, ErrNotFound
+	}
+	return active, nil
+}
+
+func (q *GoquQuerier) SetTenantActive(ctx context.Context, tenantID string, active bool) error {
+	_, err := q.db.Update("tenants").Set(goqu.Record{
+		"is_active":  active,
+		"updated_at": goqu.L("now()"),
+	}).Where(goqu.C("id").Eq(tenantID)).Executor().ExecContext(ctx)
+	return err
+}
+
 func (q *GoquQuerier) DeleteShift(ctx context.Context, arg DeleteShiftParams) error {
 	_, err := q.db.Delete("shifts").Where(
 		goqu.C("id").Eq(arg.ID),

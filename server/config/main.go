@@ -34,6 +34,7 @@ type AppConfig struct {
 	UploadLimitMB           int    `envconfig:"UPLOAD_LIMIT_MB" default:"5"`
 	RateLimitPerMinute       int    `envconfig:"RATE_LIMIT_PER_MINUTE" default:"100"`
 	AuthRateLimitPerMinute   int    `envconfig:"AUTH_RATE_LIMIT_PER_MINUTE" default:"20"`
+	SuperAdminPhone          string `envconfig:"SUPER_ADMIN_PHONE"`
 	MetricsEnabled          bool   `envconfig:"METRICS_ENABLED"`
 }
 

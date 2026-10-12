@@ -65,6 +65,50 @@ func (m *MockQuerier) CountHolidaysByDate(ctx context.Context, arg repositories.
 	return ret0, ret1
 }
 
+// ListTenants mocks base method.
+func (m *MockQuerier) ListTenants(ctx context.Context) ([]repositories.Tenant, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListTenants", ctx)
+	ret0, _ := ret[0].([]repositories.Tenant)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListTenants indicates an expected call of ListTenants.
+func (mr *MockQuerierMockRecorder) ListTenants(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTenants", reflect.TypeOf((*MockQuerier)(nil).ListTenants), ctx)
+}
+
+// IsTenantActive mocks base method.
+func (m *MockQuerier) IsTenantActive(ctx context.Context, tenantID string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsTenantActive", ctx, tenantID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsTenantActive indicates an expected call of IsTenantActive.
+func (mr *MockQuerierMockRecorder) IsTenantActive(ctx, tenantID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTenantActive", reflect.TypeOf((*MockQuerier)(nil).IsTenantActive), ctx, tenantID)
+}
+
+// SetTenantActive mocks base method.
+func (m *MockQuerier) SetTenantActive(ctx context.Context, tenantID string, active bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetTenantActive", ctx, tenantID, active)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetTenantActive indicates an expected call of SetTenantActive.
+func (mr *MockQuerierMockRecorder) SetTenantActive(ctx, tenantID, active any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTenantActive", reflect.TypeOf((*MockQuerier)(nil).SetTenantActive), ctx, tenantID, active)
+}
+
 // CountHolidaysByDate indicates an expected call of CountHolidaysByDate.
 func (mr *MockQuerierMockRecorder) CountHolidaysByDate(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()

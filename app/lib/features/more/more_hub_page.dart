@@ -331,6 +331,12 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
         label: 'App',
         items: [
           _HubItem(
+            icon: PhosphorIconsFill.key,
+            title: 'App PIN',
+            route: '/settings/pin',
+            color: AppColors.warning,
+          ),
+          _HubItem(
             icon: PhosphorIconsFill.info,
             title: 'About',
             route: '/settings/about',

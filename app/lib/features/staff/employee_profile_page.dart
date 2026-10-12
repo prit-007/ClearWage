@@ -8,6 +8,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/providers/services.dart';
 import '../dashboard/providers/dashboard_providers.dart';
@@ -317,6 +318,29 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                     ),
                     canEditPhoto: isAdmin,
                     onEditPhoto: _pickAndUploadPhoto,
+                    onMessage: (phone.isEmpty)
+                        ? null
+                        : () => unawaited(
+                            ref
+                                .read(whatsappServiceProvider)
+                                .launch(phone: phone, text: 'નમસ્તે $name!')
+                                .then((ok) {
+                                  if (!ok && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Could not open WhatsApp',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }),
+                          ),
+                    onCall: (phone.isEmpty)
+                        ? null
+                        : () => unawaited(
+                            launchUrl(Uri(scheme: 'tel', path: phone)),
+                          ),
                   ),
                 ),
               ),
@@ -510,6 +534,8 @@ class _EditorialProfileHeader extends StatelessWidget {
   final String photoUrl;
   final bool canEditPhoto;
   final VoidCallback onEditPhoto;
+  final VoidCallback? onMessage;
+  final VoidCallback? onCall;
   const _EditorialProfileHeader({
     required this.cs,
     required this.tt,
@@ -520,6 +546,8 @@ class _EditorialProfileHeader extends StatelessWidget {
     required this.photoUrl,
     required this.canEditPhoto,
     required this.onEditPhoto,
+    this.onMessage,
+    this.onCall,
   });
 
   @override
@@ -608,7 +636,65 @@ class _EditorialProfileHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
+        if (onCall != null || onMessage != null) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (onCall != null) ...[
+                _ContactActionButton(
+                  cs: cs,
+                  icon: PhosphorIconsFill.phone,
+                  tooltip: 'Call',
+                  onTap: onCall!,
+                ),
+                const SizedBox(width: 16),
+              ],
+              if (onMessage != null) ...[
+                _ContactActionButton(
+                  cs: cs,
+                  icon: PhosphorIconsFill.whatsappLogo,
+                  tooltip: 'WhatsApp',
+                  onTap: onMessage!,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 24),
+        ],
       ],
+    );
+  }
+}
+
+class _ContactActionButton extends StatelessWidget {
+  final ColorScheme cs;
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _ContactActionButton({
+    required this.cs,
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: cs.primaryContainer.withValues(alpha: 0.4),
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Icon(icon, color: cs.primary, size: 20),
+          ),
+        ),
+      ),
     );
   }
 }

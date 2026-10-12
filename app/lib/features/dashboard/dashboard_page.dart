@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +16,7 @@ import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/design_tokens.dart';
 import 'employee_dashboard.dart';
+import 'broadcast_sheet.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -279,6 +281,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                       StatefulNavigationShell.of(
                                         context,
                                       ).goBranch(1);
+                                    },
+                                  ),
+                                  _QuickActionTile(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsFill.whatsappLogo,
+                                    label: 'Broadcast',
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      unawaited(showBroadcastSheet(context));
                                     },
                                   ),
                                   _QuickActionTile(

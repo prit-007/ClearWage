@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app_providers.dart';
+import '../../core/services/whatsapp_service.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/staff_service.dart';
 import '../../data/services/attendance_service.dart';
@@ -87,4 +88,8 @@ final onboardingServiceProvider = Provider<OnboardingService>((ref) {
 
 final notificationApiServiceProvider = Provider<NotificationApiService>((ref) {
   return NotificationApiService(ref.watch(apiClientProvider));
+});
+
+final whatsappServiceProvider = Provider<WhatsappService>((ref) {
+  return WhatsappService();
 });

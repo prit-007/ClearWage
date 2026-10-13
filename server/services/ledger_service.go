@@ -48,6 +48,10 @@ func (s *LedgerService) CreateEntry(ctx context.Context, tenantID, employeeID, d
 		CreatedBy:  createdBy,
 		ClientID:   clientID,
 	})
+	if err == nil {
+		eid := employeeID
+		logActivity(ctx, s.querier, tenantID, createdBy, "created_ledger_entry", "ledger", &eid, nil)
+	}
 	if err == nil && s.triggers != nil {
 		s.triggers.NotifyLedgerEntry(ctx, tenantID, employeeID, entryType, amt)
 	}
@@ -184,5 +188,10 @@ func (s *LedgerService) GetEmployeeBalanceSummary(ctx context.Context, tenantID 
 }
 
 func (s *LedgerService) SettleEmployee(ctx context.Context, employeeID, tenantID, date, createdBy string) (repositories.Ledger, error) {
-	return s.querier.SettleEmployeeAtomic(ctx, employeeID, tenantID, date, createdBy)
+	result, err := s.querier.SettleEmployeeAtomic(ctx, employeeID, tenantID, date, createdBy)
+	if err == nil {
+		eid := employeeID
+		logActivity(ctx, s.querier, tenantID, createdBy, "settled_account", "ledger", &eid, nil)
+	}
+	return result, err
 }

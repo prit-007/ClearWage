@@ -64,6 +64,35 @@ void main() {
       expect(await svc.pendingCount(), 1);
     });
 
+    test('flush calls are serialized', () async {
+      final store = <Map<String, dynamic>>[];
+      Future<List<Map<String, dynamic>>> read() async => store;
+      Future<void> write(List<Map<String, dynamic>> items) async {
+        store
+          ..clear()
+          ..addAll(List.of(items));
+      }
+
+      var inFlight = 0;
+      var maxInFlight = 0;
+      Future<bool> push(String kind, Map<String, dynamic> payload) async {
+        inFlight++;
+        if (inFlight > maxInFlight) maxInFlight = inFlight;
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        inFlight--;
+        return true;
+      }
+
+      final svc = SyncService(read: read, write: write, push: push);
+      await svc.enqueue(kind: 'attendance', payload: const {});
+      await svc.enqueue(kind: 'ledger', payload: const {});
+
+      await Future.wait([svc.flush(), svc.flush()]);
+
+      expect(maxInFlight, 1, reason: 'pushes must not overlap');
+      expect(await svc.pendingCount(), 0);
+    });
+
     test('enqueue then clear keeps count at zero', () async {
       final store = <Map<String, dynamic>>[];
       Future<List<Map<String, dynamic>>> read() async => store;

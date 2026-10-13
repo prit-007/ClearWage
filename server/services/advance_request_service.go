@@ -90,6 +90,10 @@ func (s *AdvanceRequestService) DenyRequest(ctx context.Context, id, tenantID, d
 		Status:   "denied",
 		DeniedBy: db,
 	})
+	if err == nil {
+		eid := result.EmployeeID
+		logActivity(ctx, s.querier, tenantID, deniedBy, "denied_advance_request", "advance_request", &eid, nil)
+	}
 	if err == nil && s.triggers != nil {
 		s.triggers.NotifyAdvanceDenied(ctx, tenantID, result.EmployeeID, result.Amount.InexactFloat64())
 	}
@@ -144,6 +148,8 @@ func (s *AdvanceRequestService) ApproveAndCreateLedger(ctx context.Context, id, 
 		s.triggers.NotifyAdvanceApproved(ctx, tenantID, req.EmployeeID, req.Amount.InexactFloat64())
 	}
 	s.mailAdvanceStatus(ctx, tenantID, req.EmployeeID, "approved", req.Amount)
+	eid := req.EmployeeID
+	logActivity(ctx, s.querier, tenantID, approvedBy, "approved_advance_request", "advance_request", &eid, nil)
 	return ledger, nil
 }
 
@@ -177,6 +183,8 @@ func (s *AdvanceRequestService) approveAndCreateLedgerNoTx(ctx context.Context, 
 		return repositories.Ledger{}, err
 	}
 	s.mailAdvanceStatus(ctx, tenantID, req.EmployeeID, "approved", req.Amount)
+	eid := req.EmployeeID
+	logActivity(ctx, s.querier, tenantID, approvedBy, "approved_advance_request", "advance_request", &eid, nil)
 	return ledger, nil
 }
 

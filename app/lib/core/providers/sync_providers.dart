@@ -14,6 +14,27 @@ Future<void> refreshPendingSyncCount(WidgetRef ref) async {
   ref.read(pendingSyncCountProvider.notifier).state = items.length;
 }
 
+/// Uploads any queued KYC documents (staged offline) after connectivity returns.
+Future<void> flushDocumentUploads(WidgetRef ref) async {
+  try {
+    final queue = ref.read(documentUploadQueueProvider);
+    final docs = ref.read(documentServiceProvider);
+    final pending = await queue.pending();
+    for (final item in pending) {
+      try {
+        await docs.uploadDocument(
+          employeeId: item.employeeId,
+          docType: item.docType,
+          filePath: item.filePath,
+        );
+        await queue.remove(item.employeeId, item.docType);
+      } catch (_) {
+        // Leave queued for the next reconnect/retry.
+      }
+    }
+  } catch (_) {}
+}
+
 final syncServiceProvider = Provider<SyncService>((ref) {
   final store = ref.watch(pendingSyncStoreProvider);
   final attendance = ref.watch(attendanceServiceProvider);

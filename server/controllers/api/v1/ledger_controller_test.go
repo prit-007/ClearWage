@@ -8,13 +8,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/rs/zerolog"
-	"github.com/shopspring/decimal"
 	"github.com/clearwage/clearwage/config"
 	"github.com/clearwage/clearwage/mocks"
 	"github.com/clearwage/clearwage/repositories"
 	"github.com/clearwage/clearwage/services"
+	"github.com/go-chi/chi/v5"
+	"github.com/rs/zerolog"
+	"github.com/shopspring/decimal"
 	"go.uber.org/mock/gomock"
 )
 
@@ -22,6 +22,7 @@ func setupLedgerTest(t *testing.T) (*LedgerController, *mocks.MockQuerier, func(
 	t.Helper()
 	mockCtrl := gomock.NewController(t)
 	mockQuerier := mocks.NewMockQuerier(mockCtrl)
+	mockQuerier.EXPECT().CreateActivityLog(gomock.Any(), gomock.Any()).Return(repositories.ActivityLog{}, nil).AnyTimes()
 	logger := zerolog.Nop()
 	svc := services.NewLedgerService(mockQuerier)
 	ctrl := NewLedgerController(svc, &logger, config.AppConfig{})

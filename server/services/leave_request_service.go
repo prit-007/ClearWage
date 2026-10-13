@@ -37,10 +37,15 @@ func (s *LeaveRequestService) Create(ctx context.Context, tenantID, employeeID, 
 	if to.Before(from) {
 		return repositories.LeaveRequest{}, errors.New("to_date must be on or after from_date")
 	}
-	return s.querier.CreateLeaveRequest(ctx, repositories.CreateLeaveRequestParams{
+	lr, err := s.querier.CreateLeaveRequest(ctx, repositories.CreateLeaveRequestParams{
 		TenantID: tenantID, EmployeeID: employeeID, LeaveType: leaveType,
 		FromDate: fromDate, ToDate: toDate, Reason: reason,
 	})
+	if err == nil {
+		eid := employeeID
+		logActivity(ctx, s.querier, tenantID, employeeID, "created_leave_request", "leave_request", &eid, nil)
+	}
+	return lr, err
 }
 
 func (s *LeaveRequestService) ListByTenant(ctx context.Context, tenantID, status string, limit, offset int32) ([]repositories.LeaveRequest, error) {
@@ -65,6 +70,8 @@ func (s *LeaveRequestService) Approve(ctx context.Context, id, tenantID, approve
 	for d := lr.FromDate; d <= lr.ToDate; d = nextDay(d) {
 		_ = s.querier.MarkPaidLeave(ctx, repositories.MarkPaidLeaveParams{TenantID: tenantID, EmployeeID: lr.EmployeeID, Date: d})
 	}
+	eid := lr.EmployeeID
+	logActivity(ctx, s.querier, tenantID, approvedBy, "approved_leave_request", "leave_request", &eid, nil)
 	_ = s.triggersNotify(ctx, tenantID, lr, "approved")
 	return lr, nil
 }
@@ -76,6 +83,8 @@ func (s *LeaveRequestService) Deny(ctx context.Context, id, tenantID, deniedBy s
 	if err != nil {
 		return repositories.LeaveRequest{}, err
 	}
+	eid := lr.EmployeeID
+	logActivity(ctx, s.querier, tenantID, deniedBy, "denied_leave_request", "leave_request", &eid, nil)
 	_ = s.triggersNotify(ctx, tenantID, lr, "denied")
 	return lr, nil
 }

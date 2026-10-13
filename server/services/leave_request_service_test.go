@@ -13,6 +13,7 @@ func TestLeaveRequestApproveMarksPaidLeave(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	q := mocks.NewMockQuerier(ctrl)
+	q.EXPECT().CreateActivityLog(gomock.Any(), gomock.Any()).Return(repositories.ActivityLog{}, nil).AnyTimes()
 
 	approvedBy := "00000000-0000-0000-0000-000000000001"
 	q.EXPECT().UpdateLeaveRequestStatus(gomock.Any(), gomock.Any()).Return(

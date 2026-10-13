@@ -783,4 +783,162 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profNoAudit => 'No audit activity recorded';
+
+  @override
+  String get formErrNameRequired => 'Employee name is required';
+
+  @override
+  String get formErrPhoneRequired => 'Phone number is required';
+
+  @override
+  String get formErrPhoneInvalid => 'Enter a valid 10-digit phone number';
+
+  @override
+  String get formErrWageRequired => 'Wage amount is required';
+
+  @override
+  String get formErrWageInvalid => 'Wage must be a valid number';
+
+  @override
+  String get formErrIfsc => 'Invalid IFSC code format (e.g., SBIN0001234)';
+
+  @override
+  String get formErrEnterName => 'Enter employee name';
+
+  @override
+  String get formErrAmountInvalid => 'Enter a valid amount';
+
+  @override
+  String get formErrPan => 'Enter a valid PAN (e.g. ABCDE1234F)';
+
+  @override
+  String get formErrAadhaar => 'Aadhaar must be exactly 12 digits';
+
+  @override
+  String get formDiscardTitle => 'Discard changes?';
+
+  @override
+  String get formDiscardMsg => 'You have unsaved changes. Leave anyway?';
+
+  @override
+  String get formLeave => 'Leave';
+
+  @override
+  String get formEditProfile => 'Edit Profile';
+
+  @override
+  String get formOnboardStaff => 'Onboard Staff';
+
+  @override
+  String get formSectionCore => 'CORE IDENTITY';
+
+  @override
+  String get formSectionComp => 'COMPENSATION & ROLE';
+
+  @override
+  String get formSectionKyc => 'KYC & FINANCIAL';
+
+  @override
+  String get formSectionEmergency => 'EMERGENCY & ADDRESS';
+
+  @override
+  String get formFullName => 'Full Name *';
+
+  @override
+  String get formPhone => 'Phone Number *';
+
+  @override
+  String get formEmail => 'Email (Optional)';
+
+  @override
+  String get formDesignation => 'Designation / Title (Optional)';
+
+  @override
+  String get formDepartment => 'Department (Optional)';
+
+  @override
+  String get formWageFixedMonthly => 'Fixed Monthly';
+
+  @override
+  String get formWageAmount => 'Wage Amount (₹) *';
+
+  @override
+  String get formDoj => 'Date of Joining (Optional)';
+
+  @override
+  String get formDojHint => 'Tap to select date';
+
+  @override
+  String get formPan => 'PAN Number (Optional)';
+
+  @override
+  String get formAadhaar => 'Aadhaar Number (Optional)';
+
+  @override
+  String get formPf => 'PF / UAN Number (Optional)';
+
+  @override
+  String get formBank => 'Bank Account Number (Optional)';
+
+  @override
+  String get formIfsc => 'Bank IFSC (Optional)';
+
+  @override
+  String get formUpi => 'UPI ID (Optional)';
+
+  @override
+  String get formEmergencyName => 'Emergency Contact Name (Optional)';
+
+  @override
+  String get formEmergencyPhone => 'Emergency Contact Phone (Optional)';
+
+  @override
+  String get formCurrentAddress => 'Current Address (Optional)';
+
+  @override
+  String get formPermanentAddress => 'Permanent Address (Optional)';
+
+  @override
+  String get formHealthNotes => 'Health Notes (Optional)';
+
+  @override
+  String get formUpdateProfile => 'Update Profile';
+
+  @override
+  String get formOnboardEmployee => 'Onboard Employee';
+
+  @override
+  String formPhotoSaveFailed(String error) {
+    return 'Employee saved but photo upload failed. $error';
+  }
+
+  @override
+  String get formDefaultShift => 'Default Shift (Optional)';
+
+  @override
+  String get formCouldNotLoadShifts => 'Could not load shifts';
+
+  @override
+  String get formAssignShift => 'Assign Shift';
+
+  @override
+  String get formAccessLevel => 'System Access Level';
+
+  @override
+  String get formRoleEmployee => 'Standard Employee';
+
+  @override
+  String get formRoleSupervisor => 'Manager / Supervisor';
+
+  @override
+  String get formReportingManager => 'Reporting Manager';
+
+  @override
+  String get formNoSupervisors => 'No supervisors available';
+
+  @override
+  String get formSelectDots => 'Select…';
+
+  @override
+  String get formNone => 'None';
 }

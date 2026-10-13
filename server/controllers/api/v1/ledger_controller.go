@@ -34,6 +34,7 @@ type createLedgerRequest struct {
 	Amount     string `json:"amount"`
 	Note       string `json:"note"`
 	Version    *int32 `json:"version,omitempty"`
+	ClientID   string `json:"client_id,omitempty"`
 }
 
 func (c *LedgerController) CreateEntry(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +81,11 @@ func (c *LedgerController) CreateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entry, err := c.ledgerService.CreateEntry(r.Context(), tenantID, req.EmployeeID, req.Date, req.Type, req.Amount, req.Note, claims.EmployeeID)
+	var clientID *string
+	if req.ClientID != "" {
+		clientID = &req.ClientID
+	}
+	entry, err := c.ledgerService.CreateEntry(r.Context(), tenantID, req.EmployeeID, req.Date, req.Type, req.Amount, req.Note, claims.EmployeeID, clientID)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to create ledger entry")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to create entry")

@@ -50,21 +50,10 @@ type brevoPayload struct {
 	HTMLContent string           `json:"htmlContent"`
 }
 
-func SimpleMailHTML(body string) string {
-	s := strings.ReplaceAll(body, "&", "&amp;")
-	s = strings.ReplaceAll(s, "<", "&lt;")
-	s = strings.ReplaceAll(s, ">", "&gt;")
-	s = strings.ReplaceAll(s, "\n", "<br/>")
-	return "<div style=\"font-family:Inter,Arial,sans-serif;color:#111827;line-height:1.6\">" +
-		"<p style=\"font-size:18px;font-weight:700\">ClearWage</p>" +
-		"<p>" + s + "</p>" +
-		"<p style=\"color:#6b7280;font-size:12px\">Sent via ClearWage Workforce Management</p></div>"
-}
-
-// Send dispatches an email for tenantID. Returns an error only for unexpected
-// transport/database failures; missing config, quota exhaustion, and Brevo 4xx
-// are treated as no-ops with a warning log.
-func (m *MailService) Send(ctx context.Context, tenantID, to, subject, body string) error {
+// Send dispatches an email for tenantID with a pre-rendered HTML body.
+// Returns an error only for unexpected transport/database failures; missing
+// config, quota exhaustion, and Brevo 4xx are treated as no-ops with a warning.
+func (m *MailService) Send(ctx context.Context, tenantID, to, subject, htmlContent string) error {
 	if strings.TrimSpace(to) == "" {
 		return nil
 	}
@@ -93,15 +82,28 @@ func (m *MailService) Send(ctx context.Context, tenantID, to, subject, body stri
 		used = 0
 	}
 	if used >= quota {
-		m.logger.Warn().Str("tenant", tenantID).Int32("sent", used).Int32("quota", quota).Msg("mail skipped: daily quota reached")
+		m.logger.Warn().Str("tenant", tenantID).Int32("sent", used).Int32("quota", quota).Msg("mail skipped: tenant daily quota reached")
 		return nil
+	}
+
+	// Platform-key sends share the Brevo account's daily quota across tenants.
+	usingPlatformKey := key != "" && key == m.cfg.BrevoAPIKey
+	if usingPlatformKey {
+		pUsed, perr := m.querier.MailCountToday(ctx, repositories.MailCounterParams{Date: today})
+		if perr != nil {
+			return perr
+		}
+		if pUsed >= quota {
+			m.logger.Warn().Int32("sent", pUsed).Int32("quota", quota).Msg("mail skipped: platform daily quota reached")
+			return nil
+		}
 	}
 
 	payload, err := json.Marshal(brevoPayload{
 		Sender:      brevoRecipient{Email: senderEmail, Name: senderName},
 		To:          []brevoRecipient{{Email: to}},
 		Subject:     subject,
-		HTMLContent: SimpleMailHTML(body),
+		HTMLContent: htmlContent,
 	})
 	if err != nil {
 		return err
@@ -131,7 +133,13 @@ func (m *MailService) Send(ctx context.Context, tenantID, to, subject, body stri
 			Msg("mail skipped: brevo rejected request")
 		return nil
 	}
-	return m.querier.IncrementMailCount(ctx, repositories.IncrementMailCountParams{TenantID: tenantID, Date: today})
+	if err := m.querier.IncrementMailCount(ctx, repositories.IncrementMailCountParams{TenantID: tenantID, Date: today}); err != nil {
+		return err
+	}
+	if usingPlatformKey {
+		return m.querier.IncrementMailCounter(ctx, repositories.MailCounterParams{Date: today})
+	}
+	return nil
 }
 
 func (m *MailService) resolveConfig(ctx context.Context, tenantID string) (key, senderEmail, senderName string, quota int32) {
@@ -174,6 +182,13 @@ func (m *MailService) dailyUsage(ctx context.Context, tenantID string) (int32, s
 		date = *tc.MailSentDate
 	}
 	return tc.MailSentToday, date, nil
+}
+
+// SendAsync queues an email in a background goroutine so API handlers never
+// block on the Brevo round-trip. Uses context.WithoutCancel so request teardown
+// does not cancel an in-flight delivery.
+func (m *MailService) SendAsync(ctx context.Context, tenantID, to, subject, body string) {
+	go func() { _ = m.Send(context.WithoutCancel(ctx), tenantID, to, subject, body) }()
 }
 
 type mailerInjector interface {

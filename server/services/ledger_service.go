@@ -6,8 +6,8 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/shopspring/decimal"
 	"github.com/clearwage/clearwage/repositories"
+	"github.com/shopspring/decimal"
 )
 
 type LedgerService struct {
@@ -23,7 +23,7 @@ func (s *LedgerService) SetTriggers(t *NotificationTriggers) {
 	s.triggers = t
 }
 
-func (s *LedgerService) CreateEntry(ctx context.Context, tenantID, employeeID, date, entryType, amount, note, createdBy string) (repositories.Ledger, error) {
+func (s *LedgerService) CreateEntry(ctx context.Context, tenantID, employeeID, date, entryType, amount, note, createdBy string, clientID *string) (repositories.Ledger, error) {
 	amt, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
 		return repositories.Ledger{}, fmt.Errorf("invalid amount: %w", err)
@@ -46,6 +46,7 @@ func (s *LedgerService) CreateEntry(ctx context.Context, tenantID, employeeID, d
 		Amount:     amt,
 		Note:       n,
 		CreatedBy:  createdBy,
+		ClientID:   clientID,
 	})
 	if err == nil && s.triggers != nil {
 		s.triggers.NotifyLedgerEntry(ctx, tenantID, employeeID, entryType, amt)

@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/clearwage/clearwage/repositories/db"
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/google/uuid"
-	"github.com/clearwage/clearwage/repositories/db"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -335,7 +335,16 @@ func (q *GoquQuerier) CreateLedgerEntry(ctx context.Context, arg CreateLedgerEnt
 	if arg.LinkedPayrollMonth != nil {
 		rec["linked_payroll_month"] = arg.LinkedPayrollMonth
 	}
-	found, err := q.db.Insert("ledger").Rows(rec).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &l)
+	ds := q.db.Insert("ledger").Rows(rec).Returning(goqu.Star())
+	if arg.ClientID != nil {
+		// Idempotent offline create: re-syncing the same client_id returns the
+		// original row instead of inserting a duplicate.
+		rec["client_id"] = arg.ClientID
+		ds = q.db.Insert("ledger").Rows(rec).Returning(goqu.Star()).OnConflict(
+			goqu.DoUpdate("client_id", goqu.Record{"client_id": goqu.L("EXCLUDED.client_id")}),
+		)
+	}
+	found, err := ds.Executor().ScanStructContext(ctx, &l)
 	if err != nil {
 		return Ledger{}, err
 	}
@@ -576,10 +585,13 @@ func (q *GoquQuerier) MarkPaidLeave(ctx context.Context, arg MarkPaidLeaveParams
 	if q.sqlDB == nil {
 		return errors.New("sqlDB unavailable for raw query")
 	}
+	// Never overwrite a locked attendance record (payroll-finalized month).
 	_, err := q.sqlDB.ExecContext(ctx, `
 		INSERT INTO attendance (tenant_id, employee_id, date, shift_id, status, overtime_hours)
 		VALUES ($1, $2, $3, NULL, 'paid_leave', 0)
-		ON CONFLICT (tenant_id, employee_id, date) DO UPDATE SET status = 'paid_leave', updated_at = now()
+		ON CONFLICT (tenant_id, employee_id, date)
+		DO UPDATE SET status = 'paid_leave', updated_at = now()
+		WHERE NOT attendance.is_locked
 	`, arg.TenantID, arg.EmployeeID, arg.Date)
 	return err
 }
@@ -589,6 +601,33 @@ func (q *GoquQuerier) UpdateTenantEmail(ctx context.Context, arg UpdateTenantEma
 		"email":      arg.Email,
 		"updated_at": goqu.L("now()"),
 	}).Where(goqu.C("id").Eq(arg.TenantID)).Executor().ExecContext(ctx)
+	return err
+}
+
+func (q *GoquQuerier) MailCountToday(ctx context.Context, arg MailCounterParams) (int32, error) {
+	if q.sqlDB == nil {
+		return 0, errors.New("sqlDB unavailable for raw query")
+	}
+	var count int32
+	err := q.sqlDB.QueryRowContext(ctx,
+		`SELECT count FROM mail_daily_counters WHERE mail_date = $1`, arg.Date).Scan(&count)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return count, nil
+}
+
+func (q *GoquQuerier) IncrementMailCounter(ctx context.Context, arg MailCounterParams) error {
+	if q.sqlDB == nil {
+		return errors.New("sqlDB unavailable for raw query")
+	}
+	_, err := q.sqlDB.ExecContext(ctx, `
+		INSERT INTO mail_daily_counters (mail_date, count) VALUES ($1, 1)
+		ON CONFLICT (mail_date) DO UPDATE SET count = mail_daily_counters.count + 1
+	`, arg.Date)
 	return err
 }
 

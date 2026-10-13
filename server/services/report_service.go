@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/shopspring/decimal"
 	"github.com/clearwage/clearwage/pkg/cache"
 	"github.com/clearwage/clearwage/repositories"
 	"github.com/clearwage/clearwage/utils"
+	"github.com/shopspring/decimal"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -27,7 +27,7 @@ type ReportService struct {
 type DailySummary = repositories.DailySummary
 
 type EmployeeMonthlyReport struct {
-	Employee   repositories.Employee   `json:"employee"`
+	Employee   repositories.Employee     `json:"employee"`
 	Attendance []repositories.Attendance `json:"attendance"`
 	Ledger     []repositories.Ledger     `json:"ledger"`
 }
@@ -43,12 +43,12 @@ type AttendanceTrend struct {
 }
 
 type Defaulter struct {
-	EmployeeID          string  `json:"employee_id"`
-	Name                string  `json:"name"`
-	Phone               string  `json:"phone"`
-	PhotoURL            *string `json:"photo_url"`
-	OutstandingBalance  float64 `json:"outstanding_balance"`
-	MonthlyWage         float64 `json:"monthly_wage"`
+	EmployeeID         string  `json:"employee_id"`
+	Name               string  `json:"name"`
+	Phone              string  `json:"phone"`
+	PhotoURL           *string `json:"photo_url"`
+	OutstandingBalance float64 `json:"outstanding_balance"`
+	MonthlyWage        float64 `json:"monthly_wage"`
 }
 
 func NewReportService(querier repositories.Querier) *ReportService {

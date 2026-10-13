@@ -163,6 +163,7 @@ type Ledger struct {
 	UpdatedAt          time.Time       `json:"updated_at"`
 	LinkedPayrollMonth sql.NullString  `json:"linked_payroll_month"`
 	Version            int32           `json:"version"`
+	ClientID           uuid.NullUUID   `json:"client_id"`
 }
 
 type LedgerDispute struct {
@@ -178,6 +179,11 @@ type LedgerDispute struct {
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	AttendanceID   uuid.NullUUID  `json:"attendance_id"`
+}
+
+type MailDailyCounter struct {
+	MailDate time.Time `json:"mail_date"`
+	Count    int32     `json:"count"`
 }
 
 type Notification struct {

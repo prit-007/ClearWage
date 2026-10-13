@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/shopspring/decimal"
 	"github.com/clearwage/clearwage/mocks"
 	"github.com/clearwage/clearwage/repositories"
+	"github.com/shopspring/decimal"
 	"go.uber.org/mock/gomock"
 )
 

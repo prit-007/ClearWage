@@ -103,6 +103,7 @@ type CreateLedgerEntryParams struct {
 	Note               *string `json:"note"`
 	LinkedPayrollMonth *string `json:"linked_payroll_month"`
 	CreatedBy          string  `json:"created_by"`
+	ClientID           *string `json:"client_id"`
 }
 
 type UpdateLedgerEntryParams struct {
@@ -460,6 +461,10 @@ type UpdateTenantEmailParams struct {
 	Email    *string
 }
 
+type MailCounterParams struct {
+	Date string
+}
+
 type UpdateSyncEventStatusParams struct {
 	ID           string  `json:"id"`
 	TenantID     string  `json:"tenant_id"`
@@ -642,4 +647,6 @@ type Querier interface {
 	UpdateLeaveRequestStatus(ctx context.Context, arg UpdateLeaveRequestStatusParams) (LeaveRequest, error)
 	MarkPaidLeave(ctx context.Context, arg MarkPaidLeaveParams) error
 	UpdateTenantEmail(ctx context.Context, arg UpdateTenantEmailParams) error
+	MailCountToday(ctx context.Context, arg MailCounterParams) (int32, error)
+	IncrementMailCounter(ctx context.Context, arg MailCounterParams) error
 }

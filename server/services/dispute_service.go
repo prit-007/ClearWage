@@ -101,10 +101,25 @@ func (s *DisputeService) mailDisputeStatus(ctx context.Context, tenantID, employ
 	if err != nil || emp.Email == nil || *emp.Email == "" {
 		return
 	}
-	subject := "Your dispute was " + status
-	body := fmt.Sprintf("Hello %s,\n\nYour reported dispute has been %s.", emp.Name, status)
-	if reason != "" {
-		body += "\n\nDetails: " + reason
+	statusLabel := "Resolved"
+	tone := "success"
+	if status == "rejected" {
+		statusLabel = "Rejected"
+		tone = "danger"
 	}
-	_ = s.mailer.Send(ctx, tenantID, *emp.Email, subject, body)
+	facts := []MailFact{}
+	if reason != "" {
+		facts = append(facts, MailFact{Label: "Details", Value: reason})
+	}
+	html := BrandedMail(MailData{
+		Preheader:  "Your reported dispute has been " + statusLabel,
+		Title:      "Dispute " + statusLabel,
+		Greeting:   fmt.Sprintf("Hello %s,", emp.Name),
+		Body:       []string{"Your reported dispute has been reviewed by your supervisor."},
+		Facts:      facts,
+		Status:     statusLabel,
+		StatusTone: tone,
+		Note:       "If you have more details, reply to this email or contact your supervisor.",
+	})
+	s.mailer.SendAsync(ctx, tenantID, *emp.Email, "Your dispute was "+statusLabel, html)
 }

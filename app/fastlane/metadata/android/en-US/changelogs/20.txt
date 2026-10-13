@@ -1,0 +1,9 @@
+v1.2.1 — Mail polish & reliability
+
+- Branded ClearWage email templates for all transactional mails
+- Emails now send in the background (no blocked requests)
+- Tenant Brevo API key masked in settings
+- Leave approval no longer overwrites locked attendance
+- Offline ledger re-sync deduplicated (no duplicate entries)
+- Shared daily mail quota for platform-key sends
+- Employee "My Leave Requests" page

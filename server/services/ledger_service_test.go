@@ -31,6 +31,7 @@ func TestLedgerService_CreateEntry(t *testing.T) {
 		"500.00",
 		"Salary payment",
 		"00000000-0000-0000-0000-000000000001",
+		nil,
 	)
 	if err != nil {
 		t.Fatalf("CreateEntry failed: %v", err)
@@ -107,6 +108,7 @@ func TestLedgerService_CreateEntry_DBError(t *testing.T) {
 		"500.00",
 		"",
 		"00000000-0000-0000-0000-000000000001",
+		nil,
 	)
 	if err == nil {
 		t.Fatal("expected error, got nil")

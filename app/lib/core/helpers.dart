@@ -1,5 +1,19 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'api_exceptions.dart';
+
+/// Generates a random UUID v4 used as a client-side idempotency key for
+/// offline-safe creates (server dedups ledger on `client_id`).
+String newClientId() {
+  final r = Random.secure();
+  final bytes = List<int>.generate(16, (_) => r.nextInt(256));
+  final hex = bytes.map((e) => e.toRadixString(16).padLeft(2, '0')).join();
+  final variant = (8 + r.nextInt(4)).toRadixString(16);
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+      '4${hex.substring(13, 16)}-$variant${hex.substring(17, 20)}-'
+      '${hex.substring(20)}';
+}
 
 List<Map<String, dynamic>> asMapList(dynamic data) {
   if (data is! List) return const [];

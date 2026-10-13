@@ -103,6 +103,7 @@ type CreateLedgerEntryParams struct {
 	Note               *string `json:"note"`
 	LinkedPayrollMonth *string `json:"linked_payroll_month"`
 	CreatedBy          string  `json:"created_by"`
+	ClientID           *string `json:"client_id"`
 }
 
 type UpdateLedgerEntryParams struct {

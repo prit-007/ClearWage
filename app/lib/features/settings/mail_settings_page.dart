@@ -46,7 +46,8 @@ class _MailSettingsPageState extends ConsumerState<MailSettingsPage> {
       final data = await ref.read(settingsServiceProvider).getMailSettings();
       final key = data['brevo_api_key'] as String?;
       _accountEmailCtrl.text = data['account_email'] as String? ?? '';
-      _hasTenantKey = key != null && key.isNotEmpty;
+      _hasTenantKey =
+          (data['has_custom_key'] as bool?) ?? (key != null && key.isNotEmpty);
       _senderEmailCtrl.text = data['mail_sender_email'] as String? ?? '';
       _senderNameCtrl.text = data['mail_sender_name'] as String? ?? '';
       _quotaCtrl.text = (data['mail_quota_per_day'] as num?)?.toString() ?? '';

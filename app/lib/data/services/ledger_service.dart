@@ -46,7 +46,9 @@ class LedgerService {
   }
 
   Future<LedgerEntry> create(Map<String, dynamic> body) async {
-    final res = await _client.post('/api/v1/ledger', body: body);
+    final payload = Map<String, dynamic>.from(body)
+      ..putIfAbsent('client_id', newClientId);
+    final res = await _client.post('/api/v1/ledger', body: payload);
     return LedgerEntry.fromJson(res['data'] as Map<String, dynamic>? ?? {});
   }
 

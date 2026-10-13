@@ -280,4 +280,17 @@ void main() {
       expect(result, endsWith('...'));
     });
   });
+
+  group('newClientId', () {
+    test('produces a valid UUID v4 shape and uniqueness', () {
+      final a = newClientId();
+      final b = newClientId();
+      final uuidRe = RegExp(
+        r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+      );
+      expect(uuidRe.hasMatch(a), isTrue, reason: a);
+      expect(uuidRe.hasMatch(b), isTrue, reason: b);
+      expect(a, isNot(b));
+    });
+  });
 }

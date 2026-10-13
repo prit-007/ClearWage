@@ -335,7 +335,16 @@ func (q *GoquQuerier) CreateLedgerEntry(ctx context.Context, arg CreateLedgerEnt
 	if arg.LinkedPayrollMonth != nil {
 		rec["linked_payroll_month"] = arg.LinkedPayrollMonth
 	}
-	found, err := q.db.Insert("ledger").Rows(rec).Returning(goqu.Star()).Executor().ScanStructContext(ctx, &l)
+	ds := q.db.Insert("ledger").Rows(rec).Returning(goqu.Star())
+	if arg.ClientID != nil {
+		// Idempotent offline create: re-syncing the same client_id returns the
+		// original row instead of inserting a duplicate.
+		rec["client_id"] = arg.ClientID
+		ds = q.db.Insert("ledger").Rows(rec).Returning(goqu.Star()).OnConflict(
+			goqu.DoUpdate("client_id", goqu.Record{"client_id": goqu.L("EXCLUDED.client_id")}),
+		)
+	}
+	found, err := ds.Executor().ScanStructContext(ctx, &l)
 	if err != nil {
 		return Ledger{}, err
 	}

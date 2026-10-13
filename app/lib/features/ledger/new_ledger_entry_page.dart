@@ -103,9 +103,11 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
       } else if (ref.read(connectivityProvider).value ?? true) {
         await ref.read(ledgerServiceProvider).create(body);
       } else {
+        final staged = Map<String, dynamic>.from(body)
+          ..putIfAbsent('client_id', newClientId);
         await ref
             .read(syncServiceProvider)
-            .enqueue(kind: 'ledger', payload: body);
+            .enqueue(kind: 'ledger', payload: staged);
         await refreshPendingSyncCount(ref);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

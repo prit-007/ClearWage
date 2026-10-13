@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/clearwage/clearwage/repositories/db"
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/google/uuid"
-	"github.com/clearwage/clearwage/repositories/db"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -601,6 +601,33 @@ func (q *GoquQuerier) UpdateTenantEmail(ctx context.Context, arg UpdateTenantEma
 		"email":      arg.Email,
 		"updated_at": goqu.L("now()"),
 	}).Where(goqu.C("id").Eq(arg.TenantID)).Executor().ExecContext(ctx)
+	return err
+}
+
+func (q *GoquQuerier) MailCountToday(ctx context.Context, arg MailCounterParams) (int32, error) {
+	if q.sqlDB == nil {
+		return 0, errors.New("sqlDB unavailable for raw query")
+	}
+	var count int32
+	err := q.sqlDB.QueryRowContext(ctx,
+		`SELECT count FROM mail_daily_counters WHERE mail_date = $1`, arg.Date).Scan(&count)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return count, nil
+}
+
+func (q *GoquQuerier) IncrementMailCounter(ctx context.Context, arg MailCounterParams) error {
+	if q.sqlDB == nil {
+		return errors.New("sqlDB unavailable for raw query")
+	}
+	_, err := q.sqlDB.ExecContext(ctx, `
+		INSERT INTO mail_daily_counters (mail_date, count) VALUES ($1, 1)
+		ON CONFLICT (mail_date) DO UPDATE SET count = mail_daily_counters.count + 1
+	`, arg.Date)
 	return err
 }
 

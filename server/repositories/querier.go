@@ -461,6 +461,10 @@ type UpdateTenantEmailParams struct {
 	Email    *string
 }
 
+type MailCounterParams struct {
+	Date string
+}
+
 type UpdateSyncEventStatusParams struct {
 	ID           string  `json:"id"`
 	TenantID     string  `json:"tenant_id"`
@@ -643,4 +647,6 @@ type Querier interface {
 	UpdateLeaveRequestStatus(ctx context.Context, arg UpdateLeaveRequestStatusParams) (LeaveRequest, error)
 	MarkPaidLeave(ctx context.Context, arg MarkPaidLeaveParams) error
 	UpdateTenantEmail(ctx context.Context, arg UpdateTenantEmailParams) error
+	MailCountToday(ctx context.Context, arg MailCounterParams) (int32, error)
+	IncrementMailCounter(ctx context.Context, arg MailCounterParams) error
 }

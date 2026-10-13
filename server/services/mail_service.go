@@ -82,8 +82,21 @@ func (m *MailService) Send(ctx context.Context, tenantID, to, subject, htmlConte
 		used = 0
 	}
 	if used >= quota {
-		m.logger.Warn().Str("tenant", tenantID).Int32("sent", used).Int32("quota", quota).Msg("mail skipped: daily quota reached")
+		m.logger.Warn().Str("tenant", tenantID).Int32("sent", used).Int32("quota", quota).Msg("mail skipped: tenant daily quota reached")
 		return nil
+	}
+
+	// Platform-key sends share the Brevo account's daily quota across tenants.
+	usingPlatformKey := key != "" && key == m.cfg.BrevoAPIKey
+	if usingPlatformKey {
+		pUsed, perr := m.querier.MailCountToday(ctx, repositories.MailCounterParams{Date: today})
+		if perr != nil {
+			return perr
+		}
+		if pUsed >= quota {
+			m.logger.Warn().Int32("sent", pUsed).Int32("quota", quota).Msg("mail skipped: platform daily quota reached")
+			return nil
+		}
 	}
 
 	payload, err := json.Marshal(brevoPayload{
@@ -120,7 +133,13 @@ func (m *MailService) Send(ctx context.Context, tenantID, to, subject, htmlConte
 			Msg("mail skipped: brevo rejected request")
 		return nil
 	}
-	return m.querier.IncrementMailCount(ctx, repositories.IncrementMailCountParams{TenantID: tenantID, Date: today})
+	if err := m.querier.IncrementMailCount(ctx, repositories.IncrementMailCountParams{TenantID: tenantID, Date: today}); err != nil {
+		return err
+	}
+	if usingPlatformKey {
+		return m.querier.IncrementMailCounter(ctx, repositories.MailCounterParams{Date: today})
+	}
+	return nil
 }
 
 func (m *MailService) resolveConfig(ctx context.Context, tenantID string) (key, senderEmail, senderName string, quota int32) {

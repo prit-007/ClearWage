@@ -206,6 +206,33 @@ func (mr *MockQuerierMockRecorder) UpdateTenantEmail(ctx, arg any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTenantEmail", reflect.TypeOf((*MockQuerier)(nil).UpdateTenantEmail), ctx, arg)
 }
 
+// MailCountToday mocks base method.
+func (m *MockQuerier) MailCountToday(ctx context.Context, arg repositories.MailCounterParams) (int32, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MailCountToday", ctx, arg)
+	ret0, _ := ret[0].(int32)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (mr *MockQuerierMockRecorder) MailCountToday(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MailCountToday", reflect.TypeOf((*MockQuerier)(nil).MailCountToday), ctx, arg)
+}
+
+// IncrementMailCounter mocks base method.
+func (m *MockQuerier) IncrementMailCounter(ctx context.Context, arg repositories.MailCounterParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrementMailCounter", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (mr *MockQuerierMockRecorder) IncrementMailCounter(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementMailCounter", reflect.TypeOf((*MockQuerier)(nil).IncrementMailCounter), ctx, arg)
+}
+
 // CountHolidaysByDate indicates an expected call of CountHolidaysByDate.
 func (mr *MockQuerierMockRecorder) CountHolidaysByDate(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()

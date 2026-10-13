@@ -99,6 +99,7 @@ func TestMailServiceSendPostsAndIncrements(t *testing.T) {
 	q.EXPECT().GetTenantConfig(gomock.Any(), "t1").Return(
 		repositories.TenantConfig{TenantID: "t1", MailQuotaPerDay: 300, MailSentToday: 0, MailSentDate: nil}, nil,
 	).AnyTimes()
+	q.EXPECT().MailCountToday(gomock.Any(), gomock.Any()).Return(int32(0), nil)
 	q.EXPECT().IncrementMailCount(gomock.Any(), gomock.Any()).Do(
 		func(_ context.Context, arg repositories.IncrementMailCountParams) error {
 			if arg.TenantID != "t1" || arg.Date == "" {
@@ -107,6 +108,7 @@ func TestMailServiceSendPostsAndIncrements(t *testing.T) {
 			return nil
 		},
 	).Return(nil)
+	q.EXPECT().IncrementMailCounter(gomock.Any(), gomock.Any()).Return(nil)
 
 	svc := NewMailService(q, cfg, &logger)
 	svc.endpoint = srv.URL

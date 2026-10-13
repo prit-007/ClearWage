@@ -1545,6 +1545,318 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No audit activity recorded'**
   String get profNoAudit;
+
+  /// No description provided for @formErrNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee name is required'**
+  String get formErrNameRequired;
+
+  /// No description provided for @formErrPhoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number is required'**
+  String get formErrPhoneRequired;
+
+  /// No description provided for @formErrPhoneInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 10-digit phone number'**
+  String get formErrPhoneInvalid;
+
+  /// No description provided for @formErrWageRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Wage amount is required'**
+  String get formErrWageRequired;
+
+  /// No description provided for @formErrWageInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Wage must be a valid number'**
+  String get formErrWageInvalid;
+
+  /// No description provided for @formErrIfsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid IFSC code format (e.g., SBIN0001234)'**
+  String get formErrIfsc;
+
+  /// No description provided for @formErrEnterName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter employee name'**
+  String get formErrEnterName;
+
+  /// No description provided for @formErrAmountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid amount'**
+  String get formErrAmountInvalid;
+
+  /// No description provided for @formErrPan.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid PAN (e.g. ABCDE1234F)'**
+  String get formErrPan;
+
+  /// No description provided for @formErrAadhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar must be exactly 12 digits'**
+  String get formErrAadhaar;
+
+  /// No description provided for @formDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get formDiscardTitle;
+
+  /// No description provided for @formDiscardMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved changes. Leave anyway?'**
+  String get formDiscardMsg;
+
+  /// No description provided for @formLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get formLeave;
+
+  /// No description provided for @formEditProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Profile'**
+  String get formEditProfile;
+
+  /// No description provided for @formOnboardStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Onboard Staff'**
+  String get formOnboardStaff;
+
+  /// No description provided for @formSectionCore.
+  ///
+  /// In en, this message translates to:
+  /// **'CORE IDENTITY'**
+  String get formSectionCore;
+
+  /// No description provided for @formSectionComp.
+  ///
+  /// In en, this message translates to:
+  /// **'COMPENSATION & ROLE'**
+  String get formSectionComp;
+
+  /// No description provided for @formSectionKyc.
+  ///
+  /// In en, this message translates to:
+  /// **'KYC & FINANCIAL'**
+  String get formSectionKyc;
+
+  /// No description provided for @formSectionEmergency.
+  ///
+  /// In en, this message translates to:
+  /// **'EMERGENCY & ADDRESS'**
+  String get formSectionEmergency;
+
+  /// No description provided for @formFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name *'**
+  String get formFullName;
+
+  /// No description provided for @formPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number *'**
+  String get formPhone;
+
+  /// No description provided for @formEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email (Optional)'**
+  String get formEmail;
+
+  /// No description provided for @formDesignation.
+  ///
+  /// In en, this message translates to:
+  /// **'Designation / Title (Optional)'**
+  String get formDesignation;
+
+  /// No description provided for @formDepartment.
+  ///
+  /// In en, this message translates to:
+  /// **'Department (Optional)'**
+  String get formDepartment;
+
+  /// No description provided for @formWageFixedMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed Monthly'**
+  String get formWageFixedMonthly;
+
+  /// No description provided for @formWageAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Wage Amount (₹) *'**
+  String get formWageAmount;
+
+  /// No description provided for @formDoj.
+  ///
+  /// In en, this message translates to:
+  /// **'Date of Joining (Optional)'**
+  String get formDoj;
+
+  /// No description provided for @formDojHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to select date'**
+  String get formDojHint;
+
+  /// No description provided for @formPan.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN Number (Optional)'**
+  String get formPan;
+
+  /// No description provided for @formAadhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Number (Optional)'**
+  String get formAadhaar;
+
+  /// No description provided for @formPf.
+  ///
+  /// In en, this message translates to:
+  /// **'PF / UAN Number (Optional)'**
+  String get formPf;
+
+  /// No description provided for @formBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Account Number (Optional)'**
+  String get formBank;
+
+  /// No description provided for @formIfsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank IFSC (Optional)'**
+  String get formIfsc;
+
+  /// No description provided for @formUpi.
+  ///
+  /// In en, this message translates to:
+  /// **'UPI ID (Optional)'**
+  String get formUpi;
+
+  /// No description provided for @formEmergencyName.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Contact Name (Optional)'**
+  String get formEmergencyName;
+
+  /// No description provided for @formEmergencyPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Contact Phone (Optional)'**
+  String get formEmergencyPhone;
+
+  /// No description provided for @formCurrentAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Address (Optional)'**
+  String get formCurrentAddress;
+
+  /// No description provided for @formPermanentAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanent Address (Optional)'**
+  String get formPermanentAddress;
+
+  /// No description provided for @formHealthNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Notes (Optional)'**
+  String get formHealthNotes;
+
+  /// No description provided for @formUpdateProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Profile'**
+  String get formUpdateProfile;
+
+  /// No description provided for @formOnboardEmployee.
+  ///
+  /// In en, this message translates to:
+  /// **'Onboard Employee'**
+  String get formOnboardEmployee;
+
+  /// No description provided for @formPhotoSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee saved but photo upload failed. {error}'**
+  String formPhotoSaveFailed(String error);
+
+  /// No description provided for @formDefaultShift.
+  ///
+  /// In en, this message translates to:
+  /// **'Default Shift (Optional)'**
+  String get formDefaultShift;
+
+  /// No description provided for @formCouldNotLoadShifts.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load shifts'**
+  String get formCouldNotLoadShifts;
+
+  /// No description provided for @formAssignShift.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign Shift'**
+  String get formAssignShift;
+
+  /// No description provided for @formAccessLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'System Access Level'**
+  String get formAccessLevel;
+
+  /// No description provided for @formRoleEmployee.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard Employee'**
+  String get formRoleEmployee;
+
+  /// No description provided for @formRoleSupervisor.
+  ///
+  /// In en, this message translates to:
+  /// **'Manager / Supervisor'**
+  String get formRoleSupervisor;
+
+  /// No description provided for @formReportingManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Reporting Manager'**
+  String get formReportingManager;
+
+  /// No description provided for @formNoSupervisors.
+  ///
+  /// In en, this message translates to:
+  /// **'No supervisors available'**
+  String get formNoSupervisors;
+
+  /// No description provided for @formSelectDots.
+  ///
+  /// In en, this message translates to:
+  /// **'Select…'**
+  String get formSelectDots;
+
+  /// No description provided for @formNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get formNone;
 }
 
 class _AppLocalizationsDelegate

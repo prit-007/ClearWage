@@ -781,4 +781,163 @@ class AppLocalizationsGu extends AppLocalizations {
 
   @override
   String get profNoAudit => 'કોઈ ઓડિટ પ્રવૃત્તિ નોંધાઈ નથી';
+
+  @override
+  String get formErrNameRequired => 'કર્મચારીનું નામ જરૂરી છે';
+
+  @override
+  String get formErrPhoneRequired => 'ફોન નંબર જરૂરી છે';
+
+  @override
+  String get formErrPhoneInvalid => 'માન્ય 10-અંકનો ફોન નંબર દાખલ કરો';
+
+  @override
+  String get formErrWageRequired => 'પગારની રકમ જરૂરી છે';
+
+  @override
+  String get formErrWageInvalid => 'પગાર માન્ય સંખ્યા હોવો જોઈએ';
+
+  @override
+  String get formErrIfsc => 'અમાન્ય IFSC કોડ ફોર્મેટ (દા.ત., SBIN0001234)';
+
+  @override
+  String get formErrEnterName => 'કર્મચારીનું નામ દાખલ કરો';
+
+  @override
+  String get formErrAmountInvalid => 'માન્ય રકમ દાખલ કરો';
+
+  @override
+  String get formErrPan => 'માન્ય PAN દાખલ કરો (દા.ત. ABCDE1234F)';
+
+  @override
+  String get formErrAadhaar => 'આધાર ચોક્કસ 12 અંકનો હોવો જોઈએ';
+
+  @override
+  String get formDiscardTitle => 'ફેરફારો રદ કરશો?';
+
+  @override
+  String get formDiscardMsg =>
+      'તમારી પાસે સાચવાયેલા ન હોય તે ફેરફારો છે. છતાં બહાર જશો?';
+
+  @override
+  String get formLeave => 'બહાર જાઓ';
+
+  @override
+  String get formEditProfile => 'પ્રોફાઇલ સંપાદિત કરો';
+
+  @override
+  String get formOnboardStaff => 'સ્ટાફ ઉમેરો';
+
+  @override
+  String get formSectionCore => 'મુખ્ય ઓળખ';
+
+  @override
+  String get formSectionComp => 'પારિશ્રમિક અને ભૂમિકા';
+
+  @override
+  String get formSectionKyc => 'KYC અને નાણાકીય';
+
+  @override
+  String get formSectionEmergency => 'ઇમર્જન્સી અને સરનામું';
+
+  @override
+  String get formFullName => 'પૂરું નામ *';
+
+  @override
+  String get formPhone => 'ફોન નંબર *';
+
+  @override
+  String get formEmail => 'ઇમેઇલ (વૈકલ્પિક)';
+
+  @override
+  String get formDesignation => 'હોદ્દો / શીર્ષક (વૈકલ્પિક)';
+
+  @override
+  String get formDepartment => 'વિભાગ (વૈકલ્પિક)';
+
+  @override
+  String get formWageFixedMonthly => 'નિશ્ચિત માસિક';
+
+  @override
+  String get formWageAmount => 'પગાર રકમ (₹) *';
+
+  @override
+  String get formDoj => 'જોડાયાની તારીખ (વૈકલ્પિક)';
+
+  @override
+  String get formDojHint => 'તારીખ પસંદ કરવા ટૅપ કરો';
+
+  @override
+  String get formPan => 'PAN નંબર (વૈકલ્પિક)';
+
+  @override
+  String get formAadhaar => 'આધાર નંબર (વૈકલ્પિક)';
+
+  @override
+  String get formPf => 'PF / UAN નંબર (વૈકલ્પિક)';
+
+  @override
+  String get formBank => 'બેંક ખાતા નંબર (વૈકલ્પિક)';
+
+  @override
+  String get formIfsc => 'બેંક IFSC (વૈકલ્પિક)';
+
+  @override
+  String get formUpi => 'UPI ID (વૈકલ્પિક)';
+
+  @override
+  String get formEmergencyName => 'ઇમર્જન્સી સંપર્ક નામ (વૈકલ્પિક)';
+
+  @override
+  String get formEmergencyPhone => 'ઇમર્જન્સી સંપર્ક ફોન (વૈકલ્પિક)';
+
+  @override
+  String get formCurrentAddress => 'વર્તમાન સરનામું (વૈકલ્પિક)';
+
+  @override
+  String get formPermanentAddress => 'કાયમી સરનામું (વૈકલ્પિક)';
+
+  @override
+  String get formHealthNotes => 'આરોગ્ય નોંધ (વૈકલ્પિક)';
+
+  @override
+  String get formUpdateProfile => 'પ્રોફાઇલ અપડેટ કરો';
+
+  @override
+  String get formOnboardEmployee => 'કર્મચારી ઉમેરો';
+
+  @override
+  String formPhotoSaveFailed(String error) {
+    return 'કર્મચારી સાચવાયો પણ ફોટો અપલોડ નિષ્ફળ ગયો. $error';
+  }
+
+  @override
+  String get formDefaultShift => 'ડિફૉલ્ટ શિફ્ટ (વૈકલ્પિક)';
+
+  @override
+  String get formCouldNotLoadShifts => 'શિફ્ટ લોડ થઈ શકી નહીં';
+
+  @override
+  String get formAssignShift => 'શિફ્ટ ફાળવો';
+
+  @override
+  String get formAccessLevel => 'સિસ્ટમ એક્સેસ સ્તર';
+
+  @override
+  String get formRoleEmployee => 'સામાન્ય કર્મચારી';
+
+  @override
+  String get formRoleSupervisor => 'મેનેજર / સુપરવાઇઝર';
+
+  @override
+  String get formReportingManager => 'રિપોર્ટિંગ મેનેજર';
+
+  @override
+  String get formNoSupervisors => 'કોઈ સુપરવાઇઝર ઉપલબ્ધ નથી';
+
+  @override
+  String get formSelectDots => 'પસંદ કરો…';
+
+  @override
+  String get formNone => 'કોઈ નહીં';
 }

@@ -17,6 +17,7 @@ import '../../core/helpers.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import 'dart:async';
+import '../../l10n/app_localizations.dart';
 
 class AddEmployeeScreen extends ConsumerStatefulWidget {
   final Employee? employee;
@@ -142,20 +143,21 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   }
 
   String? _validateAll() {
+    final l = AppLocalizations.of(context);
     final name = _nameCtrl.text.trim();
     final phone = _phoneCtrl.text.trim();
     final wage = _wageCtrl.text.trim();
-    if (name.isEmpty) return 'Employee name is required';
-    if (phone.isEmpty) return 'Phone number is required';
+    if (name.isEmpty) return l.formErrNameRequired;
+    if (phone.isEmpty) return l.formErrPhoneRequired;
     if (!RegExp(r'^\d{10,15}$').hasMatch(phone)) {
-      return 'Enter a valid 10-digit phone number';
+      return l.formErrPhoneInvalid;
     }
-    if (wage.isEmpty) return 'Wage amount is required';
+    if (wage.isEmpty) return l.formErrWageRequired;
     final wageVal = double.tryParse(wage);
-    if (wageVal == null || wageVal <= 0) return 'Wage must be a valid number';
+    if (wageVal == null || wageVal <= 0) return l.formErrWageInvalid;
     final ifsc = _ifscCtrl.text.trim();
     if (ifsc.isNotEmpty && !RegExp(r'^[A-Z]{4}0[A-Z0-9]{6}$').hasMatch(ifsc)) {
-      return 'Invalid IFSC code format (e.g., SBIN0001234)';
+      return l.formErrIfsc;
     }
     return null;
   }
@@ -188,9 +190,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                   PhosphorIconsDuotone.camera,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                title: const Text(
-                  'Capture with Camera',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                title: Text(
+                  AppLocalizations.of(context).profPhotoCamera,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -203,9 +205,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                   PhosphorIconsDuotone.image,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                title: const Text(
-                  'Choose from Gallery',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                title: Text(
+                  AppLocalizations.of(context).profPhotoGallery,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -229,7 +231,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       );
       if (picked != null && mounted) setState(() => _photoPath = picked.path);
     } catch (_) {
-      if (mounted) showError(context, 'Could not pick photo');
+      if (mounted) {
+        showError(context, AppLocalizations.of(context).profCouldNotPickPhoto);
+      }
     }
   }
 
@@ -310,7 +314,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
           if (mounted) {
             showError(
               context,
-              'Employee saved but photo upload failed. ${friendlyError(photoError)}',
+              AppLocalizations.of(
+                context,
+              ).formPhotoSaveFailed(friendlyError(photoError)),
             );
           }
         }
@@ -390,9 +396,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     }
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Discard changes?',
-      message: 'You have unsaved changes. Leave anyway?',
-      confirmLabel: 'Leave',
+      title: AppLocalizations.of(context).formDiscardTitle,
+      message: AppLocalizations.of(context).formDiscardMsg,
+      confirmLabel: AppLocalizations.of(context).formLeave,
       icon: PhosphorIconsRegular.warningCircle,
       isDestructive: true,
     );
@@ -449,7 +455,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
             onPressed: _onBackPressed,
           ),
           title: Text(
-            widget.employee != null ? 'Edit Profile' : 'Onboard Staff',
+            widget.employee != null
+                ? AppLocalizations.of(context).formEditProfile
+                : AppLocalizations.of(context).formOnboardStaff,
             style: tt.titleLarge?.copyWith(
               fontWeight: FontWeight.w900,
               letterSpacing: -0.5,
@@ -541,7 +549,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                   FluidSlideIn(
                     delay: 100,
                     child: Text(
-                      'CORE IDENTITY',
+                      AppLocalizations.of(context).formSectionCore,
                       style: tt.labelSmall?.copyWith(
                         fontWeight: FontWeight.w900,
                         color: cs.primary,
@@ -554,10 +562,10 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 150,
                     child: ValidatedField(
                       controller: _nameCtrl,
-                      label: 'Full Name *',
+                      label: AppLocalizations.of(context).formFullName,
                       prefixIcon: PhosphorIconsDuotone.user,
                       validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Enter employee name'
+                          ? AppLocalizations.of(context).formErrEnterName
                           : null,
                     ),
                   ),
@@ -565,14 +573,20 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 200,
                     child: ValidatedField(
                       controller: _phoneCtrl,
-                      label: 'Phone Number *',
+                      label: AppLocalizations.of(context).formPhone,
                       prefixIcon: PhosphorIconsDuotone.phone,
                       keyboardType: TextInputType.phone,
                       validator: (v) {
                         final p = v?.trim() ?? '';
-                        if (p.isEmpty) return 'Phone number is required';
+                        if (p.isEmpty) {
+                          return AppLocalizations.of(
+                            context,
+                          ).formErrPhoneRequired;
+                        }
                         if (!RegExp(r'^\d{10,15}$').hasMatch(p)) {
-                          return 'Enter a valid 10-digit phone number';
+                          return AppLocalizations.of(
+                            context,
+                          ).formErrPhoneInvalid;
                         }
                         return null;
                       },
@@ -582,7 +596,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 220,
                     child: ValidatedField(
                       controller: _emailCtrl,
-                      label: 'Email (Optional)',
+                      label: AppLocalizations.of(context).formEmail,
                       prefixIcon: PhosphorIconsDuotone.envelope,
                       keyboardType: TextInputType.emailAddress,
                     ),
@@ -591,7 +605,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 250,
                     child: ValidatedField(
                       controller: _desigCtrl,
-                      label: 'Designation / Title (Optional)',
+                      label: AppLocalizations.of(context).formDesignation,
                       prefixIcon: PhosphorIconsDuotone.briefcase,
                     ),
                   ),
@@ -599,7 +613,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 270,
                     child: ValidatedField(
                       controller: _deptCtrl,
-                      label: 'Department (Optional)',
+                      label: AppLocalizations.of(context).formDepartment,
                       prefixIcon: PhosphorIconsDuotone.buildings,
                     ),
                   ),
@@ -609,7 +623,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                   FluidSlideIn(
                     delay: 300,
                     child: Text(
-                      'COMPENSATION & ROLE',
+                      AppLocalizations.of(context).formSectionComp,
                       style: tt.labelSmall?.copyWith(
                         fontWeight: FontWeight.w900,
                         color: cs.primary,
@@ -624,7 +638,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                       children: [
                         _TactileWageCard(
                           cs: cs,
-                          label: 'Daily Wage',
+                          label: AppLocalizations.of(context).profWageDaily,
                           icon: PhosphorIconsFill.sun,
                           isSelected: _wageType == 'daily',
                           onTap: () => _updateWage('daily'),
@@ -632,7 +646,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                         const SizedBox(width: 16),
                         _TactileWageCard(
                           cs: cs,
-                          label: 'Fixed Monthly',
+                          label: AppLocalizations.of(
+                            context,
+                          ).formWageFixedMonthly,
                           icon: PhosphorIconsFill.calendarBlank,
                           isSelected: _wageType == 'monthly',
                           onTap: () => _updateWage('monthly'),
@@ -640,7 +656,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                         const SizedBox(width: 16),
                         _TactileWageCard(
                           cs: cs,
-                          label: 'Hourly',
+                          label: AppLocalizations.of(context).profWageHourly,
                           icon: PhosphorIconsFill.clock,
                           isSelected: _wageType == 'hourly',
                           onTap: () => _updateWage('hourly'),
@@ -653,16 +669,20 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 400,
                     child: ValidatedField(
                       controller: _wageCtrl,
-                      label: 'Wage Amount (₹) *',
+                      label: AppLocalizations.of(context).formWageAmount,
                       prefixIcon: PhosphorIconsDuotone.coins,
                       keyboardType: TextInputType.number,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
-                          return 'Wage amount is required';
+                          return AppLocalizations.of(
+                            context,
+                          ).formErrWageRequired;
                         }
                         final amt = double.tryParse(v.trim());
                         if (amt == null || amt <= 0) {
-                          return 'Enter a valid amount';
+                          return AppLocalizations.of(
+                            context,
+                          ).formErrAmountInvalid;
                         }
                         return null;
                       },
@@ -707,7 +727,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                   FluidSlideIn(
                     delay: 550,
                     child: Text(
-                      'KYC & FINANCIAL',
+                      AppLocalizations.of(context).formSectionKyc,
                       style: tt.labelSmall?.copyWith(
                         fontWeight: FontWeight.w900,
                         color: cs.primary,
@@ -720,10 +740,10 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 600,
                     child: ValidatedField(
                       controller: _dojCtrl,
-                      label: 'Date of Joining (Optional)',
+                      label: AppLocalizations.of(context).formDoj,
                       prefixIcon: PhosphorIconsDuotone.calendarPlus,
                       readOnly: true,
-                      hint: 'Tap to select date',
+                      hint: AppLocalizations.of(context).formDojHint,
                       onTap: _pickDoj,
                     ),
                   ),
@@ -731,7 +751,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 650,
                     child: ValidatedField(
                       controller: _panCtrl,
-                      label: 'PAN Number (Optional)',
+                      label: AppLocalizations.of(context).formPan,
                       prefixIcon: PhosphorIconsDuotone.identificationCard,
                       validator: (v) {
                         final p = v?.trim() ?? '';
@@ -739,7 +759,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                         if (!RegExp(
                           r'^[A-Z]{5}[0-9]{4}[A-Z]$',
                         ).hasMatch(p.toUpperCase())) {
-                          return 'Enter a valid PAN (e.g. ABCDE1234F)';
+                          return AppLocalizations.of(context).formErrPan;
                         }
                         return null;
                       },
@@ -757,14 +777,14 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 700,
                     child: ValidatedField(
                       controller: _aadhaarCtrl,
-                      label: 'Aadhaar Number (Optional)',
+                      label: AppLocalizations.of(context).formAadhaar,
                       prefixIcon: PhosphorIconsDuotone.fingerprint,
                       keyboardType: TextInputType.number,
                       validator: (v) {
                         final a = v?.trim() ?? '';
                         if (a.isEmpty) return null;
                         if (!RegExp(r'^\d{12}$').hasMatch(a)) {
-                          return 'Aadhaar must be exactly 12 digits';
+                          return AppLocalizations.of(context).formErrAadhaar;
                         }
                         return null;
                       },
@@ -774,7 +794,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 750,
                     child: ValidatedField(
                       controller: _pfCtrl,
-                      label: 'PF / UAN Number (Optional)',
+                      label: AppLocalizations.of(context).formPf,
                       prefixIcon: PhosphorIconsDuotone.shieldCheck,
                     ),
                   ),
@@ -782,7 +802,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 800,
                     child: ValidatedField(
                       controller: _bankCtrl,
-                      label: 'Bank Account Number (Optional)',
+                      label: AppLocalizations.of(context).formBank,
                       prefixIcon: PhosphorIconsDuotone.bank,
                       keyboardType: TextInputType.number,
                     ),
@@ -791,7 +811,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 850,
                     child: ValidatedField(
                       controller: _ifscCtrl,
-                      label: 'Bank IFSC (Optional)',
+                      label: AppLocalizations.of(context).formIfsc,
                       prefixIcon: PhosphorIconsDuotone.buildings,
                     ),
                   ),
@@ -799,7 +819,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 900,
                     child: ValidatedField(
                       controller: _upiCtrl,
-                      label: 'UPI ID (Optional)',
+                      label: AppLocalizations.of(context).formUpi,
                       prefixIcon: PhosphorIconsDuotone.qrCode,
                     ),
                   ),
@@ -809,7 +829,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                   FluidSlideIn(
                     delay: 950,
                     child: Text(
-                      'EMERGENCY & ADDRESS',
+                      AppLocalizations.of(context).formSectionEmergency,
                       style: tt.labelSmall?.copyWith(
                         fontWeight: FontWeight.w900,
                         color: cs.primary,
@@ -822,7 +842,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 1000,
                     child: ValidatedField(
                       controller: _emergencyNameCtrl,
-                      label: 'Emergency Contact Name (Optional)',
+                      label: AppLocalizations.of(context).formEmergencyName,
                       prefixIcon: PhosphorIconsDuotone.userFocus,
                     ),
                   ),
@@ -830,7 +850,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 1050,
                     child: ValidatedField(
                       controller: _emergencyPhoneCtrl,
-                      label: 'Emergency Contact Phone (Optional)',
+                      label: AppLocalizations.of(context).formEmergencyPhone,
                       prefixIcon: PhosphorIconsDuotone.phoneCall,
                       keyboardType: TextInputType.phone,
                     ),
@@ -839,7 +859,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 1100,
                     child: ValidatedField(
                       controller: _currentAddrCtrl,
-                      label: 'Current Address (Optional)',
+                      label: AppLocalizations.of(context).formCurrentAddress,
                       prefixIcon: PhosphorIconsDuotone.house,
                       maxLines: 2,
                     ),
@@ -848,7 +868,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 1150,
                     child: ValidatedField(
                       controller: _permAddrCtrl,
-                      label: 'Permanent Address (Optional)',
+                      label: AppLocalizations.of(context).formPermanentAddress,
                       prefixIcon: PhosphorIconsDuotone.mapPin,
                       maxLines: 2,
                     ),
@@ -857,7 +877,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     delay: 1200,
                     child: ValidatedField(
                       controller: _healthCtrl,
-                      label: 'Health Notes (Optional)',
+                      label: AppLocalizations.of(context).formHealthNotes,
                       prefixIcon: PhosphorIconsDuotone.firstAid,
                       maxLines: 2,
                     ),
@@ -911,8 +931,12 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                             )
                           : Text(
                               widget.employee != null
-                                  ? 'Update Profile'
-                                  : 'Onboard Employee',
+                                  ? AppLocalizations.of(
+                                      context,
+                                    ).formUpdateProfile
+                                  : AppLocalizations.of(
+                                      context,
+                                    ).formOnboardEmployee,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -1014,7 +1038,7 @@ class _ShiftSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Default Shift (Optional)',
+          AppLocalizations.of(context).formDefaultShift,
           style: TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 13,
@@ -1038,13 +1062,16 @@ class _ShiftSelector extends StatelessWidget {
                   color: cs.error,
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Could not load shifts',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                    AppLocalizations.of(context).formCouldNotLoadShifts,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
-                TextButton(onPressed: onRetry, child: const Text('Retry')),
+                TextButton(
+                  onPressed: onRetry,
+                  child: Text(AppLocalizations.of(context).commonRetry),
+                ),
               ],
             ),
           ),
@@ -1075,7 +1102,7 @@ class _ShiftSelector extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Assign Shift',
+                      AppLocalizations.of(context).formAssignShift,
                       style: TextStyle(
                         color: cs.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
@@ -1095,7 +1122,7 @@ class _ShiftSelector extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'No shift assigned',
+                          AppLocalizations.of(context).rosterNoShiftAssigned,
                           style: TextStyle(
                             color: cs.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
@@ -1159,7 +1186,7 @@ class _RoleSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'System Access Level',
+          AppLocalizations.of(context).formAccessLevel,
           style: TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 13,
@@ -1193,9 +1220,9 @@ class _RoleSelector extends StatelessWidget {
                         color: cs.onSurfaceVariant,
                       ),
                       const SizedBox(width: 12),
-                      const Text(
-                        'Standard Employee',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                      Text(
+                        AppLocalizations.of(context).formRoleEmployee,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ],
                   ),
@@ -1210,9 +1237,9 @@ class _RoleSelector extends StatelessWidget {
                         color: cs.primary,
                       ),
                       const SizedBox(width: 12),
-                      const Text(
-                        'Manager / Supervisor',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                      Text(
+                        AppLocalizations.of(context).formRoleSupervisor,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ],
                   ),
@@ -1247,7 +1274,7 @@ class _ManagerSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Reporting Manager',
+          AppLocalizations.of(context).formReportingManager,
           style: TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 13,
@@ -1267,7 +1294,9 @@ class _ManagerSelector extends StatelessWidget {
               value: selectedId,
               isExpanded: true,
               hint: Text(
-                managers.isEmpty ? 'No supervisors available' : 'Select…',
+                managers.isEmpty
+                    ? AppLocalizations.of(context).formNoSupervisors
+                    : AppLocalizations.of(context).formSelectDots,
                 style: TextStyle(
                   color: cs.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
@@ -1278,11 +1307,11 @@ class _ManagerSelector extends StatelessWidget {
                 color: cs.onSurfaceVariant,
               ),
               items: [
-                const DropdownMenuItem<String?>(
+                DropdownMenuItem<String?>(
                   value: null,
                   child: Text(
-                    'None',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    AppLocalizations.of(context).formNone,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
                 for (final m in managers)

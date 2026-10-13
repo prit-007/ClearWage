@@ -348,9 +348,17 @@ subsequent release cycles.
 - [x] #69 i18n EN/HI/GU · #70 leave request workflow · #71 Postgres RLS
 - [x] Brevo email service (platform key, per-tenant quota/override, account email)
 
-### Release
+### Notes
 
-- [x] `CHANGELOG.md` entry for `[1.2.0]`.
-- [x] `app/pubspec.yaml` bumped to `1.2.0+19`.
-- [x] `fastlane` changelog `changelogs/19.txt`.
-- [x] Tag `v1.2.0` created and pushed.
+- **RLS (#71) is dormant defense-in-depth**: the app role owns the tenant
+  tables, so policies only take effect when deployed with a non-owner role
+  that sets `app.tenant_id` per connection. Enabling `FORCE ROW LEVEL SECURITY`
+  without that role change will lock the app out — do not flip it in prod.
+
+### Release 1.2.1 (hardening)
+
+- [x] Async mail (no blocking Brevo round-trips) · branded HTML templates
+- [x] Mask tenant Brevo key in `GET /settings/mail`
+- [x] Leave approval never overwrites locked attendance
+- [x] Idempotent offline ledger via `client_id` (dedup on re-sync)
+- [x] Platform-wide shared daily mail quota (`mail_daily_counters`)

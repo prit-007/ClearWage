@@ -73,6 +73,7 @@ func TestAttendanceService_BulkUpsert(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockQuerier := mocks.NewMockQuerier(ctrl)
+	mockQuerier.EXPECT().CreateActivityLog(gomock.Any(), gomock.Any()).Return(repositories.ActivityLog{}, nil).AnyTimes()
 	svc := NewAttendanceService(mockQuerier)
 
 	uProd := int32(10)
@@ -90,6 +91,7 @@ func TestAttendanceService_BulkUpsert(t *testing.T) {
 		"0",
 		"1",
 		&uProd,
+		"00000000-0000-0000-0000-000000000001",
 	)
 	if err != nil {
 		t.Fatalf("BulkUpsert failed: %v", err)
@@ -268,7 +270,7 @@ func TestAttendanceService_BulkUpsert_DBError(t *testing.T) {
 		"2025-01-15",
 		"00000000-0000-0000-0000-000000000003",
 		"present",
-		"0", "1", nil,
+		"0", "1", nil, "00000000-0000-0000-0000-000000000001",
 	)
 	if err == nil {
 		t.Fatal("expected error, got nil")

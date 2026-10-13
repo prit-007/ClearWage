@@ -1063,6 +1063,16 @@ class _PendingSyncTileState extends ConsumerState<_PendingSyncTile> {
         borderRadius: BorderRadius.circular(16),
         onTap: () async {
           if (_syncing) return;
+          if (!online) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'You are offline — changes will sync when you reconnect',
+                ),
+              ),
+            );
+            return;
+          }
           setState(() => _syncing = true);
           await ref.read(syncServiceProvider).flush();
           await refreshPendingSyncCount(ref);

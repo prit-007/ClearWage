@@ -773,9 +773,15 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        context.push('/attendance-bulk', extra: _dateStr);
+                      onPressed: () async {
+                        unawaited(HapticFeedback.lightImpact());
+                        final changed = await context.push<bool>(
+                          '/attendance-bulk',
+                          extra: _dateStr,
+                        );
+                        if (changed == true) {
+                          ref.invalidate(rosterByDateProvider(_dateStr));
+                        }
                       },
                       icon: Icon(
                         PhosphorIconsRegular.squaresFour,

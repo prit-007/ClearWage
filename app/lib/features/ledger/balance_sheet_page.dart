@@ -10,6 +10,7 @@ import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../l10n/app_localizations.dart';
 
 class BalanceSheetPage extends ConsumerStatefulWidget {
   const BalanceSheetPage({super.key});
@@ -83,7 +84,7 @@ class _BalanceSheetPageState extends ConsumerState<BalanceSheetPage> {
                     ),
                     centerTitle: true,
                     title: Text(
-                      'Balance Sheet',
+                      AppLocalizations.of(context).hubBalanceSheet,
                       style: tt.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.5,
@@ -116,7 +117,10 @@ class _BalanceSheetPageState extends ConsumerState<BalanceSheetPage> {
                         color: cs.error,
                       ),
                       const SizedBox(height: 16),
-                      Text('Failed to load', style: tt.titleMedium),
+                      Text(
+                        AppLocalizations.of(context).commonFailedLoad,
+                        style: tt.titleMedium,
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         '$_error',
@@ -128,11 +132,11 @@ class _BalanceSheetPageState extends ConsumerState<BalanceSheetPage> {
                 ),
               )
             else if (_data.isEmpty)
-              const SliverFillRemaining(
+              SliverFillRemaining(
                 child: EmptyState(
                   icon: PhosphorIconsRegular.coins,
-                  title: 'No balance data',
-                  subtitle: 'No employee balances found.',
+                  title: AppLocalizations.of(context).balanceNoData,
+                  subtitle: AppLocalizations.of(context).balanceNoDataHint,
                 ),
               )
             else ...[
@@ -146,7 +150,9 @@ class _BalanceSheetPageState extends ConsumerState<BalanceSheetPage> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
                   child: Text(
-                    '${_data.length} ${_data.length == 1 ? 'Employee' : 'Employees'}',
+                    AppLocalizations.of(
+                      context,
+                    ).balanceEmployeeCount(_data.length),
                     style: tt.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -221,7 +227,7 @@ class _TotalOutstandingCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Total Outstanding',
+                    AppLocalizations.of(context).balanceTotalOutstanding,
                     style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant),
                   ),
                 ],
@@ -352,10 +358,10 @@ class _EmployeeBalanceRow extends StatelessWidget {
                       ),
                       child: Text(
                         netBalance > 0
-                            ? 'EXCESS'
+                            ? AppLocalizations.of(context).dirBalanceExcess
                             : netBalance < 0
-                            ? 'DUE'
-                            : 'SETTLED',
+                            ? AppLocalizations.of(context).dirBalanceDue
+                            : AppLocalizations.of(context).balanceSettled,
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,

@@ -441,5 +441,70 @@
   "formReportingManager": "रिपोर्टिंग प्रबंधक",
   "formNoSupervisors": "कोई पर्यवेक्षक उपलब्ध नहीं",
   "formSelectDots": "चुनें…",
-  "formNone": "कोई नहीं"
+  "formNone": "कोई नहीं",
+  "ledgerHub": "लेजर हब",
+  "ledgerSearchHint": "नाम या नोट से खोजें...",
+  "ledgerFailedEntries": "प्रविष्टियाँ लोड नहीं हो सकीं",
+  "ledgerRecentTxns": "हाल के लेन-देन",
+  "ledgerNoEntries": "कोई प्रविष्टि नहीं मिली",
+  "ledgerNoEntriesHint": "कोई अन्य खोज शब्द या तारीख सीमा आज़माएँ।",
+  "ledgerNewEntry": "नई प्रविष्टि",
+  "ledgerNetBalanceMtd": "शुद्ध शेष (इस माह तक)",
+  "ledgerTotalJama": "कुल जमा",
+  "ledgerTotalUdhaar": "कुल उधार",
+  "ledgerJama": "जमा",
+  "ledgerUdhaar": "उधार",
+  "ledgerDeleteEntryTitle": "प्रविष्टि हटाएँ",
+  "ledgerDeleteEntryMsg": "₹{amount} {type} प्रविष्टि {name} के लिए हटाएँ?",
+  "@ledgerDeleteEntryMsg": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ledgerEdit": "संपादित करें",
+  "ledgerRaiseDispute": "विवाद उठाएँ",
+  "commonFailedLoad": "लोड नहीं हो सका",
+  "balanceNoData": "कोई शेष डेटा नहीं",
+  "balanceNoDataHint": "कर्मचारियों का कोई शेष नहीं मिला।",
+  "balanceEmployeeCount": "{count, plural, =1{{count} कर्मचारी} other{{count} कर्मचारी}}",
+  "@balanceEmployeeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "balanceTotalOutstanding": "कुल बकाया",
+  "balanceSettled": "पूर्ण",
+  "ledgerErrSelectEmployee": "कृपया एक कर्मचारी चुनें",
+  "ledgerErrEnterAmount": "कृपया राशि दर्ज करें",
+  "ledgerErrInvalidAmount": "कृपया एक वैध राशि दर्ज करें",
+  "ledgerDiscardTitle": "प्रविष्टि रद्द करें",
+  "ledgerDiscardMsg": "आपके कुछ असुरक्षित बदलाव हैं। उन्हें रद्द करें?",
+  "ledgerDiscardConfirm": "रद्द करें",
+  "ledgerEditEntry": "प्रविष्टि संपादित करें",
+  "ledgerGiveAdvance": "अग्रिम दें",
+  "ledgerDeduct": "कटौती करें",
+  "ledgerSelectEmployee": "कर्मचारी चुनें",
+  "ledgerNotesOptional": "टिप्पणी (वैकल्पिक)",
+  "ledgerUpdateEntry": "प्रविष्टि अपडेट करें",
+  "ledgerSaveEntry": "प्रविष्टि सहेजें",
+  "ledgerTransactionDate": "लेन-देन की तारीख",
+  "ledgerTodayDate": "आज, {date}",
+  "@ledgerTodayDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ledgerNoEmployees": "कोई कर्मचारी नहीं मिला"
 }

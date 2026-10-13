@@ -1857,6 +1857,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'None'**
   String get formNone;
+
+  /// No description provided for @ledgerHub.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger Hub'**
+  String get ledgerHub;
+
+  /// No description provided for @ledgerSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or note...'**
+  String get ledgerSearchHint;
+
+  /// No description provided for @ledgerFailedEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load entries'**
+  String get ledgerFailedEntries;
+
+  /// No description provided for @ledgerRecentTxns.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Transactions'**
+  String get ledgerRecentTxns;
+
+  /// No description provided for @ledgerNoEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries found'**
+  String get ledgerNoEntries;
+
+  /// No description provided for @ledgerNoEntriesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different search term or date range.'**
+  String get ledgerNoEntriesHint;
+
+  /// No description provided for @ledgerNewEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'New Entry'**
+  String get ledgerNewEntry;
+
+  /// No description provided for @ledgerNetBalanceMtd.
+  ///
+  /// In en, this message translates to:
+  /// **'Net Balance (MTD)'**
+  String get ledgerNetBalanceMtd;
+
+  /// No description provided for @ledgerTotalJama.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Jama'**
+  String get ledgerTotalJama;
+
+  /// No description provided for @ledgerTotalUdhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Udhaar'**
+  String get ledgerTotalUdhaar;
+
+  /// No description provided for @ledgerJama.
+  ///
+  /// In en, this message translates to:
+  /// **'Jama'**
+  String get ledgerJama;
+
+  /// No description provided for @ledgerUdhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Udhaar'**
+  String get ledgerUdhaar;
+
+  /// No description provided for @ledgerDeleteEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Entry'**
+  String get ledgerDeleteEntryTitle;
+
+  /// No description provided for @ledgerDeleteEntryMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete ₹{amount} {type} entry for {name}?'**
+  String ledgerDeleteEntryMsg(String amount, String type, String name);
+
+  /// No description provided for @ledgerEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get ledgerEdit;
+
+  /// No description provided for @ledgerRaiseDispute.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise Dispute'**
+  String get ledgerRaiseDispute;
+
+  /// No description provided for @commonFailedLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load'**
+  String get commonFailedLoad;
+
+  /// No description provided for @balanceNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'No balance data'**
+  String get balanceNoData;
+
+  /// No description provided for @balanceNoDataHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No employee balances found.'**
+  String get balanceNoDataHint;
+
+  /// No description provided for @balanceEmployeeCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{count} Employee} other{{count} Employees}}'**
+  String balanceEmployeeCount(int count);
+
+  /// No description provided for @balanceTotalOutstanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Outstanding'**
+  String get balanceTotalOutstanding;
+
+  /// No description provided for @balanceSettled.
+  ///
+  /// In en, this message translates to:
+  /// **'SETTLED'**
+  String get balanceSettled;
+
+  /// No description provided for @ledgerErrSelectEmployee.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an employee'**
+  String get ledgerErrSelectEmployee;
+
+  /// No description provided for @ledgerErrEnterAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter an amount'**
+  String get ledgerErrEnterAmount;
+
+  /// No description provided for @ledgerErrInvalidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid amount'**
+  String get ledgerErrInvalidAmount;
+
+  /// No description provided for @ledgerDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard Entry'**
+  String get ledgerDiscardTitle;
+
+  /// No description provided for @ledgerDiscardMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved changes. Discard them?'**
+  String get ledgerDiscardMsg;
+
+  /// No description provided for @ledgerDiscardConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get ledgerDiscardConfirm;
+
+  /// No description provided for @ledgerEditEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Entry'**
+  String get ledgerEditEntry;
+
+  /// No description provided for @ledgerGiveAdvance.
+  ///
+  /// In en, this message translates to:
+  /// **'Give Advance'**
+  String get ledgerGiveAdvance;
+
+  /// No description provided for @ledgerDeduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Deduct'**
+  String get ledgerDeduct;
+
+  /// No description provided for @ledgerSelectEmployee.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Employee'**
+  String get ledgerSelectEmployee;
+
+  /// No description provided for @ledgerNotesOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes (Optional)'**
+  String get ledgerNotesOptional;
+
+  /// No description provided for @ledgerUpdateEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Entry'**
+  String get ledgerUpdateEntry;
+
+  /// No description provided for @ledgerSaveEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Entry'**
+  String get ledgerSaveEntry;
+
+  /// No description provided for @ledgerTransactionDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction Date'**
+  String get ledgerTransactionDate;
+
+  /// No description provided for @ledgerTodayDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Today, {date}'**
+  String ledgerTodayDate(String date);
+
+  /// No description provided for @ledgerNoEmployees.
+  ///
+  /// In en, this message translates to:
+  /// **'No employees found'**
+  String get ledgerNoEmployees;
 }
 
 class _AppLocalizationsDelegate

@@ -942,4 +942,131 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get formNone => 'कोई नहीं';
+
+  @override
+  String get ledgerHub => 'लेजर हब';
+
+  @override
+  String get ledgerSearchHint => 'नाम या नोट से खोजें...';
+
+  @override
+  String get ledgerFailedEntries => 'प्रविष्टियाँ लोड नहीं हो सकीं';
+
+  @override
+  String get ledgerRecentTxns => 'हाल के लेन-देन';
+
+  @override
+  String get ledgerNoEntries => 'कोई प्रविष्टि नहीं मिली';
+
+  @override
+  String get ledgerNoEntriesHint => 'कोई अन्य खोज शब्द या तारीख सीमा आज़माएँ।';
+
+  @override
+  String get ledgerNewEntry => 'नई प्रविष्टि';
+
+  @override
+  String get ledgerNetBalanceMtd => 'शुद्ध शेष (इस माह तक)';
+
+  @override
+  String get ledgerTotalJama => 'कुल जमा';
+
+  @override
+  String get ledgerTotalUdhaar => 'कुल उधार';
+
+  @override
+  String get ledgerJama => 'जमा';
+
+  @override
+  String get ledgerUdhaar => 'उधार';
+
+  @override
+  String get ledgerDeleteEntryTitle => 'प्रविष्टि हटाएँ';
+
+  @override
+  String ledgerDeleteEntryMsg(String amount, String type, String name) {
+    return '₹$amount $type प्रविष्टि $name के लिए हटाएँ?';
+  }
+
+  @override
+  String get ledgerEdit => 'संपादित करें';
+
+  @override
+  String get ledgerRaiseDispute => 'विवाद उठाएँ';
+
+  @override
+  String get commonFailedLoad => 'लोड नहीं हो सका';
+
+  @override
+  String get balanceNoData => 'कोई शेष डेटा नहीं';
+
+  @override
+  String get balanceNoDataHint => 'कर्मचारियों का कोई शेष नहीं मिला।';
+
+  @override
+  String balanceEmployeeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count कर्मचारी',
+      one: '$count कर्मचारी',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get balanceTotalOutstanding => 'कुल बकाया';
+
+  @override
+  String get balanceSettled => 'पूर्ण';
+
+  @override
+  String get ledgerErrSelectEmployee => 'कृपया एक कर्मचारी चुनें';
+
+  @override
+  String get ledgerErrEnterAmount => 'कृपया राशि दर्ज करें';
+
+  @override
+  String get ledgerErrInvalidAmount => 'कृपया एक वैध राशि दर्ज करें';
+
+  @override
+  String get ledgerDiscardTitle => 'प्रविष्टि रद्द करें';
+
+  @override
+  String get ledgerDiscardMsg =>
+      'आपके कुछ असुरक्षित बदलाव हैं। उन्हें रद्द करें?';
+
+  @override
+  String get ledgerDiscardConfirm => 'रद्द करें';
+
+  @override
+  String get ledgerEditEntry => 'प्रविष्टि संपादित करें';
+
+  @override
+  String get ledgerGiveAdvance => 'अग्रिम दें';
+
+  @override
+  String get ledgerDeduct => 'कटौती करें';
+
+  @override
+  String get ledgerSelectEmployee => 'कर्मचारी चुनें';
+
+  @override
+  String get ledgerNotesOptional => 'टिप्पणी (वैकल्पिक)';
+
+  @override
+  String get ledgerUpdateEntry => 'प्रविष्टि अपडेट करें';
+
+  @override
+  String get ledgerSaveEntry => 'प्रविष्टि सहेजें';
+
+  @override
+  String get ledgerTransactionDate => 'लेन-देन की तारीख';
+
+  @override
+  String ledgerTodayDate(String date) {
+    return 'आज, $date';
+  }
+
+  @override
+  String get ledgerNoEmployees => 'कोई कर्मचारी नहीं मिला';
 }

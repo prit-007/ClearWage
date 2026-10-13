@@ -441,5 +441,70 @@
   "formReportingManager": "Reporting Manager",
   "formNoSupervisors": "No supervisors available",
   "formSelectDots": "Select…",
-  "formNone": "None"
+  "formNone": "None",
+  "ledgerHub": "Ledger Hub",
+  "ledgerSearchHint": "Search by name or note...",
+  "ledgerFailedEntries": "Failed to load entries",
+  "ledgerRecentTxns": "Recent Transactions",
+  "ledgerNoEntries": "No entries found",
+  "ledgerNoEntriesHint": "Try a different search term or date range.",
+  "ledgerNewEntry": "New Entry",
+  "ledgerNetBalanceMtd": "Net Balance (MTD)",
+  "ledgerTotalJama": "Total Jama",
+  "ledgerTotalUdhaar": "Total Udhaar",
+  "ledgerJama": "Jama",
+  "ledgerUdhaar": "Udhaar",
+  "ledgerDeleteEntryTitle": "Delete Entry",
+  "ledgerDeleteEntryMsg": "Delete ₹{amount} {type} entry for {name}?",
+  "@ledgerDeleteEntryMsg": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ledgerEdit": "Edit",
+  "ledgerRaiseDispute": "Raise Dispute",
+  "commonFailedLoad": "Failed to load",
+  "balanceNoData": "No balance data",
+  "balanceNoDataHint": "No employee balances found.",
+  "balanceEmployeeCount": "{count, plural, =1{{count} Employee} other{{count} Employees}}",
+  "@balanceEmployeeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "balanceTotalOutstanding": "Total Outstanding",
+  "balanceSettled": "SETTLED",
+  "ledgerErrSelectEmployee": "Please select an employee",
+  "ledgerErrEnterAmount": "Please enter an amount",
+  "ledgerErrInvalidAmount": "Please enter a valid amount",
+  "ledgerDiscardTitle": "Discard Entry",
+  "ledgerDiscardMsg": "You have unsaved changes. Discard them?",
+  "ledgerDiscardConfirm": "Discard",
+  "ledgerEditEntry": "Edit Entry",
+  "ledgerGiveAdvance": "Give Advance",
+  "ledgerDeduct": "Deduct",
+  "ledgerSelectEmployee": "Select Employee",
+  "ledgerNotesOptional": "Notes (Optional)",
+  "ledgerUpdateEntry": "Update Entry",
+  "ledgerSaveEntry": "Save Entry",
+  "ledgerTransactionDate": "Transaction Date",
+  "ledgerTodayDate": "Today, {date}",
+  "@ledgerTodayDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ledgerNoEmployees": "No employees found"
 }

@@ -941,4 +941,131 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get formNone => 'None';
+
+  @override
+  String get ledgerHub => 'Ledger Hub';
+
+  @override
+  String get ledgerSearchHint => 'Search by name or note...';
+
+  @override
+  String get ledgerFailedEntries => 'Failed to load entries';
+
+  @override
+  String get ledgerRecentTxns => 'Recent Transactions';
+
+  @override
+  String get ledgerNoEntries => 'No entries found';
+
+  @override
+  String get ledgerNoEntriesHint =>
+      'Try a different search term or date range.';
+
+  @override
+  String get ledgerNewEntry => 'New Entry';
+
+  @override
+  String get ledgerNetBalanceMtd => 'Net Balance (MTD)';
+
+  @override
+  String get ledgerTotalJama => 'Total Jama';
+
+  @override
+  String get ledgerTotalUdhaar => 'Total Udhaar';
+
+  @override
+  String get ledgerJama => 'Jama';
+
+  @override
+  String get ledgerUdhaar => 'Udhaar';
+
+  @override
+  String get ledgerDeleteEntryTitle => 'Delete Entry';
+
+  @override
+  String ledgerDeleteEntryMsg(String amount, String type, String name) {
+    return 'Delete ₹$amount $type entry for $name?';
+  }
+
+  @override
+  String get ledgerEdit => 'Edit';
+
+  @override
+  String get ledgerRaiseDispute => 'Raise Dispute';
+
+  @override
+  String get commonFailedLoad => 'Failed to load';
+
+  @override
+  String get balanceNoData => 'No balance data';
+
+  @override
+  String get balanceNoDataHint => 'No employee balances found.';
+
+  @override
+  String balanceEmployeeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Employees',
+      one: '$count Employee',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get balanceTotalOutstanding => 'Total Outstanding';
+
+  @override
+  String get balanceSettled => 'SETTLED';
+
+  @override
+  String get ledgerErrSelectEmployee => 'Please select an employee';
+
+  @override
+  String get ledgerErrEnterAmount => 'Please enter an amount';
+
+  @override
+  String get ledgerErrInvalidAmount => 'Please enter a valid amount';
+
+  @override
+  String get ledgerDiscardTitle => 'Discard Entry';
+
+  @override
+  String get ledgerDiscardMsg => 'You have unsaved changes. Discard them?';
+
+  @override
+  String get ledgerDiscardConfirm => 'Discard';
+
+  @override
+  String get ledgerEditEntry => 'Edit Entry';
+
+  @override
+  String get ledgerGiveAdvance => 'Give Advance';
+
+  @override
+  String get ledgerDeduct => 'Deduct';
+
+  @override
+  String get ledgerSelectEmployee => 'Select Employee';
+
+  @override
+  String get ledgerNotesOptional => 'Notes (Optional)';
+
+  @override
+  String get ledgerUpdateEntry => 'Update Entry';
+
+  @override
+  String get ledgerSaveEntry => 'Save Entry';
+
+  @override
+  String get ledgerTransactionDate => 'Transaction Date';
+
+  @override
+  String ledgerTodayDate(String date) {
+    return 'Today, $date';
+  }
+
+  @override
+  String get ledgerNoEmployees => 'No employees found';
 }

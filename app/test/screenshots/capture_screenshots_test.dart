@@ -668,7 +668,17 @@ void main() {
               _LedgerSvc(ledgerF, ledgerSumF),
             ),
           ],
-          child: const MaterialApp(home: LedgerListScreen()),
+          child: const MaterialApp(
+            locale: Locale('en'),
+            supportedLocales: [Locale('en'), Locale('hi'), Locale('gu')],
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: LedgerListScreen(),
+          ),
         ),
       );
     });

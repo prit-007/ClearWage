@@ -29,6 +29,7 @@ import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/currency_format.dart';
+import '../../l10n/app_localizations.dart';
 
 class EmployeeProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -152,9 +153,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                   PhosphorIconsDuotone.camera,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                title: const Text(
-                  'Capture with Camera',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                title: Text(
+                  AppLocalizations.of(context).profPhotoCamera,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -167,9 +168,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                   PhosphorIconsDuotone.image,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                title: const Text(
-                  'Choose from Gallery',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                title: Text(
+                  AppLocalizations.of(context).profPhotoGallery,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -194,7 +195,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
       );
       path = picked?.path;
     } catch (_) {
-      if (mounted) showError(context, 'Could not pick photo');
+      if (mounted) {
+        showError(context, AppLocalizations.of(context).profCouldNotPickPhoto);
+      }
       return;
     }
     if (path == null || !mounted) return;
@@ -205,9 +208,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
           .uploadPhoto(widget.employeeId, path);
       if (mounted) {
         setState(() => _profile?['photo_url'] = url);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Photo updated')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).profPhotoUpdated),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) showError(context, e);
@@ -244,7 +249,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
       );
     }
 
-    final name = _profile?['name'] as String? ?? 'Employee';
+    final name =
+        _profile?['name'] as String? ??
+        AppLocalizations.of(context).commonEmployee;
     final role = _profile?['role'] as String? ?? '';
     final designation = _profile?['designation'] as String? ?? role;
     final phone = _profile?['phone'] as String? ?? '';
@@ -294,10 +301,16 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                         if (emp == null || emp['id'] == null) return;
                         final confirmed = await showConfirmDialog(
                           context,
-                          title: 'Delete Employee',
-                          message:
-                              'Permanently deactivate ${emp['name'] ?? 'this employee'}? They will no longer be able to log in.',
-                          confirmLabel: 'Delete',
+                          title: AppLocalizations.of(
+                            context,
+                          ).profDeleteEmployeeTitle,
+                          message: AppLocalizations.of(context)
+                              .profDeleteEmployeeMsg(
+                                emp['name']?.toString() ?? '',
+                              ),
+                          confirmLabel: AppLocalizations.of(
+                            context,
+                          ).commonDelete,
                           icon: PhosphorIconsRegular.trash,
                           isDestructive: true,
                         );
@@ -345,9 +358,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                                 .then((ok) {
                                   if (!ok && context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         content: Text(
-                                          'Could not open WhatsApp',
+                                          AppLocalizations.of(
+                                            context,
+                                          ).broadcastNoWhatsapp,
                                         ),
                                       ),
                                     );
@@ -400,10 +415,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                       ),
                       dividerColor: Colors.transparent,
                       tabs: [
-                        const Tab(text: 'Profile'),
-                        const Tab(text: 'Attendance'),
-                        const Tab(text: 'Ledger'),
-                        if (isAdmin) const Tab(text: 'Audit'),
+                        Tab(text: AppLocalizations.of(context).profile),
+                        Tab(text: AppLocalizations.of(context).attendance),
+                        Tab(text: AppLocalizations.of(context).ledger),
+                        if (isAdmin)
+                          Tab(text: AppLocalizations.of(context).profTabAudit),
                       ],
                     ),
                   ),
@@ -448,10 +464,11 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                       onPressed: () async {
                         final confirmed = await showConfirmDialog(
                           context,
-                          title: 'Settle Account',
-                          message:
-                              'This will zero out the outstanding balance. This action cannot be undone.',
-                          confirmLabel: 'Settle',
+                          title: AppLocalizations.of(context).profSettleTitle,
+                          message: AppLocalizations.of(context).profSettleMsg,
+                          confirmLabel: AppLocalizations.of(
+                            context,
+                          ).profSettleConfirm,
                           icon: PhosphorIconsRegular.currencyCircleDollar,
                         );
                         if (confirmed != true) return;
@@ -464,7 +481,13 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                           ref.read(ledgerRefreshProvider.notifier).state++;
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Account settled')),
+                              SnackBar(
+                                content: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  ).profAccountSettled,
+                                ),
+                              ),
                             );
                           }
                           if (mounted) unawaited(_loadProfile());
@@ -479,9 +502,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                         ),
                         side: BorderSide(color: cs.outlineVariant),
                       ),
-                      child: const Text(
-                        'F&F Settle',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                      child: Text(
+                        AppLocalizations.of(context).profFFSettle,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
@@ -515,8 +538,12 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                                 SnackBar(
                                   content: Text(
                                     result.type == ResultType.done
-                                        ? 'Payslip opened'
-                                        : 'Payslip saved. Could not open automatically.',
+                                        ? AppLocalizations.of(
+                                            context,
+                                          ).profPayslipOpened
+                                        : AppLocalizations.of(
+                                            context,
+                                          ).profPayslipSaved,
                                   ),
                                 ),
                               );
@@ -532,9 +559,9 @@ class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: const Text(
-                        'Generate Slip',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                      child: Text(
+                        AppLocalizations.of(context).profGenerateSlip,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
@@ -664,7 +691,7 @@ class _EditorialProfileHeader extends StatelessWidget {
                 _ContactActionButton(
                   cs: cs,
                   icon: PhosphorIconsFill.phone,
-                  tooltip: 'Call',
+                  tooltip: AppLocalizations.of(context).profTooltipCall,
                   onTap: onCall!,
                 ),
                 const SizedBox(width: 16),
@@ -673,7 +700,7 @@ class _EditorialProfileHeader extends StatelessWidget {
                 _ContactActionButton(
                   cs: cs,
                   icon: PhosphorIconsFill.whatsappLogo,
-                  tooltip: 'WhatsApp',
+                  tooltip: AppLocalizations.of(context).profTooltipWhatsapp,
                   onTap: onMessage!,
                 ),
               ],
@@ -755,7 +782,9 @@ class _InfoTab extends StatelessWidget {
     final wageAmount = profile?['wage_amount']?.toString() ?? '0';
     final designation =
         profile?['designation'] as String? ?? profile?['role'] as String? ?? '';
-    final manager = profile?['manager_name'] as String? ?? 'Not assigned';
+    final manager =
+        profile?['manager_name'] as String? ??
+        AppLocalizations.of(context).commonNotAssigned;
     final shiftName = profile?['shift_name'] as String?;
     final shiftStart = profile?['shift_start_time'] as String?;
     final shiftEnd = profile?['shift_end_time'] as String?;
@@ -763,20 +792,23 @@ class _InfoTab extends StatelessWidget {
         ? (shiftStart != null && shiftStart.isNotEmpty
               ? '$shiftName (${formatTime(shiftStart)}–${formatTime(shiftEnd)})'
               : shiftName)
-        : 'Not assigned';
+        : AppLocalizations.of(context).commonNotAssigned;
 
+    final l = AppLocalizations.of(context);
     final kyc = <String, String>{
-      'PAN Number': profile?['pan_number'] as String? ?? '—',
-      'Aadhaar Number': profile?['aadhaar_number'] as String? ?? '—',
-      'PF / UAN': profile?['pf_number'] as String? ?? '—',
-      'Bank Account': profile?['bank_account_number'] as String? ?? '—',
-      'IFSC': profile?['bank_ifsc'] as String? ?? '—',
-      'UPI ID': profile?['upi_id'] as String? ?? '—',
-      'Emergency Contact': profile?['emergency_contact_name'] as String? ?? '—',
-      'Emergency Phone': profile?['emergency_contact_phone'] as String? ?? '—',
-      'Current Address': profile?['current_address'] as String? ?? '—',
-      'Permanent Address': profile?['permanent_address'] as String? ?? '—',
-      'Health Notes': profile?['health_notes'] as String? ?? '—',
+      l.profKycPan: profile?['pan_number'] as String? ?? '—',
+      l.profKycAadhaar: profile?['aadhaar_number'] as String? ?? '—',
+      l.profKycPf: profile?['pf_number'] as String? ?? '—',
+      l.profKycBank: profile?['bank_account_number'] as String? ?? '—',
+      l.profKycIfsc: profile?['bank_ifsc'] as String? ?? '—',
+      l.profKycUpi: profile?['upi_id'] as String? ?? '—',
+      l.profKycEmergency: profile?['emergency_contact_name'] as String? ?? '—',
+      l.profKycEmergencyPhone:
+          profile?['emergency_contact_phone'] as String? ?? '—',
+      l.profKycAddress: profile?['current_address'] as String? ?? '—',
+      l.profKycPermanentAddress:
+          profile?['permanent_address'] as String? ?? '—',
+      l.profKycHealth: profile?['health_notes'] as String? ?? '—',
     };
 
     return ListView(
@@ -786,39 +818,39 @@ class _InfoTab extends StatelessWidget {
         _EditorialInfoBlock(
           cs: cs,
           tt: tt,
-          title: 'Employment Details',
+          title: l.profBlockEmployment,
           data: {
-            'Designation': designation,
-            'Shift': shiftLabel,
-            'Manager': manager,
+            l.profDesignation: designation,
+            l.profShift: shiftLabel,
+            l.profManager: manager,
           },
         ),
         _EditorialInfoBlock(
           cs: cs,
           tt: tt,
-          title: 'Financial Config',
+          title: l.profBlockFinancial,
           data: {
-            'Wage Type': wageType == 'daily'
-                ? 'Daily Wage'
+            l.profWageType: wageType == 'daily'
+                ? l.profWageDaily
                 : wageType == 'monthly'
-                ? 'Monthly'
+                ? l.profWageMonthly
                 : wageType == 'hourly'
-                ? 'Hourly'
+                ? l.profWageHourly
                 : wageType,
-            'Base Rate':
+            l.profBaseRate:
                 '${AppCurrency.format(double.tryParse(wageAmount) ?? 0)}${wageType == 'daily'
-                    ? ' / day'
+                    ? l.profPerDay
                     : wageType == 'hourly'
-                    ? ' / hr'
+                    ? l.profPerHr
                     : ''}',
           },
         ),
-        _EditorialInfoBlock(cs: cs, tt: tt, title: 'KYC & Identity', data: kyc),
-        const Padding(
-          padding: EdgeInsets.only(top: 8),
+        _EditorialInfoBlock(cs: cs, tt: tt, title: l.profBlockKyc, data: kyc),
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
           child: Text(
-            'KYC DOCUMENTS',
-            style: TextStyle(
+            l.profKycDocs,
+            style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.0,
@@ -849,10 +881,17 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
   String? _uploadingType;
 
   static const _types = [
-    ('aadhaar', 'Aadhaar Card', PhosphorIconsDuotone.fingerprint),
-    ('pan', 'PAN Card', PhosphorIconsDuotone.identificationCard),
-    ('bank', 'Bank Passbook', PhosphorIconsDuotone.bank),
+    ('aadhaar', 'profDocAadhaar', PhosphorIconsDuotone.fingerprint),
+    ('pan', 'profDocPan', PhosphorIconsDuotone.identificationCard),
+    ('bank', 'profDocBank', PhosphorIconsDuotone.bank),
   ];
+
+  String _label(String key, AppLocalizations l) => switch (key) {
+    'profDocAadhaar' => l.profDocAadhaar,
+    'profDocPan' => l.profDocPan,
+    'profDocBank' => l.profDocBank,
+    _ => key,
+  };
 
   @override
   void initState() {
@@ -949,9 +988,9 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
                   PhosphorIconsDuotone.camera,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                title: const Text(
-                  'Capture with Camera',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                title: Text(
+                  AppLocalizations.of(context).profPhotoCamera,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -964,9 +1003,9 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
                   PhosphorIconsDuotone.image,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                title: const Text(
-                  'Choose from Gallery',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                title: Text(
+                  AppLocalizations.of(context).profPhotoGallery,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -979,9 +1018,9 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
                   PhosphorIconsDuotone.filePdf,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                title: const Text(
-                  'Upload PDF / File',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                title: Text(
+                  AppLocalizations.of(context).profUploadFile,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -1013,7 +1052,9 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
         path = result?.files.single.path;
       }
     } catch (_) {
-      if (mounted) showError(context, 'Could not pick file');
+      if (mounted) {
+        showError(context, AppLocalizations.of(context).profCouldNotPickFile);
+      }
       return;
     }
     if (path == null || !mounted) return;
@@ -1039,9 +1080,9 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
           .read(documentUploadQueueProvider)
           .remove(widget.employeeId, type);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Document uploaded')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).profDocUploaded)),
+        );
         unawaited(_load());
       }
     } catch (e) {
@@ -1057,9 +1098,7 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
             );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Queued: document will upload when back online'),
-            ),
+            SnackBar(content: Text(AppLocalizations.of(context).profDocQueued)),
           );
         }
       } else if (mounted) {
@@ -1089,9 +1128,9 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
   Future<void> _delete(String type) async {
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Delete Document',
-      message: 'Remove this document? This cannot be undone.',
-      confirmLabel: 'Delete',
+      title: AppLocalizations.of(context).profDocDeleteTitle,
+      message: AppLocalizations.of(context).profDocDeleteMsg,
+      confirmLabel: AppLocalizations.of(context).commonDelete,
       icon: PhosphorIconsRegular.trash,
       isDestructive: true,
     );
@@ -1131,7 +1170,7 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
             Icon(PhosphorIconsFill.warningCircle, size: 40, color: cs.error),
             const SizedBox(height: 12),
             Text(
-              'Could not load documents',
+              AppLocalizations.of(context).profDocsFailed,
               style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 4),
@@ -1144,7 +1183,7 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
             FilledButton.tonalIcon(
               onPressed: _load,
               icon: const Icon(PhosphorIconsFill.arrowClockwise, size: 18),
-              label: const Text('Retry'),
+              label: Text(AppLocalizations.of(context).commonRetry),
             ),
           ],
         ),
@@ -1158,7 +1197,7 @@ class _DocumentVaultState extends ConsumerState<_DocumentVault> {
             cs: cs,
             tt: tt,
             type: type,
-            label: label,
+            label: _label(label, AppLocalizations.of(context)),
             icon: icon,
             doc: _docFor(type),
             uploading: _uploadingType == type,
@@ -1266,7 +1305,9 @@ class _DocumentCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  doc != null ? 'Uploaded & Verified' : 'Action Required',
+                  doc != null
+                      ? AppLocalizations.of(context).profDocUploadedStatus
+                      : AppLocalizations.of(context).profDocActionRequired,
                   style: tt.bodySmall?.copyWith(
                     color: doc != null ? AppColors.success : cs.error,
                     fontWeight: FontWeight.w600,
@@ -1299,7 +1340,7 @@ class _DocumentCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Upload'),
+              child: Text(AppLocalizations.of(context).commonUpload),
             ),
         ],
       ),
@@ -1369,7 +1410,7 @@ class _DocumentViewerPageState extends ConsumerState<_DocumentViewerPage> {
           content: Text(
             result.message.isNotEmpty
                 ? result.message
-                : 'Could not open document',
+                : AppLocalizations.of(context).profCouldNotOpenDoc,
           ),
         ),
       );
@@ -1384,7 +1425,9 @@ class _DocumentViewerPageState extends ConsumerState<_DocumentViewerPage> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         title: Text(
-          widget.isPdf ? 'Document' : 'Document Preview',
+          widget.isPdf
+              ? AppLocalizations.of(context).profDocument
+              : AppLocalizations.of(context).profDocumentPreview,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         centerTitle: true,
@@ -1417,7 +1460,7 @@ class _DocumentViewerPageState extends ConsumerState<_DocumentViewerPage> {
                       _download();
                     },
                     icon: const Icon(PhosphorIconsBold.arrowClockwise),
-                    label: const Text('Retry'),
+                    label: Text(AppLocalizations.of(context).commonRetry),
                   ),
                 ],
               )
@@ -1434,9 +1477,9 @@ class _DocumentViewerPageState extends ConsumerState<_DocumentViewerPage> {
                   FilledButton.icon(
                     onPressed: _openExternally,
                     icon: const Icon(PhosphorIconsRegular.arrowSquareOut),
-                    label: const Text(
-                      'Open Document',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                    label: Text(
+                      AppLocalizations.of(context).profOpenDocument,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],
@@ -1581,19 +1624,19 @@ class _AttendanceTab extends StatelessWidget {
           children: [
             _AttMacroStat(
               tt: tt,
-              label: 'Present',
+              label: AppLocalizations.of(context).profPresent,
               value: '$present',
               color: AppColors.success,
             ),
             _AttMacroStat(
               tt: tt,
-              label: 'Absent',
+              label: AppLocalizations.of(context).profAbsent,
               value: '$absent',
               color: AppColors.danger,
             ),
             _AttMacroStat(
               tt: tt,
-              label: 'Half',
+              label: AppLocalizations.of(context).profHalf,
               value: '$halfDay',
               color: AppColors.warning,
             ),
@@ -1614,7 +1657,7 @@ class _AttendanceTab extends StatelessWidget {
         ),
         const SizedBox(height: 48),
         Text(
-          'RECENT LOGS',
+          AppLocalizations.of(context).profRecentLogs,
           style: tt.labelSmall?.copyWith(
             color: cs.primary,
             fontWeight: FontWeight.w900,
@@ -1623,9 +1666,9 @@ class _AttendanceTab extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         if (recent.isEmpty)
-          const EmptyState(
+          EmptyState(
             icon: PhosphorIconsRegular.calendarBlank,
-            title: 'No attendance records for this month',
+            title: AppLocalizations.of(context).profNoAtt,
           )
         else
           ...recent.map(
@@ -1693,15 +1736,31 @@ class _TimelineRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color, icon) = switch (status) {
-      'present' => ('Present', AppColors.success, PhosphorIconsBold.check),
-      'half_day' => ('Half Day', AppColors.warning, PhosphorIconsBold.minus),
+      'present' => (
+        AppLocalizations.of(context).profPresent,
+        AppColors.success,
+        PhosphorIconsBold.check,
+      ),
+      'half_day' => (
+        AppLocalizations.of(context).profHalfDay,
+        AppColors.warning,
+        PhosphorIconsBold.minus,
+      ),
       'paid_leave' => (
-        'Paid Leave',
+        AppLocalizations.of(context).profPaidLeave,
         AppColors.info,
         PhosphorIconsBold.calendar,
       ),
-      'week_off' => ('Week Off', cs.onSurfaceVariant, PhosphorIconsBold.moon),
-      _ => ('Absent', AppColors.danger, PhosphorIconsBold.x),
+      'week_off' => (
+        AppLocalizations.of(context).profWeekOff,
+        cs.onSurfaceVariant,
+        PhosphorIconsBold.moon,
+      ),
+      _ => (
+        AppLocalizations.of(context).profAbsent,
+        AppColors.danger,
+        PhosphorIconsBold.x,
+      ),
     };
 
     return Padding(
@@ -1757,7 +1816,7 @@ class _LedgerTab extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         Text(
-          'NET OUTSTANDING',
+          AppLocalizations.of(context).profNetOutstanding,
           style: tt.labelSmall?.copyWith(
             color: cs.onSurfaceVariant,
             fontWeight: FontWeight.w900,
@@ -1775,7 +1834,7 @@ class _LedgerTab extends StatelessWidget {
         ),
         if (isNegative)
           Text(
-            'Payable by Employee',
+            AppLocalizations.of(context).profPayableByEmployee,
             style: tt.labelSmall?.copyWith(
               color: balColor,
               fontWeight: FontWeight.w700,
@@ -1783,7 +1842,7 @@ class _LedgerTab extends StatelessWidget {
           ),
         const SizedBox(height: 48),
         Text(
-          'RECENT ENTRIES',
+          AppLocalizations.of(context).profRecentEntries,
           style: tt.labelSmall?.copyWith(
             color: cs.primary,
             fontWeight: FontWeight.w900,
@@ -1792,9 +1851,9 @@ class _LedgerTab extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         if (recent.isEmpty)
-          const EmptyState(
+          EmptyState(
             icon: PhosphorIconsRegular.receipt,
-            title: 'No ledger entries this month',
+            title: AppLocalizations.of(context).profNoLedger,
           )
         else
           ...recent.map(
@@ -1849,7 +1908,9 @@ class _LedgerEntryRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                isJama ? 'Wage Added' : 'Advance Taken',
+                isJama
+                    ? AppLocalizations.of(context).profWageAdded
+                    : AppLocalizations.of(context).profAdvanceTaken,
                 style: const TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 15,
@@ -1903,7 +1964,7 @@ class _AuditTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (logs.isEmpty) {
-      return const Center(child: Text('No audit activity recorded'));
+      return Center(child: Text(AppLocalizations.of(context).profNoAudit));
     }
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 160),

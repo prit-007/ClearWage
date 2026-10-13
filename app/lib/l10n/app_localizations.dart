@@ -963,6 +963,588 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Skipped {count} (no shift)'**
   String bulkSkippedNoShift(int count);
+
+  /// No description provided for @commonDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get commonDelete;
+
+  /// No description provided for @commonUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get commonUpload;
+
+  /// No description provided for @commonNotAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Not assigned'**
+  String get commonNotAssigned;
+
+  /// No description provided for @dirTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory'**
+  String get dirTitle;
+
+  /// No description provided for @dirSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or role...'**
+  String get dirSearchHint;
+
+  /// No description provided for @dirFailedLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load staff'**
+  String get dirFailedLoad;
+
+  /// No description provided for @dirNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches found'**
+  String get dirNoMatches;
+
+  /// No description provided for @dirNoStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'No staff members yet'**
+  String get dirNoStaff;
+
+  /// No description provided for @dirBalanceDue.
+  ///
+  /// In en, this message translates to:
+  /// **'DUE'**
+  String get dirBalanceDue;
+
+  /// No description provided for @dirBalanceExcess.
+  ///
+  /// In en, this message translates to:
+  /// **'EXCESS'**
+  String get dirBalanceExcess;
+
+  /// No description provided for @dirWageDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'DAILY'**
+  String get dirWageDaily;
+
+  /// No description provided for @dirWageHourly.
+  ///
+  /// In en, this message translates to:
+  /// **'HOURLY'**
+  String get dirWageHourly;
+
+  /// No description provided for @dirWageMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'MONTHLY'**
+  String get dirWageMonthly;
+
+  /// No description provided for @dirWageTypeDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get dirWageTypeDaily;
+
+  /// No description provided for @dirWageTypeMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get dirWageTypeMonthly;
+
+  /// No description provided for @dirWageTypeHourly.
+  ///
+  /// In en, this message translates to:
+  /// **'Hourly'**
+  String get dirWageTypeHourly;
+
+  /// No description provided for @dirRoleEmployee.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee'**
+  String get dirRoleEmployee;
+
+  /// No description provided for @dirRoleSupervisor.
+  ///
+  /// In en, this message translates to:
+  /// **'Supervisor'**
+  String get dirRoleSupervisor;
+
+  /// No description provided for @dirFilterByRole.
+  ///
+  /// In en, this message translates to:
+  /// **'FILTER BY ROLE'**
+  String get dirFilterByRole;
+
+  /// No description provided for @dirFilterByWage.
+  ///
+  /// In en, this message translates to:
+  /// **'FILTER BY WAGE TYPE'**
+  String get dirFilterByWage;
+
+  /// No description provided for @dirFilterByDept.
+  ///
+  /// In en, this message translates to:
+  /// **'FILTER BY DEPARTMENT'**
+  String get dirFilterByDept;
+
+  /// No description provided for @dirShowInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Inactive'**
+  String get dirShowInactive;
+
+  /// No description provided for @dirReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get dirReset;
+
+  /// No description provided for @dirApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get dirApply;
+
+  /// No description provided for @profPhotoCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture with Camera'**
+  String get profPhotoCamera;
+
+  /// No description provided for @profPhotoGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from Gallery'**
+  String get profPhotoGallery;
+
+  /// No description provided for @profUploadFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload PDF / File'**
+  String get profUploadFile;
+
+  /// No description provided for @profCouldNotPickPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not pick photo'**
+  String get profCouldNotPickPhoto;
+
+  /// No description provided for @profCouldNotPickFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not pick file'**
+  String get profCouldNotPickFile;
+
+  /// No description provided for @profPhotoUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo updated'**
+  String get profPhotoUpdated;
+
+  /// No description provided for @profDocUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Document uploaded'**
+  String get profDocUploaded;
+
+  /// No description provided for @profDocQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued: document will upload when back online'**
+  String get profDocQueued;
+
+  /// No description provided for @profDeleteEmployeeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Employee'**
+  String get profDeleteEmployeeTitle;
+
+  /// No description provided for @profDeleteEmployeeMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently deactivate {name}? They will no longer be able to log in.'**
+  String profDeleteEmployeeMsg(String name);
+
+  /// No description provided for @profTabAudit.
+  ///
+  /// In en, this message translates to:
+  /// **'Audit'**
+  String get profTabAudit;
+
+  /// No description provided for @profSettleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settle Account'**
+  String get profSettleTitle;
+
+  /// No description provided for @profSettleMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'This will zero out the outstanding balance. This action cannot be undone.'**
+  String get profSettleMsg;
+
+  /// No description provided for @profSettleConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Settle'**
+  String get profSettleConfirm;
+
+  /// No description provided for @profAccountSettled.
+  ///
+  /// In en, this message translates to:
+  /// **'Account settled'**
+  String get profAccountSettled;
+
+  /// No description provided for @profFFSettle.
+  ///
+  /// In en, this message translates to:
+  /// **'F&F Settle'**
+  String get profFFSettle;
+
+  /// No description provided for @profPayslipOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Payslip opened'**
+  String get profPayslipOpened;
+
+  /// No description provided for @profPayslipSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Payslip saved. Could not open automatically.'**
+  String get profPayslipSaved;
+
+  /// No description provided for @profGenerateSlip.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Slip'**
+  String get profGenerateSlip;
+
+  /// No description provided for @profTooltipCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Call'**
+  String get profTooltipCall;
+
+  /// No description provided for @profTooltipWhatsapp.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp'**
+  String get profTooltipWhatsapp;
+
+  /// No description provided for @profKycPan.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN Number'**
+  String get profKycPan;
+
+  /// No description provided for @profKycAadhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Number'**
+  String get profKycAadhaar;
+
+  /// No description provided for @profKycPf.
+  ///
+  /// In en, this message translates to:
+  /// **'PF / UAN'**
+  String get profKycPf;
+
+  /// No description provided for @profKycBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Account'**
+  String get profKycBank;
+
+  /// No description provided for @profKycIfsc.
+  ///
+  /// In en, this message translates to:
+  /// **'IFSC'**
+  String get profKycIfsc;
+
+  /// No description provided for @profKycUpi.
+  ///
+  /// In en, this message translates to:
+  /// **'UPI ID'**
+  String get profKycUpi;
+
+  /// No description provided for @profKycEmergency.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Contact'**
+  String get profKycEmergency;
+
+  /// No description provided for @profKycEmergencyPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Phone'**
+  String get profKycEmergencyPhone;
+
+  /// No description provided for @profKycAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Address'**
+  String get profKycAddress;
+
+  /// No description provided for @profKycPermanentAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanent Address'**
+  String get profKycPermanentAddress;
+
+  /// No description provided for @profKycHealth.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Notes'**
+  String get profKycHealth;
+
+  /// No description provided for @profBlockEmployment.
+  ///
+  /// In en, this message translates to:
+  /// **'Employment Details'**
+  String get profBlockEmployment;
+
+  /// No description provided for @profBlockFinancial.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial Config'**
+  String get profBlockFinancial;
+
+  /// No description provided for @profBlockKyc.
+  ///
+  /// In en, this message translates to:
+  /// **'KYC & Identity'**
+  String get profBlockKyc;
+
+  /// No description provided for @profDesignation.
+  ///
+  /// In en, this message translates to:
+  /// **'Designation'**
+  String get profDesignation;
+
+  /// No description provided for @profShift.
+  ///
+  /// In en, this message translates to:
+  /// **'Shift'**
+  String get profShift;
+
+  /// No description provided for @profManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Manager'**
+  String get profManager;
+
+  /// No description provided for @profWageType.
+  ///
+  /// In en, this message translates to:
+  /// **'Wage Type'**
+  String get profWageType;
+
+  /// No description provided for @profWageDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Wage'**
+  String get profWageDaily;
+
+  /// No description provided for @profWageMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get profWageMonthly;
+
+  /// No description provided for @profWageHourly.
+  ///
+  /// In en, this message translates to:
+  /// **'Hourly'**
+  String get profWageHourly;
+
+  /// No description provided for @profBaseRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Base Rate'**
+  String get profBaseRate;
+
+  /// No description provided for @profPerDay.
+  ///
+  /// In en, this message translates to:
+  /// **' / day'**
+  String get profPerDay;
+
+  /// No description provided for @profPerHr.
+  ///
+  /// In en, this message translates to:
+  /// **' / hr'**
+  String get profPerHr;
+
+  /// No description provided for @profKycDocs.
+  ///
+  /// In en, this message translates to:
+  /// **'KYC DOCUMENTS'**
+  String get profKycDocs;
+
+  /// No description provided for @profDocAadhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Card'**
+  String get profDocAadhaar;
+
+  /// No description provided for @profDocPan.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN Card'**
+  String get profDocPan;
+
+  /// No description provided for @profDocBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Passbook'**
+  String get profDocBank;
+
+  /// No description provided for @profDocUploadedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded & Verified'**
+  String get profDocUploadedStatus;
+
+  /// No description provided for @profDocActionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Action Required'**
+  String get profDocActionRequired;
+
+  /// No description provided for @profDocDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Document'**
+  String get profDocDeleteTitle;
+
+  /// No description provided for @profDocDeleteMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this document? This cannot be undone.'**
+  String get profDocDeleteMsg;
+
+  /// No description provided for @profDocsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load documents'**
+  String get profDocsFailed;
+
+  /// No description provided for @profCouldNotOpenDoc.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open document'**
+  String get profCouldNotOpenDoc;
+
+  /// No description provided for @profDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Document'**
+  String get profDocument;
+
+  /// No description provided for @profDocumentPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Document Preview'**
+  String get profDocumentPreview;
+
+  /// No description provided for @profOpenDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Document'**
+  String get profOpenDocument;
+
+  /// No description provided for @profPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Present'**
+  String get profPresent;
+
+  /// No description provided for @profAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Absent'**
+  String get profAbsent;
+
+  /// No description provided for @profHalf.
+  ///
+  /// In en, this message translates to:
+  /// **'Half'**
+  String get profHalf;
+
+  /// No description provided for @profHalfDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Half Day'**
+  String get profHalfDay;
+
+  /// No description provided for @profPaidLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid Leave'**
+  String get profPaidLeave;
+
+  /// No description provided for @profWeekOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Week Off'**
+  String get profWeekOff;
+
+  /// No description provided for @profRecentLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'RECENT LOGS'**
+  String get profRecentLogs;
+
+  /// No description provided for @profNoAtt.
+  ///
+  /// In en, this message translates to:
+  /// **'No attendance records for this month'**
+  String get profNoAtt;
+
+  /// No description provided for @profNetOutstanding.
+  ///
+  /// In en, this message translates to:
+  /// **'NET OUTSTANDING'**
+  String get profNetOutstanding;
+
+  /// No description provided for @profPayableByEmployee.
+  ///
+  /// In en, this message translates to:
+  /// **'Payable by Employee'**
+  String get profPayableByEmployee;
+
+  /// No description provided for @profRecentEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'RECENT ENTRIES'**
+  String get profRecentEntries;
+
+  /// No description provided for @profNoLedger.
+  ///
+  /// In en, this message translates to:
+  /// **'No ledger entries this month'**
+  String get profNoLedger;
+
+  /// No description provided for @profWageAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Wage Added'**
+  String get profWageAdded;
+
+  /// No description provided for @profAdvanceTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance Taken'**
+  String get profAdvanceTaken;
+
+  /// No description provided for @profNoAudit.
+  ///
+  /// In en, this message translates to:
+  /// **'No audit activity recorded'**
+  String get profNoAudit;
 }
 
 class _AppLocalizationsDelegate

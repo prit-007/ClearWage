@@ -16,6 +16,7 @@ import '../../core/responsive.dart';
 import '../../core/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/currency_format.dart';
+import '../../l10n/app_localizations.dart';
 
 const int _pageSize = 20;
 
@@ -267,7 +268,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
                       vertical: 16,
                     ),
                     title: Text(
-                      'Directory',
+                      AppLocalizations.of(context).dirTitle,
                       style: tt.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w900,
                         letterSpacing: -1.0,
@@ -334,7 +335,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Failed to load staff',
+                        AppLocalizations.of(context).dirFailedLoad,
                         style: tt.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -352,7 +353,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen>
                           PhosphorIconsFill.arrowClockwise,
                           size: 18,
                         ),
-                        label: const Text('Retry'),
+                        label: Text(AppLocalizations.of(context).commonRetry),
                       ),
                     ],
                   ),
@@ -538,7 +539,7 @@ class _PremiumSearchBarState extends State<_PremiumSearchBar> {
           letterSpacing: -0.3,
         ),
         decoration: InputDecoration(
-          hintText: 'Search by name or role...',
+          hintText: AppLocalizations.of(context).dirSearchHint,
           hintStyle: TextStyle(
             color: widget.cs.onSurfaceVariant.withValues(alpha: 0.6),
             fontSize: 14,
@@ -615,7 +616,7 @@ class _BalanceChip extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            '${isDue ? 'DUE' : 'EXCESS'} $formatted',
+            '${isDue ? AppLocalizations.of(context).dirBalanceDue : AppLocalizations.of(context).dirBalanceExcess} $formatted',
             style: TextStyle(
               color: color,
               fontSize: 10,
@@ -739,10 +740,10 @@ class _StaffDirectoryTile extends ConsumerWidget {
                       ),
                       child: Text(
                         isDaily
-                            ? 'DAILY'
+                            ? AppLocalizations.of(context).dirWageDaily
                             : isHourly
-                            ? 'HOURLY'
-                            : 'MONTHLY',
+                            ? AppLocalizations.of(context).dirWageHourly
+                            : AppLocalizations.of(context).dirWageMonthly,
                         style: TextStyle(
                           color: typeColor,
                           fontSize: 10,
@@ -771,7 +772,9 @@ class _EmptySearchState extends StatelessWidget {
   Widget build(BuildContext context) {
     return EmptyState(
       icon: PhosphorIconsRegular.users,
-      title: isSearching ? 'No matches found' : 'No staff members yet',
+      title: isSearching
+          ? AppLocalizations.of(context).dirNoMatches
+          : AppLocalizations.of(context).dirNoStaff,
     );
   }
 }
@@ -851,7 +854,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             ),
             const SizedBox(height: 20),
             Text(
-              'FILTER BY ROLE',
+              AppLocalizations.of(context).dirFilterByRole,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -867,7 +870,9 @@ class _FilterSheetState extends State<_FilterSheet> {
                 final selected = _roles.contains(role);
                 return FilterChip(
                   label: Text(
-                    role[0].toUpperCase() + role.substring(1),
+                    role == 'employee'
+                        ? AppLocalizations.of(context).dirRoleEmployee
+                        : AppLocalizations.of(context).dirRoleSupervisor,
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: selected ? cs.primary : cs.onSurfaceVariant,
@@ -896,7 +901,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             ),
             const SizedBox(height: 20),
             Text(
-              'FILTER BY WAGE TYPE',
+              AppLocalizations.of(context).dirFilterByWage,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -912,7 +917,11 @@ class _FilterSheetState extends State<_FilterSheet> {
                 final selected = _wages.contains(type);
                 return FilterChip(
                   label: Text(
-                    type[0].toUpperCase() + type.substring(1),
+                    type == 'daily'
+                        ? AppLocalizations.of(context).dirWageTypeDaily
+                        : type == 'monthly'
+                        ? AppLocalizations.of(context).dirWageTypeMonthly
+                        : AppLocalizations.of(context).dirWageTypeHourly,
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: selected ? cs.primary : cs.onSurfaceVariant,
@@ -942,7 +951,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             const SizedBox(height: 20),
             if (widget.departments.isNotEmpty) ...[
               Text(
-                'FILTER BY DEPARTMENT',
+                AppLocalizations.of(context).dirFilterByDept,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
@@ -991,7 +1000,7 @@ class _FilterSheetState extends State<_FilterSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Show Inactive',
+                  AppLocalizations.of(context).dirShowInactive,
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     color: cs.onSurfaceVariant,
@@ -1012,9 +1021,9 @@ class _FilterSheetState extends State<_FilterSheet> {
                       HapticFeedback.lightImpact();
                       widget.onApply({}, {}, {}, false);
                     },
-                    child: const Text(
-                      'Reset',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                    child: Text(
+                      AppLocalizations.of(context).dirReset,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -1025,9 +1034,9 @@ class _FilterSheetState extends State<_FilterSheet> {
                       HapticFeedback.mediumImpact();
                       widget.onApply(_roles, _wages, _depts, _inactive);
                     },
-                    child: const Text(
-                      'Apply',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                    child: Text(
+                      AppLocalizations.of(context).dirApply,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),

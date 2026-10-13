@@ -489,4 +489,298 @@ class AppLocalizationsEn extends AppLocalizations {
   String bulkSkippedNoShift(int count) {
     return 'Skipped $count (no shift)';
   }
+
+  @override
+  String get commonDelete => 'Delete';
+
+  @override
+  String get commonUpload => 'Upload';
+
+  @override
+  String get commonNotAssigned => 'Not assigned';
+
+  @override
+  String get dirTitle => 'Directory';
+
+  @override
+  String get dirSearchHint => 'Search by name or role...';
+
+  @override
+  String get dirFailedLoad => 'Failed to load staff';
+
+  @override
+  String get dirNoMatches => 'No matches found';
+
+  @override
+  String get dirNoStaff => 'No staff members yet';
+
+  @override
+  String get dirBalanceDue => 'DUE';
+
+  @override
+  String get dirBalanceExcess => 'EXCESS';
+
+  @override
+  String get dirWageDaily => 'DAILY';
+
+  @override
+  String get dirWageHourly => 'HOURLY';
+
+  @override
+  String get dirWageMonthly => 'MONTHLY';
+
+  @override
+  String get dirWageTypeDaily => 'Daily';
+
+  @override
+  String get dirWageTypeMonthly => 'Monthly';
+
+  @override
+  String get dirWageTypeHourly => 'Hourly';
+
+  @override
+  String get dirRoleEmployee => 'Employee';
+
+  @override
+  String get dirRoleSupervisor => 'Supervisor';
+
+  @override
+  String get dirFilterByRole => 'FILTER BY ROLE';
+
+  @override
+  String get dirFilterByWage => 'FILTER BY WAGE TYPE';
+
+  @override
+  String get dirFilterByDept => 'FILTER BY DEPARTMENT';
+
+  @override
+  String get dirShowInactive => 'Show Inactive';
+
+  @override
+  String get dirReset => 'Reset';
+
+  @override
+  String get dirApply => 'Apply';
+
+  @override
+  String get profPhotoCamera => 'Capture with Camera';
+
+  @override
+  String get profPhotoGallery => 'Choose from Gallery';
+
+  @override
+  String get profUploadFile => 'Upload PDF / File';
+
+  @override
+  String get profCouldNotPickPhoto => 'Could not pick photo';
+
+  @override
+  String get profCouldNotPickFile => 'Could not pick file';
+
+  @override
+  String get profPhotoUpdated => 'Photo updated';
+
+  @override
+  String get profDocUploaded => 'Document uploaded';
+
+  @override
+  String get profDocQueued => 'Queued: document will upload when back online';
+
+  @override
+  String get profDeleteEmployeeTitle => 'Delete Employee';
+
+  @override
+  String profDeleteEmployeeMsg(String name) {
+    return 'Permanently deactivate $name? They will no longer be able to log in.';
+  }
+
+  @override
+  String get profTabAudit => 'Audit';
+
+  @override
+  String get profSettleTitle => 'Settle Account';
+
+  @override
+  String get profSettleMsg =>
+      'This will zero out the outstanding balance. This action cannot be undone.';
+
+  @override
+  String get profSettleConfirm => 'Settle';
+
+  @override
+  String get profAccountSettled => 'Account settled';
+
+  @override
+  String get profFFSettle => 'F&F Settle';
+
+  @override
+  String get profPayslipOpened => 'Payslip opened';
+
+  @override
+  String get profPayslipSaved => 'Payslip saved. Could not open automatically.';
+
+  @override
+  String get profGenerateSlip => 'Generate Slip';
+
+  @override
+  String get profTooltipCall => 'Call';
+
+  @override
+  String get profTooltipWhatsapp => 'WhatsApp';
+
+  @override
+  String get profKycPan => 'PAN Number';
+
+  @override
+  String get profKycAadhaar => 'Aadhaar Number';
+
+  @override
+  String get profKycPf => 'PF / UAN';
+
+  @override
+  String get profKycBank => 'Bank Account';
+
+  @override
+  String get profKycIfsc => 'IFSC';
+
+  @override
+  String get profKycUpi => 'UPI ID';
+
+  @override
+  String get profKycEmergency => 'Emergency Contact';
+
+  @override
+  String get profKycEmergencyPhone => 'Emergency Phone';
+
+  @override
+  String get profKycAddress => 'Current Address';
+
+  @override
+  String get profKycPermanentAddress => 'Permanent Address';
+
+  @override
+  String get profKycHealth => 'Health Notes';
+
+  @override
+  String get profBlockEmployment => 'Employment Details';
+
+  @override
+  String get profBlockFinancial => 'Financial Config';
+
+  @override
+  String get profBlockKyc => 'KYC & Identity';
+
+  @override
+  String get profDesignation => 'Designation';
+
+  @override
+  String get profShift => 'Shift';
+
+  @override
+  String get profManager => 'Manager';
+
+  @override
+  String get profWageType => 'Wage Type';
+
+  @override
+  String get profWageDaily => 'Daily Wage';
+
+  @override
+  String get profWageMonthly => 'Monthly';
+
+  @override
+  String get profWageHourly => 'Hourly';
+
+  @override
+  String get profBaseRate => 'Base Rate';
+
+  @override
+  String get profPerDay => ' / day';
+
+  @override
+  String get profPerHr => ' / hr';
+
+  @override
+  String get profKycDocs => 'KYC DOCUMENTS';
+
+  @override
+  String get profDocAadhaar => 'Aadhaar Card';
+
+  @override
+  String get profDocPan => 'PAN Card';
+
+  @override
+  String get profDocBank => 'Bank Passbook';
+
+  @override
+  String get profDocUploadedStatus => 'Uploaded & Verified';
+
+  @override
+  String get profDocActionRequired => 'Action Required';
+
+  @override
+  String get profDocDeleteTitle => 'Delete Document';
+
+  @override
+  String get profDocDeleteMsg => 'Remove this document? This cannot be undone.';
+
+  @override
+  String get profDocsFailed => 'Could not load documents';
+
+  @override
+  String get profCouldNotOpenDoc => 'Could not open document';
+
+  @override
+  String get profDocument => 'Document';
+
+  @override
+  String get profDocumentPreview => 'Document Preview';
+
+  @override
+  String get profOpenDocument => 'Open Document';
+
+  @override
+  String get profPresent => 'Present';
+
+  @override
+  String get profAbsent => 'Absent';
+
+  @override
+  String get profHalf => 'Half';
+
+  @override
+  String get profHalfDay => 'Half Day';
+
+  @override
+  String get profPaidLeave => 'Paid Leave';
+
+  @override
+  String get profWeekOff => 'Week Off';
+
+  @override
+  String get profRecentLogs => 'RECENT LOGS';
+
+  @override
+  String get profNoAtt => 'No attendance records for this month';
+
+  @override
+  String get profNetOutstanding => 'NET OUTSTANDING';
+
+  @override
+  String get profPayableByEmployee => 'Payable by Employee';
+
+  @override
+  String get profRecentEntries => 'RECENT ENTRIES';
+
+  @override
+  String get profNoLedger => 'No ledger entries this month';
+
+  @override
+  String get profWageAdded => 'Wage Added';
+
+  @override
+  String get profAdvanceTaken => 'Advance Taken';
+
+  @override
+  String get profNoAudit => 'No audit activity recorded';
 }

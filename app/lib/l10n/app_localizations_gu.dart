@@ -486,4 +486,299 @@ class AppLocalizationsGu extends AppLocalizations {
   String bulkSkippedNoShift(int count) {
     return '$count છોડ્યા (કોઈ શિફ્ટ નહીં)';
   }
+
+  @override
+  String get commonDelete => 'કાઢી નાખો';
+
+  @override
+  String get commonUpload => 'અપલોડ કરો';
+
+  @override
+  String get commonNotAssigned => 'ફાળવેલું નથી';
+
+  @override
+  String get dirTitle => 'યાદી';
+
+  @override
+  String get dirSearchHint => 'નામ અથવા ભૂમિકાથી શોધો...';
+
+  @override
+  String get dirFailedLoad => 'સ્ટાફ લોડ થઈ શક્યો નહીં';
+
+  @override
+  String get dirNoMatches => 'કોઈ મેળ મળ્યો નહીં';
+
+  @override
+  String get dirNoStaff => 'હજી સુધી કોઈ સ્ટાફ સભ્ય નથી';
+
+  @override
+  String get dirBalanceDue => 'બાકી';
+
+  @override
+  String get dirBalanceExcess => 'જમા';
+
+  @override
+  String get dirWageDaily => 'દૈનિક';
+
+  @override
+  String get dirWageHourly => 'કલાકીય';
+
+  @override
+  String get dirWageMonthly => 'માસિક';
+
+  @override
+  String get dirWageTypeDaily => 'દૈનિક';
+
+  @override
+  String get dirWageTypeMonthly => 'માસિક';
+
+  @override
+  String get dirWageTypeHourly => 'કલાકીય';
+
+  @override
+  String get dirRoleEmployee => 'કર્મચારી';
+
+  @override
+  String get dirRoleSupervisor => 'સુપરવાઇઝર';
+
+  @override
+  String get dirFilterByRole => 'ભૂમિકાથી ગાળો';
+
+  @override
+  String get dirFilterByWage => 'પગાર પ્રકારથી ગાળો';
+
+  @override
+  String get dirFilterByDept => 'વિભાગથી ગાળો';
+
+  @override
+  String get dirShowInactive => 'નિષ્ક્રિય બતાવો';
+
+  @override
+  String get dirReset => 'રીસેટ';
+
+  @override
+  String get dirApply => 'લાગુ કરો';
+
+  @override
+  String get profPhotoCamera => 'કેમેરાથી કેપ્ચર કરો';
+
+  @override
+  String get profPhotoGallery => 'ગેલેરીમાંથી પસંદ કરો';
+
+  @override
+  String get profUploadFile => 'PDF/ફાઇલ અપલોડ કરો';
+
+  @override
+  String get profCouldNotPickPhoto => 'ફોટો પસંદ કરી શકાયો નહીં';
+
+  @override
+  String get profCouldNotPickFile => 'ફાઇલ પસંદ કરી શકાઈ નહીં';
+
+  @override
+  String get profPhotoUpdated => 'ફોટો અપડેટ થયો';
+
+  @override
+  String get profDocUploaded => 'દસ્તાવેજ અપલોડ થયો';
+
+  @override
+  String get profDocQueued => 'કતારમાં: ઓનલાઇન થતાં દસ્તાવેજ અપલોડ થશે';
+
+  @override
+  String get profDeleteEmployeeTitle => 'કર્મચારી કાઢી નાખો';
+
+  @override
+  String profDeleteEmployeeMsg(String name) {
+    return '$name કાયમ માટે નિષ્ક્રિય કરાશે? તેઓ હવે લૉગ ઇન કરી શકશે નહીં.';
+  }
+
+  @override
+  String get profTabAudit => 'ઓડિટ';
+
+  @override
+  String get profSettleTitle => 'ખાતું સેટલ કરો';
+
+  @override
+  String get profSettleMsg =>
+      'આથી બાકી બેલેન્સ શૂન્ય થઈ જશે. આ ક્રિયા પાછી ફેરવી શકાય નહીં.';
+
+  @override
+  String get profSettleConfirm => 'સેટલ કરો';
+
+  @override
+  String get profAccountSettled => 'ખાતું સેટલ થયું';
+
+  @override
+  String get profFFSettle => 'F&F સેટલ';
+
+  @override
+  String get profPayslipOpened => 'પગાર સ્લિપ ખૂલી';
+
+  @override
+  String get profPayslipSaved => 'પગાર સ્લિપ સાચવાઈ. આપોઆપ ખૂલી શકી નહીં.';
+
+  @override
+  String get profGenerateSlip => 'સ્લિપ બનાવો';
+
+  @override
+  String get profTooltipCall => 'કૉલ';
+
+  @override
+  String get profTooltipWhatsapp => 'WhatsApp';
+
+  @override
+  String get profKycPan => 'PAN નંબર';
+
+  @override
+  String get profKycAadhaar => 'આધાર નંબર';
+
+  @override
+  String get profKycPf => 'PF / UAN';
+
+  @override
+  String get profKycBank => 'બેંક ખાતું';
+
+  @override
+  String get profKycIfsc => 'IFSC';
+
+  @override
+  String get profKycUpi => 'UPI ID';
+
+  @override
+  String get profKycEmergency => 'ઇમર્જન્સી સંપર્ક';
+
+  @override
+  String get profKycEmergencyPhone => 'ઇમર્જન્સી ફોન';
+
+  @override
+  String get profKycAddress => 'વર્તમાન સરનામું';
+
+  @override
+  String get profKycPermanentAddress => 'કાયમી સરનામું';
+
+  @override
+  String get profKycHealth => 'આરોગ્ય નોંધ';
+
+  @override
+  String get profBlockEmployment => 'રોજગાર વિગતો';
+
+  @override
+  String get profBlockFinancial => 'નાણાકીય કન્ફિગ';
+
+  @override
+  String get profBlockKyc => 'KYC અને ઓળખ';
+
+  @override
+  String get profDesignation => 'હોદ્દો';
+
+  @override
+  String get profShift => 'શિફ્ટ';
+
+  @override
+  String get profManager => 'મેનેજર';
+
+  @override
+  String get profWageType => 'પગાર પ્રકાર';
+
+  @override
+  String get profWageDaily => 'દૈનિક પગાર';
+
+  @override
+  String get profWageMonthly => 'માસિક';
+
+  @override
+  String get profWageHourly => 'કલાકીય';
+
+  @override
+  String get profBaseRate => 'આધાર દર';
+
+  @override
+  String get profPerDay => ' / દિવસ';
+
+  @override
+  String get profPerHr => ' / કલાક';
+
+  @override
+  String get profKycDocs => 'KYC દસ્તાવેજો';
+
+  @override
+  String get profDocAadhaar => 'આધાર કાર્ડ';
+
+  @override
+  String get profDocPan => 'PAN કાર્ડ';
+
+  @override
+  String get profDocBank => 'બેંક પાસબુક';
+
+  @override
+  String get profDocUploadedStatus => 'અપલોડ અને ચકાસાયેલ';
+
+  @override
+  String get profDocActionRequired => 'કાર્યવાહી જરૂરી';
+
+  @override
+  String get profDocDeleteTitle => 'દસ્તાવેજ કાઢી નાખો';
+
+  @override
+  String get profDocDeleteMsg =>
+      'આ દસ્તાવેજ કાઢી નાખો? આ પાછું ફેરવી શકાય નહીં.';
+
+  @override
+  String get profDocsFailed => 'દસ્તાવેજો લોડ થઈ શક્યા નહીં';
+
+  @override
+  String get profCouldNotOpenDoc => 'દસ્તાવેજ ખૂલી શક્યો નહીં';
+
+  @override
+  String get profDocument => 'દસ્તાવેજ';
+
+  @override
+  String get profDocumentPreview => 'દસ્તાવેજ પૂર્વદર્શન';
+
+  @override
+  String get profOpenDocument => 'દસ્તાવેજ ખોલો';
+
+  @override
+  String get profPresent => 'હાજર';
+
+  @override
+  String get profAbsent => 'ગેરહાજર';
+
+  @override
+  String get profHalf => 'અર્ધ';
+
+  @override
+  String get profHalfDay => 'અર્ધો દિવસ';
+
+  @override
+  String get profPaidLeave => 'પેઇડ રજા';
+
+  @override
+  String get profWeekOff => 'સાપ્તાહિક રજા';
+
+  @override
+  String get profRecentLogs => 'તાજેતરની લૉગ્સ';
+
+  @override
+  String get profNoAtt => 'આ મહિનાની કોઈ હાજરી નોંધ નથી';
+
+  @override
+  String get profNetOutstanding => 'કુલ બાકી';
+
+  @override
+  String get profPayableByEmployee => 'કર્મચારી દ્વારા ચૂકવવાનું';
+
+  @override
+  String get profRecentEntries => 'તાજેતરની નોંધો';
+
+  @override
+  String get profNoLedger => 'આ મહિનાની કોઈ ખાતા નોંધ નથી';
+
+  @override
+  String get profWageAdded => 'પગાર ઉમેરાયો';
+
+  @override
+  String get profAdvanceTaken => 'એડવાન્સ લીધો';
+
+  @override
+  String get profNoAudit => 'કોઈ ઓડિટ પ્રવૃત્તિ નોંધાઈ નથી';
 }

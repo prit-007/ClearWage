@@ -488,4 +488,299 @@ class AppLocalizationsHi extends AppLocalizations {
   String bulkSkippedNoShift(int count) {
     return '$count छोड़े गए (कोई शिफ़्ट नहीं)';
   }
+
+  @override
+  String get commonDelete => 'हटाएं';
+
+  @override
+  String get commonUpload => 'अपलोड करें';
+
+  @override
+  String get commonNotAssigned => 'आवंटित नहीं';
+
+  @override
+  String get dirTitle => 'निर्देशिका';
+
+  @override
+  String get dirSearchHint => 'नाम या भूमिका से खोजें...';
+
+  @override
+  String get dirFailedLoad => 'स्टाफ़ लोड नहीं हो सका';
+
+  @override
+  String get dirNoMatches => 'कोई मेल नहीं मिला';
+
+  @override
+  String get dirNoStaff => 'अभी तक कोई स्टाफ़ सदस्य नहीं';
+
+  @override
+  String get dirBalanceDue => 'बकाया';
+
+  @override
+  String get dirBalanceExcess => 'जमा';
+
+  @override
+  String get dirWageDaily => 'दैनिक';
+
+  @override
+  String get dirWageHourly => 'प्रति घंटा';
+
+  @override
+  String get dirWageMonthly => 'मासिक';
+
+  @override
+  String get dirWageTypeDaily => 'दैनिक';
+
+  @override
+  String get dirWageTypeMonthly => 'मासिक';
+
+  @override
+  String get dirWageTypeHourly => 'प्रति घंटा';
+
+  @override
+  String get dirRoleEmployee => 'कर्मचारी';
+
+  @override
+  String get dirRoleSupervisor => 'पर्यवेक्षक';
+
+  @override
+  String get dirFilterByRole => 'भूमिका से छानें';
+
+  @override
+  String get dirFilterByWage => 'वेतन प्रकार से छानें';
+
+  @override
+  String get dirFilterByDept => 'विभाग से छानें';
+
+  @override
+  String get dirShowInactive => 'निष्क्रिय दिखाएं';
+
+  @override
+  String get dirReset => 'रीसेट';
+
+  @override
+  String get dirApply => 'लागू करें';
+
+  @override
+  String get profPhotoCamera => 'कैमरे से खींचें';
+
+  @override
+  String get profPhotoGallery => 'गैलरी से चुनें';
+
+  @override
+  String get profUploadFile => 'PDF/फ़ाइल अपलोड करें';
+
+  @override
+  String get profCouldNotPickPhoto => 'फ़ोटो नहीं चुनी जा सकी';
+
+  @override
+  String get profCouldNotPickFile => 'फ़ाइल नहीं चुनी जा सकी';
+
+  @override
+  String get profPhotoUpdated => 'फ़ोटो अपडेट हुआ';
+
+  @override
+  String get profDocUploaded => 'दस्तावेज़ अपलोड हुआ';
+
+  @override
+  String get profDocQueued => 'कतार में: ऑनलाइन आने पर दस्तावेज़ अपलोड होगा';
+
+  @override
+  String get profDeleteEmployeeTitle => 'कर्मचारी हटाएं';
+
+  @override
+  String profDeleteEmployeeMsg(String name) {
+    return '$name को स्थायी रूप से निष्क्रिय किया जाएगा? वे अब लॉग इन नहीं कर पाएंगे।';
+  }
+
+  @override
+  String get profTabAudit => 'ऑडिट';
+
+  @override
+  String get profSettleTitle => 'खाता निपटाएं';
+
+  @override
+  String get profSettleMsg =>
+      'इससे बकाया शेष शून्य हो जाएगा। यह क्रिया वापस नहीं की जा सकती।';
+
+  @override
+  String get profSettleConfirm => 'निपटाएं';
+
+  @override
+  String get profAccountSettled => 'खाता निपटाया गया';
+
+  @override
+  String get profFFSettle => 'F&F निपटान';
+
+  @override
+  String get profPayslipOpened => 'पेस्लिप खुली';
+
+  @override
+  String get profPayslipSaved => 'पेस्लिप सहेजी गई। स्वतः नहीं खुल सकी।';
+
+  @override
+  String get profGenerateSlip => 'स्लिप बनाएं';
+
+  @override
+  String get profTooltipCall => 'कॉल';
+
+  @override
+  String get profTooltipWhatsapp => 'WhatsApp';
+
+  @override
+  String get profKycPan => 'PAN नंबर';
+
+  @override
+  String get profKycAadhaar => 'आधार नंबर';
+
+  @override
+  String get profKycPf => 'PF / UAN';
+
+  @override
+  String get profKycBank => 'बैंक खाता';
+
+  @override
+  String get profKycIfsc => 'IFSC';
+
+  @override
+  String get profKycUpi => 'UPI ID';
+
+  @override
+  String get profKycEmergency => 'आपातकालीन संपर्क';
+
+  @override
+  String get profKycEmergencyPhone => 'आपातकालीन फ़ोन';
+
+  @override
+  String get profKycAddress => 'वर्तमान पता';
+
+  @override
+  String get profKycPermanentAddress => 'स्थायी पता';
+
+  @override
+  String get profKycHealth => 'स्वास्थ्य टिप्पणी';
+
+  @override
+  String get profBlockEmployment => 'रोज़गार विवरण';
+
+  @override
+  String get profBlockFinancial => 'वित्तीय कॉन्फ़िग';
+
+  @override
+  String get profBlockKyc => 'KYC और पहचान';
+
+  @override
+  String get profDesignation => 'पदनाम';
+
+  @override
+  String get profShift => 'शिफ़्ट';
+
+  @override
+  String get profManager => 'प्रबंधक';
+
+  @override
+  String get profWageType => 'वेतन प्रकार';
+
+  @override
+  String get profWageDaily => 'दैनिक वेतन';
+
+  @override
+  String get profWageMonthly => 'मासिक';
+
+  @override
+  String get profWageHourly => 'प्रति घंटा';
+
+  @override
+  String get profBaseRate => 'आधार दर';
+
+  @override
+  String get profPerDay => ' / दिन';
+
+  @override
+  String get profPerHr => ' / घंटा';
+
+  @override
+  String get profKycDocs => 'KYC दस्तावेज़';
+
+  @override
+  String get profDocAadhaar => 'आधार कार्ड';
+
+  @override
+  String get profDocPan => 'PAN कार्ड';
+
+  @override
+  String get profDocBank => 'बैंक पासबुक';
+
+  @override
+  String get profDocUploadedStatus => 'अपलोड और सत्यापित';
+
+  @override
+  String get profDocActionRequired => 'कार्रवाई आवश्यक';
+
+  @override
+  String get profDocDeleteTitle => 'दस्तावेज़ हटाएं';
+
+  @override
+  String get profDocDeleteMsg =>
+      'यह दस्तावेज़ हटाएं? यह वापस नहीं किया जा सकता।';
+
+  @override
+  String get profDocsFailed => 'दस्तावेज़ लोड नहीं हो सके';
+
+  @override
+  String get profCouldNotOpenDoc => 'दस्तावेज़ नहीं खुल सका';
+
+  @override
+  String get profDocument => 'दस्तावेज़';
+
+  @override
+  String get profDocumentPreview => 'दस्तावेज़ पूर्वावलोकन';
+
+  @override
+  String get profOpenDocument => 'दस्तावेज़ खोलें';
+
+  @override
+  String get profPresent => 'उपस्थित';
+
+  @override
+  String get profAbsent => 'अनुपस्थित';
+
+  @override
+  String get profHalf => 'आधा';
+
+  @override
+  String get profHalfDay => 'आधा दिन';
+
+  @override
+  String get profPaidLeave => 'सशुल्क अवकाश';
+
+  @override
+  String get profWeekOff => 'साप्ताहिक अवकाश';
+
+  @override
+  String get profRecentLogs => 'हाल की लॉग';
+
+  @override
+  String get profNoAtt => 'इस माह कोई उपस्थिति रिकॉर्ड नहीं';
+
+  @override
+  String get profNetOutstanding => 'कुल बकाया';
+
+  @override
+  String get profPayableByEmployee => 'कर्मचारी द्वारा देय';
+
+  @override
+  String get profRecentEntries => 'हाल की प्रविष्टियां';
+
+  @override
+  String get profNoLedger => 'इस माह कोई खाता प्रविष्टि नहीं';
+
+  @override
+  String get profWageAdded => 'वेतन जोड़ा';
+
+  @override
+  String get profAdvanceTaken => 'अग्रिम लिया';
+
+  @override
+  String get profNoAudit => 'कोई ऑडिट गतिविधि दर्ज नहीं';
 }

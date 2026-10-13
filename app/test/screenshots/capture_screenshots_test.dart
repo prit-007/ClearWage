@@ -612,7 +612,17 @@ void main() {
             staffServiceProvider.overrideWithValue(_StaffSvc(staffF)),
             userInfoProvider.overrideWith((ref) => _admin()),
           ],
-          child: const MaterialApp(home: StaffDirectoryScreen()),
+          child: const MaterialApp(
+            locale: Locale('en'),
+            supportedLocales: [Locale('en'), Locale('hi'), Locale('gu')],
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: StaffDirectoryScreen(),
+          ),
         ),
       );
     });

@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/api_client.dart';
 import 'package:clearwage/core/providers/app_providers.dart';
 import 'package:clearwage/core/providers/services.dart';
+import 'package:clearwage/core/services/locale_service.dart';
 import 'package:clearwage/core/widgets/shimmer_loading.dart';
 import 'package:clearwage/data/models/auth_model.dart';
 import 'package:clearwage/data/models/employee_model.dart';
@@ -12,6 +14,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:clearwage/data/services/ledger_service.dart';
 import 'package:clearwage/data/services/staff_service.dart';
 import 'package:clearwage/features/staff/staff_directory_page.dart';
+import 'package:clearwage/l10n/app_localizations.dart';
 
 class _NoOpApiClient extends ApiClient {
   _NoOpApiClient() : super(baseUrl: 'http://localhost');
@@ -61,7 +64,11 @@ class FakeLedgerService extends LedgerService {
   Future<List<Map<String, dynamic>>> getBalanceSummary() async => _rows;
 }
 
-Widget _buildApp(FakeStaffService fakeService, {FakeLedgerService? ledger}) {
+Widget _buildApp(
+  FakeStaffService fakeService, {
+  FakeLedgerService? ledger,
+  Locale locale = const Locale('en'),
+}) {
   return ProviderScope(
     overrides: [
       staffServiceProvider.overrideWithValue(fakeService),
@@ -75,7 +82,17 @@ Widget _buildApp(FakeStaffService fakeService, {FakeLedgerService? ledger}) {
         ),
       ),
     ],
-    child: const MaterialApp(home: StaffDirectoryScreen()),
+    child: MaterialApp(
+      locale: locale,
+      supportedLocales: supportedLocales,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: const StaffDirectoryScreen(),
+    ),
   );
 }
 
@@ -97,6 +114,17 @@ void main() {
       fakeService.completeSlowLoad();
       await tester.pumpAndSettle();
       expect(find.text('No staff members yet'), findsOneWidget);
+    });
+
+    testWidgets('renders Hindi labels when locale is hi', (tester) async {
+      fakeService.setEmployees([]);
+      await tester.pumpWidget(
+        _buildApp(fakeService, locale: const Locale('hi')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('निर्देशिका'), findsOneWidget);
+      expect(find.text('अभी तक कोई स्टाफ़ सदस्य नहीं'), findsOneWidget);
     });
 
     testWidgets('shows employee list when data is loaded', (tester) async {

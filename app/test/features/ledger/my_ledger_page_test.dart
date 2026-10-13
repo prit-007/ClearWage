@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
@@ -7,6 +8,8 @@ import 'package:clearwage/core/providers/services.dart';
 import 'package:clearwage/core/widgets/shimmer_loading.dart';
 import 'package:clearwage/data/services/profile_service.dart';
 import 'package:clearwage/features/ledger/my_ledger_page.dart';
+import 'package:clearwage/core/services/locale_service.dart';
+import 'package:clearwage/l10n/app_localizations.dart';
 
 class _NoOpApiClient extends ApiClient {
   _NoOpApiClient() : super(baseUrl: 'http://localhost');
@@ -46,10 +49,23 @@ class FakeProfileService extends ProfileService {
   }
 }
 
-Widget _buildApp(FakeProfileService fakeService) {
+Widget _buildApp(
+  FakeProfileService fakeService, {
+  Locale locale = const Locale('en'),
+}) {
   return ProviderScope(
     overrides: [profileServiceProvider.overrideWithValue(fakeService)],
-    child: const MaterialApp(home: MyLedgerPage()),
+    child: MaterialApp(
+      locale: locale,
+      supportedLocales: supportedLocales,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: const MyLedgerPage(),
+    ),
   );
 }
 
@@ -236,6 +252,29 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(fakeService.callCount, greaterThan(initialCallCount));
+    });
+
+    testWidgets('renders Hindi labels when locale is hi', (tester) async {
+      fakeService.setLedgerData({
+        'entries': [
+          {
+            'id': 'e1',
+            'type': 'jama',
+            'amount': 1000,
+            'note': '',
+            'date': '2026-08-01',
+          },
+        ],
+        'net_balance': 1000,
+      });
+      await tester.pumpWidget(
+        _buildApp(fakeService, locale: const Locale('hi')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('मेरा खाता'), findsOneWidget);
+      expect(find.text('इस माह'), findsOneWidget);
+      expect(find.text('जमा'), findsOneWidget);
     });
   });
 }

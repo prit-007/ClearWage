@@ -506,5 +506,31 @@
       }
     }
   },
-  "ledgerNoEmployees": "कोई कर्मचारी नहीं मिला"
+  "ledgerNoEmployees": "कोई कर्मचारी नहीं मिला",
+  "leaveRequestSubmitted": "अवकाश अनुरोध सबमिट हुआ",
+  "leaveRequestTitle": "अवकाश का अनुरोध करें",
+  "leaveUnpaid": "अवैतनिक अवकाश",
+  "leavePickRange": "तारीख सीमा चुनने के लिए टैप करें",
+  "leaveReasonOptional": "कारण (वैकल्पिक)",
+  "commonSubmitting": "सबमिट हो रहा है…",
+  "leaveSubmitRequest": "अनुरोध सबमिट करें",
+  "myAttTitle": "मेरी उपस्थिति",
+  "myAttRecordSubject": "उपस्थिति रिकॉर्ड",
+  "myAttMonthlyLog": "मासिक लॉग",
+  "myAttNoRecords": "कोई रिकॉर्ड नहीं",
+  "myAttNoRecordsHint": "इस माह के लिए कोई उपस्थिति रिकॉर्ड नहीं।",
+  "myAttReportError": "त्रुटि की रिपोर्ट करें",
+  "myAttOt": "OT {hours}घं",
+  "@myAttOt": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "myLedgerNoEntries": "कोई प्रविष्टि नहीं",
+  "myLedgerNoEntriesHint": "इस माह के लिए कोई लेजर प्रविष्टि नहीं।",
+  "myLedgerWagesEarned": "अर्जित मजदूरी",
+  "myLedgerAdvancesTaken": "लिए गए अग्रिम",
+  "myLedgerNetPosition": "शुद्ध स्थिति"
 }

@@ -15,6 +15,7 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import 'providers/ledger_providers.dart';
+import '../../l10n/app_localizations.dart';
 
 class MyLedgerPage extends ConsumerStatefulWidget {
   const MyLedgerPage({super.key});
@@ -125,7 +126,7 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
                       ),
                       centerTitle: true,
                       title: Text(
-                        'My Ledger',
+                        AppLocalizations.of(context).qaMyLedger,
                         style: tt.titleLarge?.copyWith(
                           fontWeight: FontWeight.w900,
                           letterSpacing: -0.5,
@@ -188,7 +189,10 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
                           color: cs.error,
                         ),
                         const SizedBox(height: 16),
-                        Text('Failed to load', style: tt.titleMedium),
+                        Text(
+                          AppLocalizations.of(context).commonFailedLoad,
+                          style: tt.titleMedium,
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           _error!,
@@ -198,7 +202,7 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
                         const SizedBox(height: 16),
                         FilledButton.icon(
                           icon: const Icon(PhosphorIconsRegular.arrowClockwise),
-                          label: const Text('Retry'),
+                          label: Text(AppLocalizations.of(context).commonRetry),
                           onPressed: _loadLedger,
                         ),
                       ],
@@ -225,11 +229,13 @@ class _MyLedgerPageState extends ConsumerState<MyLedgerPage> {
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 16)),
                 if (entries.isEmpty)
-                  const SliverFillRemaining(
+                  SliverFillRemaining(
                     child: EmptyState(
                       icon: PhosphorIconsRegular.listDashes,
-                      title: 'No entries',
-                      subtitle: 'No ledger entries for this month.',
+                      title: AppLocalizations.of(context).myLedgerNoEntries,
+                      subtitle: AppLocalizations.of(
+                        context,
+                      ).myLedgerNoEntriesHint,
                     ),
                   )
                 else
@@ -314,7 +320,7 @@ class _BalanceCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Outstanding Balance',
+                    AppLocalizations.of(context).statOutstandingBalance,
                     style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant),
                   ),
                 ],
@@ -396,7 +402,7 @@ class _MonthlySummaryCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'This Month',
+                AppLocalizations.of(context).empThisMonth,
                 style: tt.labelLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.3,
@@ -406,19 +412,19 @@ class _MonthlySummaryCard extends StatelessWidget {
               ResponsiveStatRow(
                 children: [
                   _MonthlyStat(
-                    label: 'Wages Earned',
+                    label: AppLocalizations.of(context).myLedgerWagesEarned,
                     value: '\u20B9${wagesEarned.toStringAsFixed(0)}',
                     icon: PhosphorIconsFill.arrowUpRight,
                     color: AppColors.success,
                   ),
                   _MonthlyStat(
-                    label: 'Advances Taken',
+                    label: AppLocalizations.of(context).myLedgerAdvancesTaken,
                     value: '\u20B9${advancesTaken.toStringAsFixed(0)}',
                     icon: PhosphorIconsFill.arrowDownLeft,
                     color: AppColors.danger,
                   ),
                   _MonthlyStat(
-                    label: 'Net Position',
+                    label: AppLocalizations.of(context).myLedgerNetPosition,
                     value:
                         '${netPosition >= 0 ? '+' : '-'}\u20B9${netPosition.abs().toStringAsFixed(0)}',
                     icon: PhosphorIconsRegular.coins,
@@ -501,7 +507,8 @@ class _LedgerEntryCard extends StatelessWidget {
 
     final isJama = type == 'jama';
     final color = isJama ? AppColors.success : AppColors.danger;
-    final label = isJama ? 'Jama' : 'Udhaar';
+    final l = AppLocalizations.of(context);
+    final label = isJama ? l.ledgerJama : l.ledgerUdhaar;
 
     return GestureDetector(
       onLongPress: onLongPress,

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -78,6 +79,10 @@ func (m *MailService) Send(ctx context.Context, tenantID, to, subject, body stri
 	if senderName == "" {
 		senderName = m.cfg.BrevoSenderName
 	}
+	if senderEmail == "" {
+		m.logger.Warn().Str("tenant", tenantID).Str("to", to).Msg("mail skipped: no sender email configured")
+		return nil
+	}
 
 	used, date, err := m.dailyUsage(ctx, tenantID)
 	if err != nil {
@@ -117,7 +122,13 @@ func (m *MailService) Send(ctx context.Context, tenantID, to, subject, body stri
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
-		m.logger.Warn().Str("tenant", tenantID).Int("status", resp.StatusCode).Str("to", to).Msg("mail skipped: brevo rejected request")
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		m.logger.Warn().
+			Str("tenant", tenantID).
+			Int("status", resp.StatusCode).
+			Str("to", to).
+			Str("body", string(respBody)).
+			Msg("mail skipped: brevo rejected request")
 		return nil
 	}
 	return m.querier.IncrementMailCount(ctx, repositories.IncrementMailCountParams{TenantID: tenantID, Date: today})

@@ -5,6 +5,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/helpers.dart';
 import '../../core/providers/services.dart';
 import '../../core/responsive.dart';
+import '../../l10n/app_localizations.dart';
 
 Future<void> showRequestLeaveDialog(BuildContext context) async {
   await showAdaptiveSheet<void>(
@@ -73,7 +74,9 @@ class _RequestLeaveSheetState extends ConsumerState<RequestLeaveSheet> {
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Leave request submitted')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).leaveRequestSubmitted),
+          ),
         );
         Navigator.pop(context);
       }
@@ -108,14 +111,20 @@ class _RequestLeaveSheetState extends ConsumerState<RequestLeaveSheet> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Request Leave',
+              AppLocalizations.of(context).leaveRequestTitle,
               style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 16),
             SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'paid', label: Text('Paid Leave')),
-                ButtonSegment(value: 'unpaid', label: Text('Unpaid Leave')),
+              segments: [
+                ButtonSegment(
+                  value: 'paid',
+                  label: Text(AppLocalizations.of(context).profPaidLeave),
+                ),
+                ButtonSegment(
+                  value: 'unpaid',
+                  label: Text(AppLocalizations.of(context).leaveUnpaid),
+                ),
               ],
               selected: {_leaveType},
               onSelectionChanged: (s) => setState(() => _leaveType = s.first),
@@ -127,7 +136,7 @@ class _RequestLeaveSheetState extends ConsumerState<RequestLeaveSheet> {
                 '${_fmt(_from)} → ${_fmt(_to)}',
                 style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
-              subtitle: const Text('Tap to pick date range'),
+              subtitle: Text(AppLocalizations.of(context).leavePickRange),
               leading: Icon(
                 PhosphorIconsRegular.calendarBlank,
                 color: cs.primary,
@@ -140,7 +149,7 @@ class _RequestLeaveSheetState extends ConsumerState<RequestLeaveSheet> {
               controller: _reasonCtrl,
               maxLines: 3,
               decoration: InputDecoration(
-                labelText: 'Reason (optional)',
+                labelText: AppLocalizations.of(context).leaveReasonOptional,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -151,7 +160,9 @@ class _RequestLeaveSheetState extends ConsumerState<RequestLeaveSheet> {
               onPressed: _saving ? null : _submit,
               icon: const Icon(PhosphorIconsFill.calendarCheck),
               label: Text(
-                _saving ? 'Submitting…' : 'Submit Request',
+                _saving
+                    ? AppLocalizations.of(context).commonSubmitting
+                    : AppLocalizations.of(context).leaveSubmitRequest,
                 style: const TextStyle(fontWeight: FontWeight.w800),
               ),
               style: FilledButton.styleFrom(

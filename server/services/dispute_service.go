@@ -41,6 +41,10 @@ func (s *DisputeService) Create(ctx context.Context, tenantID, ledgerID, attenda
 		RaisedBy:     raisedBy,
 		Reason:       reason,
 	})
+	if err == nil {
+		eid := employeeID
+		logActivity(ctx, s.querier, tenantID, raisedBy, "raised_dispute", "dispute", &eid, nil)
+	}
 	if err == nil && s.triggers != nil {
 		emp, empErr := s.querier.FindEmployeeByID(ctx, repositories.FindEmployeeByIDParams{
 			ID: employeeID, TenantID: tenantID,
@@ -70,6 +74,10 @@ func (s *DisputeService) Resolve(ctx context.Context, tenantID, disputeID, resol
 		ResolutionNote: note,
 		TenantID:       tenantID,
 	})
+	if err == nil {
+		eid := dispute.EmployeeID
+		logActivity(ctx, s.querier, tenantID, resolvedBy, "resolved_dispute", "dispute", &eid, nil)
+	}
 	if err == nil && s.triggers != nil {
 		s.triggers.NotifyDisputeResolved(ctx, tenantID, dispute.EmployeeID)
 	}
@@ -84,6 +92,10 @@ func (s *DisputeService) Reject(ctx context.Context, tenantID, disputeID, resolv
 		ResolutionNote: note,
 		TenantID:       tenantID,
 	})
+	if err == nil {
+		eid := dispute.EmployeeID
+		logActivity(ctx, s.querier, tenantID, resolvedBy, "rejected_dispute", "dispute", &eid, nil)
+	}
 	if err == nil && s.triggers != nil {
 		s.triggers.NotifyDisputeRejected(ctx, tenantID, dispute.EmployeeID)
 	}

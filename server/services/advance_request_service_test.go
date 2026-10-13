@@ -15,6 +15,7 @@ func setupAdvanceRequestTest(t *testing.T) (*AdvanceRequestService, *mocks.MockQ
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	mockQuerier := mocks.NewMockQuerier(ctrl)
+	mockQuerier.EXPECT().CreateActivityLog(gomock.Any(), gomock.Any()).Return(repositories.ActivityLog{}, nil).AnyTimes()
 	svc := NewAdvanceRequestService(mockQuerier)
 	return svc, mockQuerier, ctrl.Finish
 }
@@ -83,6 +84,7 @@ func setupLedgerTest(t *testing.T) (*LedgerService, *mocks.MockQuerier, func()) 
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	mockQuerier := mocks.NewMockQuerier(ctrl)
+	mockQuerier.EXPECT().CreateActivityLog(gomock.Any(), gomock.Any()).Return(repositories.ActivityLog{}, nil).AnyTimes()
 	svc := NewLedgerService(mockQuerier)
 	return svc, mockQuerier, ctrl.Finish
 }

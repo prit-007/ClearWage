@@ -16,6 +16,7 @@ func TestLedgerService_CreateEntry(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockQuerier := mocks.NewMockQuerier(ctrl)
+	mockQuerier.EXPECT().CreateActivityLog(gomock.Any(), gomock.Any()).Return(repositories.ActivityLog{}, nil).AnyTimes()
 	svc := NewLedgerService(mockQuerier)
 
 	mockQuerier.EXPECT().

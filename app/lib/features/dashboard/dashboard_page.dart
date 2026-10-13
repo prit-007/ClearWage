@@ -60,6 +60,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final l = AppLocalizations.of(context);
     final asyncData = ref.watch(dashboardDataProvider);
 
     return Scaffold(
@@ -82,7 +83,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     color: cs.error,
                   ),
                   const SizedBox(height: 16),
-                  Text('Something went wrong', style: tt.titleMedium),
+                  Text(
+                    AppLocalizations.of(context).errorSomethingWentWrong,
+                    style: tt.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     friendlyError(e),
@@ -92,7 +96,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     icon: const Icon(PhosphorIconsFill.arrowClockwise),
-                    label: const Text('Retry'),
+                    label: Text(AppLocalizations.of(context).commonRetry),
                     onPressed: () {
                       ref.invalidate(dashboardDataProvider);
                     },
@@ -125,7 +129,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   ),
                                 ),
                                 Text(
-                                  'Workspace',
+                                  AppLocalizations.of(context).dashWorkspace,
                                   style: tt.headlineLarge?.copyWith(
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: -1.0,
@@ -164,7 +168,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 cs: cs,
                                 tt: tt,
                                 icon: PhosphorIconsDuotone.users,
-                                label: 'Total Staff',
+                                label: l.statTotalStaff,
                                 value: '${data.totalWorkforce}',
                                 color: cs.secondary,
                               ),
@@ -172,7 +176,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 cs: cs,
                                 tt: tt,
                                 icon: PhosphorIconsDuotone.wallet,
-                                label: 'Payroll (MTD)',
+                                label: l.statPayrollMtd,
                                 value:
                                     '\u20B9${data.wageBillMtd.toStringAsFixed(0)}',
                                 color: cs.primary,
@@ -188,7 +192,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   cs: cs,
                                   tt: tt,
                                   icon: PhosphorIconsDuotone.coins,
-                                  label: 'Outstanding (Udhaar)',
+                                  label: l.statOutstandingUdhaar,
                                   value:
                                       '\u20B9${data.totalOutstanding.toStringAsFixed(0)}',
                                   color: AppColors.warning,
@@ -197,7 +201,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   cs: cs,
                                   tt: tt,
                                   icon: PhosphorIconsDuotone.warningCircle,
-                                  label: 'Defaulters',
+                                  label: l.statDefaulters,
                                   value: '${data.defaultersCount}',
                                   color: AppColors.danger,
                                 ),
@@ -213,7 +217,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   cs: cs,
                                   tt: tt,
                                   icon: PhosphorIconsDuotone.checkCircle,
-                                  label: 'Present Today',
+                                  label: l.statPresentToday,
                                   value: '${data.presentToday}',
                                   color: AppColors.success,
                                 ),
@@ -221,7 +225,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   cs: cs,
                                   tt: tt,
                                   icon: PhosphorIconsDuotone.wallet,
-                                  label: 'Outstanding',
+                                  label: l.statOutstanding,
                                   value:
                                       '\u20B9${data.totalOutstanding.toStringAsFixed(0)}',
                                   color: cs.primary,
@@ -237,7 +241,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         ),
                         const SizedBox(height: 40),
                         Text(
-                          'Quick Actions',
+                          l.quickActions,
                           style: tt.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.5,
@@ -253,7 +257,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     cs: cs,
                                     tt: tt,
                                     icon: PhosphorIconsRegular.userPlus,
-                                    label: 'Add\nStaff',
+                                    label: l.qaAddStaff,
                                     onTap: () {
                                       HapticFeedback.lightImpact();
                                       context.push('/add-employee');
@@ -263,7 +267,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     cs: cs,
                                     tt: tt,
                                     icon: PhosphorIconsRegular.calendarCheck,
-                                    label: 'Mark\nAttendance',
+                                    label: l.qaMarkAttendance,
                                     onTap: () {
                                       HapticFeedback.lightImpact();
                                       StatefulNavigationShell.of(
@@ -275,7 +279,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     cs: cs,
                                     tt: tt,
                                     icon: PhosphorIconsRegular.coins,
-                                    label: 'Add\nJama/Udhaar',
+                                    label: l.qaAddJamaUdhaar,
                                     onTap: () {
                                       HapticFeedback.lightImpact();
                                       context.push('/new-ledger');
@@ -290,7 +294,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     cs: cs,
                                     tt: tt,
                                     icon: PhosphorIconsRegular.users,
-                                    label: 'Staff\nDirectory',
+                                    label: l.qaStaffDirectory,
                                     onTap: () {
                                       HapticFeedback.lightImpact();
                                       StatefulNavigationShell.of(
@@ -302,7 +306,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     cs: cs,
                                     tt: tt,
                                     icon: PhosphorIconsFill.whatsappLogo,
-                                    label: 'Broadcast',
+                                    label: l.qaBroadcast,
                                     onTap: () {
                                       HapticFeedback.lightImpact();
                                       unawaited(showBroadcastSheet(context));
@@ -312,7 +316,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     cs: cs,
                                     tt: tt,
                                     icon: PhosphorIconsRegular.dotsThreeCircle,
-                                    label: 'More',
+                                    label: l.more,
                                     onTap: () {
                                       HapticFeedback.lightImpact();
                                       context.push('/more');
@@ -330,7 +334,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 cs: cs,
                                 tt: tt,
                                 icon: PhosphorIconsRegular.userCircle,
-                                label: 'My\nProfile',
+                                label: l.qaMyProfile,
                                 onTap: () {
                                   HapticFeedback.lightImpact();
                                   context.push('/my-profile');
@@ -341,7 +345,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 cs: cs,
                                 tt: tt,
                                 icon: PhosphorIconsRegular.dotsThreeCircle,
-                                label: 'More',
+                                label: l.more,
                                 onTap: () {
                                   HapticFeedback.lightImpact();
                                   context.push('/more');
@@ -351,7 +355,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           ),
                         const SizedBox(height: 40),
                         Text(
-                          'Recent Activity',
+                          l.recentActivity,
                           style: tt.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.5,
@@ -359,11 +363,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         ),
                         const SizedBox(height: 12),
                         if (data.recentActivity.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 32),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
                             child: EmptyState(
                               icon: PhosphorIconsRegular.clock,
-                              title: 'No activity recorded yet.',
+                              title: l.noActivityYet,
                             ),
                           )
                         else
@@ -430,7 +434,7 @@ class _AttendanceOverviewCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Today\'s Floor',
+                AppLocalizations.of(context).dashTodaysFloor,
                 style: tt.labelLarge?.copyWith(
                   color: cs.onPrimaryContainer,
                   fontWeight: FontWeight.w600,
@@ -466,11 +470,17 @@ class _AttendanceOverviewCard extends StatelessWidget {
             children: [
               _DotLegend(
                 cs.onPrimaryContainer,
-                '${data.presentToday} Present',
+                AppLocalizations.of(
+                  context,
+                ).dashPresentCount(data.presentToday),
                 cs,
               ),
               const SizedBox(width: 16),
-              _DotLegend(cs.error, '${data.absentToday} Absent', cs),
+              _DotLegend(
+                cs.error,
+                AppLocalizations.of(context).dashAbsentCount(data.absentToday),
+                cs,
+              ),
             ],
           ),
         ],
@@ -750,7 +760,9 @@ class _AttendanceTrendChart extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Attendance Trends (${trends.length} days)',
+                      AppLocalizations.of(
+                        context,
+                      ).dashTrendsTitle(trends.length),
                       style: tt.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.5,
@@ -758,7 +770,7 @@ class _AttendanceTrendChart extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Daily attendance breakdown',
+                      AppLocalizations.of(context).dashTrendsSubtitle,
                       style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                     ),
                   ],
@@ -783,7 +795,11 @@ class _AttendanceTrendChart extends ConsumerWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      '${(trends.fold<int>(0, (s, t) => s + t.present) / trends.length).toStringAsFixed(1)} avg/day',
+                      AppLocalizations.of(context).dashAvgPerDay(
+                        (trends.fold<int>(0, (s, t) => s + t.present) /
+                                trends.length)
+                            .toStringAsFixed(1),
+                      ),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
@@ -797,10 +813,10 @@ class _AttendanceTrendChart extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           if (maxY == 0)
-            const EmptyState(
+            EmptyState(
               icon: PhosphorIconsRegular.chartBar,
-              title: 'No attendance data',
-              subtitle: 'No attendance has been recorded for this period.',
+              title: AppLocalizations.of(context).dashNoAttendanceTitle,
+              subtitle: AppLocalizations.of(context).dashNoAttendanceSubtitle,
             )
           else
             SizedBox(
@@ -1065,10 +1081,8 @@ class _PendingSyncTileState extends ConsumerState<_PendingSyncTile> {
           if (_syncing) return;
           if (!online) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'You are offline — changes will sync when you reconnect',
-                ),
+              SnackBar(
+                content: Text(AppLocalizations.of(context).syncOfflineHint),
               ),
             );
             return;
@@ -1093,8 +1107,10 @@ class _PendingSyncTileState extends ConsumerState<_PendingSyncTile> {
               Expanded(
                 child: Text(
                   _syncing
-                      ? 'Syncing…'
-                      : '$pending change${pending == 1 ? '' : 's'} saved offline — tap to sync now',
+                      ? AppLocalizations.of(context).syncSyncing
+                      : AppLocalizations.of(
+                          context,
+                        ).syncPendingChanges(pending),
                   style: tt.bodySmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),

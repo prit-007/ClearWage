@@ -46,5 +46,127 @@
   "hubEmailSettings": "ઈમેલ સેટિંગ્સ",
   "hubAbout": "વિશે",
   "hubRecentlyUsed": "તાજેતરમાં ઉપયોગ થયેલ",
-  "hubPayrollSettings": "પેરોલ સેટિંગ્સ"
+  "hubPayrollSettings": "પેરોલ સેટિંગ્સ",
+  "errorSomethingWentWrong": "કંઈક ખોટું થયું",
+  "commonRetry": "ફરી પ્રયાસ કરો",
+  "commonCancel": "રદ્દ કરો",
+  "commonSubmit": "સબમિટ કરો",
+  "commonEmployee": "કર્મચારી",
+  "commonAmount": "રકમ",
+  "commonNoteOptional": "નોંધ (વૈકલ્પિક)",
+  "dashWorkspace": "કાર્યસ્થળ",
+  "dashTodaysFloor": "આજની સ્થિતિ",
+  "statTotalStaff": "કુલ સ્ટાફ",
+  "statPayrollMtd": "પેરોલ (આ મહિને)",
+  "statOutstandingUdhaar": "બાકી (ઉધાર)",
+  "statDefaulters": "બાકીદારો",
+  "statPresentToday": "આજે હાજર",
+  "statOutstanding": "બાકી",
+  "statOutstandingBalance": "બાકી બેલેન્સ",
+  "dashPresentCount": "{count} હાજર",
+  "@dashPresentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashAbsentCount": "{count} ગેરહાજર",
+  "@dashAbsentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quickActions": "ઝડપી ક્રિયાઓ",
+  "qaAddStaff": "સ્ટાફ\nઉમેરો",
+  "qaMarkAttendance": "હાજરી\nનોંધો",
+  "qaAddJamaUdhaar": "જમા/ઉધાર\nઉમેરો",
+  "qaStaffDirectory": "સ્ટાફ\nયાદી",
+  "qaBroadcast": "પ્રસારણ",
+  "qaMyProfile": "મારી\nપ્રોફાઇલ",
+  "recentActivity": "તાજેતરની પ્રવૃત્તિ",
+  "noActivityYet": "હજી સુધી કોઈ પ્રવૃત્તિ નોંધાઈ નથી.",
+  "dashTrendsTitle": "હાજરીના વલણો ({days} દિવસ)",
+  "@dashTrendsTitle": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dashTrendsSubtitle": "દૈનિક હાજરી વિગત",
+  "dashAvgPerDay": "{avg} સરેરાશ/દિવસ",
+  "@dashAvgPerDay": {
+    "placeholders": {
+      "avg": {
+        "type": "String"
+      }
+    }
+  },
+  "dashNoAttendanceTitle": "કોઈ હાજરી ડેટા નથી",
+  "dashNoAttendanceSubtitle": "આ ગાળા માટે કોઈ હાજરી નોંધાઈ નથી.",
+  "syncOfflineHint": "તમે ઑફલાઇન છો — ફરી કનેક્ટ થતાં ફેરફારો સિંક થશે",
+  "syncSyncing": "સિંક થઈ રહ્યું છે…",
+  "syncPendingChanges": "{count, plural, =1{1 ફેરફાર ઑફલાઇન સાચવાયો — હમણાં સિંક કરવા ટૅપ કરો} other{{count} ફેરફારો ઑફલાઇન સાચવાયા — હમણાં સિંક કરવા ટૅપ કરો}}",
+  "@syncPendingChanges": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "empThisMonth": "આ મહિને",
+  "empDaysSummary": "{present} / {total} દિવસ",
+  "@empDaysSummary": {
+    "placeholders": {
+      "present": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "empAttendancePct": "{pct}% હાજરી",
+  "@empAttendancePct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "qaMyAttendance": "મારી હાજરી",
+  "qaMyPayslip": "પગાર સ્લિપ",
+  "qaRequestAdvance": "એડવાન્સ વિનંતી",
+  "qaMyLedger": "મારું ખાતું",
+  "advanceAmountRange": "રકમ ₹1 અને ₹1,00,000 વચ્ચે હોવી જોઈએ",
+  "advanceSubmitted": "એડવાન્સ વિનંતી સબમિટ કરાઈ",
+  "broadcastTitle": "પ્રસારણ સંદેશ",
+  "broadcastSubtitle": "પસંદ કરેલા સ્ટાફને WhatsApp સંદેશ મોકલો.",
+  "broadcastHint": "સંદેશ (ગ્રીટિંગ માટે ખાલી છોડો)",
+  "broadcastNoStaff": "કોઈ સક્રિય સ્ટાફ મળ્યો નથી",
+  "broadcastNoPhone": "ફોન નંબર નથી",
+  "broadcastSelectStaff": "મોકલવા માટે સ્ટાફ પસંદ કરો",
+  "broadcastSendTo": "{count} ને મોકલો",
+  "@broadcastSendTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "broadcastNoWhatsapp": "WhatsApp ખોલી શકાયું નહીં",
+  "broadcastOpening": "WhatsApp ખોલાઈ રહ્યું છે {total} માંથી {opened}",
+  "@broadcastOpening": {
+    "placeholders": {
+      "opened": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }

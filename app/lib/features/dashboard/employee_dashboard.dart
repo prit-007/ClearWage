@@ -9,6 +9,7 @@ import '../../core/helpers.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/design_tokens.dart';
+import '../../l10n/app_localizations.dart';
 
 class EmployeeDashboard extends ConsumerStatefulWidget {
   const EmployeeDashboard({super.key});
@@ -52,10 +53,11 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
   }
 
   String _getGreeting() {
+    final l = AppLocalizations.of(context);
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning,';
-    if (hour < 17) return 'Good Afternoon,';
-    return 'Good Evening,';
+    if (hour < 12) return l.greetingMorning;
+    if (hour < 17) return l.greetingAfternoon;
+    return l.greetingEvening;
   }
 
   @override
@@ -98,7 +100,9 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                                     ),
                                     Text(
                                       _overview?['name'] as String? ??
-                                          'Employee',
+                                          AppLocalizations.of(
+                                            context,
+                                          ).commonEmployee,
                                       style: tt.headlineLarge?.copyWith(
                                         fontWeight: FontWeight.w800,
                                         letterSpacing: -1.0,
@@ -137,7 +141,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                               _buildOutstandingCard(cs, tt),
                             const SizedBox(height: 32),
                             Text(
-                              'Quick Actions',
+                              AppLocalizations.of(context).quickActions,
                               style: tt.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.5,
@@ -166,13 +170,16 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
           children: [
             Icon(PhosphorIconsFill.warningCircle, size: 48, color: cs.error),
             const SizedBox(height: 16),
-            Text('Something went wrong', style: tt.titleMedium),
+            Text(
+              AppLocalizations.of(context).errorSomethingWentWrong,
+              style: tt.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text('$_error', style: tt.bodySmall, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             FilledButton.icon(
               icon: const Icon(PhosphorIconsFill.arrowClockwise),
-              label: const Text('Retry'),
+              label: Text(AppLocalizations.of(context).commonRetry),
               onPressed: _loadOverview,
             ),
           ],
@@ -211,7 +218,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
               ),
               const SizedBox(width: 8),
               Text(
-                'This Month',
+                AppLocalizations.of(context).empThisMonth,
                 style: tt.labelLarge?.copyWith(
                   color: cs.onPrimaryContainer,
                   fontWeight: FontWeight.w600,
@@ -221,7 +228,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
           ),
           const SizedBox(height: 24),
           Text(
-            '$presentDays / $totalDays days',
+            AppLocalizations.of(context).empDaysSummary(presentDays, totalDays),
             style: tt.displayLarge?.copyWith(
               color: cs.onPrimaryContainer,
               fontWeight: FontWeight.w900,
@@ -244,7 +251,9 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
           ),
           const SizedBox(height: 16),
           Text(
-            '${(pct * 100).toStringAsFixed(0)}% attendance',
+            AppLocalizations.of(
+              context,
+            ).empAttendancePct('${(pct * 100).toStringAsFixed(0)}'),
             style: tt.bodyMedium?.copyWith(
               color: cs.onPrimaryContainer.withValues(alpha: 0.8),
               fontWeight: FontWeight.w600,
@@ -285,7 +294,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Outstanding Balance',
+              AppLocalizations.of(context).statOutstandingBalance,
               style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant),
             ),
             const SizedBox(height: 4),
@@ -304,13 +313,14 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
   }
 
   Widget _buildQuickActions(ColorScheme cs, TextTheme tt) {
+    final l = AppLocalizations.of(context);
     return ResponsiveStatRow(
       children: [
         _GlassActionCard(
           cs: cs,
           tt: tt,
           icon: PhosphorIconsDuotone.calendarCheck,
-          label: 'My Attendance',
+          label: l.qaMyAttendance,
           onTap: () {
             HapticFeedback.lightImpact();
             StatefulNavigationShell.of(context).goBranch(1);
@@ -320,7 +330,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
           cs: cs,
           tt: tt,
           icon: PhosphorIconsDuotone.receipt,
-          label: 'My Payslip',
+          label: l.qaMyPayslip,
           onTap: () {
             HapticFeedback.lightImpact();
             context.push('/my-profile');
@@ -338,7 +348,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                 cs: cs,
                 tt: tt,
                 icon: PhosphorIconsDuotone.coins,
-                label: 'Request Advance',
+                label: l.qaRequestAdvance,
                 onTap: () {
                   HapticFeedback.lightImpact();
                   _showAdvanceDialog(context);
@@ -348,7 +358,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                 cs: cs,
                 tt: tt,
                 icon: PhosphorIconsDuotone.handCoins,
-                label: 'My Advance Requests',
+                label: l.hubMyAdvanceRequests,
                 onTap: () {
                   HapticFeedback.lightImpact();
                   context.push('/my-advance-requests');
@@ -363,7 +373,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                 cs: cs,
                 tt: tt,
                 icon: PhosphorIconsDuotone.listDashes,
-                label: 'My Ledger',
+                label: l.qaMyLedger,
                 onTap: () {
                   HapticFeedback.lightImpact();
                   StatefulNavigationShell.of(context).goBranch(3);
@@ -373,7 +383,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                 cs: cs,
                 tt: tt,
                 icon: PhosphorIconsDuotone.chartPieSlice,
-                label: 'My Reports',
+                label: l.hubMyReports,
                 onTap: () {
                   HapticFeedback.lightImpact();
                   context.push('/my-reports');
@@ -388,7 +398,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                 cs: cs,
                 tt: tt,
                 icon: PhosphorIconsDuotone.clock,
-                label: 'Shift Timings',
+                label: l.hubShiftTimings,
                 onTap: () {
                   HapticFeedback.lightImpact();
                   context.push('/my-shifts');
@@ -398,7 +408,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                 cs: cs,
                 tt: tt,
                 icon: PhosphorIconsDuotone.dotsThreeCircle,
-                label: 'More',
+                label: l.more,
                 onTap: () {
                   HapticFeedback.lightImpact();
                   StatefulNavigationShell.of(context).goBranch(2);
@@ -413,6 +423,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
 
   void _showAdvanceDialog(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
     bool submitting = false;
 
     showDialog(
@@ -438,7 +449,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
               ),
             ),
             title: Text(
-              'Request Advance',
+              l.qaRequestAdvance,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.5,
@@ -452,7 +463,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                   controller: amountCtrl,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'Amount',
+                    labelText: l.commonAmount,
                     prefixText: '\u20B9 ',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -463,7 +474,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                 TextField(
                   controller: noteCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Note (optional)',
+                    labelText: l.commonNoteOptional,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -480,7 +491,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                   Navigator.pop(ctx);
                 },
                 child: Text(
-                  'Cancel',
+                  l.commonCancel,
                   style: TextStyle(
                     color: cs.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
@@ -499,11 +510,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                             amountValue > 100000) {
                           if (ctx.mounted) {
                             ScaffoldMessenger.of(ctx).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Amount must be between ₹1 and ₹1,00,000',
-                                ),
-                              ),
+                              SnackBar(content: Text(l.advanceAmountRange)),
                             );
                           }
                           return;
@@ -523,7 +530,7 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                           if (ctx.mounted) {
                             Navigator.pop(ctx);
                             if (context.mounted) {
-                              showSuccess(context, 'Advance request submitted');
+                              showSuccess(context, l.advanceSubmitted);
                             }
                           }
                         } catch (e) {
@@ -548,9 +555,9 @@ class _EmployeeDashboardState extends ConsumerState<EmployeeDashboard> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Submit',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                    : Text(
+                        l.commonSubmit,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
               ),
             ],

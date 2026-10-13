@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/providers/services.dart';
+import 'package:clearwage/core/services/locale_service.dart';
 import 'package:clearwage/core/services/whatsapp_service.dart';
 import 'package:clearwage/data/models/employee_model.dart';
 import 'package:clearwage/features/dashboard/broadcast_sheet.dart';
 import 'package:clearwage/features/staff/providers/staff_providers.dart';
+import 'package:clearwage/l10n/app_localizations.dart';
 
 class FakeWhatsappService extends WhatsappService {
   final List<({String phone, String text})> calls = [];
@@ -44,7 +47,17 @@ Widget _buildSheet(FakeWhatsappService svc) {
       employeeListProvider.overrideWith((ref) async => _employees()),
       whatsappServiceProvider.overrideWithValue(svc),
     ],
-    child: const MaterialApp(home: Scaffold(body: BroadcastSheet())),
+    child: const MaterialApp(
+      locale: Locale('en'),
+      supportedLocales: supportedLocales,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: Scaffold(body: BroadcastSheet()),
+    ),
   );
 }
 

@@ -46,5 +46,127 @@
   "hubEmailSettings": "Email Settings",
   "hubAbout": "About",
   "hubRecentlyUsed": "Recently Used",
-  "hubPayrollSettings": "Payroll Settings"
+  "hubPayrollSettings": "Payroll Settings",
+  "errorSomethingWentWrong": "Something went wrong",
+  "commonRetry": "Retry",
+  "commonCancel": "Cancel",
+  "commonSubmit": "Submit",
+  "commonEmployee": "Employee",
+  "commonAmount": "Amount",
+  "commonNoteOptional": "Note (optional)",
+  "dashWorkspace": "Workspace",
+  "dashTodaysFloor": "Today's Floor",
+  "statTotalStaff": "Total Staff",
+  "statPayrollMtd": "Payroll (MTD)",
+  "statOutstandingUdhaar": "Outstanding (Udhaar)",
+  "statDefaulters": "Defaulters",
+  "statPresentToday": "Present Today",
+  "statOutstanding": "Outstanding",
+  "statOutstandingBalance": "Outstanding Balance",
+  "dashPresentCount": "{count} Present",
+  "@dashPresentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashAbsentCount": "{count} Absent",
+  "@dashAbsentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quickActions": "Quick Actions",
+  "qaAddStaff": "Add\nStaff",
+  "qaMarkAttendance": "Mark\nAttendance",
+  "qaAddJamaUdhaar": "Add\nJama/Udhaar",
+  "qaStaffDirectory": "Staff\nDirectory",
+  "qaBroadcast": "Broadcast",
+  "qaMyProfile": "My\nProfile",
+  "recentActivity": "Recent Activity",
+  "noActivityYet": "No activity recorded yet.",
+  "dashTrendsTitle": "Attendance Trends ({days} days)",
+  "@dashTrendsTitle": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dashTrendsSubtitle": "Daily attendance breakdown",
+  "dashAvgPerDay": "{avg} avg/day",
+  "@dashAvgPerDay": {
+    "placeholders": {
+      "avg": {
+        "type": "String"
+      }
+    }
+  },
+  "dashNoAttendanceTitle": "No attendance data",
+  "dashNoAttendanceSubtitle": "No attendance has been recorded for this period.",
+  "syncOfflineHint": "You are offline — changes will sync when you reconnect",
+  "syncSyncing": "Syncing…",
+  "syncPendingChanges": "{count, plural, =1{{count} change saved offline — tap to sync now} other{{count} changes saved offline — tap to sync now}}",
+  "@syncPendingChanges": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "empThisMonth": "This Month",
+  "empDaysSummary": "{present} / {total} days",
+  "@empDaysSummary": {
+    "placeholders": {
+      "present": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "empAttendancePct": "{pct}% attendance",
+  "@empAttendancePct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "qaMyAttendance": "My Attendance",
+  "qaMyPayslip": "My Payslip",
+  "qaRequestAdvance": "Request Advance",
+  "qaMyLedger": "My Ledger",
+  "advanceAmountRange": "Amount must be between ₹1 and ₹1,00,000",
+  "advanceSubmitted": "Advance request submitted",
+  "broadcastTitle": "Broadcast Message",
+  "broadcastSubtitle": "Send a WhatsApp message to selected staff.",
+  "broadcastHint": "Message (leave empty for greeting)",
+  "broadcastNoStaff": "No active staff found",
+  "broadcastNoPhone": "No phone number",
+  "broadcastSelectStaff": "Select staff to send",
+  "broadcastSendTo": "Send to {count}",
+  "@broadcastSendTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "broadcastNoWhatsapp": "Could not open WhatsApp",
+  "broadcastOpening": "Opening WhatsApp for {opened} of {total}",
+  "@broadcastOpening": {
+    "placeholders": {
+      "opened": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -381,6 +381,324 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payroll Settings'**
   String get hubPayrollSettings;
+
+  /// No description provided for @errorSomethingWentWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get errorSomethingWentWrong;
+
+  /// No description provided for @commonRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get commonRetry;
+
+  /// No description provided for @commonCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get commonCancel;
+
+  /// No description provided for @commonSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get commonSubmit;
+
+  /// No description provided for @commonEmployee.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee'**
+  String get commonEmployee;
+
+  /// No description provided for @commonAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get commonAmount;
+
+  /// No description provided for @commonNoteOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Note (optional)'**
+  String get commonNoteOptional;
+
+  /// No description provided for @dashWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get dashWorkspace;
+
+  /// No description provided for @dashTodaysFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Floor'**
+  String get dashTodaysFloor;
+
+  /// No description provided for @statTotalStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Staff'**
+  String get statTotalStaff;
+
+  /// No description provided for @statPayrollMtd.
+  ///
+  /// In en, this message translates to:
+  /// **'Payroll (MTD)'**
+  String get statPayrollMtd;
+
+  /// No description provided for @statOutstandingUdhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Outstanding (Udhaar)'**
+  String get statOutstandingUdhaar;
+
+  /// No description provided for @statDefaulters.
+  ///
+  /// In en, this message translates to:
+  /// **'Defaulters'**
+  String get statDefaulters;
+
+  /// No description provided for @statPresentToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Present Today'**
+  String get statPresentToday;
+
+  /// No description provided for @statOutstanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Outstanding'**
+  String get statOutstanding;
+
+  /// No description provided for @statOutstandingBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Outstanding Balance'**
+  String get statOutstandingBalance;
+
+  /// No description provided for @dashPresentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Present'**
+  String dashPresentCount(int count);
+
+  /// No description provided for @dashAbsentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Absent'**
+  String dashAbsentCount(int count);
+
+  /// No description provided for @quickActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Actions'**
+  String get quickActions;
+
+  /// No description provided for @qaAddStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Add\nStaff'**
+  String get qaAddStaff;
+
+  /// No description provided for @qaMarkAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark\nAttendance'**
+  String get qaMarkAttendance;
+
+  /// No description provided for @qaAddJamaUdhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Add\nJama/Udhaar'**
+  String get qaAddJamaUdhaar;
+
+  /// No description provided for @qaStaffDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff\nDirectory'**
+  String get qaStaffDirectory;
+
+  /// No description provided for @qaBroadcast.
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast'**
+  String get qaBroadcast;
+
+  /// No description provided for @qaMyProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'My\nProfile'**
+  String get qaMyProfile;
+
+  /// No description provided for @recentActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Activity'**
+  String get recentActivity;
+
+  /// No description provided for @noActivityYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity recorded yet.'**
+  String get noActivityYet;
+
+  /// No description provided for @dashTrendsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance Trends ({days} days)'**
+  String dashTrendsTitle(int days);
+
+  /// No description provided for @dashTrendsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily attendance breakdown'**
+  String get dashTrendsSubtitle;
+
+  /// No description provided for @dashAvgPerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{avg} avg/day'**
+  String dashAvgPerDay(String avg);
+
+  /// No description provided for @dashNoAttendanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No attendance data'**
+  String get dashNoAttendanceTitle;
+
+  /// No description provided for @dashNoAttendanceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No attendance has been recorded for this period.'**
+  String get dashNoAttendanceSubtitle;
+
+  /// No description provided for @syncOfflineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You are offline — changes will sync when you reconnect'**
+  String get syncOfflineHint;
+
+  /// No description provided for @syncSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing…'**
+  String get syncSyncing;
+
+  /// No description provided for @syncPendingChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{count} change saved offline — tap to sync now} other{{count} changes saved offline — tap to sync now}}'**
+  String syncPendingChanges(int count);
+
+  /// No description provided for @empThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This Month'**
+  String get empThisMonth;
+
+  /// No description provided for @empDaysSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{present} / {total} days'**
+  String empDaysSummary(int present, int total);
+
+  /// No description provided for @empAttendancePct.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}% attendance'**
+  String empAttendancePct(String pct);
+
+  /// No description provided for @qaMyAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'My Attendance'**
+  String get qaMyAttendance;
+
+  /// No description provided for @qaMyPayslip.
+  ///
+  /// In en, this message translates to:
+  /// **'My Payslip'**
+  String get qaMyPayslip;
+
+  /// No description provided for @qaRequestAdvance.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Advance'**
+  String get qaRequestAdvance;
+
+  /// No description provided for @qaMyLedger.
+  ///
+  /// In en, this message translates to:
+  /// **'My Ledger'**
+  String get qaMyLedger;
+
+  /// No description provided for @advanceAmountRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount must be between ₹1 and ₹1,00,000'**
+  String get advanceAmountRange;
+
+  /// No description provided for @advanceSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance request submitted'**
+  String get advanceSubmitted;
+
+  /// No description provided for @broadcastTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast Message'**
+  String get broadcastTitle;
+
+  /// No description provided for @broadcastSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a WhatsApp message to selected staff.'**
+  String get broadcastSubtitle;
+
+  /// No description provided for @broadcastHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Message (leave empty for greeting)'**
+  String get broadcastHint;
+
+  /// No description provided for @broadcastNoStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'No active staff found'**
+  String get broadcastNoStaff;
+
+  /// No description provided for @broadcastNoPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'No phone number'**
+  String get broadcastNoPhone;
+
+  /// No description provided for @broadcastSelectStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Select staff to send'**
+  String get broadcastSelectStaff;
+
+  /// No description provided for @broadcastSendTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to {count}'**
+  String broadcastSendTo(int count);
+
+  /// No description provided for @broadcastNoWhatsapp.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open WhatsApp'**
+  String get broadcastNoWhatsapp;
+
+  /// No description provided for @broadcastOpening.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening WhatsApp for {opened} of {total}'**
+  String broadcastOpening(int opened, int total);
 }
 
 class _AppLocalizationsDelegate

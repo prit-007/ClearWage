@@ -368,3 +368,14 @@ subsequent release cycles.
 - [x] Leave approval never overwrites locked attendance
 - [x] Idempotent offline ledger via `client_id` (dedup on re-sync)
 - [x] Platform-wide shared daily mail quota (`mail_daily_counters`)
+
+### Release 1.2.2 (audit + sync reliability)
+
+- [x] Attendance audit keyed by `employee_id` (mark/update/bulk)
+- [x] Per-employee audit for ledger/advance/dispute/leave actions
+- [x] Serialized sync flushes · doc-queue auto-sync on reconnect
+- [x] Bulk-mode roster refresh · offline sync-chip gating · leave deep-link
+- [x] `CHANGELOG.md` entry for `[1.2.2]`.
+- [x] `app/pubspec.yaml` bumped to `1.2.2+21`.
+- [x] `fastlane` changelog `changelogs/21.txt`.
+- [ ] Tag `v1.2.2` created and pushed.

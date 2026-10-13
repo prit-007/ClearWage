@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-10-13
+
+### Fixed
+
+- **Attendance audit trail**: mark/update/bulk events are now keyed by
+  `employee_id` (they used the attendance id, so the Audit Log tab never
+  showed attendance activity).
+- **Per-employee audit trail**: activity logs are now linked to the employee
+  for ledger, advance, dispute, and leave actions.
+- **Sync reliability**: offline writes are flushed serially, and the offline
+  KYC document queue also auto-syncs on reconnect.
+- **Bulk attendance mode** now refreshes the roster on return.
+- The dashboard pending-sync chip waits for connectivity instead of
+  attempting an offline flush.
+
+### Changed
+
+- `leave` push notifications deep-link to My Leave Requests.
+
+### Notes
+
+- Postgres RLS (`#71`) is documented as dormant defense-in-depth; it takes
+  effect only when the app connects with a non-owner role that sets
+  `app.tenant_id` per connection.
+
 ## [1.2.1] - 2026-10-12
 
 ### Changed

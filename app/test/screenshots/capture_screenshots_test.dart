@@ -843,7 +843,17 @@ void main() {
         '16_more_hub_admin',
         ProviderScope(
           overrides: [userInfoProvider.overrideWith((ref) => _admin())],
-          child: const MaterialApp(home: MoreHubPage()),
+          child: const MaterialApp(
+            locale: Locale('en'),
+            supportedLocales: [Locale('en'), Locale('hi'), Locale('gu')],
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: MoreHubPage(),
+          ),
         ),
       );
     });
@@ -856,7 +866,17 @@ void main() {
         '17_more_hub_employee',
         ProviderScope(
           overrides: [userInfoProvider.overrideWith((ref) => _employee())],
-          child: const MaterialApp(home: MoreHubPage()),
+          child: const MaterialApp(
+            locale: Locale('en'),
+            supportedLocales: [Locale('en'), Locale('hi'), Locale('gu')],
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: MoreHubPage(),
+          ),
         ),
       );
     });

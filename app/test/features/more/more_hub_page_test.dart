@@ -1,14 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/providers/app_providers.dart';
+import 'package:clearwage/core/services/locale_service.dart';
 import 'package:clearwage/data/models/auth_model.dart';
 import 'package:clearwage/features/more/more_hub_page.dart';
+import 'package:clearwage/l10n/app_localizations.dart';
 
 Widget _buildApp(AppUser? user) {
   return ProviderScope(
     overrides: [if (user != null) userInfoProvider.overrideWith((ref) => user)],
-    child: const MaterialApp(home: MoreHubPage()),
+    child: const MaterialApp(
+      locale: Locale('en'),
+      supportedLocales: supportedLocales,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: MoreHubPage(),
+    ),
   );
 }
 
@@ -50,7 +63,7 @@ void main() {
       await tester.drag(scrollable, const Offset(0, -300));
       await tester.pumpAndSettle();
       expect(find.text('Financial'), findsOneWidget);
-      expect(find.text('Advance Requests'), findsOneWidget);
+      expect(find.text('My Advance Requests'), findsOneWidget);
     });
 
     testWidgets('hides admin-only items for non-admin', (tester) async {
@@ -161,6 +174,32 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Search'), findsOneWidget);
+    });
+
+    testWidgets('renders Hindi translations when locale is hi', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [userInfoProvider.overrideWith((ref) => null)],
+          child: const MaterialApp(
+            locale: Locale('hi'),
+            supportedLocales: supportedLocales,
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: MoreHubPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('रिपोर्ट्स'), findsOneWidget);
+      expect(find.text('शिफ़्ट समय'), findsOneWidget);
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -700));
+      await tester.pumpAndSettle();
+      expect(find.text('सूचनाएं'), findsOneWidget);
     });
   });
 }

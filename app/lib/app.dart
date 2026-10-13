@@ -39,7 +39,9 @@ class ClearWageApp extends ConsumerWidget {
           secondaryContainer: const Color(0xFFD9E2FF),
           onSecondaryContainer: const Color(0xFF001945),
         ),
-        textTheme: GoogleFonts.interTextTheme(),
+        textTheme: GoogleFonts.interTextTheme().apply(
+          fontFamilyFallback: ['Noto Sans Devanagari', 'Noto Sans Gujarati'],
+        ),
         appBarTheme: const AppBarTheme(
           centerTitle: false,
           elevation: 0,
@@ -68,7 +70,9 @@ class ClearWageApp extends ConsumerWidget {
           secondaryContainer: const Color(0xFF1E2A4A),
           onSecondaryContainer: const Color(0xFFD9E2FF),
         ),
-        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).apply(
+          fontFamilyFallback: ['Noto Sans Devanagari', 'Noto Sans Gujarati'],
+        ),
         appBarTheme: const AppBarTheme(
           centerTitle: false,
           elevation: 0,

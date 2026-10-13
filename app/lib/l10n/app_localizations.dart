@@ -118,6 +118,30 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get home;
 
+  /// No description provided for @staff.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff'**
+  String get staff;
+
+  /// No description provided for @attendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance'**
+  String get attendance;
+
+  /// No description provided for @ledger.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger'**
+  String get ledger;
+
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
   /// No description provided for @more.
   ///
   /// In en, this message translates to:
@@ -141,6 +165,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Good Evening,'**
   String get greetingEvening;
+
+  /// No description provided for @commonSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get commonSearch;
 
   /// No description provided for @language.
   ///
@@ -171,6 +201,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language updated'**
   String get languageApplied;
+
+  /// No description provided for @languageSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Language'**
+  String get languageSelect;
+
+  /// No description provided for @hubReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get hubReports;
+
+  /// No description provided for @hubWorkforce.
+  ///
+  /// In en, this message translates to:
+  /// **'Workforce'**
+  String get hubWorkforce;
+
+  /// No description provided for @hubFinancial.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial'**
+  String get hubFinancial;
+
+  /// No description provided for @hubRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get hubRequests;
+
+  /// No description provided for @hubActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get hubActivity;
+
+  /// No description provided for @hubDebug.
+  ///
+  /// In en, this message translates to:
+  /// **'Debug'**
+  String get hubDebug;
+
+  /// No description provided for @hubApp.
+  ///
+  /// In en, this message translates to:
+  /// **'App'**
+  String get hubApp;
+
+  /// No description provided for @hubDailySummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Summary'**
+  String get hubDailySummary;
+
+  /// No description provided for @hubDefaulters.
+  ///
+  /// In en, this message translates to:
+  /// **'Defaulters'**
+  String get hubDefaulters;
+
+  /// No description provided for @hubWageBillTrends.
+  ///
+  /// In en, this message translates to:
+  /// **'Wage Bill Trends'**
+  String get hubWageBillTrends;
+
+  /// No description provided for @hubPayrollSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Payroll Summary'**
+  String get hubPayrollSummary;
+
+  /// No description provided for @hubMyReports.
+  ///
+  /// In en, this message translates to:
+  /// **'My Reports'**
+  String get hubMyReports;
+
+  /// No description provided for @hubShiftTimings.
+  ///
+  /// In en, this message translates to:
+  /// **'Shift Timings'**
+  String get hubShiftTimings;
+
+  /// No description provided for @hubHolidays.
+  ///
+  /// In en, this message translates to:
+  /// **'Holidays'**
+  String get hubHolidays;
+
+  /// No description provided for @hubLeavePolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Policy'**
+  String get hubLeavePolicy;
+
+  /// No description provided for @hubLeaveRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Requests'**
+  String get hubLeaveRequests;
+
+  /// No description provided for @hubMyLeaveRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'My Leave Requests'**
+  String get hubMyLeaveRequests;
+
+  /// No description provided for @hubAdvanceRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance Requests'**
+  String get hubAdvanceRequests;
+
+  /// No description provided for @hubMyAdvanceRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'My Advance Requests'**
+  String get hubMyAdvanceRequests;
+
+  /// No description provided for @hubBalanceSheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance Sheet'**
+  String get hubBalanceSheet;
+
+  /// No description provided for @hubDisputes.
+  ///
+  /// In en, this message translates to:
+  /// **'Disputes'**
+  String get hubDisputes;
+
+  /// No description provided for @hubNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get hubNotifications;
+
+  /// No description provided for @hubAppLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'App Logs'**
+  String get hubAppLogs;
+
+  /// No description provided for @hubAppPin.
+  ///
+  /// In en, this message translates to:
+  /// **'App PIN'**
+  String get hubAppPin;
+
+  /// No description provided for @hubSyncCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Center'**
+  String get hubSyncCenter;
+
+  /// No description provided for @hubEmailSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Settings'**
+  String get hubEmailSettings;
+
+  /// No description provided for @hubAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get hubAbout;
+
+  /// No description provided for @hubRecentlyUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently Used'**
+  String get hubRecentlyUsed;
+
+  /// No description provided for @hubPayrollSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Payroll Settings'**
+  String get hubPayrollSettings;
 }
 
 class _AppLocalizationsDelegate

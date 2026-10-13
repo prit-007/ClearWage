@@ -10,6 +10,7 @@ import '../../core/responsive.dart';
 import '../../core/services/locale_service.dart';
 import '../../core/theme_provider.dart';
 import '../../core/widgets/fluid_slide_in.dart';
+import '../../l10n/app_localizations.dart';
 
 class _HubItem {
   final IconData icon;
@@ -96,7 +97,7 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
               sliver: SliverToBoxAdapter(
                 child: Text(
-                  'More',
+                  AppLocalizations.of(context).more,
                   style: tt.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -109,7 +110,7 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
                 child: TextField(
                   onChanged: (v) => setState(() => _query = v),
                   decoration: InputDecoration(
-                    hintText: 'Search',
+                    hintText: AppLocalizations.of(context).commonSearch,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _query.isNotEmpty
                         ? IconButton(
@@ -138,7 +139,7 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
                 sliver: SliverToBoxAdapter(
                   child: Text(
-                    'Recently Used',
+                    AppLocalizations.of(context).hubRecentlyUsed,
                     style: tt.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: cs.onSurfaceVariant,
@@ -209,121 +210,122 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
   }
 
   List<_HubSection> _buildItems(bool isAdmin) {
+    final l = AppLocalizations.of(context);
     final sections = <_HubSection>[
       _HubSection(
-        label: 'Reports',
+        label: l.hubReports,
         items: [
           if (isAdmin)
-            const _HubItem(
+            _HubItem(
               icon: PhosphorIconsFill.chartLineUp,
-              title: 'Daily Summary',
+              title: l.hubDailySummary,
               route: '/reports/daily-summary',
               color: AppColors.info,
             ),
           if (isAdmin)
-            const _HubItem(
+            _HubItem(
               icon: PhosphorIconsFill.warningCircle,
-              title: 'Defaulters',
+              title: l.hubDefaulters,
               route: '/reports/defaulters',
               color: AppColors.danger,
             ),
           if (isAdmin)
-            const _HubItem(
+            _HubItem(
               icon: PhosphorIconsFill.chartLineUp,
-              title: 'Wage Bill Trends',
+              title: l.hubWageBillTrends,
               route: '/reports/wage-bill-trends',
               color: AppColors.purple,
             ),
           if (isAdmin)
-            const _HubItem(
+            _HubItem(
               icon: PhosphorIconsFill.wallet,
-              title: 'Payroll Summary',
+              title: l.hubPayrollSummary,
               route: '/reports/payroll',
               color: AppColors.success,
             ),
           if (!isAdmin)
-            const _HubItem(
+            _HubItem(
               icon: PhosphorIconsFill.chartLineUp,
-              title: 'My Reports',
+              title: l.hubMyReports,
               route: '/my-reports',
               color: AppColors.info,
             ),
         ],
       ),
       _HubSection(
-        label: 'Workforce',
+        label: l.hubWorkforce,
         items: [
           _HubItem(
             icon: PhosphorIconsFill.clock,
-            title: 'Shift Timings',
+            title: l.hubShiftTimings,
             route: isAdmin ? '/shifts' : '/my-shifts',
             color: AppColors.info,
           ),
           _HubItem(
             icon: PhosphorIconsFill.calendarCheck,
-            title: 'Holidays',
+            title: l.hubHolidays,
             route: isAdmin ? '/holidays' : '/my-holidays',
             color: AppColors.success,
           ),
           if (isAdmin)
-            const _HubItem(
+            _HubItem(
               icon: PhosphorIconsFill.scroll,
-              title: 'Leave Policy',
+              title: l.hubLeavePolicy,
               route: '/leave-policy',
               color: AppColors.purple,
             ),
           if (isAdmin)
-            const _HubItem(
+            _HubItem(
               icon: PhosphorIconsFill.calendarX,
-              title: 'Leave Requests',
+              title: l.hubLeaveRequests,
               route: '/leave-requests',
               color: AppColors.danger,
             ),
           if (!isAdmin)
-            const _HubItem(
+            _HubItem(
               icon: PhosphorIconsRegular.calendarX,
-              title: 'My Leave Requests',
+              title: l.hubMyLeaveRequests,
               route: '/my-leave-requests',
               color: AppColors.danger,
             ),
         ],
       ),
       _HubSection(
-        label: 'Financial',
+        label: l.hubFinancial,
         items: [
           _HubItem(
             icon: PhosphorIconsFill.handCoins,
-            title: 'Advance Requests',
+            title: isAdmin ? l.hubAdvanceRequests : l.hubMyAdvanceRequests,
             route: isAdmin ? '/advance-requests' : '/my-advance-requests',
             color: AppColors.warning,
           ),
           if (isAdmin)
-            const _HubItem(
+            _HubItem(
               icon: PhosphorIconsFill.gear,
-              title: 'Payroll Settings',
+              title: l.hubPayrollSettings,
               route: '/payroll-settings',
               color: AppColors.info,
             ),
         ],
       ),
       if (isAdmin)
-        const _HubSection(
-          label: 'Requests',
+        _HubSection(
+          label: l.hubRequests,
           items: [
             _HubItem(
               icon: PhosphorIconsFill.warningCircle,
-              title: 'Disputes',
+              title: l.hubDisputes,
               route: '/disputes',
               color: AppColors.danger,
             ),
           ],
         ),
-      const _HubSection(
-        label: 'Activity',
+      _HubSection(
+        label: l.hubActivity,
         items: [
           _HubItem(
             icon: PhosphorIconsFill.bell,
-            title: 'Notifications',
+            title: l.hubNotifications,
             route: '/notifications',
             color: AppColors.info,
           ),
@@ -333,12 +335,12 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
 
     if (isAdmin) {
       sections.add(
-        const _HubSection(
-          label: 'Debug',
+        _HubSection(
+          label: l.hubDebug,
           items: [
             _HubItem(
               icon: PhosphorIconsFill.terminal,
-              title: 'App Logs',
+              title: l.hubAppLogs,
               route: '/debug/logs',
               color: csDebugLogColor,
             ),
@@ -349,36 +351,36 @@ class _MoreHubPageState extends ConsumerState<MoreHubPage> {
 
     sections.add(
       _HubSection(
-        label: 'App',
+        label: l.hubApp,
         items: [
           _HubItem(
             icon: PhosphorIconsFill.translate,
-            title: 'Language',
+            title: l.language,
             route: '',
             color: AppColors.info,
             onTap: () => _showLanguageSheet(context),
           ),
-          const _HubItem(
+          _HubItem(
             icon: PhosphorIconsFill.key,
-            title: 'App PIN',
+            title: l.hubAppPin,
             route: '/settings/pin',
             color: AppColors.warning,
           ),
-          const _HubItem(
+          _HubItem(
             icon: PhosphorIconsFill.cloudArrowUp,
-            title: 'Sync Center',
+            title: l.hubSyncCenter,
             route: '/settings/sync',
             color: AppColors.success,
           ),
-          const _HubItem(
+          _HubItem(
             icon: PhosphorIconsFill.envelope,
-            title: 'Email Settings',
+            title: l.hubEmailSettings,
             route: '/settings/mail',
             color: AppColors.purple,
           ),
-          const _HubItem(
+          _HubItem(
             icon: PhosphorIconsFill.info,
-            title: 'About',
+            title: l.hubAbout,
             route: '/settings/about',
             color: AppColors.info,
           ),
@@ -440,7 +442,7 @@ class _LanguageSheetState extends ConsumerState<_LanguageSheet> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Select Language',
+              AppLocalizations.of(context).languageSelect,
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),

@@ -89,6 +89,10 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     final homeLabel = AppLocalizations.of(context).home;
     final moreLabel = AppLocalizations.of(context).more;
+    final staffLabel = AppLocalizations.of(context).staff;
+    final attendanceLabel = AppLocalizations.of(context).attendance;
+    final ledgerLabel = AppLocalizations.of(context).ledger;
+    final profileLabel = AppLocalizations.of(context).profile;
     final navItems = <NavigationDestination>[
       NavigationDestination(
         icon: const Icon(Icons.home_outlined),
@@ -96,20 +100,20 @@ class _MainShellState extends ConsumerState<MainShell> {
         label: homeLabel,
       ),
       if (isAdmin) ...[
-        const NavigationDestination(
-          icon: Icon(Icons.groups_outlined),
-          selectedIcon: Icon(Icons.groups),
-          label: 'Staff',
+        NavigationDestination(
+          icon: const Icon(Icons.groups_outlined),
+          selectedIcon: const Icon(Icons.groups),
+          label: staffLabel,
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.event_available_outlined),
-          selectedIcon: Icon(Icons.event_available),
-          label: 'Attendance',
+        NavigationDestination(
+          icon: const Icon(Icons.event_available_outlined),
+          selectedIcon: const Icon(Icons.event_available),
+          label: attendanceLabel,
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.account_balance_wallet_outlined),
-          selectedIcon: Icon(Icons.account_balance_wallet),
-          label: 'Ledger',
+        NavigationDestination(
+          icon: const Icon(Icons.account_balance_wallet_outlined),
+          selectedIcon: const Icon(Icons.account_balance_wallet),
+          label: ledgerLabel,
         ),
         NavigationDestination(
           icon: const Icon(Icons.more_horiz_outlined),
@@ -117,20 +121,20 @@ class _MainShellState extends ConsumerState<MainShell> {
           label: moreLabel,
         ),
       ] else ...[
-        const NavigationDestination(
-          icon: Icon(Icons.event_available_outlined),
-          selectedIcon: Icon(Icons.event_available),
-          label: 'Attendance',
+        NavigationDestination(
+          icon: const Icon(Icons.event_available_outlined),
+          selectedIcon: const Icon(Icons.event_available),
+          label: attendanceLabel,
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.account_balance_wallet_outlined),
-          selectedIcon: Icon(Icons.account_balance_wallet),
-          label: 'Ledger',
+        NavigationDestination(
+          icon: const Icon(Icons.account_balance_wallet_outlined),
+          selectedIcon: const Icon(Icons.account_balance_wallet),
+          label: ledgerLabel,
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.person_outlined),
-          selectedIcon: Icon(Icons.person),
-          label: 'Profile',
+        NavigationDestination(
+          icon: const Icon(Icons.person_outlined),
+          selectedIcon: const Icon(Icons.person),
+          label: profileLabel,
         ),
         NavigationDestination(
           icon: const Icon(Icons.more_horiz_outlined),

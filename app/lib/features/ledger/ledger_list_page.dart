@@ -16,6 +16,7 @@ import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
+import '../../l10n/app_localizations.dart';
 
 const int _pageSize = 20;
 
@@ -195,7 +196,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                 pinned: true,
                 elevation: 0,
                 title: Text(
-                  'Ledger Hub',
+                  AppLocalizations.of(context).ledgerHub,
                   style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 centerTitle: true,
@@ -206,7 +207,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                       PhosphorIconsRegular.users,
                       color: cs.onSurface,
                     ),
-                    tooltip: 'Balance Sheet',
+                    tooltip: AppLocalizations.of(context).hubBalanceSheet,
                   ),
                 ],
               ),
@@ -263,7 +264,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                     controller: _searchCtrl,
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
-                      hintText: 'Search by name or note...',
+                      hintText: AppLocalizations.of(context).ledgerSearchHint,
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
@@ -314,7 +315,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Failed to load entries',
+                          AppLocalizations.of(context).ledgerFailedEntries,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
@@ -325,7 +326,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                         const SizedBox(height: 16),
                         FilledButton.icon(
                           icon: const Icon(PhosphorIconsFill.arrowClockwise),
-                          label: const Text('Retry'),
+                          label: Text(AppLocalizations.of(context).commonRetry),
                           onPressed: _fetch,
                         ),
                       ],
@@ -341,7 +342,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                       vertical: 8,
                     ),
                     child: Text(
-                      'Recent Transactions',
+                      AppLocalizations.of(context).ledgerRecentTxns,
                       style: tt.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -349,13 +350,15 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                   ),
                 ),
                 if (_filteredEntries.isEmpty)
-                  const SliverToBoxAdapter(
+                  SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 48),
+                      padding: const EdgeInsets.symmetric(vertical: 48),
                       child: EmptyState(
                         icon: PhosphorIconsRegular.listDashes,
-                        title: 'No entries found',
-                        subtitle: 'Try a different search term or date range.',
+                        title: AppLocalizations.of(context).ledgerNoEntries,
+                        subtitle: AppLocalizations.of(
+                          context,
+                        ).ledgerNoEntriesHint,
                       ),
                     ),
                   )
@@ -397,7 +400,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
         backgroundColor: cs.primary,
         icon: Icon(PhosphorIconsBold.plus, color: cs.onPrimary),
         label: Text(
-          'New Entry',
+          AppLocalizations.of(context).ledgerNewEntry,
           style: TextStyle(color: cs.onPrimary, fontWeight: FontWeight.bold),
         ),
       ),
@@ -443,7 +446,7 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
             child: Column(
               children: [
                 Text(
-                  'Net Balance (MTD)',
+                  AppLocalizations.of(context).ledgerNetBalanceMtd,
                   style: tt.labelMedium?.copyWith(
                     color: cs.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
@@ -462,13 +465,13 @@ class _LedgerListScreenState extends ConsumerState<LedgerListScreen> {
                 ResponsiveStatRow(
                   children: [
                     _SummaryStat(
-                      label: 'Total Jama',
+                      label: AppLocalizations.of(context).ledgerTotalJama,
                       value: '\u20B9${jama.toStringAsFixed(0)}',
                       icon: PhosphorIconsFill.arrowUpRight,
                       color: AppColors.success,
                     ),
                     _SummaryStat(
-                      label: 'Total Udhaar',
+                      label: AppLocalizations.of(context).ledgerTotalUdhaar,
                       value: '\u20B9${udhaar.toStringAsFixed(0)}',
                       icon: PhosphorIconsFill.arrowDownLeft,
                       color: AppColors.danger,
@@ -614,7 +617,9 @@ class _LedgerRow extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      isJama ? 'Jama' : 'Udhaar',
+                      isJama
+                          ? AppLocalizations.of(context).ledgerJama
+                          : AppLocalizations.of(context).ledgerUdhaar,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -650,21 +655,33 @@ class _LedgerRow extends ConsumerWidget {
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('Delete Entry'),
+                        title: Text(
+                          AppLocalizations.of(context).ledgerDeleteEntryTitle,
+                        ),
                         content: Text(
-                          'Delete ₹${entry.amount.toStringAsFixed(0)} ${isJama ? 'Jama' : 'Udhaar'} entry for ${entry.employeeName}?',
+                          AppLocalizations.of(context).ledgerDeleteEntryMsg(
+                            entry.amount.toStringAsFixed(0),
+                            isJama
+                                ? AppLocalizations.of(context).ledgerJama
+                                : AppLocalizations.of(context).ledgerUdhaar,
+                            entry.employeeName,
+                          ),
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Cancel'),
+                            child: Text(
+                              AppLocalizations.of(context).commonCancel,
+                            ),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, true),
                             style: TextButton.styleFrom(
                               foregroundColor: AppColors.danger,
                             ),
-                            child: const Text('Delete'),
+                            child: Text(
+                              AppLocalizations.of(context).commonDelete,
+                            ),
                           ),
                         ],
                       ),
@@ -680,39 +697,39 @@ class _LedgerRow extends ConsumerWidget {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(PhosphorIconsRegular.pencil, size: 16),
-                        SizedBox(width: 8),
-                        Text('Edit'),
+                        const Icon(PhosphorIconsRegular.pencil, size: 16),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context).ledgerEdit),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'dispute',
                     child: Row(
                       children: [
-                        Icon(PhosphorIconsRegular.flag, size: 16),
-                        SizedBox(width: 8),
-                        Text('Raise Dispute'),
+                        const Icon(PhosphorIconsRegular.flag, size: 16),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context).ledgerRaiseDispute),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(
+                        const Icon(
                           PhosphorIconsRegular.trash,
                           size: 16,
                           color: AppColors.danger,
                         ),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(
-                          'Delete',
-                          style: TextStyle(color: AppColors.danger),
+                          AppLocalizations.of(context).commonDelete,
+                          style: const TextStyle(color: AppColors.danger),
                         ),
                       ],
                     ),

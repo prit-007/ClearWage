@@ -14,6 +14,7 @@ import '../../core/widgets/employee_avatar.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
+import '../../l10n/app_localizations.dart';
 import 'dart:async';
 
 class NewLedgerEntryScreen extends ConsumerStatefulWidget {
@@ -71,18 +72,18 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
 
   Future<void> _save() async {
     if (_selectedEmployeeId == null) {
-      showError(context, 'Please select an employee');
+      showError(context, AppLocalizations.of(context).ledgerErrSelectEmployee);
       unawaited(HapticFeedback.vibrate());
       return;
     }
     if (_amountController.text.trim().isEmpty) {
-      showError(context, 'Please enter an amount');
+      showError(context, AppLocalizations.of(context).ledgerErrEnterAmount);
       unawaited(HapticFeedback.vibrate());
       return;
     }
     final amount = double.tryParse(_amountController.text.trim());
     if (amount == null || amount <= 0) {
-      showError(context, 'Please enter a valid amount');
+      showError(context, AppLocalizations.of(context).ledgerErrInvalidAmount);
       unawaited(HapticFeedback.vibrate());
       return;
     }
@@ -111,8 +112,8 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
         await refreshPendingSyncCount(ref);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Saved offline — will sync when back online'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context).syncSavedOffline),
             ),
           );
         }
@@ -156,9 +157,9 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
         if (didPop) return;
         final confirmed = await showConfirmDialog(
           context,
-          title: 'Discard Entry',
-          message: 'You have unsaved changes. Discard them?',
-          confirmLabel: 'Discard',
+          title: AppLocalizations.of(context).ledgerDiscardTitle,
+          message: AppLocalizations.of(context).ledgerDiscardMsg,
+          confirmLabel: AppLocalizations.of(context).ledgerDiscardConfirm,
           icon: PhosphorIconsRegular.warningCircle,
           isDestructive: true,
         );
@@ -179,7 +180,9 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
             },
           ),
           title: Text(
-            _isEditing ? 'Edit Entry' : 'New Entry',
+            _isEditing
+                ? AppLocalizations.of(context).ledgerEditEntry
+                : AppLocalizations.of(context).ledgerNewEntry,
             style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           centerTitle: true,
@@ -207,8 +210,12 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                           children: [
                             Expanded(
                               child: _PremiumToggle(
-                                title: 'Give Advance',
-                                subtitle: 'Jama',
+                                title: AppLocalizations.of(
+                                  context,
+                                ).ledgerGiveAdvance,
+                                subtitle: AppLocalizations.of(
+                                  context,
+                                ).ledgerJama,
                                 isActive: _isJama,
                                 activeColor: AppColors.success,
                                 icon: PhosphorIconsFill.arrowUpRight,
@@ -217,8 +224,12 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                             ),
                             Expanded(
                               child: _PremiumToggle(
-                                title: 'Deduct',
-                                subtitle: 'Udhaar',
+                                title: AppLocalizations.of(
+                                  context,
+                                ).ledgerDeduct,
+                                subtitle: AppLocalizations.of(
+                                  context,
+                                ).ledgerUdhaar,
                                 isActive: !_isJama,
                                 activeColor: AppColors.danger,
                                 icon: PhosphorIconsFill.arrowDownLeft,
@@ -231,7 +242,7 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                       const SizedBox(height: 48),
                       Center(
                         child: Text(
-                          'Amount',
+                          AppLocalizations.of(context).commonAmount,
                           style: tt.labelLarge?.copyWith(
                             color: cs.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
@@ -329,7 +340,9 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Employee',
+                                      AppLocalizations.of(
+                                        context,
+                                      ).commonEmployee,
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: cs.onSurfaceVariant,
@@ -338,7 +351,9 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                                     const SizedBox(height: 2),
                                     Text(
                                       _selectedEmployeeName ??
-                                          'Select Employee',
+                                          AppLocalizations.of(
+                                            context,
+                                          ).ledgerSelectEmployee,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w700,
                                         color: _selectedEmployeeName != null
@@ -364,7 +379,9 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                         controller: _noteController,
                         style: tt.titleMedium,
                         decoration: InputDecoration(
-                          labelText: 'Notes (Optional)',
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).ledgerNotesOptional,
                           prefixIcon: Icon(
                             PhosphorIconsRegular.textAa,
                             color: cs.onSurfaceVariant,
@@ -418,7 +435,9 @@ class _NewLedgerEntryScreenState extends ConsumerState<NewLedgerEntryScreen> {
                             ),
                           )
                         : Text(
-                            _isEditing ? 'Update Entry' : 'Save Entry',
+                            _isEditing
+                                ? AppLocalizations.of(context).ledgerUpdateEntry
+                                : AppLocalizations.of(context).ledgerSaveEntry,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -538,12 +557,16 @@ class _PremiumDatePicker extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Transaction Date',
+                  AppLocalizations.of(context).ledgerTransactionDate,
                   style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  isToday ? 'Today, ${formatDate(date)}' : formatDate(date),
+                  isToday
+                      ? AppLocalizations.of(
+                          context,
+                        ).ledgerTodayDate(formatDate(date))
+                      : formatDate(date),
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     color: cs.onSurface,
@@ -618,7 +641,7 @@ class _EmployeePickerSheetState extends ConsumerState<_EmployeePickerSheet> {
               controller: _searchCtrl,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: 'Search employees...',
+                hintText: AppLocalizations.of(context).rosterSearchHint,
                 prefixIcon: Icon(
                   PhosphorIconsRegular.magnifyingGlass,
                   color: cs.onSurfaceVariant,
@@ -646,10 +669,10 @@ class _EmployeePickerSheetState extends ConsumerState<_EmployeePickerSheet> {
                           .where((e) => e.name.toLowerCase().contains(query))
                           .toList();
                 if (filtered.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: EmptyState(
                       icon: PhosphorIconsRegular.users,
-                      title: 'No employees found',
+                      title: AppLocalizations.of(context).ledgerNoEmployees,
                     ),
                   );
                 }

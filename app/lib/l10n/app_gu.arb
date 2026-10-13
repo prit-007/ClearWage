@@ -441,5 +441,70 @@
   "formReportingManager": "રિપોર્ટિંગ મેનેજર",
   "formNoSupervisors": "કોઈ સુપરવાઇઝર ઉપલબ્ધ નથી",
   "formSelectDots": "પસંદ કરો…",
-  "formNone": "કોઈ નહીં"
+  "formNone": "કોઈ નહીં",
+  "ledgerHub": "લેજર હબ",
+  "ledgerSearchHint": "નામ કે નોંધથી શોધો...",
+  "ledgerFailedEntries": "એન્ટ્રીઓ લોડ થઈ શકી નહીં",
+  "ledgerRecentTxns": "તાજેતરના વ્યવહારો",
+  "ledgerNoEntries": "કોઈ એન્ટ્રી મળી નહીં",
+  "ledgerNoEntriesHint": "બીજો શોધ શબ્દ કે તારીખ શ્રેણી અજમાવો.",
+  "ledgerNewEntry": "નવી એન્ટ્રી",
+  "ledgerNetBalanceMtd": "ચોખ્ખું બાકી (આ મહિના સુધી)",
+  "ledgerTotalJama": "કુલ જમા",
+  "ledgerTotalUdhaar": "કુલ ઉધાર",
+  "ledgerJama": "જમા",
+  "ledgerUdhaar": "ઉધાર",
+  "ledgerDeleteEntryTitle": "એન્ટ્રી કાઢી નાખો",
+  "ledgerDeleteEntryMsg": "₹{amount} {type} એન્ટ્રી {name} માટે કાઢી નાખશો?",
+  "@ledgerDeleteEntryMsg": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ledgerEdit": "સંપાદિત કરો",
+  "ledgerRaiseDispute": "વિવાદ ઉઠાવો",
+  "commonFailedLoad": "લોડ થઈ શક્યું નહીં",
+  "balanceNoData": "કોઈ બાકી ડેટા નથી",
+  "balanceNoDataHint": "કર્મચારીઓનું કોઈ બાકી મળ્યું નહીં.",
+  "balanceEmployeeCount": "{count, plural, =1{{count} કર્મચારી} other{{count} કર્મચારી}}",
+  "@balanceEmployeeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "balanceTotalOutstanding": "કુલ બાકી",
+  "balanceSettled": "પૂર્ણ",
+  "ledgerErrSelectEmployee": "કૃપા કરીને એક કર્મચારી પસંદ કરો",
+  "ledgerErrEnterAmount": "કૃપા કરીને રકમ દાખલ કરો",
+  "ledgerErrInvalidAmount": "કૃપા કરીને માન્ય રકમ દાખલ કરો",
+  "ledgerDiscardTitle": "એન્ટ્રી રદ કરો",
+  "ledgerDiscardMsg": "તમારી પાસે સાચવાયેલા ન હોય તે ફેરફારો છે. તે રદ કરશો?",
+  "ledgerDiscardConfirm": "રદ કરો",
+  "ledgerEditEntry": "એન્ટ્રી સંપાદિત કરો",
+  "ledgerGiveAdvance": "એડવાન્સ આપો",
+  "ledgerDeduct": "કપાત કરો",
+  "ledgerSelectEmployee": "કર્મચારી પસંદ કરો",
+  "ledgerNotesOptional": "નોંધ (વૈકલ્પિક)",
+  "ledgerUpdateEntry": "એન્ટ્રી અપડેટ કરો",
+  "ledgerSaveEntry": "એન્ટ્રી સાચવો",
+  "ledgerTransactionDate": "વ્યવહારની તારીખ",
+  "ledgerTodayDate": "આજે, {date}",
+  "@ledgerTodayDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ledgerNoEmployees": "કોઈ કર્મચારી મળ્યો નહીં"
 }

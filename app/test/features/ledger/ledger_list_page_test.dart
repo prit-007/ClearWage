@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/api_client.dart';
@@ -7,6 +8,8 @@ import 'package:clearwage/features/ledger/ledger_list_page.dart';
 import 'package:clearwage/data/models/ledger_model.dart';
 import 'package:clearwage/core/providers/services.dart';
 import 'package:clearwage/data/services/ledger_service.dart';
+import 'package:clearwage/core/services/locale_service.dart';
+import 'package:clearwage/l10n/app_localizations.dart';
 
 class _NoOpApiClient extends ApiClient {
   _NoOpApiClient() : super(baseUrl: 'http://localhost');
@@ -85,10 +88,23 @@ class FakeLedgerService extends LedgerService {
   }
 }
 
-Widget _buildApp(FakeLedgerService fakeService) {
+Widget _buildApp(
+  FakeLedgerService fakeService, {
+  Locale locale = const Locale('en'),
+}) {
   return ProviderScope(
     overrides: [ledgerServiceProvider.overrideWithValue(fakeService)],
-    child: const MaterialApp(home: LedgerListScreen()),
+    child: MaterialApp(
+      locale: locale,
+      supportedLocales: supportedLocales,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: const LedgerListScreen(),
+    ),
   );
 }
 
@@ -479,6 +495,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Udhaar'), findsOneWidget);
+    });
+
+    testWidgets('renders Hindi labels when locale is hi', (tester) async {
+      fakeService.setEntries([]);
+      await tester.pumpWidget(
+        _buildApp(fakeService, locale: const Locale('hi')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('लेजर हब'), findsOneWidget);
+      expect(find.text('नई प्रविष्टि'), findsOneWidget);
     });
   });
 }

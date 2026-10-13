@@ -378,4 +378,4 @@ subsequent release cycles.
 - [x] `CHANGELOG.md` entry for `[1.2.2]`.
 - [x] `app/pubspec.yaml` bumped to `1.2.2+21`.
 - [x] `fastlane` changelog `changelogs/21.txt`.
-- [ ] Tag `v1.2.2` created and pushed.
+- [x] Tag `v1.2.2` created and pushed.

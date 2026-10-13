@@ -1,0 +1,7 @@
+v1.2.2 — Audit trail & sync reliability
+
+- Attendance mark/update/bulk now appear in the employee Audit Log
+- Full audit trail for ledger, advance, dispute, and leave actions
+- Offline writes flush serially + KYC document queue auto-syncs on reconnect
+- Bulk attendance refresh on return; leave notifications deep-link correctly
+- Offline sync chip waits for connectivity

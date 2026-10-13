@@ -176,6 +176,13 @@ func (m *MailService) dailyUsage(ctx context.Context, tenantID string) (int32, s
 	return tc.MailSentToday, date, nil
 }
 
+// SendAsync queues an email in a background goroutine so API handlers never
+// block on the Brevo round-trip. Uses context.WithoutCancel so request teardown
+// does not cancel an in-flight delivery.
+func (m *MailService) SendAsync(ctx context.Context, tenantID, to, subject, body string) {
+	go func() { _ = m.Send(context.WithoutCancel(ctx), tenantID, to, subject, body) }()
+}
+
 type mailerInjector interface {
 	SetMailer(*MailService)
 }

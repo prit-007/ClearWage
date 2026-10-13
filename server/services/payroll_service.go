@@ -389,7 +389,7 @@ func (s *PayrollService) mailPayrollSummary(ctx context.Context, tenantID string
 		return
 	}
 	body := fmt.Sprintf("Payroll for %s has been finalized and locked.\n\nTotal wage bill: %.2f", month, result.TotalWage)
-	_ = s.mailer.Send(ctx, tenantID, *tenant.Email, "Payroll finalized — "+month, body)
+	s.mailer.SendAsync(ctx, tenantID, *tenant.Email, "Payroll finalized - "+month, body)
 }
 
 func (s *PayrollService) GeneratePayslip(ctx context.Context, tenantID, employeeID, startDate, endDate string) ([]byte, string, error) {

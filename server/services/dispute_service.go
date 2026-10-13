@@ -106,5 +106,5 @@ func (s *DisputeService) mailDisputeStatus(ctx context.Context, tenantID, employ
 	if reason != "" {
 		body += "\n\nDetails: " + reason
 	}
-	_ = s.mailer.Send(ctx, tenantID, *emp.Email, subject, body)
+	s.mailer.SendAsync(ctx, tenantID, *emp.Email, subject, body)
 }

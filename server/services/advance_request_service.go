@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/shopspring/decimal"
 	"github.com/clearwage/clearwage/repositories"
+	"github.com/shopspring/decimal"
 )
 
 type AdvanceRequestService struct {
@@ -197,5 +197,5 @@ func (s *AdvanceRequestService) mailAdvanceStatus(ctx context.Context, tenantID,
 		subject = "Your advance request was approved"
 	}
 	body := fmt.Sprintf("Hello %s,\n\nYour advance request of amount %s has been %s.", emp.Name, amount.StringFixed(0), status)
-	_ = s.mailer.Send(ctx, tenantID, *emp.Email, subject, body)
+	s.mailer.SendAsync(ctx, tenantID, *emp.Email, subject, body)
 }

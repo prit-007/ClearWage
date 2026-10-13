@@ -6,8 +6,8 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/shopspring/decimal"
 	"github.com/clearwage/clearwage/repositories"
+	"github.com/shopspring/decimal"
 )
 
 type LedgerService struct {

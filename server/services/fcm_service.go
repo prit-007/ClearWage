@@ -218,9 +218,9 @@ type FCMAndroidNotif struct {
 type FCMAPNS struct {
 	Payload struct {
 		Aps struct {
-			Sound             string `json:"sound"`
-			Badge             int    `json:"badge"`
-			ContentAvailable  bool   `json:"content-available"`
+			Sound            string `json:"sound"`
+			Badge            int    `json:"badge"`
+			ContentAvailable bool   `json:"content-available"`
 		} `json:"aps"`
 	} `json:"payload"`
 }

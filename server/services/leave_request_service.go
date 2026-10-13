@@ -87,7 +87,7 @@ func (s *LeaveRequestService) triggersNotify(ctx context.Context, tenantID strin
 	if s.mailer != nil {
 		emp, err := s.querier.FindEmployeeByID(ctx, repositories.FindEmployeeByIDParams{ID: lr.EmployeeID, TenantID: tenantID})
 		if err == nil && emp.Email != nil && *emp.Email != "" {
-			_ = s.mailer.Send(ctx, tenantID, *emp.Email,
+			s.mailer.SendAsync(ctx, tenantID, *emp.Email,
 				"Leave request "+status,
 				fmt.Sprintf("Hello %s,\n\nYour leave request (%s to %s) has been %s.",
 					emp.Name, lr.FromDate, lr.ToDate, status))

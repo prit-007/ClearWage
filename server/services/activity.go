@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 
-	"github.com/rs/zerolog"
 	"github.com/clearwage/clearwage/repositories"
+	"github.com/rs/zerolog"
 )
 
 var activityLogger = zerolog.Nop()

@@ -631,7 +631,17 @@ void main() {
             settingsServiceProvider.overrideWithValue(_SettingsSvc(settingsF)),
             userInfoProvider.overrideWith((ref) => _admin()),
           ],
-          child: const MaterialApp(home: AttendanceRosterPage()),
+          child: const MaterialApp(
+            locale: Locale('en'),
+            supportedLocales: [Locale('en'), Locale('hi'), Locale('gu')],
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: AttendanceRosterPage(),
+          ),
         ),
       );
     });

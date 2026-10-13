@@ -168,5 +168,115 @@
         "type": "int"
       }
     }
+  },
+  "commonSave": "સાચવો",
+  "rosterTitle": "દૈનિક રોસ્ટર",
+  "rosterSearchHint": "કર્મચારી શોધો...",
+  "rosterWeeklyOff": "સાપ્તાહિક રજા",
+  "rosterHoliday": "રજા",
+  "rosterCannotMark": "આ દિવસે હાજરી નોંધી શકાય નહીં.",
+  "rosterHolidayBadge": "રજા · {name}",
+  "@rosterHolidayBadge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterBulkMode": "બલ્ક મોડ",
+  "rosterMarkAllPresent": "બધાને હાજર નોંધો",
+  "rosterProcessing": "પ્રક્રિયા થઈ રહી છે...",
+  "rosterAllMarked": "બધા કર્મચારીઓ પહેલેથી નોંધાયેલા છે",
+  "rosterMarkAllConfirm": "{count} નોંધાયેલા ન હોય તે કર્મચારીઓને હાજર નોંધાશે. ચાલુ રાખશો?",
+  "@rosterMarkAllConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rosterMark": "નોંધો",
+  "rosterConflict": "રેકોર્ડ અન્યત્ર બદલાયો. રિફ્રેશ કરાયું — મહેરબાની કરીને ફરી પ્રયાસ કરો.",
+  "rosterNoShiftChosen": "કોઈ શિફ્ટ ફાળવેલી નથી. શિફ્ટ પસંદ કરો અથવા સ્ટાફ પ્રોફાઇલ સંપાદિત કરો.",
+  "rosterNoStaffTitle": "કોઈ સક્રિય સ્ટાફ નથી",
+  "rosterNoStaffSubtitle": "ટ્રેકિંગ શરૂ કરવા માટે યાદીમાંથી કર્મચારી ઉમેરો.",
+  "rosterFailedLoad": "રોસ્ટર લોડ થઈ શક્યું નહીં",
+  "rosterFailedShifts": "શિફ્ટ લોડ થઈ શકી નહીં: {error}",
+  "@rosterFailedShifts": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterFailedHolidays": "રજાઓ લોડ થઈ શકી નહીં: {error}",
+  "@rosterFailedHolidays": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterFailedSettings": "સેટિંગ્સ લોડ થઈ શકી નહીં: {error}",
+  "@rosterFailedSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterNoShiftAssigned": "કોઈ શિફ્ટ ફાળવેલી નથી",
+  "rosterUnknownShift": "અજાણી શિફ્ટ",
+  "rosterSelectShift": "શિફ્ટ પસંદ કરો",
+  "rosterNoShift": "કોઈ શિફ્ટ નહીં",
+  "rosterOtHours": "ઓવરટાઇમ કલાક",
+  "rosterOtRange": "OT કલાક 0 અને 24 વચ્ચે હોવા જોઈએ",
+  "rosterBadgePending": "બાકી",
+  "rosterBadgeLocked": "લૉક",
+  "rosterLocked": "આ હાજરી રેકોર્ડ લૉક છે અને સંપાદિત કરી શકાય નહીં",
+  "rosterOtChip": "OT: {hours} કલાક",
+  "@rosterOtChip": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "syncSavedOffline": "ઑફલાઇન સાચવાયું — ઓનલાઇન થતાં સિંક થશે",
+  "bulkTitle": "બલ્ક હાજરી",
+  "bulkStatTotal": "કુલ",
+  "bulkStatMarked": "નોંધાયેલા",
+  "bulkStatAbsent": "ગેરહાજર",
+  "bulkPresent": "હાજર",
+  "bulkAbsent": "ગેરહાજર",
+  "bulkSelectAll": "બધા પસંદ કરો",
+  "bulkMarkRemaining": "બાકીને હાજર નોંધો",
+  "bulkNoShiftAssigned": "નોંધાયેલા ન હોય તે કર્મચારીઓને કોઈ શિફ્ટ ફાળવેલી નથી",
+  "bulkAllMarkedFor": "{date} માટે બધા કર્મચારીઓ પહેલેથી નોંધાયેલા છે",
+  "@bulkAllMarkedFor": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "bulkResult": "{marked} નોંધાયા ({absent} ગેરહાજર)",
+  "@bulkResult": {
+    "placeholders": {
+      "marked": {
+        "type": "int"
+      },
+      "absent": {
+        "type": "int"
+      }
+    }
+  },
+  "bulkSkippedNoShift": "{count} છોડ્યા (કોઈ શિફ્ટ નહીં)",
+  "@bulkSkippedNoShift": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

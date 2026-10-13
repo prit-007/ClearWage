@@ -7,6 +7,7 @@ import '../../core/helpers.dart';
 import '../../core/providers/services.dart';
 import '../../core/responsive.dart';
 import '../../core/design_tokens.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/widgets/loading_button.dart';
 import '../../data/models/roster_model.dart';
@@ -73,8 +74,8 @@ class _AttendanceBulkScreenState extends ConsumerState<AttendanceBulkScreen> {
           SnackBar(
             content: Text(
               buildable.isEmpty
-                  ? 'All employees already marked'
-                  : 'No unmarked employees have a shift assigned',
+                  ? AppLocalizations.of(context).rosterAllMarked
+                  : AppLocalizations.of(context).bulkNoShiftAssigned,
             ),
           ),
         );
@@ -89,9 +90,15 @@ class _AttendanceBulkScreenState extends ConsumerState<AttendanceBulkScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${records.length} marked'
-              ' (${_absent.where((id) => buildable.any((r) => r.employeeId == id)).length} absent)'
-              '${skipped > 0 ? ', $skipped skipped (no shift)' : ''}',
+              AppLocalizations.of(context).bulkResult(
+                    records.length,
+                    _absent
+                        .where((id) => buildable.any((r) => r.employeeId == id))
+                        .length,
+                  ) +
+                  (skipped > 0
+                      ? ' ${AppLocalizations.of(context).bulkSkippedNoShift(skipped)}'
+                      : ''),
             ),
           ),
         );
@@ -119,7 +126,7 @@ class _AttendanceBulkScreenState extends ConsumerState<AttendanceBulkScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Bulk Attendance',
+          AppLocalizations.of(context).bulkTitle,
           style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
         centerTitle: true,
@@ -153,8 +160,9 @@ class _AttendanceBulkScreenState extends ConsumerState<AttendanceBulkScreen> {
                   child: buildable.isEmpty
                       ? Center(
                           child: Text(
-                            'All employees already marked'
-                            ' for ${widget.date}',
+                            AppLocalizations.of(
+                              context,
+                            ).bulkAllMarkedFor(widget.date),
                             style: tt.bodySmall?.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
@@ -227,9 +235,24 @@ class _BulkSummaryBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _Stat(cs: cs, tt: tt, label: 'Total', value: '$total'),
-          _Stat(cs: cs, tt: tt, label: 'Marked', value: '$marked'),
-          _Stat(cs: cs, tt: tt, label: 'Absent', value: '$absentSelected'),
+          _Stat(
+            cs: cs,
+            tt: tt,
+            label: AppLocalizations.of(context).bulkStatTotal,
+            value: '$total',
+          ),
+          _Stat(
+            cs: cs,
+            tt: tt,
+            label: AppLocalizations.of(context).bulkStatMarked,
+            value: '$marked',
+          ),
+          _Stat(
+            cs: cs,
+            tt: tt,
+            label: AppLocalizations.of(context).bulkStatAbsent,
+            value: '$absentSelected',
+          ),
         ],
       ),
     );
@@ -344,7 +367,9 @@ class _BulkTile extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              absent ? 'ABSENT' : 'PRESENT',
+              absent
+                  ? AppLocalizations.of(context).bulkAbsent
+                  : AppLocalizations.of(context).bulkPresent,
               style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.w900,
@@ -396,7 +421,7 @@ class _BulkFooter extends StatelessWidget {
                   PhosphorIconsRegular.selectionAll,
                   color: cs.primary,
                 ),
-                label: const Text('Select All'),
+                label: Text(AppLocalizations.of(context).bulkSelectAll),
               ),
             ),
             const SizedBox(width: 12),
@@ -405,7 +430,7 @@ class _BulkFooter extends StatelessWidget {
               child: LoadingButton(
                 loading: saving,
                 onPressed: onApply,
-                label: 'Mark Remaining as Present',
+                label: AppLocalizations.of(context).bulkMarkRemaining,
                 icon: PhosphorIconsBold.checks,
                 backgroundColor: AppColors.success,
               ),

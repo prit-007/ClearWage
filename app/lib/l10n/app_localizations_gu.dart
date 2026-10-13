@@ -332,4 +332,158 @@ class AppLocalizationsGu extends AppLocalizations {
   String broadcastOpening(int opened, int total) {
     return 'WhatsApp ખોલાઈ રહ્યું છે $total માંથી $opened';
   }
+
+  @override
+  String get commonSave => 'સાચવો';
+
+  @override
+  String get rosterTitle => 'દૈનિક રોસ્ટર';
+
+  @override
+  String get rosterSearchHint => 'કર્મચારી શોધો...';
+
+  @override
+  String get rosterWeeklyOff => 'સાપ્તાહિક રજા';
+
+  @override
+  String get rosterHoliday => 'રજા';
+
+  @override
+  String get rosterCannotMark => 'આ દિવસે હાજરી નોંધી શકાય નહીં.';
+
+  @override
+  String rosterHolidayBadge(String name) {
+    return 'રજા · $name';
+  }
+
+  @override
+  String get rosterBulkMode => 'બલ્ક મોડ';
+
+  @override
+  String get rosterMarkAllPresent => 'બધાને હાજર નોંધો';
+
+  @override
+  String get rosterProcessing => 'પ્રક્રિયા થઈ રહી છે...';
+
+  @override
+  String get rosterAllMarked => 'બધા કર્મચારીઓ પહેલેથી નોંધાયેલા છે';
+
+  @override
+  String rosterMarkAllConfirm(int count) {
+    return '$count નોંધાયેલા ન હોય તે કર્મચારીઓને હાજર નોંધાશે. ચાલુ રાખશો?';
+  }
+
+  @override
+  String get rosterMark => 'નોંધો';
+
+  @override
+  String get rosterConflict =>
+      'રેકોર્ડ અન્યત્ર બદલાયો. રિફ્રેશ કરાયું — મહેરબાની કરીને ફરી પ્રયાસ કરો.';
+
+  @override
+  String get rosterNoShiftChosen =>
+      'કોઈ શિફ્ટ ફાળવેલી નથી. શિફ્ટ પસંદ કરો અથવા સ્ટાફ પ્રોફાઇલ સંપાદિત કરો.';
+
+  @override
+  String get rosterNoStaffTitle => 'કોઈ સક્રિય સ્ટાફ નથી';
+
+  @override
+  String get rosterNoStaffSubtitle =>
+      'ટ્રેકિંગ શરૂ કરવા માટે યાદીમાંથી કર્મચારી ઉમેરો.';
+
+  @override
+  String get rosterFailedLoad => 'રોસ્ટર લોડ થઈ શક્યું નહીં';
+
+  @override
+  String rosterFailedShifts(String error) {
+    return 'શિફ્ટ લોડ થઈ શકી નહીં: $error';
+  }
+
+  @override
+  String rosterFailedHolidays(String error) {
+    return 'રજાઓ લોડ થઈ શકી નહીં: $error';
+  }
+
+  @override
+  String rosterFailedSettings(String error) {
+    return 'સેટિંગ્સ લોડ થઈ શકી નહીં: $error';
+  }
+
+  @override
+  String get rosterNoShiftAssigned => 'કોઈ શિફ્ટ ફાળવેલી નથી';
+
+  @override
+  String get rosterUnknownShift => 'અજાણી શિફ્ટ';
+
+  @override
+  String get rosterSelectShift => 'શિફ્ટ પસંદ કરો';
+
+  @override
+  String get rosterNoShift => 'કોઈ શિફ્ટ નહીં';
+
+  @override
+  String get rosterOtHours => 'ઓવરટાઇમ કલાક';
+
+  @override
+  String get rosterOtRange => 'OT કલાક 0 અને 24 વચ્ચે હોવા જોઈએ';
+
+  @override
+  String get rosterBadgePending => 'બાકી';
+
+  @override
+  String get rosterBadgeLocked => 'લૉક';
+
+  @override
+  String get rosterLocked => 'આ હાજરી રેકોર્ડ લૉક છે અને સંપાદિત કરી શકાય નહીં';
+
+  @override
+  String rosterOtChip(String hours) {
+    return 'OT: $hours કલાક';
+  }
+
+  @override
+  String get syncSavedOffline => 'ઑફલાઇન સાચવાયું — ઓનલાઇન થતાં સિંક થશે';
+
+  @override
+  String get bulkTitle => 'બલ્ક હાજરી';
+
+  @override
+  String get bulkStatTotal => 'કુલ';
+
+  @override
+  String get bulkStatMarked => 'નોંધાયેલા';
+
+  @override
+  String get bulkStatAbsent => 'ગેરહાજર';
+
+  @override
+  String get bulkPresent => 'હાજર';
+
+  @override
+  String get bulkAbsent => 'ગેરહાજર';
+
+  @override
+  String get bulkSelectAll => 'બધા પસંદ કરો';
+
+  @override
+  String get bulkMarkRemaining => 'બાકીને હાજર નોંધો';
+
+  @override
+  String get bulkNoShiftAssigned =>
+      'નોંધાયેલા ન હોય તે કર્મચારીઓને કોઈ શિફ્ટ ફાળવેલી નથી';
+
+  @override
+  String bulkAllMarkedFor(String date) {
+    return '$date માટે બધા કર્મચારીઓ પહેલેથી નોંધાયેલા છે';
+  }
+
+  @override
+  String bulkResult(int marked, int absent) {
+    return '$marked નોંધાયા ($absent ગેરહાજર)';
+  }
+
+  @override
+  String bulkSkippedNoShift(int count) {
+    return '$count છોડ્યા (કોઈ શિફ્ટ નહીં)';
+  }
 }

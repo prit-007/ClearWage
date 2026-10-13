@@ -6,6 +6,7 @@ import '../../core/helpers.dart';
 import '../../core/providers/services.dart';
 import '../../core/responsive.dart';
 import '../../core/design_tokens.dart';
+import '../../l10n/app_localizations.dart';
 import '../staff/providers/staff_providers.dart';
 
 Future<void> showBroadcastSheet(BuildContext context) {
@@ -58,12 +59,13 @@ class _BroadcastSheetState extends ConsumerState<BroadcastSheet> {
     }
     if (mounted) {
       setState(() => _sending = false);
+      final l = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             opened == 0
-                ? 'Could not open WhatsApp'
-                : 'Opening WhatsApp for $opened of ${targets.length}',
+                ? l.broadcastNoWhatsapp
+                : l.broadcastOpening(opened, targets.length),
           ),
         ),
       );
@@ -74,6 +76,7 @@ class _BroadcastSheetState extends ConsumerState<BroadcastSheet> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final l = AppLocalizations.of(context);
     final employees =
         ref
             .watch(employeeListProvider)
@@ -101,7 +104,7 @@ class _BroadcastSheetState extends ConsumerState<BroadcastSheet> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Broadcast Message',
+                    l.broadcastTitle,
                     style: tt.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.5,
@@ -109,7 +112,7 @@ class _BroadcastSheetState extends ConsumerState<BroadcastSheet> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Send a WhatsApp message to selected staff.',
+                    l.broadcastSubtitle,
                     style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                   ),
                   const SizedBox(height: 16),
@@ -118,7 +121,7 @@ class _BroadcastSheetState extends ConsumerState<BroadcastSheet> {
                     maxLines: 3,
                     maxLength: 500,
                     decoration: InputDecoration(
-                      hintText: 'Message (leave empty for greeting)',
+                      hintText: l.broadcastHint,
                       filled: true,
                       fillColor: cs.surfaceContainerHighest.withValues(
                         alpha: 0.4,
@@ -135,7 +138,7 @@ class _BroadcastSheetState extends ConsumerState<BroadcastSheet> {
             Divider(color: cs.outlineVariant.withValues(alpha: 0.4)),
             Expanded(
               child: employees.isEmpty
-                  ? const Center(child: Text('No active staff found'))
+                  ? Center(child: Text(l.broadcastNoStaff))
                   : ListView(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       children: [
@@ -170,7 +173,7 @@ class _BroadcastSheetState extends ConsumerState<BroadcastSheet> {
                               ),
                             ),
                             subtitle: Text(
-                              e.phone.isEmpty ? 'No phone number' : e.phone,
+                              e.phone.isEmpty ? l.broadcastNoPhone : e.phone,
                               style: tt.labelSmall?.copyWith(
                                 color: e.phone.isEmpty
                                     ? cs.error
@@ -207,8 +210,8 @@ class _BroadcastSheetState extends ConsumerState<BroadcastSheet> {
                         ),
                   label: Text(
                     _selected.isEmpty
-                        ? 'Select staff to send'
-                        : 'Send to ${_selected.length}',
+                        ? l.broadcastSelectStaff
+                        : l.broadcastSendTo(_selected.length),
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),

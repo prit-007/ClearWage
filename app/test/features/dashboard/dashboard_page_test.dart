@@ -69,7 +69,11 @@ class FakeProfileService extends ProfileService {
   }
 }
 
-Widget _buildApp(FakeDashboardService fakeService, {bool isAdmin = true}) {
+Widget _buildApp(
+  FakeDashboardService fakeService, {
+  bool isAdmin = true,
+  Locale locale = const Locale('en'),
+}) {
   return ProviderScope(
     overrides: [
       dashboardServiceProvider.overrideWithValue(fakeService),
@@ -84,8 +88,8 @@ Widget _buildApp(FakeDashboardService fakeService, {bool isAdmin = true}) {
       ),
       connectivityProvider.overrideWith(FakeConnectivity.new),
     ],
-    child: const MaterialApp(
-      locale: Locale('en'),
+    child: MaterialApp(
+      locale: locale,
       supportedLocales: supportedLocales,
       localizationsDelegates: [
         AppLocalizations.delegate,
@@ -93,7 +97,7 @@ Widget _buildApp(FakeDashboardService fakeService, {bool isAdmin = true}) {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: DashboardScreen(),
+      home: const DashboardScreen(),
     ),
   );
 }
@@ -330,6 +334,26 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Attendance Trends'), findsNothing);
+    });
+
+    testWidgets('renders Hindi labels when locale is hi', (tester) async {
+      fakeService.setData(_makeData());
+      await tester.pumpWidget(
+        _buildApp(fakeService, locale: const Locale('hi')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('कार्यस्थल'), findsOneWidget);
+      expect(find.text('कुल स्टाफ़'), findsOneWidget);
+      expect(find.text('पेरोल (इस माह)'), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.text('त्वरित क्रियाएँ'),
+        500,
+        scrollable: find.byType(Scrollable),
+      );
+      expect(find.text('त्वरित क्रियाएँ'), findsOneWidget);
+      expect(find.text('हाल की गतिविधि'), findsOneWidget);
     });
   });
 }

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/api_client.dart';
+import 'package:clearwage/core/services/locale_service.dart';
 import 'package:clearwage/core/widgets/shimmer_loading.dart';
 import 'package:clearwage/core/providers/services.dart';
 import 'package:clearwage/data/services/profile_service.dart';
 import 'package:clearwage/features/dashboard/employee_dashboard.dart';
+import 'package:clearwage/l10n/app_localizations.dart';
 
 class _NoOpApiClient extends ApiClient {
   _NoOpApiClient() : super(baseUrl: 'http://localhost');
@@ -30,7 +33,17 @@ class FakeProfileService extends ProfileService {
 Widget _buildApp(FakeProfileService fakeService) {
   return ProviderScope(
     overrides: [profileServiceProvider.overrideWithValue(fakeService)],
-    child: const MaterialApp(home: EmployeeDashboard()),
+    child: const MaterialApp(
+      locale: Locale('en'),
+      supportedLocales: supportedLocales,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: EmployeeDashboard(),
+    ),
   );
 }
 

@@ -148,4 +148,188 @@ class AppLocalizationsGu extends AppLocalizations {
 
   @override
   String get hubPayrollSettings => 'પેરોલ સેટિંગ્સ';
+
+  @override
+  String get errorSomethingWentWrong => 'કંઈક ખોટું થયું';
+
+  @override
+  String get commonRetry => 'ફરી પ્રયાસ કરો';
+
+  @override
+  String get commonCancel => 'રદ્દ કરો';
+
+  @override
+  String get commonSubmit => 'સબમિટ કરો';
+
+  @override
+  String get commonEmployee => 'કર્મચારી';
+
+  @override
+  String get commonAmount => 'રકમ';
+
+  @override
+  String get commonNoteOptional => 'નોંધ (વૈકલ્પિક)';
+
+  @override
+  String get dashWorkspace => 'કાર્યસ્થળ';
+
+  @override
+  String get dashTodaysFloor => 'આજની સ્થિતિ';
+
+  @override
+  String get statTotalStaff => 'કુલ સ્ટાફ';
+
+  @override
+  String get statPayrollMtd => 'પેરોલ (આ મહિને)';
+
+  @override
+  String get statOutstandingUdhaar => 'બાકી (ઉધાર)';
+
+  @override
+  String get statDefaulters => 'બાકીદારો';
+
+  @override
+  String get statPresentToday => 'આજે હાજર';
+
+  @override
+  String get statOutstanding => 'બાકી';
+
+  @override
+  String get statOutstandingBalance => 'બાકી બેલેન્સ';
+
+  @override
+  String dashPresentCount(int count) {
+    return '$count હાજર';
+  }
+
+  @override
+  String dashAbsentCount(int count) {
+    return '$count ગેરહાજર';
+  }
+
+  @override
+  String get quickActions => 'ઝડપી ક્રિયાઓ';
+
+  @override
+  String get qaAddStaff => 'સ્ટાફ\nઉમેરો';
+
+  @override
+  String get qaMarkAttendance => 'હાજરી\nનોંધો';
+
+  @override
+  String get qaAddJamaUdhaar => 'જમા/ઉધાર\nઉમેરો';
+
+  @override
+  String get qaStaffDirectory => 'સ્ટાફ\nયાદી';
+
+  @override
+  String get qaBroadcast => 'પ્રસારણ';
+
+  @override
+  String get qaMyProfile => 'મારી\nપ્રોફાઇલ';
+
+  @override
+  String get recentActivity => 'તાજેતરની પ્રવૃત્તિ';
+
+  @override
+  String get noActivityYet => 'હજી સુધી કોઈ પ્રવૃત્તિ નોંધાઈ નથી.';
+
+  @override
+  String dashTrendsTitle(int days) {
+    return 'હાજરીના વલણો ($days દિવસ)';
+  }
+
+  @override
+  String get dashTrendsSubtitle => 'દૈનિક હાજરી વિગત';
+
+  @override
+  String dashAvgPerDay(String avg) {
+    return '$avg સરેરાશ/દિવસ';
+  }
+
+  @override
+  String get dashNoAttendanceTitle => 'કોઈ હાજરી ડેટા નથી';
+
+  @override
+  String get dashNoAttendanceSubtitle => 'આ ગાળા માટે કોઈ હાજરી નોંધાઈ નથી.';
+
+  @override
+  String get syncOfflineHint =>
+      'તમે ઑફલાઇન છો — ફરી કનેક્ટ થતાં ફેરફારો સિંક થશે';
+
+  @override
+  String get syncSyncing => 'સિંક થઈ રહ્યું છે…';
+
+  @override
+  String syncPendingChanges(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ફેરફારો ઑફલાઇન સાચવાયા — હમણાં સિંક કરવા ટૅપ કરો',
+      one: '1 ફેરફાર ઑફલાઇન સાચવાયો — હમણાં સિંક કરવા ટૅપ કરો',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get empThisMonth => 'આ મહિને';
+
+  @override
+  String empDaysSummary(int present, int total) {
+    return '$present / $total દિવસ';
+  }
+
+  @override
+  String empAttendancePct(String pct) {
+    return '$pct% હાજરી';
+  }
+
+  @override
+  String get qaMyAttendance => 'મારી હાજરી';
+
+  @override
+  String get qaMyPayslip => 'પગાર સ્લિપ';
+
+  @override
+  String get qaRequestAdvance => 'એડવાન્સ વિનંતી';
+
+  @override
+  String get qaMyLedger => 'મારું ખાતું';
+
+  @override
+  String get advanceAmountRange => 'રકમ ₹1 અને ₹1,00,000 વચ્ચે હોવી જોઈએ';
+
+  @override
+  String get advanceSubmitted => 'એડવાન્સ વિનંતી સબમિટ કરાઈ';
+
+  @override
+  String get broadcastTitle => 'પ્રસારણ સંદેશ';
+
+  @override
+  String get broadcastSubtitle => 'પસંદ કરેલા સ્ટાફને WhatsApp સંદેશ મોકલો.';
+
+  @override
+  String get broadcastHint => 'સંદેશ (ગ્રીટિંગ માટે ખાલી છોડો)';
+
+  @override
+  String get broadcastNoStaff => 'કોઈ સક્રિય સ્ટાફ મળ્યો નથી';
+
+  @override
+  String get broadcastNoPhone => 'ફોન નંબર નથી';
+
+  @override
+  String get broadcastSelectStaff => 'મોકલવા માટે સ્ટાફ પસંદ કરો';
+
+  @override
+  String broadcastSendTo(int count) {
+    return '$count ને મોકલો';
+  }
+
+  @override
+  String get broadcastNoWhatsapp => 'WhatsApp ખોલી શકાયું નહીં';
+
+  @override
+  String broadcastOpening(int opened, int total) {
+    return 'WhatsApp ખોલાઈ રહ્યું છે $total માંથી $opened';
+  }
 }

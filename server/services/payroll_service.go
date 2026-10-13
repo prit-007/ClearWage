@@ -388,8 +388,16 @@ func (s *PayrollService) mailPayrollSummary(ctx context.Context, tenantID string
 	if err != nil || tenant.Email == nil || *tenant.Email == "" {
 		return
 	}
-	body := fmt.Sprintf("Payroll for %s has been finalized and locked.\n\nTotal wage bill: %.2f", month, result.TotalWage)
-	s.mailer.SendAsync(ctx, tenantID, *tenant.Email, "Payroll finalized - "+month, body)
+	html := BrandedMail(MailData{
+		Preheader: "Payroll for " + month + " has been finalized",
+		Title:     "Payroll Finalized — " + month,
+		Greeting:  fmt.Sprintf("Hello %s,", tenant.Name),
+		Body:      []string{"Your payroll for the month has been finalized and locked. Attendance for this period is now locked for payroll."},
+		Facts:     []MailFact{{Label: "Month", Value: month}, {Label: "Total Wage Bill", Value: "₹ " + fmt.Sprintf("%.2f", result.TotalWage)}},
+		Status:    "Completed",
+		Note:      "Payslips are available for each employee from their profile.",
+	})
+	s.mailer.SendAsync(ctx, tenantID, *tenant.Email, "Payroll finalized — "+month, html)
 }
 
 func (s *PayrollService) GeneratePayslip(ctx context.Context, tenantID, employeeID, startDate, endDate string) ([]byte, string, error) {

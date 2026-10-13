@@ -16,13 +16,44 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestSimpleMailHTMLEscapes(t *testing.T) {
-	html := SimpleMailHTML("Hello <b>Ramesh</b> & Co\nNew line")
-	if !strings.Contains(html, "&lt;b&gt;") {
-		t.Fatalf("expected escaped html, got: %s", html)
+func TestBrandedMailEscapesAndBrands(t *testing.T) {
+	html := BrandedMail(MailData{
+		Title:    "Welcome <b>Ramesh</b> & Co",
+		Greeting: "Hello,</p><script>alert(1)</script>",
+		Body:     []string{"Your account is ready & <i>live</i>."},
+		Facts:    []MailFact{{Label: "Amount", Value: "₹ 5,000 & more"}},
+		Status:   "Approved",
+	})
+	if !strings.Contains(html, "ClearWage") {
+		t.Fatalf("expected brand present in html")
 	}
-	if !strings.Contains(html, "<br/>") {
-		t.Fatalf("expected line break, got: %s", html)
+	if strings.Contains(html, "<script>") {
+		t.Fatalf("expected script tag to be escaped: %s", html)
+	}
+	if !strings.Contains(html, "&lt;b&gt;") {
+		t.Fatalf("expected <b> escaped: %s", html)
+	}
+	if !strings.Contains(html, "&lt;/p&gt;") || strings.Contains(html, "</p><script>") {
+		t.Fatalf("expected greeting escaped")
+	}
+	if !strings.Contains(html, "₹ 5,000 &amp; more") {
+		t.Fatalf("expected fact value escaped")
+	}
+}
+
+func TestBrandedMailRendersSections(t *testing.T) {
+	html := BrandedMail(MailData{
+		Title:      "Payroll Finalized",
+		Body:       []string{"Wage bill"},
+		Facts:      []MailFact{{Label: "Month", Value: "Jan 2026"}},
+		Status:     "Completed",
+		StatusTone: "success",
+		CTA:        &MailCTA{Text: "Open the app", URL: "https://clearwage.app"},
+	})
+	for _, want := range []string{"Payroll Finalized", "Month", "Completed", "Open the app", "ClearWage", "Workforce Management"} {
+		if !strings.Contains(html, want) {
+			t.Fatalf("expected %q in html", want)
+		}
 	}
 }
 

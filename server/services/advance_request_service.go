@@ -192,10 +192,23 @@ func (s *AdvanceRequestService) mailAdvanceStatus(ctx context.Context, tenantID,
 	if err != nil || emp.Email == nil || *emp.Email == "" {
 		return
 	}
-	subject := "Advance request " + status
-	if status == "approved" {
-		subject = "Your advance request was approved"
+	statusLabel := "Approved"
+	tone := "success"
+	subject := "Your advance was approved"
+	if status != "approved" {
+		statusLabel = "Denied"
+		tone = "danger"
+		subject = "Your advance was denied"
 	}
-	body := fmt.Sprintf("Hello %s,\n\nYour advance request of amount %s has been %s.", emp.Name, amount.StringFixed(0), status)
-	s.mailer.SendAsync(ctx, tenantID, *emp.Email, subject, body)
+	html := BrandedMail(MailData{
+		Preheader:  "Your advance request has been " + statusLabel,
+		Title:      "Advance Request " + statusLabel,
+		Greeting:   fmt.Sprintf("Hello %s,", emp.Name),
+		Body:       []string{"Your advance request has been reviewed."},
+		Facts:      []MailFact{{Label: "Amount", Value: "₹ " + amount.StringFixed(0)}, {Label: "Status", Value: statusLabel}},
+		Status:     statusLabel,
+		StatusTone: tone,
+		Note:       "The amount, if approved, will reflect on your ledger balance.",
+	})
+	s.mailer.SendAsync(ctx, tenantID, *emp.Email, subject, html)
 }

@@ -50,21 +50,10 @@ type brevoPayload struct {
 	HTMLContent string           `json:"htmlContent"`
 }
 
-func SimpleMailHTML(body string) string {
-	s := strings.ReplaceAll(body, "&", "&amp;")
-	s = strings.ReplaceAll(s, "<", "&lt;")
-	s = strings.ReplaceAll(s, ">", "&gt;")
-	s = strings.ReplaceAll(s, "\n", "<br/>")
-	return "<div style=\"font-family:Inter,Arial,sans-serif;color:#111827;line-height:1.6\">" +
-		"<p style=\"font-size:18px;font-weight:700\">ClearWage</p>" +
-		"<p>" + s + "</p>" +
-		"<p style=\"color:#6b7280;font-size:12px\">Sent via ClearWage Workforce Management</p></div>"
-}
-
-// Send dispatches an email for tenantID. Returns an error only for unexpected
-// transport/database failures; missing config, quota exhaustion, and Brevo 4xx
-// are treated as no-ops with a warning log.
-func (m *MailService) Send(ctx context.Context, tenantID, to, subject, body string) error {
+// Send dispatches an email for tenantID with a pre-rendered HTML body.
+// Returns an error only for unexpected transport/database failures; missing
+// config, quota exhaustion, and Brevo 4xx are treated as no-ops with a warning.
+func (m *MailService) Send(ctx context.Context, tenantID, to, subject, htmlContent string) error {
 	if strings.TrimSpace(to) == "" {
 		return nil
 	}
@@ -101,7 +90,7 @@ func (m *MailService) Send(ctx context.Context, tenantID, to, subject, body stri
 		Sender:      brevoRecipient{Email: senderEmail, Name: senderName},
 		To:          []brevoRecipient{{Email: to}},
 		Subject:     subject,
-		HTMLContent: SimpleMailHTML(body),
+		HTMLContent: htmlContent,
 	})
 	if err != nil {
 		return err

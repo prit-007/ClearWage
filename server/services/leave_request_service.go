@@ -87,10 +87,23 @@ func (s *LeaveRequestService) triggersNotify(ctx context.Context, tenantID strin
 	if s.mailer != nil {
 		emp, err := s.querier.FindEmployeeByID(ctx, repositories.FindEmployeeByIDParams{ID: lr.EmployeeID, TenantID: tenantID})
 		if err == nil && emp.Email != nil && *emp.Email != "" {
-			s.mailer.SendAsync(ctx, tenantID, *emp.Email,
-				"Leave request "+status,
-				fmt.Sprintf("Hello %s,\n\nYour leave request (%s to %s) has been %s.",
-					emp.Name, lr.FromDate, lr.ToDate, status))
+			statusLabel := "Approved"
+			tone := "success"
+			if status == "denied" {
+				statusLabel = "Denied"
+				tone = "danger"
+			}
+			html := BrandedMail(MailData{
+				Preheader:  "Your leave request has been " + statusLabel,
+				Title:      "Leave Request " + statusLabel,
+				Greeting:   fmt.Sprintf("Hello %s,", emp.Name),
+				Body:       []string{"Your leave request has been reviewed."},
+				Facts:      []MailFact{{Label: "From", Value: lr.FromDate}, {Label: "To", Value: lr.ToDate}, {Label: "Status", Value: statusLabel}},
+				Status:     statusLabel,
+				StatusTone: tone,
+				Note:       "Approved leave days are marked as paid leave on your attendance calendar.",
+			})
+			s.mailer.SendAsync(ctx, tenantID, *emp.Email, "Leave request "+statusLabel, html)
 		}
 	}
 	return nil

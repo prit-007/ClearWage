@@ -107,8 +107,16 @@ func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designat
 			s.triggers.NotifyWelcome(ctx, tenantID, emp.ID, tenantName)
 		}
 		if s.mailer != nil && emp.Email != nil && *emp.Email != "" {
-			body := fmt.Sprintf("નમસ્તે %s,\n\nYour ClearWage employee account is ready. Please connect with your supervisor for app access and your schedule.", emp.Name)
-			s.mailer.SendAsync(ctx, tenantID, *emp.Email, "Welcome to ClearWage", body)
+			html := BrandedMail(MailData{
+				Preheader: "Your ClearWage account is ready to use",
+				Title:     "Welcome to ClearWage",
+				Greeting:  fmt.Sprintf("નમસ્તે %s,", emp.Name),
+				Body: []string{
+					"Your ClearWage employee account is ready. Connect with your supervisor to start using the app — view your schedule, track attendance, and stay on top of your wages.",
+				},
+				Note: "We're here to help. Ask your supervisor if you have any questions.",
+			})
+			s.mailer.SendAsync(ctx, tenantID, *emp.Email, "Welcome to ClearWage", html)
 		}
 	}
 	return emp, err

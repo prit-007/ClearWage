@@ -360,6 +360,8 @@ subsequent release cycles.
 - [x] `CHANGELOG.md` entry for `[1.2.1]`.
 - [x] `app/pubspec.yaml` bumped to `1.2.1+20`.
 - [x] `fastlane` changelog `changelogs/20.txt`.
+- [x] Tag `v1.2.1` created and pushed.
+- [ ] Deploy: run migrations 00034 (ledger.client_id) + 00035 (mail_daily_counters).
 
 - [x] Async mail (no blocking Brevo round-trips) · branded HTML templates
 - [x] Mask tenant Brevo key in `GET /settings/mail`

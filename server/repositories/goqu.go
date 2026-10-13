@@ -576,10 +576,13 @@ func (q *GoquQuerier) MarkPaidLeave(ctx context.Context, arg MarkPaidLeaveParams
 	if q.sqlDB == nil {
 		return errors.New("sqlDB unavailable for raw query")
 	}
+	// Never overwrite a locked attendance record (payroll-finalized month).
 	_, err := q.sqlDB.ExecContext(ctx, `
 		INSERT INTO attendance (tenant_id, employee_id, date, shift_id, status, overtime_hours)
 		VALUES ($1, $2, $3, NULL, 'paid_leave', 0)
-		ON CONFLICT (tenant_id, employee_id, date) DO UPDATE SET status = 'paid_leave', updated_at = now()
+		ON CONFLICT (tenant_id, employee_id, date)
+		DO UPDATE SET status = 'paid_leave', updated_at = now()
+		WHERE NOT attendance.is_locked
 	`, arg.TenantID, arg.EmployeeID, arg.Date)
 	return err
 }

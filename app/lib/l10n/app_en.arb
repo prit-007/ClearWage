@@ -168,5 +168,115 @@
         "type": "int"
       }
     }
+  },
+  "commonSave": "Save",
+  "rosterTitle": "Daily Roster",
+  "rosterSearchHint": "Search employees...",
+  "rosterWeeklyOff": "Weekly Off",
+  "rosterHoliday": "Holiday",
+  "rosterCannotMark": "Attendance cannot be marked on this day.",
+  "rosterHolidayBadge": "HOLIDAY · {name}",
+  "@rosterHolidayBadge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterBulkMode": "Bulk Mode",
+  "rosterMarkAllPresent": "Mark All Present",
+  "rosterProcessing": "Processing...",
+  "rosterAllMarked": "All employees already marked",
+  "rosterMarkAllConfirm": "This will mark {count} unmarked employees as present. Continue?",
+  "@rosterMarkAllConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rosterMark": "Mark",
+  "rosterConflict": "Record changed elsewhere. Refreshed — please try again.",
+  "rosterNoShiftChosen": "No shift assigned. Choose a shift or edit staff profile to assign one.",
+  "rosterNoStaffTitle": "No Active Staff",
+  "rosterNoStaffSubtitle": "Add employees from the directory to start tracking.",
+  "rosterFailedLoad": "Failed to load roster",
+  "rosterFailedShifts": "Failed to load shifts: {error}",
+  "@rosterFailedShifts": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterFailedHolidays": "Failed to load holidays: {error}",
+  "@rosterFailedHolidays": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterFailedSettings": "Failed to load settings: {error}",
+  "@rosterFailedSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterNoShiftAssigned": "No shift assigned",
+  "rosterUnknownShift": "Unknown shift",
+  "rosterSelectShift": "Select shift",
+  "rosterNoShift": "No shift",
+  "rosterOtHours": "Overtime Hours",
+  "rosterOtRange": "OT hours must be between 0 and 24",
+  "rosterBadgePending": "PENDING",
+  "rosterBadgeLocked": "LOCKED",
+  "rosterLocked": "This attendance record is locked and cannot be edited",
+  "rosterOtChip": "OT: {hours}h",
+  "@rosterOtChip": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "syncSavedOffline": "Saved offline — will sync when you're back online",
+  "bulkTitle": "Bulk Attendance",
+  "bulkStatTotal": "Total",
+  "bulkStatMarked": "Marked",
+  "bulkStatAbsent": "Absent",
+  "bulkPresent": "PRESENT",
+  "bulkAbsent": "ABSENT",
+  "bulkSelectAll": "Select All",
+  "bulkMarkRemaining": "Mark Remaining as Present",
+  "bulkNoShiftAssigned": "No unmarked employees have a shift assigned",
+  "bulkAllMarkedFor": "All employees already marked for {date}",
+  "@bulkAllMarkedFor": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "bulkResult": "{marked} marked ({absent} absent)",
+  "@bulkResult": {
+    "placeholders": {
+      "marked": {
+        "type": "int"
+      },
+      "absent": {
+        "type": "int"
+      }
+    }
+  },
+  "bulkSkippedNoShift": "Skipped {count} (no shift)",
+  "@bulkSkippedNoShift": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

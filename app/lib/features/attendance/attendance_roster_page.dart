@@ -21,6 +21,7 @@ import '../../data/models/shift_model.dart';
 import '../../data/models/holiday_model.dart';
 import '../../core/responsive.dart';
 import '../../core/design_tokens.dart';
+import '../../l10n/app_localizations.dart';
 import 'dart:async';
 
 enum _AttStatus { present, absent, halfDay }
@@ -88,7 +89,11 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load shifts: ${friendlyError(e)}')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).rosterFailedShifts(friendlyError(e)),
+            ),
+          ),
         );
       }
     }
@@ -104,7 +109,11 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to load holidays: ${friendlyError(e)}'),
+            content: Text(
+              AppLocalizations.of(
+                context,
+              ).rosterFailedHolidays(friendlyError(e)),
+            ),
           ),
         );
       }
@@ -123,7 +132,11 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to load settings: ${friendlyError(e)}'),
+            content: Text(
+              AppLocalizations.of(
+                context,
+              ).rosterFailedSettings(friendlyError(e)),
+            ),
           ),
         );
       }
@@ -137,7 +150,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     if (unmarkedRows.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All employees already marked')),
+          SnackBar(content: Text(AppLocalizations.of(context).rosterAllMarked)),
         );
       }
       return;
@@ -145,10 +158,11 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
 
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Mark All Present',
-      message:
-          'This will mark ${unmarkedRows.length} unmarked employees as present. Continue?',
-      confirmLabel: 'Mark',
+      title: AppLocalizations.of(context).rosterMarkAllPresent,
+      message: AppLocalizations.of(
+        context,
+      ).rosterMarkAllConfirm(unmarkedRows.length),
+      confirmLabel: AppLocalizations.of(context).rosterMark,
       icon: PhosphorIconsRegular.checks,
     );
     if (confirmed != true) return;
@@ -166,7 +180,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     if (unmarkedRows.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All employees already marked')),
+          SnackBar(content: Text(AppLocalizations.of(context).rosterAllMarked)),
         );
       }
       setState(() => _saving = false);
@@ -260,11 +274,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
       if (e is ApiException && e.statusCode == 409) {
         ref.invalidate(rosterByDateProvider(_dateStr));
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Record changed elsewhere. Refreshed — please try again.',
-            ),
-          ),
+          SnackBar(content: Text(AppLocalizations.of(context).rosterConflict)),
         );
       } else {
         showError(context, e);
@@ -282,10 +292,8 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
     if (chosenShift == null || chosenShift.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'No shift assigned. Choose a shift or edit staff profile to assign one.',
-            ),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).rosterNoShiftChosen),
           ),
         );
       }
@@ -331,16 +339,17 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   void _offlineSavedSnack() {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Saved offline — will sync when you\'re back online'),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context).syncSavedOffline)),
       );
     }
   }
 
   Widget _buildRosterBody({required ColorScheme cs, required TextTheme tt}) {
+    final l = AppLocalizations.of(context);
     final rows = _cachedRows ?? <RosterRow>[];
-    final merged = rows.map((r) => _rosterRowToMerged(r, _dateStr)).toList();
+    final merged = rows
+        .map((r) => _rosterRowToMerged(r, _dateStr, l.rosterNoShiftAssigned))
+        .toList();
     final isHoliday = _isHoliday;
     final filtered = isHoliday
         ? merged.where((r) => r.attendance != null).toList()
@@ -374,12 +383,12 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
               ),
               const SizedBox(height: 24),
               Text(
-                'No Active Staff',
+                l.rosterNoStaffTitle,
                 style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
               Text(
-                'Add employees from the directory to start tracking.',
+                l.rosterNoStaffSubtitle,
                 style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
@@ -434,6 +443,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final l = AppLocalizations.of(context);
     final rosterAsync = ref.watch(rosterByDateProvider(_dateStr));
     final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
 
@@ -468,7 +478,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                   ),
                   centerTitle: true,
                   title: Text(
-                    'Daily Roster',
+                    l.rosterTitle,
                     style: tt.titleLarge?.copyWith(
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.5,
@@ -580,7 +590,9 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                                         const SizedBox(width: 6),
                                         Flexible(
                                           child: Text(
-                                            'HOLIDAY \u00b7 ${_selectedHoliday!.name}',
+                                            l.rosterHolidayBadge(
+                                              _selectedHoliday!.name,
+                                            ),
                                             overflow: TextOverflow.ellipsis,
                                             style: tt.labelSmall?.copyWith(
                                               color: AppColors.warning,
@@ -640,7 +652,9 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _isWeeklyOff ? 'Weekly Off' : 'Holiday',
+                                  _isWeeklyOff
+                                      ? l.rosterWeeklyOff
+                                      : l.rosterHoliday,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w800,
                                     fontSize: 13,
@@ -660,7 +674,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                                 ],
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Attendance cannot be marked on this day.',
+                                  l.rosterCannotMark,
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: cs.onSurfaceVariant.withValues(
@@ -684,7 +698,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                     controller: _searchCtrl,
                     onChanged: (v) => setState(() => _searchQuery = v),
                     decoration: InputDecoration(
-                      hintText: 'Search employees...',
+                      hintText: l.rosterSearchHint,
                       prefixIcon: const PhosphorIcon(
                         PhosphorIconsRegular.magnifyingGlass,
                         size: 20,
@@ -740,7 +754,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Failed to load roster',
+                          l.rosterFailedLoad,
                           style: tt.titleMedium?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
@@ -787,9 +801,9 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                         PhosphorIconsRegular.squaresFour,
                         color: cs.primary,
                       ),
-                      label: const Text(
-                        'Bulk Mode',
-                        style: TextStyle(fontWeight: FontWeight.w800),
+                      label: Text(
+                        l.rosterBulkMode,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(64),
@@ -816,7 +830,7 @@ class _AttendanceRosterPageState extends ConsumerState<AttendanceRosterPage> {
                             )
                           : const Icon(PhosphorIconsBold.checks),
                       label: Text(
-                        _saving ? 'Processing...' : 'Mark All Present',
+                        _saving ? l.rosterProcessing : l.rosterMarkAllPresent,
                         style: const TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 16,
@@ -847,13 +861,18 @@ class _MergedRow {
   const _MergedRow({required this.employee, this.attendance});
 }
 
-String _buildShiftLabel(String? name, String? start, String? end) {
-  if (name == null || name.isEmpty) return 'No shift assigned';
+String _buildShiftLabel(
+  String? name,
+  String? start,
+  String? end,
+  String noShiftLabel,
+) {
+  if (name == null || name.isEmpty) return noShiftLabel;
   if (start == null || start.isEmpty) return name;
   return '$name (${formatTime(start)}\u2013${formatTime(end)})';
 }
 
-_MergedRow _rosterRowToMerged(RosterRow row, String date) {
+_MergedRow _rosterRowToMerged(RosterRow row, String date, String noShiftLabel) {
   final resolvedShiftId = row.attendanceShiftId?.isNotEmpty == true
       ? row.attendanceShiftId
       : row.defaultShiftId;
@@ -872,6 +891,7 @@ _MergedRow _rosterRowToMerged(RosterRow row, String date) {
       row.shiftName,
       row.shiftStartTime,
       row.shiftEndTime,
+      noShiftLabel,
     ),
   );
   if (!row.hasAttendance) {
@@ -945,7 +965,7 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
-          'Overtime Hours',
+          AppLocalizations.of(context).rosterOtHours,
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
@@ -973,7 +993,7 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              'Cancel',
+              AppLocalizations.of(context).commonCancel,
               style: TextStyle(
                 color: widget.cs.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
@@ -985,8 +1005,8 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
               final parsed = double.tryParse(ctrl.text);
               if (parsed == null || parsed < 0 || parsed > 24) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('OT hours must be between 0 and 24'),
+                  SnackBar(
+                    content: Text(AppLocalizations.of(context).rosterOtRange),
                   ),
                 );
                 return;
@@ -1001,9 +1021,9 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
-              'Save',
-              style: TextStyle(fontWeight: FontWeight.w700),
+            child: Text(
+              AppLocalizations.of(context).commonSave,
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -1093,7 +1113,7 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'PENDING',
+                  AppLocalizations.of(context).rosterBadgePending,
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
@@ -1123,7 +1143,7 @@ class _UnmarkedEmployeeCardState extends State<_UnmarkedEmployeeCard> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'OT: ${_otCtrl.text}h',
+                        AppLocalizations.of(context).rosterOtChip(_otCtrl.text),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -1283,11 +1303,7 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
     if (widget.attendance.isLocked) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'This attendance record is locked and cannot be edited',
-            ),
-          ),
+          SnackBar(content: Text(AppLocalizations.of(context).rosterLocked)),
         );
       }
       return;
@@ -1325,7 +1341,7 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
-          'Overtime Hours',
+          AppLocalizations.of(context).rosterOtHours,
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
@@ -1353,7 +1369,7 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              'Cancel',
+              AppLocalizations.of(context).commonCancel,
               style: TextStyle(
                 color: widget.cs.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
@@ -1365,8 +1381,8 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
               final parsed = double.tryParse(ctrl.text);
               if (parsed == null || parsed < 0 || parsed > 24) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('OT hours must be between 0 and 24'),
+                  SnackBar(
+                    content: Text(AppLocalizations.of(context).rosterOtRange),
                   ),
                 );
                 return;
@@ -1396,9 +1412,9 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
-              'Save',
-              style: TextStyle(fontWeight: FontWeight.w700),
+            child: Text(
+              AppLocalizations.of(context).commonSave,
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -1411,11 +1427,7 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
     if (widget.attendance.isLocked) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'This attendance record is locked and cannot be edited',
-            ),
-          ),
+          SnackBar(content: Text(AppLocalizations.of(context).rosterLocked)),
         );
       }
       return;
@@ -1483,7 +1495,10 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                     Row(
                       children: [
                         Text(
-                          widget.employee.shiftName ?? 'No shift assigned',
+                          widget.employee.shiftName ??
+                              AppLocalizations.of(
+                                context,
+                              ).rosterNoShiftAssigned,
                           style: widget.tt.labelSmall?.copyWith(
                             color: widget.cs.onSurfaceVariant,
                           ),
@@ -1500,7 +1515,7 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              'LOCKED',
+                              AppLocalizations.of(context).rosterBadgeLocked,
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w900,
@@ -1558,7 +1573,9 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'OT: ${widget.attendance.overtimeHours.toStringAsFixed(1)}h',
+                        AppLocalizations.of(context).rosterOtChip(
+                          widget.attendance.overtimeHours.toStringAsFixed(1),
+                        ),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -1618,12 +1635,13 @@ class _PremiumAttendanceCardState extends State<_PremiumAttendanceCard> {
   }
 }
 
-String _shiftName(List<Shift> shifts, String? id) {
-  if (id == null || id.isEmpty) return 'No shift assigned';
+String _shiftName(List<Shift> shifts, String? id, BuildContext context) {
+  final l = AppLocalizations.of(context);
+  if (id == null || id.isEmpty) return l.rosterNoShiftAssigned;
   for (final s in shifts) {
     if (s.id == id) return s.name;
   }
-  return 'Unknown shift';
+  return l.rosterUnknownShift;
 }
 
 class _ShiftDropdown extends StatelessWidget {
@@ -1659,7 +1677,7 @@ class _ShiftDropdown extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                _shiftName(shifts, selectedId),
+                _shiftName(shifts, selectedId, context),
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: cs.onSurfaceVariant,
@@ -1698,7 +1716,7 @@ class _ShiftDropdown extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                'Select shift',
+                AppLocalizations.of(context).rosterSelectShift,
                 style: TextStyle(
                   color: cs.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
@@ -1719,7 +1737,7 @@ class _ShiftDropdown extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'No shift',
+                    AppLocalizations.of(context).rosterNoShift,
                     style: TextStyle(
                       color: cs.onSurfaceVariant,
                       fontWeight: FontWeight.w600,

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/api_client.dart';
 import 'package:clearwage/core/providers/services.dart';
+import 'package:clearwage/core/services/locale_service.dart';
 import 'package:clearwage/data/models/roster_model.dart';
 import 'package:clearwage/data/services/attendance_service.dart';
 import 'package:clearwage/features/attendance/attendance_bulk_page.dart';
 import 'package:clearwage/features/attendance/attendance_roster_page.dart';
+import 'package:clearwage/l10n/app_localizations.dart';
 
 class _NoOpApiClient extends ApiClient {
   _NoOpApiClient() : super(baseUrl: 'http://localhost');
@@ -52,7 +55,17 @@ Widget _buildApp(FakeAttendanceService svc) {
       rosterByDateProvider('2026-08-01').overrideWith((ref) async => _rows),
       attendanceServiceProvider.overrideWithValue(svc),
     ],
-    child: const MaterialApp(home: AttendanceBulkScreen(date: '2026-08-01')),
+    child: const MaterialApp(
+      locale: Locale('en'),
+      supportedLocales: supportedLocales,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: AttendanceBulkScreen(date: '2026-08-01'),
+    ),
   );
 }
 

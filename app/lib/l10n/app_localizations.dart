@@ -699,6 +699,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Opening WhatsApp for {opened} of {total}'**
   String broadcastOpening(int opened, int total);
+
+  /// No description provided for @commonSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get commonSave;
+
+  /// No description provided for @rosterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Roster'**
+  String get rosterTitle;
+
+  /// No description provided for @rosterSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search employees...'**
+  String get rosterSearchHint;
+
+  /// No description provided for @rosterWeeklyOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Off'**
+  String get rosterWeeklyOff;
+
+  /// No description provided for @rosterHoliday.
+  ///
+  /// In en, this message translates to:
+  /// **'Holiday'**
+  String get rosterHoliday;
+
+  /// No description provided for @rosterCannotMark.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance cannot be marked on this day.'**
+  String get rosterCannotMark;
+
+  /// No description provided for @rosterHolidayBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'HOLIDAY · {name}'**
+  String rosterHolidayBadge(String name);
+
+  /// No description provided for @rosterBulkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulk Mode'**
+  String get rosterBulkMode;
+
+  /// No description provided for @rosterMarkAllPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark All Present'**
+  String get rosterMarkAllPresent;
+
+  /// No description provided for @rosterProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing...'**
+  String get rosterProcessing;
+
+  /// No description provided for @rosterAllMarked.
+  ///
+  /// In en, this message translates to:
+  /// **'All employees already marked'**
+  String get rosterAllMarked;
+
+  /// No description provided for @rosterMarkAllConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This will mark {count} unmarked employees as present. Continue?'**
+  String rosterMarkAllConfirm(int count);
+
+  /// No description provided for @rosterMark.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark'**
+  String get rosterMark;
+
+  /// No description provided for @rosterConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Record changed elsewhere. Refreshed — please try again.'**
+  String get rosterConflict;
+
+  /// No description provided for @rosterNoShiftChosen.
+  ///
+  /// In en, this message translates to:
+  /// **'No shift assigned. Choose a shift or edit staff profile to assign one.'**
+  String get rosterNoShiftChosen;
+
+  /// No description provided for @rosterNoStaffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No Active Staff'**
+  String get rosterNoStaffTitle;
+
+  /// No description provided for @rosterNoStaffSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add employees from the directory to start tracking.'**
+  String get rosterNoStaffSubtitle;
+
+  /// No description provided for @rosterFailedLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load roster'**
+  String get rosterFailedLoad;
+
+  /// No description provided for @rosterFailedShifts.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load shifts: {error}'**
+  String rosterFailedShifts(String error);
+
+  /// No description provided for @rosterFailedHolidays.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load holidays: {error}'**
+  String rosterFailedHolidays(String error);
+
+  /// No description provided for @rosterFailedSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load settings: {error}'**
+  String rosterFailedSettings(String error);
+
+  /// No description provided for @rosterNoShiftAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'No shift assigned'**
+  String get rosterNoShiftAssigned;
+
+  /// No description provided for @rosterUnknownShift.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown shift'**
+  String get rosterUnknownShift;
+
+  /// No description provided for @rosterSelectShift.
+  ///
+  /// In en, this message translates to:
+  /// **'Select shift'**
+  String get rosterSelectShift;
+
+  /// No description provided for @rosterNoShift.
+  ///
+  /// In en, this message translates to:
+  /// **'No shift'**
+  String get rosterNoShift;
+
+  /// No description provided for @rosterOtHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Overtime Hours'**
+  String get rosterOtHours;
+
+  /// No description provided for @rosterOtRange.
+  ///
+  /// In en, this message translates to:
+  /// **'OT hours must be between 0 and 24'**
+  String get rosterOtRange;
+
+  /// No description provided for @rosterBadgePending.
+  ///
+  /// In en, this message translates to:
+  /// **'PENDING'**
+  String get rosterBadgePending;
+
+  /// No description provided for @rosterBadgeLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'LOCKED'**
+  String get rosterBadgeLocked;
+
+  /// No description provided for @rosterLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This attendance record is locked and cannot be edited'**
+  String get rosterLocked;
+
+  /// No description provided for @rosterOtChip.
+  ///
+  /// In en, this message translates to:
+  /// **'OT: {hours}h'**
+  String rosterOtChip(String hours);
+
+  /// No description provided for @syncSavedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved offline — will sync when you\'re back online'**
+  String get syncSavedOffline;
+
+  /// No description provided for @bulkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulk Attendance'**
+  String get bulkTitle;
+
+  /// No description provided for @bulkStatTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get bulkStatTotal;
+
+  /// No description provided for @bulkStatMarked.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked'**
+  String get bulkStatMarked;
+
+  /// No description provided for @bulkStatAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Absent'**
+  String get bulkStatAbsent;
+
+  /// No description provided for @bulkPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'PRESENT'**
+  String get bulkPresent;
+
+  /// No description provided for @bulkAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'ABSENT'**
+  String get bulkAbsent;
+
+  /// No description provided for @bulkSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get bulkSelectAll;
+
+  /// No description provided for @bulkMarkRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark Remaining as Present'**
+  String get bulkMarkRemaining;
+
+  /// No description provided for @bulkNoShiftAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'No unmarked employees have a shift assigned'**
+  String get bulkNoShiftAssigned;
+
+  /// No description provided for @bulkAllMarkedFor.
+  ///
+  /// In en, this message translates to:
+  /// **'All employees already marked for {date}'**
+  String bulkAllMarkedFor(String date);
+
+  /// No description provided for @bulkResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{marked} marked ({absent} absent)'**
+  String bulkResult(int marked, int absent);
+
+  /// No description provided for @bulkSkippedNoShift.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped {count} (no shift)'**
+  String bulkSkippedNoShift(int count);
 }
 
 class _AppLocalizationsDelegate

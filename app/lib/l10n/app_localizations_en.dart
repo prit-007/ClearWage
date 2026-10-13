@@ -333,4 +333,160 @@ class AppLocalizationsEn extends AppLocalizations {
   String broadcastOpening(int opened, int total) {
     return 'Opening WhatsApp for $opened of $total';
   }
+
+  @override
+  String get commonSave => 'Save';
+
+  @override
+  String get rosterTitle => 'Daily Roster';
+
+  @override
+  String get rosterSearchHint => 'Search employees...';
+
+  @override
+  String get rosterWeeklyOff => 'Weekly Off';
+
+  @override
+  String get rosterHoliday => 'Holiday';
+
+  @override
+  String get rosterCannotMark => 'Attendance cannot be marked on this day.';
+
+  @override
+  String rosterHolidayBadge(String name) {
+    return 'HOLIDAY · $name';
+  }
+
+  @override
+  String get rosterBulkMode => 'Bulk Mode';
+
+  @override
+  String get rosterMarkAllPresent => 'Mark All Present';
+
+  @override
+  String get rosterProcessing => 'Processing...';
+
+  @override
+  String get rosterAllMarked => 'All employees already marked';
+
+  @override
+  String rosterMarkAllConfirm(int count) {
+    return 'This will mark $count unmarked employees as present. Continue?';
+  }
+
+  @override
+  String get rosterMark => 'Mark';
+
+  @override
+  String get rosterConflict =>
+      'Record changed elsewhere. Refreshed — please try again.';
+
+  @override
+  String get rosterNoShiftChosen =>
+      'No shift assigned. Choose a shift or edit staff profile to assign one.';
+
+  @override
+  String get rosterNoStaffTitle => 'No Active Staff';
+
+  @override
+  String get rosterNoStaffSubtitle =>
+      'Add employees from the directory to start tracking.';
+
+  @override
+  String get rosterFailedLoad => 'Failed to load roster';
+
+  @override
+  String rosterFailedShifts(String error) {
+    return 'Failed to load shifts: $error';
+  }
+
+  @override
+  String rosterFailedHolidays(String error) {
+    return 'Failed to load holidays: $error';
+  }
+
+  @override
+  String rosterFailedSettings(String error) {
+    return 'Failed to load settings: $error';
+  }
+
+  @override
+  String get rosterNoShiftAssigned => 'No shift assigned';
+
+  @override
+  String get rosterUnknownShift => 'Unknown shift';
+
+  @override
+  String get rosterSelectShift => 'Select shift';
+
+  @override
+  String get rosterNoShift => 'No shift';
+
+  @override
+  String get rosterOtHours => 'Overtime Hours';
+
+  @override
+  String get rosterOtRange => 'OT hours must be between 0 and 24';
+
+  @override
+  String get rosterBadgePending => 'PENDING';
+
+  @override
+  String get rosterBadgeLocked => 'LOCKED';
+
+  @override
+  String get rosterLocked =>
+      'This attendance record is locked and cannot be edited';
+
+  @override
+  String rosterOtChip(String hours) {
+    return 'OT: ${hours}h';
+  }
+
+  @override
+  String get syncSavedOffline =>
+      'Saved offline — will sync when you\'re back online';
+
+  @override
+  String get bulkTitle => 'Bulk Attendance';
+
+  @override
+  String get bulkStatTotal => 'Total';
+
+  @override
+  String get bulkStatMarked => 'Marked';
+
+  @override
+  String get bulkStatAbsent => 'Absent';
+
+  @override
+  String get bulkPresent => 'PRESENT';
+
+  @override
+  String get bulkAbsent => 'ABSENT';
+
+  @override
+  String get bulkSelectAll => 'Select All';
+
+  @override
+  String get bulkMarkRemaining => 'Mark Remaining as Present';
+
+  @override
+  String get bulkNoShiftAssigned =>
+      'No unmarked employees have a shift assigned';
+
+  @override
+  String bulkAllMarkedFor(String date) {
+    return 'All employees already marked for $date';
+  }
+
+  @override
+  String bulkResult(int marked, int absent) {
+    return '$marked marked ($absent absent)';
+  }
+
+  @override
+  String bulkSkippedNoShift(int count) {
+    return 'Skipped $count (no shift)';
+  }
 }

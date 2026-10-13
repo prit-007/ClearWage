@@ -168,5 +168,115 @@
         "type": "int"
       }
     }
+  },
+  "commonSave": "सहेजें",
+  "rosterTitle": "दैनिक रोस्टर",
+  "rosterSearchHint": "कर्मचारी खोजें...",
+  "rosterWeeklyOff": "साप्ताहिक अवकाश",
+  "rosterHoliday": "अवकाश",
+  "rosterCannotMark": "इस दिन उपस्थिति दर्ज नहीं की जा सकती।",
+  "rosterHolidayBadge": "अवकाश · {name}",
+  "@rosterHolidayBadge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterBulkMode": "बल्क मोड",
+  "rosterMarkAllPresent": "सभी को उपस्थित दर्ज करें",
+  "rosterProcessing": "प्रोसेस हो रहा है...",
+  "rosterAllMarked": "सभी कर्मचारी पहले ही दर्ज हैं",
+  "rosterMarkAllConfirm": "{count} बिना दर्ज कर्मचारियों को उपस्थित दर्ज किया जाएगा। जारी रखें?",
+  "@rosterMarkAllConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rosterMark": "दर्ज करें",
+  "rosterConflict": "रिकॉर्ड कहीं और बदला गया है। रिफ्रेश किया गया — कृपया फिर से प्रयास करें।",
+  "rosterNoShiftChosen": "कोई शिफ़्ट आवंटित नहीं है। कोई शिफ़्ट चुनें या स्टाफ़ प्रोफ़ाइल संपादित करें।",
+  "rosterNoStaffTitle": "कोई सक्रिय स्टाफ़ नहीं",
+  "rosterNoStaffSubtitle": "ट्रैकिंग शुरू करने के लिए निर्देशिका से कर्मचारी जोड़ें।",
+  "rosterFailedLoad": "रोस्टर लोड नहीं हो सका",
+  "rosterFailedShifts": "शिफ़्ट लोड नहीं हो सकीं: {error}",
+  "@rosterFailedShifts": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterFailedHolidays": "अवकाश लोड नहीं हो सके: {error}",
+  "@rosterFailedHolidays": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterFailedSettings": "सेटिंग्स लोड नहीं हो सकीं: {error}",
+  "@rosterFailedSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterNoShiftAssigned": "कोई शिफ़्ट आवंटित नहीं",
+  "rosterUnknownShift": "अज्ञात शिफ़्ट",
+  "rosterSelectShift": "शिफ़्ट चुनें",
+  "rosterNoShift": "कोई शिफ़्ट नहीं",
+  "rosterOtHours": "ओवरटाइम घंटे",
+  "rosterOtRange": "OT घंटे 0 और 24 के बीच होने चाहिए",
+  "rosterBadgePending": "प्रतीक्षित",
+  "rosterBadgeLocked": "लॉક",
+  "rosterLocked": "यह उपस्थिति रिकॉर्ड लॉक है और संपादित नहीं किया जा सकता",
+  "rosterOtChip": "OT: {hours} घंटे",
+  "@rosterOtChip": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "syncSavedOffline": "ऑफ़लाइन सहेजा गया — ऑनलाइन आने पर सिंक होगा",
+  "bulkTitle": "बल्क उपस्थिति",
+  "bulkStatTotal": "कुल",
+  "bulkStatMarked": "दर्ज",
+  "bulkStatAbsent": "अनुपस्थित",
+  "bulkPresent": "उपस्थित",
+  "bulkAbsent": "अनुपस्थित",
+  "bulkSelectAll": "सभी चुनें",
+  "bulkMarkRemaining": "बाकी को उपस्थित दर्ज करें",
+  "bulkNoShiftAssigned": "बिना दर्ज कर्मचारियों में से किसी को शिफ़्ट आवंटित नहीं है",
+  "bulkAllMarkedFor": "{date} के लिए सभी कर्मचारी पहले ही दर्ज हैं",
+  "@bulkAllMarkedFor": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "bulkResult": "{marked} दर्ज ({absent} अनुपस्थित)",
+  "@bulkResult": {
+    "placeholders": {
+      "marked": {
+        "type": "int"
+      },
+      "absent": {
+        "type": "int"
+      }
+    }
+  },
+  "bulkSkippedNoShift": "{count} छोड़े गए (कोई शिफ़्ट नहीं)",
+  "@bulkSkippedNoShift": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

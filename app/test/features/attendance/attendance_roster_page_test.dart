@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/api_client.dart';
 import 'package:clearwage/core/providers/app_providers.dart';
 import 'package:clearwage/core/providers/services.dart';
+import 'package:clearwage/core/services/locale_service.dart';
 import 'package:clearwage/data/models/auth_model.dart';
 import 'package:clearwage/data/models/roster_model.dart';
 import 'package:clearwage/data/models/shift_model.dart';
 import 'package:clearwage/data/services/attendance_service.dart';
 import 'package:clearwage/data/services/shift_service.dart';
 import 'package:clearwage/features/attendance/attendance_roster_page.dart';
+import 'package:clearwage/l10n/app_localizations.dart';
 
 class _NoOpApiClient extends ApiClient {
   _NoOpApiClient() : super(baseUrl: 'http://localhost');
@@ -73,6 +76,7 @@ Widget _buildApp(
   FakeAttendanceService fakeAttendance,
   FakeShiftService fakeShifts, {
   String role = 'owner',
+  Locale locale = const Locale('en'),
 }) {
   return ProviderScope(
     overrides: [
@@ -82,7 +86,17 @@ Widget _buildApp(
         (ref) => AppUser(token: '', tenantId: '', employeeId: '', role: role),
       ),
     ],
-    child: const MaterialApp(home: AttendanceRosterPage()),
+    child: MaterialApp(
+      locale: locale,
+      supportedLocales: supportedLocales,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: const AttendanceRosterPage(),
+    ),
   );
 }
 
@@ -102,6 +116,18 @@ void main() {
 
       expect(find.text('Daily Roster'), findsOneWidget);
       expect(find.text('Search employees...'), findsOneWidget);
+    });
+
+    testWidgets('renders Hindi labels when locale is hi', (tester) async {
+      fakeAttendance.setRows([]);
+      await tester.pumpWidget(
+        _buildApp(fakeAttendance, fakeShifts, locale: const Locale('hi')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('दैनिक रोस्टर'), findsOneWidget);
+      expect(find.text('कर्मचारी खोजें...'), findsOneWidget);
+      expect(find.text('कोई सक्रिय स्टाफ़ नहीं'), findsOneWidget);
     });
 
     testWidgets('shows all employees after load', (tester) async {

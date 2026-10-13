@@ -135,10 +135,20 @@ func (c *SettingsController) GetMailSettings(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	var accountEmail = c.settingsSvc.GetAccountEmail(r.Context(), tenantID)
+	var keyResp any
+	hasKey := settings.BrevoAPIKey != nil && *settings.BrevoAPIKey != ""
+	if hasKey {
+		k := *settings.BrevoAPIKey
+		if len(k) > 4 {
+			k = "****" + k[len(k)-4:]
+		}
+		keyResp = k
+	}
 	resp := map[string]any{
 		"tenant_id":          settings.TenantID,
 		"account_email":      accountEmail,
-		"brevo_api_key":      settings.BrevoAPIKey,
+		"brevo_api_key":      keyResp,
+		"has_custom_key":     hasKey,
 		"mail_sender_email":  settings.MailSenderEmail,
 		"mail_sender_name":   settings.MailSenderName,
 		"mail_quota_per_day": settings.MailQuotaPerDay,

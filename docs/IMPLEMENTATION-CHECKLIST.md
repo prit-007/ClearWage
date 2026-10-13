@@ -357,6 +357,10 @@ subsequent release cycles.
 
 ### Release 1.2.1 (hardening)
 
+- [x] `CHANGELOG.md` entry for `[1.2.1]`.
+- [x] `app/pubspec.yaml` bumped to `1.2.1+20`.
+- [x] `fastlane` changelog `changelogs/20.txt`.
+
 - [x] Async mail (no blocking Brevo round-trips) · branded HTML templates
 - [x] Mask tenant Brevo key in `GET /settings/mail`
 - [x] Leave approval never overwrites locked attendance

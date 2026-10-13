@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-10-12
+
+### Changed
+
+- **Branded email templates**: every transactional mail (welcome, advance,
+  dispute, leave, payroll) now renders as a polished, inline-CSS ClearWage
+  template with header, summary facts, status badge, and footer.
+- Email sending is now **asynchronous** — API handlers never block on the
+  Brevo round-trip.
+
+### Fixed
+
+- Tenant Brevo API key is **masked** in `GET /settings/mail`.
+- Approving a leave request no longer **overwrites locked attendance**
+  (payroll-finalized months).
+- Offline ledger re-sync is **idempotent** via a stable `client_id`
+  (no duplicate Jama/Udhaar entries after reconnection).
+- Sends using the **platform key** are bounded by a shared 300/day counter
+  across all tenants.
+
+### Added
+
+- Employee **My Leave Requests** page (status list with deny reason).
+
 ## [1.2.0] - 2026-10-12
 
 ### Added

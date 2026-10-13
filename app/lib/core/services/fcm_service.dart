@@ -166,6 +166,8 @@ class FcmService {
         ctx.go('/disputes');
       case 'advance_request':
         ctx.go('/my-advance-requests');
+      case 'leave':
+        ctx.go('/my-leave-requests');
       case 'holiday':
         ctx.go('/my-holidays');
       case 'shift':

@@ -55,6 +55,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       _prevOnline = online;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         unawaited(ref.read(syncServiceProvider).flush());
+        unawaited(flushDocumentUploads(ref));
         unawaited(refreshPendingSyncCount(ref));
       });
     } else if (!online) {

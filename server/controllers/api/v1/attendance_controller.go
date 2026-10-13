@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/rs/zerolog"
 	"github.com/clearwage/clearwage/config"
 	"github.com/clearwage/clearwage/middlewares"
 	"github.com/clearwage/clearwage/repositories"
 	"github.com/clearwage/clearwage/services"
 	"github.com/clearwage/clearwage/utils"
+	"github.com/go-chi/chi/v5"
+	"github.com/rs/zerolog"
 )
 
 // AttendanceController handles attendance CRUD operations, bulk upsert, and month locking.
@@ -33,16 +33,16 @@ func NewAttendanceController(attendanceService *services.AttendanceService, logg
 }
 
 type createAttendanceRequest struct {
-	EmployeeID            string     `json:"employee_id"`
-	Date                  string     `json:"date"`
-	ShiftID               string     `json:"shift_id"`
-	Status                string     `json:"status"`
-	CheckInTime           *time.Time `json:"check_in_time,omitempty"`
-	CheckOutTime          *time.Time `json:"check_out_time,omitempty"`
-	OvertimeHours         string     `json:"overtime_hours,omitempty"`
-	OvertimeRateMultiplier string    `json:"overtime_rate_multiplier,omitempty"`
-	UnitsProduced         *int32     `json:"units_produced,omitempty"`
-	Version               *int32     `json:"version,omitempty"`
+	EmployeeID             string     `json:"employee_id"`
+	Date                   string     `json:"date"`
+	ShiftID                string     `json:"shift_id"`
+	Status                 string     `json:"status"`
+	CheckInTime            *time.Time `json:"check_in_time,omitempty"`
+	CheckOutTime           *time.Time `json:"check_out_time,omitempty"`
+	OvertimeHours          string     `json:"overtime_hours,omitempty"`
+	OvertimeRateMultiplier string     `json:"overtime_rate_multiplier,omitempty"`
+	UnitsProduced          *int32     `json:"units_produced,omitempty"`
+	Version                *int32     `json:"version,omitempty"`
 }
 
 const (
@@ -455,7 +455,7 @@ func (c *AttendanceController) BulkUpsert(w http.ResponseWriter, r *http.Request
 
 		att, err := c.attendanceService.BulkUpsert(
 			r.Context(), tenantID, rec.EmployeeID, rec.Date, rec.ShiftID, rec.Status,
-			otHours, otRate, rec.UnitsProduced,
+			otHours, otRate, rec.UnitsProduced, claims.EmployeeID,
 		)
 		if err != nil {
 			if err == repositories.ErrAttendanceLocked {

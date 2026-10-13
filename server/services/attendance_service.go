@@ -76,7 +76,8 @@ func (s *AttendanceService) CreateAttendance(ctx context.Context, tenantID, empl
 		UnitsProduced:          unitsProduced,
 	})
 	if err == nil {
-		logActivity(ctx, s.querier, tenantID, editedBy, "marked_attendance", "attendance", &att.ID, nil)
+		eid := employeeID
+		logActivity(ctx, s.querier, tenantID, editedBy, "marked_attendance", "attendance", &eid, nil)
 		s.cache.Delete(fmt.Sprintf("roster:%s:%s", tenantID, date))
 		if s.triggers != nil {
 			s.triggers.NotifyAttendanceMarked(ctx, tenantID, employeeID, date, status)
@@ -154,12 +155,13 @@ func (s *AttendanceService) UpdateAttendance(ctx context.Context, id, tenantID, 
 		ExpectedVersion:        expectedVersion,
 	})
 	if err == nil {
-		logActivity(ctx, s.querier, tenantID, editedBy, "updated_attendance", "attendance", &id, nil)
+		eid := att.EmployeeID
+		logActivity(ctx, s.querier, tenantID, editedBy, "updated_attendance", "attendance", &eid, nil)
 	}
 	return att, err
 }
 
-func (s *AttendanceService) BulkUpsert(ctx context.Context, tenantID, employeeID, date, shiftID, status string, overtimeHours, overtimeRate string, unitsProduced *int32) ([]repositories.Attendance, error) {
+func (s *AttendanceService) BulkUpsert(ctx context.Context, tenantID, employeeID, date, shiftID, status string, overtimeHours, overtimeRate string, unitsProduced *int32, editedBy string) ([]repositories.Attendance, error) {
 	otHours, err := parseFloat(overtimeHours, "overtime_hours")
 	if err != nil {
 		return nil, err
@@ -179,6 +181,8 @@ func (s *AttendanceService) BulkUpsert(ctx context.Context, tenantID, employeeID
 		UnitsProduced:          unitsProduced,
 	})
 	if err == nil {
+		eid := employeeID
+		logActivity(ctx, s.querier, tenantID, editedBy, "bulk_attendance", "attendance", &eid, nil)
 		s.cache.Delete(fmt.Sprintf("roster:%s:%s", tenantID, date))
 	}
 	return result, err

@@ -8,10 +8,11 @@ import (
 	"testing"
 
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/mocks"
-	"github.com/vivek-app/vivek_app/repositories"
-	"github.com/vivek-app/vivek_app/services"
+	"github.com/shopspring/decimal"
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/mocks"
+	"github.com/clearwage/clearwage/repositories"
+	"github.com/clearwage/clearwage/services"
 	"go.uber.org/mock/gomock"
 )
 
@@ -30,12 +31,15 @@ func TestReportDailySummary_Success(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
-		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
-		Return([]repositories.Employee{{Name: "A"}, {Name: "B"}}, nil)
-
-	mockQuerier.EXPECT().
-		ListAttendanceByDate(gomock.Any(), gomock.Any()).
-		Return([]repositories.Attendance{{Status: "present"}}, nil)
+		GetDailySummary(gomock.Any(), "00000000-0000-0000-0000-000000000001", "2025-01-15").
+		Return(repositories.DailySummary{
+			Date:          "2025-01-15",
+			TotalWorkers:  2,
+			Present:       1,
+			Absent:        0,
+			OnLeave:       1,
+			TotalWageBill: decimal.NewFromInt(1000),
+		}, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/reports/daily?date=2025-01-15", nil)
 	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "e1", "owner"))
@@ -48,7 +52,7 @@ func TestReportDailySummary_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	if resp["status"] != "success" {
 		t.Errorf("expected success, got %v", resp["status"])
 	}
@@ -101,8 +105,8 @@ func TestReportDailySummary_DBError(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
-		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
-		Return(nil, errors.New("db error"))
+		GetDailySummary(gomock.Any(), "00000000-0000-0000-0000-000000000001", "2025-01-15").
+		Return(repositories.DailySummary{}, errors.New("db error"))
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/reports/daily?date=2025-01-15", nil)
 	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "e1", "owner"))
@@ -182,12 +186,11 @@ func TestReportDailySummary_Empty(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
-		ListEmployeesByTenant(gomock.Any(), gomock.Any()).
-		Return([]repositories.Employee{}, nil)
-
-	mockQuerier.EXPECT().
-		ListAttendanceByDate(gomock.Any(), gomock.Any()).
-		Return([]repositories.Attendance{}, nil)
+		GetDailySummary(gomock.Any(), "00000000-0000-0000-0000-000000000001", "2025-01-15").
+		Return(repositories.DailySummary{
+			Date:         "2025-01-15",
+			TotalWorkers: 0,
+		}, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/reports/daily?date=2025-01-15", nil)
 	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "e1", "owner"))

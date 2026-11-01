@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/pkg"
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/pkg"
 )
 
 func TestAuthMiddlewareValidToken(t *testing.T) {

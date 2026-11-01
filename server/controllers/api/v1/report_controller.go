@@ -1,16 +1,18 @@
 package v1
 
 import (
+	"bytes"
 	"encoding/csv"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/middlewares"
-	"github.com/vivek-app/vivek_app/services"
-	"github.com/vivek-app/vivek_app/utils"
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/middlewares"
+	"github.com/clearwage/clearwage/services"
+	"github.com/clearwage/clearwage/utils"
 )
 
 type ReportController struct {
@@ -30,13 +32,24 @@ func NewReportController(reportService *services.ReportService, logger *zerolog.
 func (c *ReportController) DailySummary(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || (claims.Role != "owner" && claims.Role != "supervisor") {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	date := r.URL.Query().Get("date")
 	if date == "" {
-		utils.JSONError(w, http.StatusBadRequest, "date query parameter is required")
+		utils.JSONFail(w, http.StatusBadRequest, "date query parameter is required")
+		return
+	}
+
+	if !utils.ValidateDate(date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 
@@ -53,7 +66,13 @@ func (c *ReportController) DailySummary(w http.ResponseWriter, r *http.Request) 
 func (c *ReportController) EmployeeMonthly(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -61,8 +80,18 @@ func (c *ReportController) EmployeeMonthly(w http.ResponseWriter, r *http.Reques
 	endDate := r.URL.Query().Get("end_date")
 	employeeID := r.URL.Query().Get("employee_id")
 
+	if claims.Role == "employee" && claims.EmployeeID != employeeID {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
 	if startDate == "" || endDate == "" || employeeID == "" {
-		utils.JSONError(w, http.StatusBadRequest, "employee_id, start_date, and end_date query parameters are required")
+		utils.JSONFail(w, http.StatusBadRequest, "employee_id, start_date, and end_date query parameters are required")
+		return
+	}
+
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 
@@ -79,7 +108,13 @@ func (c *ReportController) EmployeeMonthly(w http.ResponseWriter, r *http.Reques
 func (c *ReportController) WageBillTrends(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || (claims.Role != "owner" && claims.Role != "supervisor") {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
@@ -104,7 +139,13 @@ func (c *ReportController) WageBillTrends(w http.ResponseWriter, r *http.Request
 func (c *ReportController) DefaultersList(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || (claims.Role != "owner" && claims.Role != "supervisor") {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
@@ -118,22 +159,60 @@ func (c *ReportController) DefaultersList(w http.ResponseWriter, r *http.Request
 	utils.JSONSuccess(w, http.StatusOK, defaulters)
 }
 
+func (c *ReportController) AttendanceTrends(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	daysStr := r.URL.Query().Get("days")
+	days := 30
+	if daysStr != "" {
+		if d, err := strconv.Atoi(daysStr); err == nil && d > 0 && d <= 90 {
+			days = d
+		}
+	}
+
+	trends, err := c.reportService.GetAttendanceTrends(r.Context(), tenantID, days)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to get attendance trends")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to get attendance trends")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, trends)
+}
+
 func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || (claims.Role != "owner" && claims.Role != "supervisor") {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	reportType := r.URL.Query().Get("type")
 	if reportType == "" {
-		utils.JSONError(w, http.StatusBadRequest, "type query parameter is required (defaulters, trends)")
+		utils.JSONFail(w, http.StatusBadRequest, "type query parameter is required (defaulters, trends)")
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/csv")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.csv", reportType))
-	writer := csv.NewWriter(w)
+	safeName := strings.NewReplacer(
+		"../", "", "..\\", "", "/", "", "\\", "",
+		"\r", "", "\n", "", "\x00", "",
+	).Replace(reportType)
+	if safeName == "" {
+		safeName = "report"
+	}
+
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
 
 	switch reportType {
 	case "defaulters":
@@ -143,9 +222,9 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 			utils.JSONError(w, http.StatusInternalServerError, "Failed to export")
 			return
 		}
-		writer.Write([]string{"EmployeeID", "Name", "Phone", "OutstandingBalance", "MonthlyWage"})
+		_ = writer.Write([]string{"EmployeeID", "Name", "Phone", "OutstandingBalance", "MonthlyWage"})
 		for _, d := range defaulters {
-			writer.Write([]string{
+			_ = writer.Write([]string{
 				d.EmployeeID, d.Name, d.Phone,
 				fmt.Sprintf("%.2f", d.OutstandingBalance),
 				fmt.Sprintf("%.2f", d.MonthlyWage),
@@ -165,18 +244,28 @@ func (c *ReportController) ExportCSV(w http.ResponseWriter, r *http.Request) {
 			utils.JSONError(w, http.StatusInternalServerError, "Failed to export")
 			return
 		}
-		writer.Write([]string{"Month", "TotalWages", "Headcount"})
+		_ = writer.Write([]string{"Month", "TotalWages", "Headcount"})
 		for _, t := range trends {
-			writer.Write([]string{
+			_ = writer.Write([]string{
 				t.Month,
-				fmt.Sprintf("%.2f", t.TotalWages),
+				fmt.Sprintf("%.2f", t.TotalWages.InexactFloat64()),
 				strconv.Itoa(t.Headcount),
 			})
 		}
 	default:
-		utils.JSONError(w, http.StatusBadRequest, "invalid type: must be 'defaulters' or 'trends'")
+		utils.JSONFail(w, http.StatusBadRequest, "invalid type: must be 'defaulters' or 'trends'")
 		return
 	}
 
 	writer.Flush()
+	if err := writer.Error(); err != nil {
+		c.logger.Error().Err(err).Msg("csv flush error")
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.csv"`, safeName))
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		c.logger.Error().Err(err).Msg("csv write error")
+	}
 }

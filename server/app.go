@@ -1,6 +1,6 @@
-// @title           Vivek App API
+// @title           ClearWage API
 // @version         1.0
-// @description     Backend API for Vivek App — staff management, attendance, shifts, ledger
+// @description     Backend API for ClearWage — staff management, attendance, shifts, ledger
 // @host            localhost:8080
 // @BasePath        /api/v1
 // @schemes         http
@@ -11,9 +11,9 @@
 package main
 
 import (
-	"github.com/vivek-app/vivek_app/cli"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/logger"
+	"github.com/clearwage/clearwage/cli"
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/logger"
 )
 
 func main() {

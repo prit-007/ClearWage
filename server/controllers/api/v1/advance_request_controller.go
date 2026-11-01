@@ -2,16 +2,70 @@ package v1
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/middlewares"
-	"github.com/vivek-app/vivek_app/services"
-	"github.com/vivek-app/vivek_app/utils"
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/middlewares"
+	"github.com/clearwage/clearwage/services"
+	"github.com/clearwage/clearwage/utils"
 )
+
+func parseLimitOffset(r *http.Request) (int32, int32, error) {
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
+	if limitStr == "" {
+		return 20, 0, nil
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid limit parameter")
+	}
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	offset := 0
+	if offsetStr != "" {
+		offset, err = strconv.Atoi(offsetStr)
+		if err != nil {
+			return 0, 0, fmt.Errorf("invalid offset parameter")
+		}
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return int32(limit), int32(offset), nil
+}
+
+func parseAllLimitOffset(r *http.Request) (int32, int32, error) {
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
+	if limitStr == "" {
+		return 100, 0, nil
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid limit parameter")
+	}
+	if limit <= 0 || limit > 100 {
+		limit = 100
+	}
+	offset := 0
+	if offsetStr != "" {
+		offset, err = strconv.Atoi(offsetStr)
+		if err != nil {
+			return 0, 0, fmt.Errorf("invalid offset parameter")
+		}
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return int32(limit), int32(offset), nil
+}
 
 type AdvanceRequestController struct {
 	advanceRequestService *services.AdvanceRequestService
@@ -36,24 +90,33 @@ type createAdvanceRequest struct {
 func (c *AdvanceRequestController) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
 	var req createAdvanceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if req.EmployeeID == "" || req.Amount == "" {
-		utils.JSONError(w, http.StatusBadRequest, "employee_id and amount are required")
+		utils.JSONFail(w, http.StatusBadRequest, "employee_id and amount are required")
 		return
 	}
 
 	amt, err := strconv.ParseFloat(req.Amount, 64)
 	if err != nil || amt <= 0 {
-		utils.JSONError(w, http.StatusBadRequest, "amount must be a positive number")
+		utils.JSONFail(w, http.StatusBadRequest, "amount must be a positive number")
+		return
+	}
+	if amt > 100000 {
+		utils.JSONFail(w, http.StatusBadRequest, "amount must not exceed 1,00,000")
 		return
 	}
 
@@ -70,12 +133,22 @@ func (c *AdvanceRequestController) Create(w http.ResponseWriter, r *http.Request
 func (c *AdvanceRequestController) List(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
 	status := r.URL.Query().Get("status")
-	requests, err := c.advanceRequestService.ListRequests(r.Context(), tenantID, status)
+	limit, offset, err := parseLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	requests, err := c.advanceRequestService.ListRequests(r.Context(), tenantID, status, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list advance requests")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list advance requests")
@@ -92,24 +165,34 @@ type approveAdvanceRequest struct {
 func (c *AdvanceRequestController) Approve(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	claims := middlewares.GetClaims(r.Context())
 	if claims == nil {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	var req approveAdvanceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 	if req.Date == "" {
-		utils.JSONError(w, http.StatusBadRequest, "date is required")
+		now := time.Now()
+		req.Date = fmt.Sprintf("%d-%02d-%02d", now.Year(), now.Month(), now.Day())
+	}
+
+	if !utils.ValidateDate(req.Date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 
@@ -126,13 +209,18 @@ func (c *AdvanceRequestController) Approve(w http.ResponseWriter, r *http.Reques
 func (c *AdvanceRequestController) Deny(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	claims := middlewares.GetClaims(r.Context())
 	if claims == nil {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 

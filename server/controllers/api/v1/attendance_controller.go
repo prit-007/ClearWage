@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/middlewares"
+	"github.com/clearwage/clearwage/repositories"
+	"github.com/clearwage/clearwage/services"
+	"github.com/clearwage/clearwage/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/middlewares"
-	"github.com/vivek-app/vivek_app/services"
-	"github.com/vivek-app/vivek_app/utils"
 )
 
 // AttendanceController handles attendance CRUD operations, bulk upsert, and month locking.
@@ -32,15 +33,16 @@ func NewAttendanceController(attendanceService *services.AttendanceService, logg
 }
 
 type createAttendanceRequest struct {
-	EmployeeID            string     `json:"employee_id"`
-	Date                  string     `json:"date"`
-	ShiftID               string     `json:"shift_id"`
-	Status                string     `json:"status"`
-	CheckInTime           *time.Time `json:"check_in_time,omitempty"`
-	CheckOutTime          *time.Time `json:"check_out_time,omitempty"`
-	OvertimeHours         string     `json:"overtime_hours,omitempty"`
-	OvertimeRateMultiplier string    `json:"overtime_rate_multiplier,omitempty"`
-	UnitsProduced         *int32     `json:"units_produced,omitempty"`
+	EmployeeID             string     `json:"employee_id"`
+	Date                   string     `json:"date"`
+	ShiftID                string     `json:"shift_id"`
+	Status                 string     `json:"status"`
+	CheckInTime            *time.Time `json:"check_in_time,omitempty"`
+	CheckOutTime           *time.Time `json:"check_out_time,omitempty"`
+	OvertimeHours          string     `json:"overtime_hours,omitempty"`
+	OvertimeRateMultiplier string     `json:"overtime_rate_multiplier,omitempty"`
+	UnitsProduced          *int32     `json:"units_produced,omitempty"`
+	Version                *int32     `json:"version,omitempty"`
 }
 
 const (
@@ -82,29 +84,49 @@ func isValidAttendanceStatus(status string) bool {
 func (c *AttendanceController) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	claims := middlewares.GetClaims(r.Context())
 	if claims == nil {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	var req createAttendanceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if req.EmployeeID == "" || req.Date == "" || req.ShiftID == "" || req.Status == "" {
-		utils.JSONError(w, http.StatusBadRequest, "employee_id, date, shift_id, and status are required")
+		utils.JSONFail(w, http.StatusBadRequest, "employee_id, date, shift_id, and status are required")
+		return
+	}
+
+	if !utils.ValidateDate(req.Date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 
 	if !isValidAttendanceStatus(req.Status) {
-		utils.JSONError(w, http.StatusBadRequest, "invalid status: must be present, absent, half_day, paid_leave, or week_off")
+		utils.JSONFail(w, http.StatusBadRequest, "invalid status: must be present, absent, half_day, paid_leave, or week_off")
+		return
+	}
+
+	isHoliday, err := c.attendanceService.IsHoliday(r.Context(), tenantID, req.Date)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to check holiday")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to check holiday")
+		return
+	}
+	if isHoliday {
+		utils.JSONFail(w, http.StatusBadRequest, "Cannot mark attendance on a declared holiday")
 		return
 	}
 
@@ -122,6 +144,10 @@ func (c *AttendanceController) Create(w http.ResponseWriter, r *http.Request) {
 		req.CheckInTime, req.CheckOutTime, otHours, otRate, req.UnitsProduced, claims.EmployeeID,
 	)
 	if err != nil {
+		if err == repositories.ErrAttendanceLocked {
+			utils.JSONFail(w, http.StatusConflict, "Attendance is locked for this period and cannot be modified")
+			return
+		}
 		c.logger.Error().Err(err).Msg("failed to create attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to create attendance")
 		return
@@ -140,17 +166,38 @@ func (c *AttendanceController) Create(w http.ResponseWriter, r *http.Request) {
 func (c *AttendanceController) ListByDate(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	date := r.URL.Query().Get("date")
 	if date == "" {
-		utils.JSONError(w, http.StatusBadRequest, "date query parameter is required")
+		utils.JSONFail(w, http.StatusBadRequest, "date query parameter is required")
 		return
 	}
 
-	attendance, err := c.attendanceService.ListByDate(r.Context(), tenantID, date)
+	if !utils.ValidateDate(date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	attendance, err := c.attendanceService.ListByDate(r.Context(), tenantID, date, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list attendance")
@@ -158,6 +205,54 @@ func (c *AttendanceController) ListByDate(w http.ResponseWriter, r *http.Request
 	}
 
 	utils.JSONSuccess(w, http.StatusOK, attendance)
+}
+
+// Roster returns the daily roster for a given date: every active employee joined with
+// their default shift and (if present) that day's attendance record. Employees without
+// a record have nil attendance fields so the client can render "unmarked" state.
+//
+// Query param: date (string, required) — YYYY-MM-DD format
+// Success (200): utils.Response with []RosterRow payload
+// Failure (400): utils.Response — missing/invalid date parameter
+// Failure (401): utils.Response — missing or invalid JWT / tenant context
+// Failure (403): utils.Response — caller has "employee" role
+// Failure (500): utils.Response — database or service error
+func (c *AttendanceController) Roster(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	date := r.URL.Query().Get("date")
+	if date == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "date query parameter is required")
+		return
+	}
+
+	if !utils.ValidateDate(date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	rows, err := c.attendanceService.RosterByDate(r.Context(), tenantID, date)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to list roster")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to list roster")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, rows)
 }
 
 // ListByEmployee returns attendance records for a specific employee within a date range.
@@ -172,7 +267,17 @@ func (c *AttendanceController) ListByDate(w http.ResponseWriter, r *http.Request
 func (c *AttendanceController) ListByEmployee(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
@@ -181,11 +286,22 @@ func (c *AttendanceController) ListByEmployee(w http.ResponseWriter, r *http.Req
 	endDate := r.URL.Query().Get("end_date")
 
 	if startDate == "" || endDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
 		return
 	}
 
-	attendance, err := c.attendanceService.ListByEmployeeMonth(r.Context(), employeeID, tenantID, startDate, endDate)
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	attendance, err := c.attendanceService.ListByEmployeeMonth(r.Context(), employeeID, tenantID, startDate, endDate, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list employee attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list attendance")
@@ -210,37 +326,52 @@ func (c *AttendanceController) ListByEmployee(w http.ResponseWriter, r *http.Req
 func (c *AttendanceController) Update(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	claims := middlewares.GetClaims(r.Context())
 	if claims == nil {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	var req createAttendanceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
+	if req.Status != "" && !isValidAttendanceStatus(req.Status) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid status: must be present, absent, half_day, paid_leave, or week_off")
+		return
+	}
 	otHours := req.OvertimeHours
 	if otHours == "" {
 		otHours = "0"
 	}
-	otRate := req.OvertimeRateMultiplier
-	if otRate == "" {
-		otRate = "1"
+	var version int32
+	if req.Version != nil {
+		version = *req.Version
 	}
-
 	att, err := c.attendanceService.UpdateAttendance(
 		r.Context(), id, tenantID, req.ShiftID, req.Status,
-		req.CheckInTime, req.CheckOutTime, otHours, otRate, req.UnitsProduced, claims.EmployeeID,
+		req.CheckInTime, req.CheckOutTime, otHours, req.OvertimeRateMultiplier, req.UnitsProduced, claims.EmployeeID, version,
 	)
 	if err != nil {
+		if err == repositories.ErrConcurrentModification {
+			utils.JSONFail(w, http.StatusConflict, "Record was modified by another user. Please refresh and try again.")
+			return
+		}
+		if err == repositories.ErrAttendanceLocked {
+			utils.JSONFail(w, http.StatusConflict, "Attendance is locked for this period and cannot be modified")
+			return
+		}
 		c.logger.Error().Err(err).Msg("failed to update attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to update attendance")
 		return
@@ -252,7 +383,8 @@ func (c *AttendanceController) Update(w http.ResponseWriter, r *http.Request) {
 // BulkUpsert inserts or updates multiple attendance records in a single batch operation.
 // Each record is upserted independently by the service layer.
 // Duplicate employee+date combinations are overwritten.
-// If any record fails, the entire operation is rolled back and a 500 is returned.
+// If any record fails, processing stops and a 500 is returned, but previously
+// upserted records in the same batch are NOT rolled back.
 //
 // Request body: JSON object with a 'records' array of createAttendanceRequest
 // Required fields in records: employee_id, date, shift_id, status
@@ -263,7 +395,17 @@ func (c *AttendanceController) Update(w http.ResponseWriter, r *http.Request) {
 func (c *AttendanceController) BulkUpsert(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
@@ -271,17 +413,37 @@ func (c *AttendanceController) BulkUpsert(w http.ResponseWriter, r *http.Request
 		Records []createAttendanceRequest `json:"records"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if len(req.Records) == 0 {
-		utils.JSONError(w, http.StatusBadRequest, "records is required")
+		utils.JSONFail(w, http.StatusBadRequest, "records is required")
+		return
+	}
+	if len(req.Records) > 500 {
+		utils.JSONFail(w, http.StatusBadRequest, "records must not exceed 500 per request")
 		return
 	}
 
 	var results []interface{}
 	for _, rec := range req.Records {
+		if rec.Status != "" && !isValidAttendanceStatus(rec.Status) {
+			utils.JSONFail(w, http.StatusBadRequest, "invalid status: must be present, absent, half_day, paid_leave, or week_off")
+			return
+		}
+		if rec.Date != "" {
+			isHoliday, err := c.attendanceService.IsHoliday(r.Context(), tenantID, rec.Date)
+			if err != nil {
+				c.logger.Error().Err(err).Msg("failed to check holiday")
+				utils.JSONError(w, http.StatusInternalServerError, "Failed to check holiday")
+				return
+			}
+			if isHoliday {
+				utils.JSONFail(w, http.StatusBadRequest, "Cannot mark attendance on a declared holiday")
+				return
+			}
+		}
 		otHours := rec.OvertimeHours
 		if otHours == "" {
 			otHours = "0"
@@ -293,9 +455,13 @@ func (c *AttendanceController) BulkUpsert(w http.ResponseWriter, r *http.Request
 
 		att, err := c.attendanceService.BulkUpsert(
 			r.Context(), tenantID, rec.EmployeeID, rec.Date, rec.ShiftID, rec.Status,
-			otHours, otRate, rec.UnitsProduced,
+			otHours, otRate, rec.UnitsProduced, claims.EmployeeID,
 		)
 		if err != nil {
+			if err == repositories.ErrAttendanceLocked {
+				utils.JSONFail(w, http.StatusConflict, "Attendance is locked for one or more records and cannot be modified")
+				return
+			}
 			c.logger.Error().Err(err).Msg("failed to bulk upsert attendance")
 			utils.JSONError(w, http.StatusInternalServerError, "Failed to bulk upsert attendance")
 			return
@@ -319,7 +485,12 @@ func (c *AttendanceController) BulkUpsert(w http.ResponseWriter, r *http.Request
 func (c *AttendanceController) LockMonth(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -328,12 +499,17 @@ func (c *AttendanceController) LockMonth(w http.ResponseWriter, r *http.Request)
 		EndDate   string `json:"end_date"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if req.StartDate == "" || req.EndDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date are required")
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date are required")
+		return
+	}
+
+	if !utils.ValidateDate(req.StartDate) || !utils.ValidateDate(req.EndDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 

@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/middlewares"
-	"github.com/vivek-app/vivek_app/services"
-	"github.com/vivek-app/vivek_app/utils"
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/middlewares"
+	"github.com/clearwage/clearwage/services"
+	"github.com/clearwage/clearwage/utils"
 )
 
 type LeavePolicyController struct {
@@ -33,18 +33,24 @@ type upsertLeavePolicyRequest struct {
 func (c *LeavePolicyController) Upsert(w http.ResponseWriter, r *http.Request) {
 	var req upsertLeavePolicyRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || (claims.Role != "owner" && claims.Role != "supervisor") {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	if req.PaidLeaveDaysPerYear < 0 || req.UnpaidLeaveDaysPerYear < 0 {
-		utils.JSONError(w, http.StatusBadRequest, "Leave days must be non-negative")
+		utils.JSONFail(w, http.StatusBadRequest, "Leave days must be non-negative")
 		return
 	}
 
@@ -61,7 +67,7 @@ func (c *LeavePolicyController) Upsert(w http.ResponseWriter, r *http.Request) {
 func (c *LeavePolicyController) Get(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 

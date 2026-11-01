@@ -1,0 +1,6 @@
+- In-app notifications with 30-day auto-cleanup
+- Device push notifications via FCM HTTP v1 API
+- Notification bell with unread badge in AppBar
+- Notifications page with type icons and tap-to-navigate
+- Triggers: attendance, advances, ledger, disputes, payroll, welcome
+- FCM token management with auto-refresh

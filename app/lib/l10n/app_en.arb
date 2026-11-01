@@ -1,0 +1,536 @@
+{
+  "@@locale": "en",
+  "splashTitle": "ClearWage",
+  "splashSubtitle": "Workforce Management",
+  "home": "Home",
+  "staff": "Staff",
+  "attendance": "Attendance",
+  "ledger": "Ledger",
+  "profile": "Profile",
+  "more": "More",
+  "greetingMorning": "Good Morning,",
+  "greetingAfternoon": "Good Afternoon,",
+  "greetingEvening": "Good Evening,",
+  "commonSearch": "Search",
+  "language": "Language",
+  "languageEnglish": "English",
+  "languageHindi": "हिन्दी",
+  "languageGujarati": "ગુજરાતી",
+  "languageApplied": "Language updated",
+  "languageSelect": "Select Language",
+  "hubReports": "Reports",
+  "hubWorkforce": "Workforce",
+  "hubFinancial": "Financial",
+  "hubRequests": "Requests",
+  "hubActivity": "Activity",
+  "hubDebug": "Debug",
+  "hubApp": "App",
+  "hubDailySummary": "Daily Summary",
+  "hubDefaulters": "Defaulters",
+  "hubWageBillTrends": "Wage Bill Trends",
+  "hubPayrollSummary": "Payroll Summary",
+  "hubMyReports": "My Reports",
+  "hubShiftTimings": "Shift Timings",
+  "hubHolidays": "Holidays",
+  "hubLeavePolicy": "Leave Policy",
+  "hubLeaveRequests": "Leave Requests",
+  "hubMyLeaveRequests": "My Leave Requests",
+  "hubAdvanceRequests": "Advance Requests",
+  "hubMyAdvanceRequests": "My Advance Requests",
+  "hubBalanceSheet": "Balance Sheet",
+  "hubDisputes": "Disputes",
+  "hubNotifications": "Notifications",
+  "hubAppLogs": "App Logs",
+  "hubAppPin": "App PIN",
+  "hubSyncCenter": "Sync Center",
+  "hubEmailSettings": "Email Settings",
+  "hubAbout": "About",
+  "hubRecentlyUsed": "Recently Used",
+  "hubPayrollSettings": "Payroll Settings",
+  "errorSomethingWentWrong": "Something went wrong",
+  "commonRetry": "Retry",
+  "commonCancel": "Cancel",
+  "commonSubmit": "Submit",
+  "commonEmployee": "Employee",
+  "commonAmount": "Amount",
+  "commonNoteOptional": "Note (optional)",
+  "dashWorkspace": "Workspace",
+  "dashTodaysFloor": "Today's Floor",
+  "statTotalStaff": "Total Staff",
+  "statPayrollMtd": "Payroll (MTD)",
+  "statOutstandingUdhaar": "Outstanding (Udhaar)",
+  "statDefaulters": "Defaulters",
+  "statPresentToday": "Present Today",
+  "statOutstanding": "Outstanding",
+  "statOutstandingBalance": "Outstanding Balance",
+  "dashPresentCount": "{count} Present",
+  "@dashPresentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashAbsentCount": "{count} Absent",
+  "@dashAbsentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quickActions": "Quick Actions",
+  "qaAddStaff": "Add\nStaff",
+  "qaMarkAttendance": "Mark\nAttendance",
+  "qaAddJamaUdhaar": "Add\nJama/Udhaar",
+  "qaStaffDirectory": "Staff\nDirectory",
+  "qaBroadcast": "Broadcast",
+  "qaMyProfile": "My\nProfile",
+  "recentActivity": "Recent Activity",
+  "noActivityYet": "No activity recorded yet.",
+  "dashTrendsTitle": "Attendance Trends ({days} days)",
+  "@dashTrendsTitle": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dashTrendsSubtitle": "Daily attendance breakdown",
+  "dashAvgPerDay": "{avg} avg/day",
+  "@dashAvgPerDay": {
+    "placeholders": {
+      "avg": {
+        "type": "String"
+      }
+    }
+  },
+  "dashNoAttendanceTitle": "No attendance data",
+  "dashNoAttendanceSubtitle": "No attendance has been recorded for this period.",
+  "syncOfflineHint": "You are offline — changes will sync when you reconnect",
+  "syncSyncing": "Syncing…",
+  "syncPendingChanges": "{count, plural, =1{{count} change saved offline — tap to sync now} other{{count} changes saved offline — tap to sync now}}",
+  "@syncPendingChanges": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "empThisMonth": "This Month",
+  "empDaysSummary": "{present} / {total} days",
+  "@empDaysSummary": {
+    "placeholders": {
+      "present": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "empAttendancePct": "{pct}% attendance",
+  "@empAttendancePct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "qaMyAttendance": "My Attendance",
+  "qaMyPayslip": "My Payslip",
+  "qaRequestAdvance": "Request Advance",
+  "qaMyLedger": "My Ledger",
+  "advanceAmountRange": "Amount must be between ₹1 and ₹1,00,000",
+  "advanceSubmitted": "Advance request submitted",
+  "broadcastTitle": "Broadcast Message",
+  "broadcastSubtitle": "Send a WhatsApp message to selected staff.",
+  "broadcastHint": "Message (leave empty for greeting)",
+  "broadcastNoStaff": "No active staff found",
+  "broadcastNoPhone": "No phone number",
+  "broadcastSelectStaff": "Select staff to send",
+  "broadcastSendTo": "Send to {count}",
+  "@broadcastSendTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "broadcastNoWhatsapp": "Could not open WhatsApp",
+  "broadcastOpening": "Opening WhatsApp for {opened} of {total}",
+  "@broadcastOpening": {
+    "placeholders": {
+      "opened": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "commonSave": "Save",
+  "rosterTitle": "Daily Roster",
+  "rosterSearchHint": "Search employees...",
+  "rosterWeeklyOff": "Weekly Off",
+  "rosterHoliday": "Holiday",
+  "rosterCannotMark": "Attendance cannot be marked on this day.",
+  "rosterHolidayBadge": "HOLIDAY · {name}",
+  "@rosterHolidayBadge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterBulkMode": "Bulk Mode",
+  "rosterMarkAllPresent": "Mark All Present",
+  "rosterProcessing": "Processing...",
+  "rosterAllMarked": "All employees already marked",
+  "rosterMarkAllConfirm": "This will mark {count} unmarked employees as present. Continue?",
+  "@rosterMarkAllConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rosterMark": "Mark",
+  "rosterConflict": "Record changed elsewhere. Refreshed — please try again.",
+  "rosterNoShiftChosen": "No shift assigned. Choose a shift or edit staff profile to assign one.",
+  "rosterNoStaffTitle": "No Active Staff",
+  "rosterNoStaffSubtitle": "Add employees from the directory to start tracking.",
+  "rosterFailedLoad": "Failed to load roster",
+  "rosterFailedShifts": "Failed to load shifts: {error}",
+  "@rosterFailedShifts": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterFailedHolidays": "Failed to load holidays: {error}",
+  "@rosterFailedHolidays": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterFailedSettings": "Failed to load settings: {error}",
+  "@rosterFailedSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterNoShiftAssigned": "No shift assigned",
+  "rosterUnknownShift": "Unknown shift",
+  "rosterSelectShift": "Select shift",
+  "rosterNoShift": "No shift",
+  "rosterOtHours": "Overtime Hours",
+  "rosterOtRange": "OT hours must be between 0 and 24",
+  "rosterBadgePending": "PENDING",
+  "rosterBadgeLocked": "LOCKED",
+  "rosterLocked": "This attendance record is locked and cannot be edited",
+  "rosterOtChip": "OT: {hours}h",
+  "@rosterOtChip": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "syncSavedOffline": "Saved offline — will sync when you're back online",
+  "bulkTitle": "Bulk Attendance",
+  "bulkStatTotal": "Total",
+  "bulkStatMarked": "Marked",
+  "bulkStatAbsent": "Absent",
+  "bulkPresent": "PRESENT",
+  "bulkAbsent": "ABSENT",
+  "bulkSelectAll": "Select All",
+  "bulkMarkRemaining": "Mark Remaining as Present",
+  "bulkNoShiftAssigned": "No unmarked employees have a shift assigned",
+  "bulkAllMarkedFor": "All employees already marked for {date}",
+  "@bulkAllMarkedFor": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "bulkResult": "{marked} marked ({absent} absent)",
+  "@bulkResult": {
+    "placeholders": {
+      "marked": {
+        "type": "int"
+      },
+      "absent": {
+        "type": "int"
+      }
+    }
+  },
+  "bulkSkippedNoShift": "Skipped {count} (no shift)",
+  "@bulkSkippedNoShift": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonDelete": "Delete",
+  "commonUpload": "Upload",
+  "commonNotAssigned": "Not assigned",
+  "dirTitle": "Directory",
+  "dirSearchHint": "Search by name or role...",
+  "dirFailedLoad": "Failed to load staff",
+  "dirNoMatches": "No matches found",
+  "dirNoStaff": "No staff members yet",
+  "dirBalanceDue": "DUE",
+  "dirBalanceExcess": "EXCESS",
+  "dirWageDaily": "DAILY",
+  "dirWageHourly": "HOURLY",
+  "dirWageMonthly": "MONTHLY",
+  "dirWageTypeDaily": "Daily",
+  "dirWageTypeMonthly": "Monthly",
+  "dirWageTypeHourly": "Hourly",
+  "dirRoleEmployee": "Employee",
+  "dirRoleSupervisor": "Supervisor",
+  "dirFilterByRole": "FILTER BY ROLE",
+  "dirFilterByWage": "FILTER BY WAGE TYPE",
+  "dirFilterByDept": "FILTER BY DEPARTMENT",
+  "dirShowInactive": "Show Inactive",
+  "dirReset": "Reset",
+  "dirApply": "Apply",
+  "profPhotoCamera": "Capture with Camera",
+  "profPhotoGallery": "Choose from Gallery",
+  "profUploadFile": "Upload PDF / File",
+  "profCouldNotPickPhoto": "Could not pick photo",
+  "profCouldNotPickFile": "Could not pick file",
+  "profPhotoUpdated": "Photo updated",
+  "profDocUploaded": "Document uploaded",
+  "profDocQueued": "Queued: document will upload when back online",
+  "profDeleteEmployeeTitle": "Delete Employee",
+  "profDeleteEmployeeMsg": "Permanently deactivate {name}? They will no longer be able to log in.",
+  "@profDeleteEmployeeMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "profTabAudit": "Audit",
+  "profSettleTitle": "Settle Account",
+  "profSettleMsg": "This will zero out the outstanding balance. This action cannot be undone.",
+  "profSettleConfirm": "Settle",
+  "profAccountSettled": "Account settled",
+  "profFFSettle": "F&F Settle",
+  "profPayslipOpened": "Payslip opened",
+  "profPayslipSaved": "Payslip saved. Could not open automatically.",
+  "profGenerateSlip": "Generate Slip",
+  "profTooltipCall": "Call",
+  "profTooltipWhatsapp": "WhatsApp",
+  "profKycPan": "PAN Number",
+  "profKycAadhaar": "Aadhaar Number",
+  "profKycPf": "PF / UAN",
+  "profKycBank": "Bank Account",
+  "profKycIfsc": "IFSC",
+  "profKycUpi": "UPI ID",
+  "profKycEmergency": "Emergency Contact",
+  "profKycEmergencyPhone": "Emergency Phone",
+  "profKycAddress": "Current Address",
+  "profKycPermanentAddress": "Permanent Address",
+  "profKycHealth": "Health Notes",
+  "profBlockEmployment": "Employment Details",
+  "profBlockFinancial": "Financial Config",
+  "profBlockKyc": "KYC & Identity",
+  "profDesignation": "Designation",
+  "profShift": "Shift",
+  "profManager": "Manager",
+  "profWageType": "Wage Type",
+  "profWageDaily": "Daily Wage",
+  "profWageMonthly": "Monthly",
+  "profWageHourly": "Hourly",
+  "profBaseRate": "Base Rate",
+  "profPerDay": " / day",
+  "profPerHr": " / hr",
+  "profKycDocs": "KYC DOCUMENTS",
+  "profDocAadhaar": "Aadhaar Card",
+  "profDocPan": "PAN Card",
+  "profDocBank": "Bank Passbook",
+  "profDocUploadedStatus": "Uploaded & Verified",
+  "profDocActionRequired": "Action Required",
+  "profDocDeleteTitle": "Delete Document",
+  "profDocDeleteMsg": "Remove this document? This cannot be undone.",
+  "profDocsFailed": "Could not load documents",
+  "profCouldNotOpenDoc": "Could not open document",
+  "profDocument": "Document",
+  "profDocumentPreview": "Document Preview",
+  "profOpenDocument": "Open Document",
+  "profPresent": "Present",
+  "profAbsent": "Absent",
+  "profHalf": "Half",
+  "profHalfDay": "Half Day",
+  "profPaidLeave": "Paid Leave",
+  "profWeekOff": "Week Off",
+  "profRecentLogs": "RECENT LOGS",
+  "profNoAtt": "No attendance records for this month",
+  "profNetOutstanding": "NET OUTSTANDING",
+  "profPayableByEmployee": "Payable by Employee",
+  "profRecentEntries": "RECENT ENTRIES",
+  "profNoLedger": "No ledger entries this month",
+  "profWageAdded": "Wage Added",
+  "profAdvanceTaken": "Advance Taken",
+  "profNoAudit": "No audit activity recorded",
+  "formErrNameRequired": "Employee name is required",
+  "formErrPhoneRequired": "Phone number is required",
+  "formErrPhoneInvalid": "Enter a valid 10-digit phone number",
+  "formErrWageRequired": "Wage amount is required",
+  "formErrWageInvalid": "Wage must be a valid number",
+  "formErrIfsc": "Invalid IFSC code format (e.g., SBIN0001234)",
+  "formErrEnterName": "Enter employee name",
+  "formErrAmountInvalid": "Enter a valid amount",
+  "formErrPan": "Enter a valid PAN (e.g. ABCDE1234F)",
+  "formErrAadhaar": "Aadhaar must be exactly 12 digits",
+  "formDiscardTitle": "Discard changes?",
+  "formDiscardMsg": "You have unsaved changes. Leave anyway?",
+  "formLeave": "Leave",
+  "formEditProfile": "Edit Profile",
+  "formOnboardStaff": "Onboard Staff",
+  "formSectionCore": "CORE IDENTITY",
+  "formSectionComp": "COMPENSATION & ROLE",
+  "formSectionKyc": "KYC & FINANCIAL",
+  "formSectionEmergency": "EMERGENCY & ADDRESS",
+  "formFullName": "Full Name *",
+  "formPhone": "Phone Number *",
+  "formEmail": "Email (Optional)",
+  "formDesignation": "Designation / Title (Optional)",
+  "formDepartment": "Department (Optional)",
+  "formWageFixedMonthly": "Fixed Monthly",
+  "formWageAmount": "Wage Amount (₹) *",
+  "formDoj": "Date of Joining (Optional)",
+  "formDojHint": "Tap to select date",
+  "formPan": "PAN Number (Optional)",
+  "formAadhaar": "Aadhaar Number (Optional)",
+  "formPf": "PF / UAN Number (Optional)",
+  "formBank": "Bank Account Number (Optional)",
+  "formIfsc": "Bank IFSC (Optional)",
+  "formUpi": "UPI ID (Optional)",
+  "formEmergencyName": "Emergency Contact Name (Optional)",
+  "formEmergencyPhone": "Emergency Contact Phone (Optional)",
+  "formCurrentAddress": "Current Address (Optional)",
+  "formPermanentAddress": "Permanent Address (Optional)",
+  "formHealthNotes": "Health Notes (Optional)",
+  "formUpdateProfile": "Update Profile",
+  "formOnboardEmployee": "Onboard Employee",
+  "formPhotoSaveFailed": "Employee saved but photo upload failed. {error}",
+  "@formPhotoSaveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "formDefaultShift": "Default Shift (Optional)",
+  "formCouldNotLoadShifts": "Could not load shifts",
+  "formAssignShift": "Assign Shift",
+  "formAccessLevel": "System Access Level",
+  "formRoleEmployee": "Standard Employee",
+  "formRoleSupervisor": "Manager / Supervisor",
+  "formReportingManager": "Reporting Manager",
+  "formNoSupervisors": "No supervisors available",
+  "formSelectDots": "Select…",
+  "formNone": "None",
+  "ledgerHub": "Ledger Hub",
+  "ledgerSearchHint": "Search by name or note...",
+  "ledgerFailedEntries": "Failed to load entries",
+  "ledgerRecentTxns": "Recent Transactions",
+  "ledgerNoEntries": "No entries found",
+  "ledgerNoEntriesHint": "Try a different search term or date range.",
+  "ledgerNewEntry": "New Entry",
+  "ledgerNetBalanceMtd": "Net Balance (MTD)",
+  "ledgerTotalJama": "Total Jama",
+  "ledgerTotalUdhaar": "Total Udhaar",
+  "ledgerJama": "Jama",
+  "ledgerUdhaar": "Udhaar",
+  "ledgerDeleteEntryTitle": "Delete Entry",
+  "ledgerDeleteEntryMsg": "Delete ₹{amount} {type} entry for {name}?",
+  "@ledgerDeleteEntryMsg": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ledgerEdit": "Edit",
+  "ledgerRaiseDispute": "Raise Dispute",
+  "commonFailedLoad": "Failed to load",
+  "balanceNoData": "No balance data",
+  "balanceNoDataHint": "No employee balances found.",
+  "balanceEmployeeCount": "{count, plural, =1{{count} Employee} other{{count} Employees}}",
+  "@balanceEmployeeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "balanceTotalOutstanding": "Total Outstanding",
+  "balanceSettled": "SETTLED",
+  "ledgerErrSelectEmployee": "Please select an employee",
+  "ledgerErrEnterAmount": "Please enter an amount",
+  "ledgerErrInvalidAmount": "Please enter a valid amount",
+  "ledgerDiscardTitle": "Discard Entry",
+  "ledgerDiscardMsg": "You have unsaved changes. Discard them?",
+  "ledgerDiscardConfirm": "Discard",
+  "ledgerEditEntry": "Edit Entry",
+  "ledgerGiveAdvance": "Give Advance",
+  "ledgerDeduct": "Deduct",
+  "ledgerSelectEmployee": "Select Employee",
+  "ledgerNotesOptional": "Notes (Optional)",
+  "ledgerUpdateEntry": "Update Entry",
+  "ledgerSaveEntry": "Save Entry",
+  "ledgerTransactionDate": "Transaction Date",
+  "ledgerTodayDate": "Today, {date}",
+  "@ledgerTodayDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ledgerNoEmployees": "No employees found",
+  "leaveRequestSubmitted": "Leave request submitted",
+  "leaveRequestTitle": "Request Leave",
+  "leaveUnpaid": "Unpaid Leave",
+  "leavePickRange": "Tap to pick date range",
+  "leaveReasonOptional": "Reason (optional)",
+  "commonSubmitting": "Submitting…",
+  "leaveSubmitRequest": "Submit Request",
+  "myAttTitle": "My Attendance",
+  "myAttRecordSubject": "attendance record",
+  "myAttMonthlyLog": "Monthly Log",
+  "myAttNoRecords": "No Records",
+  "myAttNoRecordsHint": "No attendance records for this month.",
+  "myAttReportError": "Report Error",
+  "myAttOt": "OT {hours}h",
+  "@myAttOt": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "myLedgerNoEntries": "No entries",
+  "myLedgerNoEntriesHint": "No ledger entries for this month.",
+  "myLedgerWagesEarned": "Wages Earned",
+  "myLedgerAdvancesTaken": "Advances Taken",
+  "myLedgerNetPosition": "Net Position"
+}

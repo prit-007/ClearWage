@@ -3,6 +3,8 @@ package utils
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/rs/zerolog/log"
 )
 
 type Response struct {
@@ -14,17 +16,23 @@ type Response struct {
 func JSONSuccess(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(Response{Status: "success", Data: data})
+	if err := json.NewEncoder(w).Encode(Response{Status: "success", Data: data}); err != nil {
+		log.Warn().Err(err).Msg("json encode error (success)")
+	}
 }
 
 func JSONFail(w http.ResponseWriter, statusCode int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(Response{Status: "fail", Message: message})
+	if err := json.NewEncoder(w).Encode(Response{Status: "fail", Message: message}); err != nil {
+		log.Warn().Err(err).Msg("json encode error (fail)")
+	}
 }
 
 func JSONError(w http.ResponseWriter, statusCode int, err string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(Response{Status: "error", Message: err})
+	if err := json.NewEncoder(w).Encode(Response{Status: "error", Message: err}); err != nil {
+		log.Warn().Err(err).Msg("json encode error (error)")
+	}
 }

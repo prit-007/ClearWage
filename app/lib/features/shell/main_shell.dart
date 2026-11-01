@@ -1,0 +1,285 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+
+import '../../core/app_info.dart';
+import '../../core/helpers.dart';
+import '../../core/providers/app_providers.dart';
+import '../../core/providers/services.dart';
+import '../../core/providers/sync_providers.dart';
+import '../../core/responsive.dart';
+import '../../core/services/connectivity_service.dart';
+import '../../core/services/fcm_service.dart';
+import '../../core/services/locale_service.dart';
+import '../../core/token_storage.dart';
+import '../../l10n/app_localizations.dart';
+import '../../core/widgets/notification_badge.dart';
+import '../../core/widgets/offline_banner.dart';
+import '../../core/widgets/app_lock_overlay.dart';
+import '../../core/widgets/update_checker.dart';
+
+class MainShell extends ConsumerStatefulWidget {
+  final StatefulNavigationShell navigationShell;
+  const MainShell({super.key, required this.navigationShell});
+  @override
+  ConsumerState<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends ConsumerState<MainShell> {
+  bool _fcmInitialized = false;
+  bool _syncWatched = false;
+  bool _prevOnline = true;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_syncWatched) {
+      _syncWatched = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(refreshPendingSyncCount(ref));
+        unawaited(initLocale(ref));
+      });
+    }
+    // Initialize FCM once after auth is confirmed
+    if (!_fcmInitialized) {
+      _fcmInitialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(fcmServiceProvider).initialize(ref);
+      });
+    }
+
+    final online = ref.watch(connectivityProvider).value ?? true;
+    if (online && !_prevOnline) {
+      _prevOnline = online;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(ref.read(syncServiceProvider).flush());
+        unawaited(flushDocumentUploads(ref));
+        unawaited(refreshPendingSyncCount(ref));
+      });
+    } else if (!online) {
+      _prevOnline = online;
+    }
+
+    final cs = Theme.of(context).colorScheme;
+    final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
+    final isWide = AppBreakpoints.isDesktop(context);
+    final appVersion = ref.watch(appInfoProvider).valueOrNull;
+
+    ref.listen<bool>(sessionExpiredProvider, (prev, next) {
+      if (next && prev != true) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          showInfoDialog(
+            context,
+            title: 'Session Expired',
+            message:
+                'Your session has expired. Any unsaved changes will be lost. Please sign in again to continue.',
+            buttonLabel: 'Sign In',
+            icon: PhosphorIconsRegular.warningCircle,
+            iconColor: Theme.of(context).colorScheme.error,
+            onButtonPressed: () {
+              ref.read(sessionExpiredProvider.notifier).state = false;
+              context.go('/login');
+            },
+          );
+        });
+      }
+    });
+
+    final homeLabel = AppLocalizations.of(context).home;
+    final moreLabel = AppLocalizations.of(context).more;
+    final staffLabel = AppLocalizations.of(context).staff;
+    final attendanceLabel = AppLocalizations.of(context).attendance;
+    final ledgerLabel = AppLocalizations.of(context).ledger;
+    final profileLabel = AppLocalizations.of(context).profile;
+    final navItems = <NavigationDestination>[
+      NavigationDestination(
+        icon: const Icon(Icons.home_outlined),
+        selectedIcon: const Icon(Icons.home),
+        label: homeLabel,
+      ),
+      if (isAdmin) ...[
+        NavigationDestination(
+          icon: const Icon(Icons.groups_outlined),
+          selectedIcon: const Icon(Icons.groups),
+          label: staffLabel,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.event_available_outlined),
+          selectedIcon: const Icon(Icons.event_available),
+          label: attendanceLabel,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.account_balance_wallet_outlined),
+          selectedIcon: const Icon(Icons.account_balance_wallet),
+          label: ledgerLabel,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.more_horiz_outlined),
+          selectedIcon: const Icon(Icons.more_horiz),
+          label: moreLabel,
+        ),
+      ] else ...[
+        NavigationDestination(
+          icon: const Icon(Icons.event_available_outlined),
+          selectedIcon: const Icon(Icons.event_available),
+          label: attendanceLabel,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.account_balance_wallet_outlined),
+          selectedIcon: const Icon(Icons.account_balance_wallet),
+          label: ledgerLabel,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.person_outlined),
+          selectedIcon: const Icon(Icons.person),
+          label: profileLabel,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.more_horiz_outlined),
+          selectedIcon: const Icon(Icons.more_horiz),
+          label: moreLabel,
+        ),
+      ],
+    ];
+
+    final effectiveIdx = widget.navigationShell.currentIndex;
+
+    final railDestinations = navItems
+        .map(
+          (item) => NavigationRailDestination(
+            icon: item.icon,
+            selectedIcon: item.selectedIcon,
+            label: Text(item.label),
+          ),
+        )
+        .toList();
+
+    return UpdateChecker(
+      child: AppLockOverlay(
+        child: Scaffold(
+          appBar: AppBar(
+            backgroundColor: cs.surface,
+            elevation: 0,
+            title: Text(
+              'ClearWage',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            actions: [
+              NotificationBadge(
+                child: IconButton(
+                  icon: Icon(
+                    PhosphorIconsRegular.bell,
+                    color: cs.onSurfaceVariant,
+                  ),
+                  onPressed: () => context.push('/notifications'),
+                ),
+              ),
+              PopupMenuButton<String>(
+                icon: PhosphorIcon(
+                  PhosphorIconsRegular.userCircle,
+                  color: cs.onSurfaceVariant,
+                ),
+                onSelected: (value) async {
+                  if (value == 'profile') {
+                    unawaited(
+                      Future<void>.microtask(() {
+                        if (context.mounted) context.push('/my-profile');
+                      }),
+                    );
+                  } else if (value == 'signout') {
+                    await ref.read(authServiceProvider).logout();
+                    await TokenStorage.clear();
+                    if (!context.mounted) return;
+                    ref.read(tokenProvider.notifier).state = null;
+                    ref.read(userInfoProvider.notifier).state = null;
+                    if (!context.mounted) return;
+                    context.go('/login');
+                  }
+                },
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: 'profile',
+                    child: Text('My Profile'),
+                  ),
+                  PopupMenuItem(
+                    enabled: false,
+                    child: Text(
+                      'v${appVersion?.version ?? '0.0.0'}',
+                      style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  const PopupMenuItem(
+                    value: 'signout',
+                    child: Text('Sign Out'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          body: OfflineBanner(
+            child: isWide
+                ? Row(
+                    children: [
+                      NavigationRail(
+                        selectedIndex: effectiveIdx,
+                        onDestinationSelected: (i) {
+                          widget.navigationShell.goBranch(
+                            i,
+                            initialLocation:
+                                i == widget.navigationShell.currentIndex,
+                          );
+                        },
+                        labelType: NavigationRailLabelType.all,
+                        backgroundColor: cs.surface,
+                        indicatorColor: cs.primaryContainer.withValues(
+                          alpha: 0.5,
+                        ),
+                        selectedIconTheme: IconThemeData(color: cs.primary),
+                        selectedLabelTextStyle: TextStyle(
+                          color: cs.primary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
+                        unselectedLabelTextStyle: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                        destinations: railDestinations,
+                      ),
+                      VerticalDivider(
+                        width: 1,
+                        thickness: 1,
+                        color: cs.outlineVariant.withValues(alpha: 0.3),
+                      ),
+                      Expanded(child: widget.navigationShell),
+                    ],
+                  )
+                : widget.navigationShell,
+          ),
+          bottomNavigationBar: isWide
+              ? null
+              : NavigationBar(
+                  selectedIndex: effectiveIdx,
+                  onDestinationSelected: (i) {
+                    widget.navigationShell.goBranch(
+                      i,
+                      initialLocation: i == widget.navigationShell.currentIndex,
+                    );
+                  },
+                  destinations: navItems,
+                ),
+        ),
+      ),
+    );
+  }
+}

@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/middlewares"
+	"github.com/clearwage/clearwage/repositories"
+	"github.com/clearwage/clearwage/services"
+	"github.com/clearwage/clearwage/utils"
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/middlewares"
-	"github.com/vivek-app/vivek_app/repositories"
-	"github.com/vivek-app/vivek_app/services"
-	"github.com/vivek-app/vivek_app/utils"
 )
 
 type SettingsController struct {
@@ -33,26 +33,20 @@ type upsertPayrollSettingsRequest struct {
 	OTRounding          int32   `json:"ot_rounding"`
 	WageBasis           string  `json:"wage_basis"`
 	WeekOffPaid         bool    `json:"week_off_paid"`
+	WeeklyOffs          string  `json:"weekly_offs"`
 }
 
 func (c *SettingsController) GetPayrollSettings(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	settings, err := c.settingsSvc.GetPayrollSettings(r.Context(), tenantID)
 	if err != nil {
-		settings = repositories.TenantConfig{
-			TenantID:            tenantID,
-			OTTrigger:           "after_shift_end",
-			OTThresholdHours:    0,
-			OTMultiplierDefault: 1.5,
-			OTRounding:          30,
-			WageBasis:           "calendar",
-			WeekOffPaid:         false,
-		}
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to load payroll settings")
+		return
 	}
 
 	utils.JSONSuccess(w, http.StatusOK, settings)
@@ -61,30 +55,43 @@ func (c *SettingsController) GetPayrollSettings(w http.ResponseWriter, r *http.R
 func (c *SettingsController) UpsertPayrollSettings(w http.ResponseWriter, r *http.Request) {
 	var req upsertPayrollSettingsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
 	if req.OTTrigger != "after_shift_end" && req.OTTrigger != "after_daily_hours" {
-		utils.JSONError(w, http.StatusBadRequest, "ot_trigger must be after_shift_end or after_daily_hours")
+		utils.JSONFail(w, http.StatusBadRequest, "ot_trigger must be after_shift_end or after_daily_hours")
 		return
 	}
-	if req.OTMultiplierDefault != 1.0 && req.OTMultiplierDefault != 1.5 && req.OTMultiplierDefault != 2.0 {
-		utils.JSONError(w, http.StatusBadRequest, "ot_multiplier_default must be 1.0, 1.5, or 2.0")
+	if req.OTMultiplierDefault < 1.0 || req.OTMultiplierDefault > 2.0 {
+		utils.JSONFail(w, http.StatusBadRequest, "ot_multiplier_default must be between 1.0 and 2.0")
 		return
 	}
-	if req.OTRounding != 15 && req.OTRounding != 30 && req.OTRounding != 60 {
-		utils.JSONError(w, http.StatusBadRequest, "ot_rounding must be 15, 30, or 60")
+	if req.OTRounding < 0 {
+		utils.JSONFail(w, http.StatusBadRequest, "ot_rounding must be a non-negative integer")
+		return
+	}
+	if req.OTRounding != 0 && !utils.ValidateOTRounding(int(req.OTRounding)) {
+		utils.JSONFail(w, http.StatusBadRequest, "ot_rounding must be one of: 15, 30, or 60")
+		return
+	}
+	if req.OTThresholdHours < 0 || req.OTThresholdHours > 24 {
+		utils.JSONFail(w, http.StatusBadRequest, "ot_threshold_hours must be between 0 and 24")
 		return
 	}
 	if req.WageBasis != "calendar" && req.WageBasis != "fixed_26" && req.WageBasis != "fixed_30" {
-		utils.JSONError(w, http.StatusBadRequest, "wage_basis must be calendar, fixed_26, or fixed_30")
+		utils.JSONFail(w, http.StatusBadRequest, "wage_basis must be calendar, fixed_26, or fixed_30")
 		return
 	}
 
@@ -96,6 +103,7 @@ func (c *SettingsController) UpsertPayrollSettings(w http.ResponseWriter, r *htt
 		OTRounding:          req.OTRounding,
 		WageBasis:           req.WageBasis,
 		WeekOffPaid:         req.WeekOffPaid,
+		WeeklyOffs:          req.WeeklyOffs,
 	})
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to upsert payroll settings")
@@ -103,5 +111,79 @@ func (c *SettingsController) UpsertPayrollSettings(w http.ResponseWriter, r *htt
 		return
 	}
 
+	utils.JSONSuccess(w, http.StatusOK, settings)
+}
+
+type upsertMailSettingsRequest struct {
+	AccountEmail    *string `json:"account_email"`
+	BrevoAPIKey     *string `json:"brevo_api_key"`
+	MailSenderEmail *string `json:"mail_sender_email"`
+	MailSenderName  *string `json:"mail_sender_name"`
+	MailQuotaPerDay *int32  `json:"mail_quota_per_day"`
+}
+
+func (c *SettingsController) GetMailSettings(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	settings, err := c.settingsSvc.GetMailSettings(r.Context(), tenantID)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to load mail settings")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to load mail settings")
+		return
+	}
+	var accountEmail = c.settingsSvc.GetAccountEmail(r.Context(), tenantID)
+	var keyResp any
+	hasKey := settings.BrevoAPIKey != nil && *settings.BrevoAPIKey != ""
+	if hasKey {
+		k := *settings.BrevoAPIKey
+		if len(k) > 4 {
+			k = "****" + k[len(k)-4:]
+		}
+		keyResp = k
+	}
+	resp := map[string]any{
+		"tenant_id":          settings.TenantID,
+		"account_email":      accountEmail,
+		"brevo_api_key":      keyResp,
+		"has_custom_key":     hasKey,
+		"mail_sender_email":  settings.MailSenderEmail,
+		"mail_sender_name":   settings.MailSenderName,
+		"mail_quota_per_day": settings.MailQuotaPerDay,
+		"mail_sent_today":    settings.MailSentToday,
+		"mail_sent_date":     settings.MailSentDate,
+	}
+	utils.JSONSuccess(w, http.StatusOK, resp)
+}
+
+func (c *SettingsController) UpsertMailSettings(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if tenantID == "" || claims == nil {
+		return
+	}
+	var req upsertMailSettingsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+	if req.MailQuotaPerDay != nil && (*req.MailQuotaPerDay < 1 || *req.MailQuotaPerDay > 3000) {
+		utils.JSONFail(w, http.StatusBadRequest, "mail_quota_per_day must be between 1 and 3000")
+		return
+	}
+	settings, err := c.settingsSvc.UpsertMailSettings(r.Context(), repositories.UpsertTenantConfigParams{
+		TenantID:        tenantID,
+		BrevoAPIKey:     req.BrevoAPIKey,
+		MailSenderEmail: req.MailSenderEmail,
+		MailSenderName:  req.MailSenderName,
+		MailQuotaPerDay: req.MailQuotaPerDay,
+	}, req.AccountEmail)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to save mail settings")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to save mail settings")
+		return
+	}
 	utils.JSONSuccess(w, http.StatusOK, settings)
 }

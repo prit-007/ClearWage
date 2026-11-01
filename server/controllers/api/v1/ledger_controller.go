@@ -6,10 +6,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/middlewares"
-	"github.com/vivek-app/vivek_app/services"
-	"github.com/vivek-app/vivek_app/utils"
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/middlewares"
+	"github.com/clearwage/clearwage/repositories"
+	"github.com/clearwage/clearwage/services"
+	"github.com/clearwage/clearwage/utils"
 )
 
 type LedgerController struct {
@@ -32,38 +33,59 @@ type createLedgerRequest struct {
 	Type       string `json:"type"`
 	Amount     string `json:"amount"`
 	Note       string `json:"note"`
+	Version    *int32 `json:"version,omitempty"`
+	ClientID   string `json:"client_id,omitempty"`
 }
 
 func (c *LedgerController) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	claims := middlewares.GetClaims(r.Context())
 	if claims == nil {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	var req createLedgerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	if req.EmployeeID == "" || req.Date == "" || req.Type == "" || req.Amount == "" {
-		utils.JSONError(w, http.StatusBadRequest, "employee_id, date, type, and amount are required")
+		utils.JSONFail(w, http.StatusBadRequest, "employee_id, date, type, and amount are required")
+		return
+	}
+
+	if len(req.Note) > 500 {
+		utils.JSONFail(w, http.StatusBadRequest, "note must be at most 500 characters")
+		return
+	}
+
+	if !utils.ValidateDate(req.Date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 
 	if req.Type != "jama" && req.Type != "udhaar" {
-		utils.JSONError(w, http.StatusBadRequest, "type must be 'jama' or 'udhaar'")
+		utils.JSONFail(w, http.StatusBadRequest, "type must be 'jama' or 'udhaar'")
 		return
 	}
 
-	entry, err := c.ledgerService.CreateEntry(r.Context(), tenantID, req.EmployeeID, req.Date, req.Type, req.Amount, req.Note, claims.EmployeeID)
+	var clientID *string
+	if req.ClientID != "" {
+		clientID = &req.ClientID
+	}
+	entry, err := c.ledgerService.CreateEntry(r.Context(), tenantID, req.EmployeeID, req.Date, req.Type, req.Amount, req.Note, claims.EmployeeID, clientID)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to create ledger entry")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to create entry")
@@ -76,7 +98,12 @@ func (c *LedgerController) CreateEntry(w http.ResponseWriter, r *http.Request) {
 func (c *LedgerController) ListByEmployee(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -85,11 +112,21 @@ func (c *LedgerController) ListByEmployee(w http.ResponseWriter, r *http.Request
 	endDate := r.URL.Query().Get("end_date")
 
 	if startDate == "" || endDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
 		return
 	}
 
-	entries, err := c.ledgerService.ListByEmployeeMonth(r.Context(), employeeID, tenantID, startDate, endDate)
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	entries, err := c.ledgerService.ListByEmployeeMonth(r.Context(), employeeID, tenantID, startDate, endDate, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list ledger entries")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list entries")
@@ -102,7 +139,12 @@ func (c *LedgerController) ListByEmployee(w http.ResponseWriter, r *http.Request
 func (c *LedgerController) GetBalance(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -115,24 +157,39 @@ func (c *LedgerController) GetBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.JSONSuccess(w, http.StatusOK, map[string]int32{"balance": balance})
+	utils.JSONSuccess(w, http.StatusOK, map[string]float64{"balance": balance})
 }
 
 func (c *LedgerController) ListByTenant(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
 	if startDate == "" || endDate == "" {
-		utils.JSONError(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
 		return
 	}
 
-	entries, err := c.ledgerService.ListByTenant(r.Context(), tenantID, startDate, endDate)
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	limit, offset, err := parseLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	entries, err := c.ledgerService.ListByTenant(r.Context(), tenantID, startDate, endDate, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list global ledger feed")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list entries")
@@ -145,7 +202,12 @@ func (c *LedgerController) ListByTenant(w http.ResponseWriter, r *http.Request) 
 func (c *LedgerController) GetTotalOutstanding(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
@@ -159,6 +221,49 @@ func (c *LedgerController) GetTotalOutstanding(w http.ResponseWriter, r *http.Re
 	utils.JSONSuccess(w, http.StatusOK, map[string]float64{"total_outstanding": total})
 }
 
+// Summary returns the aggregated jama/udhaar totals and net balance for the tenant
+// within a date range, plus the running total outstanding across all employees.
+//
+// Query params: start_date, end_date (required, YYYY-MM-DD)
+// Success (200): utils.Response with services.LedgerSummary payload
+// Failure (400): utils.Response — missing/invalid date range
+// Failure (401): utils.Response — missing or invalid JWT / tenant context
+// Failure (403): utils.Response — caller has "employee" role
+// Failure (500): utils.Response — database or service error
+func (c *LedgerController) Summary(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
+		return
+	}
+
+	startDate := r.URL.Query().Get("start_date")
+	endDate := r.URL.Query().Get("end_date")
+	if startDate == "" || endDate == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date query parameters are required")
+		return
+	}
+
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	summary, err := c.ledgerService.GetSummary(r.Context(), tenantID, startDate, endDate)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to get ledger summary")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to get ledger summary")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, summary)
+}
+
 type settleRequest struct {
 	Date string `json:"date"`
 }
@@ -166,24 +271,34 @@ type settleRequest struct {
 func (c *LedgerController) SettleAccount(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	claims := middlewares.GetClaims(r.Context())
 	if claims == nil {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
 		return
 	}
 
 	employeeID := chi.URLParam(r, "id")
 	var req settleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 	if req.Date == "" {
-		utils.JSONError(w, http.StatusBadRequest, "date is required")
+		utils.JSONFail(w, http.StatusBadRequest, "date is required")
+		return
+	}
+
+	if !utils.ValidateDate(req.Date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
 		return
 	}
 
@@ -191,6 +306,147 @@ func (c *LedgerController) SettleAccount(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to settle account")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to settle account")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, entry)
+}
+
+func (c *LedgerController) BalanceSummary(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
+		return
+	}
+
+	summary, err := c.ledgerService.GetEmployeeBalanceSummary(r.Context(), tenantID)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to get balance summary")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to get balance summary")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, summary)
+}
+
+func (c *LedgerController) UpdateEntry(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	entryID := chi.URLParam(r, "id")
+	var req createLedgerRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	if req.Date == "" || req.Type == "" || req.Amount == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "date, type, and amount are required")
+		return
+	}
+
+	if !utils.ValidateDate(req.Date) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	if req.Type != "jama" && req.Type != "udhaar" {
+		utils.JSONFail(w, http.StatusBadRequest, "type must be 'jama' or 'udhaar'")
+		return
+	}
+
+	entry, err := c.ledgerService.UpdateEntry(r.Context(), entryID, tenantID, req.Date, req.Type, req.Amount, req.Note, func() int32 {
+		if req.Version != nil {
+			return *req.Version
+		}
+		return 0
+	}())
+	if err != nil {
+		if err == repositories.ErrConcurrentModification {
+			utils.JSONFail(w, http.StatusConflict, "Record was modified by another user. Please refresh and try again.")
+			return
+		}
+		c.logger.Error().Err(err).Msg("failed to update ledger entry")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to update entry")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, entry)
+}
+
+func (c *LedgerController) DeleteEntry(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	entryID := chi.URLParam(r, "id")
+
+	err := c.ledgerService.DeleteEntry(r.Context(), entryID, tenantID)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to delete ledger entry")
+		utils.JSONError(w, http.StatusInternalServerError, "Failed to delete entry")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+func (c *LedgerController) GetEntry(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	if tenantID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil {
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if claims.Role == "employee" {
+		utils.JSONFail(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+
+	entryID := chi.URLParam(r, "id")
+
+	entry, err := c.ledgerService.GetEntryByID(r.Context(), entryID, tenantID)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to get ledger entry")
+		utils.JSONError(w, http.StatusNotFound, "Entry not found")
 		return
 	}
 

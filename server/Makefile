@@ -19,6 +19,9 @@ migrate-down:
 test:
 	go test ./...
 
+lint:
+	golangci-lint run ./...
+
 clean-test-cache:
 	go clean -testcache && go test ./...
 

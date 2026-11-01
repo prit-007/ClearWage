@@ -2,12 +2,11 @@ package cli
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/pressly/goose/v3"
 	"github.com/spf13/cobra"
 
-	"github.com/vivek-app/vivek_app/config"
+	"github.com/clearwage/clearwage/config"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -45,12 +44,11 @@ It has up and down sub commands`,
 }
 
 func runGooseMigration(dbCfg config.DBConfig, direction string) error {
-	db, err := sql.Open("pgx", fmt.Sprintf("postgres://%s:%s@%s:%d/%s?%s",
-		dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Db, dbCfg.QueryString))
+	db, err := sql.Open("pgx", dbCfg.ConnectionString())
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err

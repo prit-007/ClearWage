@@ -10,10 +10,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/mocks"
-	"github.com/vivek-app/vivek_app/repositories"
-	"github.com/vivek-app/vivek_app/services"
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/mocks"
+	"github.com/clearwage/clearwage/repositories"
+	"github.com/clearwage/clearwage/services"
 	"go.uber.org/mock/gomock"
 )
 
@@ -34,6 +34,9 @@ func TestShiftCreate_Success(t *testing.T) {
 	mockQuerier.EXPECT().
 		CreateShift(gomock.Any(), gomock.Any()).
 		Return(repositories.Shift{Name: "Morning"}, nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	body, _ := json.Marshal(map[string]interface{}{
 		"name":       "Morning",
@@ -145,7 +148,7 @@ func TestShiftList_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	if resp["status"] != "success" {
 		t.Errorf("expected success status, got %v", resp["status"])
 	}

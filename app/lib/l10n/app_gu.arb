@@ -1,0 +1,536 @@
+{
+  "@@locale": "gu",
+  "splashTitle": "ક્લિયરવેજ",
+  "splashSubtitle": "કર્મચારી વ્યવસ્થાપન",
+  "home": "હોમ",
+  "staff": "સ્ટાફ",
+  "attendance": "હાજરી",
+  "ledger": "ખાતું",
+  "profile": "પ્રોફાઇલ",
+  "more": "વધુ",
+  "greetingMorning": "સુપ્રભાત,",
+  "greetingAfternoon": "નમસ્કાર,",
+  "greetingEvening": "શુભ સંધ્યા,",
+  "commonSearch": "શોધો",
+  "language": "ભાષા",
+  "languageEnglish": "English",
+  "languageHindi": "हिन्दी",
+  "languageGujarati": "ગુજરાતી",
+  "languageApplied": "ભાષા અપડેટ થઈ",
+  "languageSelect": "ભાષા પસંદ કરો",
+  "hubReports": "રિપોર્ટ્સ",
+  "hubWorkforce": "વર્કફોર્સ",
+  "hubFinancial": "નાણાકીય",
+  "hubRequests": "અરજીઓ",
+  "hubActivity": "પ્રવૃત્તિ",
+  "hubDebug": "ડિબગ",
+  "hubApp": "એપ",
+  "hubDailySummary": "દૈનિક સારાંશ",
+  "hubDefaulters": "બાકી દાર",
+  "hubWageBillTrends": "વેતન-બિલ વલણો",
+  "hubPayrollSummary": "પેરોલ સારાંશ",
+  "hubMyReports": "મારા રિપોર્ટ્સ",
+  "hubShiftTimings": "શિફ્ટ સમય",
+  "hubHolidays": "રજાઓ",
+  "hubLeavePolicy": "રજા નીતિ",
+  "hubLeaveRequests": "રજા અરજીઓ",
+  "hubMyLeaveRequests": "મારી રજાની અરજીઓ",
+  "hubAdvanceRequests": "એડવાન્સ અરજીઓ",
+  "hubMyAdvanceRequests": "મારી એડવાન્સ અરજીઓ",
+  "hubBalanceSheet": "બેલેન્સ શીટ",
+  "hubDisputes": "વિવાદ",
+  "hubNotifications": "સૂચનાઓ",
+  "hubAppLogs": "એપ લોગ",
+  "hubAppPin": "એપ પિન",
+  "hubSyncCenter": "સિંક કેન્દ્ર",
+  "hubEmailSettings": "ઈમેલ સેટિંગ્સ",
+  "hubAbout": "વિશે",
+  "hubRecentlyUsed": "તાજેતરમાં ઉપયોગ થયેલ",
+  "hubPayrollSettings": "પેરોલ સેટિંગ્સ",
+  "errorSomethingWentWrong": "કંઈક ખોટું થયું",
+  "commonRetry": "ફરી પ્રયાસ કરો",
+  "commonCancel": "રદ્દ કરો",
+  "commonSubmit": "સબમિટ કરો",
+  "commonEmployee": "કર્મચારી",
+  "commonAmount": "રકમ",
+  "commonNoteOptional": "નોંધ (વૈકલ્પિક)",
+  "dashWorkspace": "કાર્યસ્થળ",
+  "dashTodaysFloor": "આજની સ્થિતિ",
+  "statTotalStaff": "કુલ સ્ટાફ",
+  "statPayrollMtd": "પેરોલ (આ મહિને)",
+  "statOutstandingUdhaar": "બાકી (ઉધાર)",
+  "statDefaulters": "બાકીદારો",
+  "statPresentToday": "આજે હાજર",
+  "statOutstanding": "બાકી",
+  "statOutstandingBalance": "બાકી બેલેન્સ",
+  "dashPresentCount": "{count} હાજર",
+  "@dashPresentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashAbsentCount": "{count} ગેરહાજર",
+  "@dashAbsentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quickActions": "ઝડપી ક્રિયાઓ",
+  "qaAddStaff": "સ્ટાફ\nઉમેરો",
+  "qaMarkAttendance": "હાજરી\nનોંધો",
+  "qaAddJamaUdhaar": "જમા/ઉધાર\nઉમેરો",
+  "qaStaffDirectory": "સ્ટાફ\nયાદી",
+  "qaBroadcast": "પ્રસારણ",
+  "qaMyProfile": "મારી\nપ્રોફાઇલ",
+  "recentActivity": "તાજેતરની પ્રવૃત્તિ",
+  "noActivityYet": "હજી સુધી કોઈ પ્રવૃત્તિ નોંધાઈ નથી.",
+  "dashTrendsTitle": "હાજરીના વલણો ({days} દિવસ)",
+  "@dashTrendsTitle": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dashTrendsSubtitle": "દૈનિક હાજરી વિગત",
+  "dashAvgPerDay": "{avg} સરેરાશ/દિવસ",
+  "@dashAvgPerDay": {
+    "placeholders": {
+      "avg": {
+        "type": "String"
+      }
+    }
+  },
+  "dashNoAttendanceTitle": "કોઈ હાજરી ડેટા નથી",
+  "dashNoAttendanceSubtitle": "આ ગાળા માટે કોઈ હાજરી નોંધાઈ નથી.",
+  "syncOfflineHint": "તમે ઑફલાઇન છો — ફરી કનેક્ટ થતાં ફેરફારો સિંક થશે",
+  "syncSyncing": "સિંક થઈ રહ્યું છે…",
+  "syncPendingChanges": "{count, plural, =1{1 ફેરફાર ઑફલાઇન સાચવાયો — હમણાં સિંક કરવા ટૅપ કરો} other{{count} ફેરફારો ઑફલાઇન સાચવાયા — હમણાં સિંક કરવા ટૅપ કરો}}",
+  "@syncPendingChanges": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "empThisMonth": "આ મહિને",
+  "empDaysSummary": "{present} / {total} દિવસ",
+  "@empDaysSummary": {
+    "placeholders": {
+      "present": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "empAttendancePct": "{pct}% હાજરી",
+  "@empAttendancePct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "qaMyAttendance": "મારી હાજરી",
+  "qaMyPayslip": "પગાર સ્લિપ",
+  "qaRequestAdvance": "એડવાન્સ વિનંતી",
+  "qaMyLedger": "મારું ખાતું",
+  "advanceAmountRange": "રકમ ₹1 અને ₹1,00,000 વચ્ચે હોવી જોઈએ",
+  "advanceSubmitted": "એડવાન્સ વિનંતી સબમિટ કરાઈ",
+  "broadcastTitle": "પ્રસારણ સંદેશ",
+  "broadcastSubtitle": "પસંદ કરેલા સ્ટાફને WhatsApp સંદેશ મોકલો.",
+  "broadcastHint": "સંદેશ (ગ્રીટિંગ માટે ખાલી છોડો)",
+  "broadcastNoStaff": "કોઈ સક્રિય સ્ટાફ મળ્યો નથી",
+  "broadcastNoPhone": "ફોન નંબર નથી",
+  "broadcastSelectStaff": "મોકલવા માટે સ્ટાફ પસંદ કરો",
+  "broadcastSendTo": "{count} ને મોકલો",
+  "@broadcastSendTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "broadcastNoWhatsapp": "WhatsApp ખોલી શકાયું નહીં",
+  "broadcastOpening": "WhatsApp ખોલાઈ રહ્યું છે {total} માંથી {opened}",
+  "@broadcastOpening": {
+    "placeholders": {
+      "opened": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "commonSave": "સાચવો",
+  "rosterTitle": "દૈનિક રોસ્ટર",
+  "rosterSearchHint": "કર્મચારી શોધો...",
+  "rosterWeeklyOff": "સાપ્તાહિક રજા",
+  "rosterHoliday": "રજા",
+  "rosterCannotMark": "આ દિવસે હાજરી નોંધી શકાય નહીં.",
+  "rosterHolidayBadge": "રજા · {name}",
+  "@rosterHolidayBadge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterBulkMode": "બલ્ક મોડ",
+  "rosterMarkAllPresent": "બધાને હાજર નોંધો",
+  "rosterProcessing": "પ્રક્રિયા થઈ રહી છે...",
+  "rosterAllMarked": "બધા કર્મચારીઓ પહેલેથી નોંધાયેલા છે",
+  "rosterMarkAllConfirm": "{count} નોંધાયેલા ન હોય તે કર્મચારીઓને હાજર નોંધાશે. ચાલુ રાખશો?",
+  "@rosterMarkAllConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rosterMark": "નોંધો",
+  "rosterConflict": "રેકોર્ડ અન્યત્ર બદલાયો. રિફ્રેશ કરાયું — મહેરબાની કરીને ફરી પ્રયાસ કરો.",
+  "rosterNoShiftChosen": "કોઈ શિફ્ટ ફાળવેલી નથી. શિફ્ટ પસંદ કરો અથવા સ્ટાફ પ્રોફાઇલ સંપાદિત કરો.",
+  "rosterNoStaffTitle": "કોઈ સક્રિય સ્ટાફ નથી",
+  "rosterNoStaffSubtitle": "ટ્રેકિંગ શરૂ કરવા માટે યાદીમાંથી કર્મચારી ઉમેરો.",
+  "rosterFailedLoad": "રોસ્ટર લોડ થઈ શક્યું નહીં",
+  "rosterFailedShifts": "શિફ્ટ લોડ થઈ શકી નહીં: {error}",
+  "@rosterFailedShifts": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterFailedHolidays": "રજાઓ લોડ થઈ શકી નહીં: {error}",
+  "@rosterFailedHolidays": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterFailedSettings": "સેટિંગ્સ લોડ થઈ શકી નહીં: {error}",
+  "@rosterFailedSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterNoShiftAssigned": "કોઈ શિફ્ટ ફાળવેલી નથી",
+  "rosterUnknownShift": "અજાણી શિફ્ટ",
+  "rosterSelectShift": "શિફ્ટ પસંદ કરો",
+  "rosterNoShift": "કોઈ શિફ્ટ નહીં",
+  "rosterOtHours": "ઓવરટાઇમ કલાક",
+  "rosterOtRange": "OT કલાક 0 અને 24 વચ્ચે હોવા જોઈએ",
+  "rosterBadgePending": "બાકી",
+  "rosterBadgeLocked": "લૉક",
+  "rosterLocked": "આ હાજરી રેકોર્ડ લૉક છે અને સંપાદિત કરી શકાય નહીં",
+  "rosterOtChip": "OT: {hours} કલાક",
+  "@rosterOtChip": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "syncSavedOffline": "ઑફલાઇન સાચવાયું — ઓનલાઇન થતાં સિંક થશે",
+  "bulkTitle": "બલ્ક હાજરી",
+  "bulkStatTotal": "કુલ",
+  "bulkStatMarked": "નોંધાયેલા",
+  "bulkStatAbsent": "ગેરહાજર",
+  "bulkPresent": "હાજર",
+  "bulkAbsent": "ગેરહાજર",
+  "bulkSelectAll": "બધા પસંદ કરો",
+  "bulkMarkRemaining": "બાકીને હાજર નોંધો",
+  "bulkNoShiftAssigned": "નોંધાયેલા ન હોય તે કર્મચારીઓને કોઈ શિફ્ટ ફાળવેલી નથી",
+  "bulkAllMarkedFor": "{date} માટે બધા કર્મચારીઓ પહેલેથી નોંધાયેલા છે",
+  "@bulkAllMarkedFor": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "bulkResult": "{marked} નોંધાયા ({absent} ગેરહાજર)",
+  "@bulkResult": {
+    "placeholders": {
+      "marked": {
+        "type": "int"
+      },
+      "absent": {
+        "type": "int"
+      }
+    }
+  },
+  "bulkSkippedNoShift": "{count} છોડ્યા (કોઈ શિફ્ટ નહીં)",
+  "@bulkSkippedNoShift": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonDelete": "કાઢી નાખો",
+  "commonUpload": "અપલોડ કરો",
+  "commonNotAssigned": "ફાળવેલું નથી",
+  "dirTitle": "યાદી",
+  "dirSearchHint": "નામ અથવા ભૂમિકાથી શોધો...",
+  "dirFailedLoad": "સ્ટાફ લોડ થઈ શક્યો નહીં",
+  "dirNoMatches": "કોઈ મેળ મળ્યો નહીં",
+  "dirNoStaff": "હજી સુધી કોઈ સ્ટાફ સભ્ય નથી",
+  "dirBalanceDue": "બાકી",
+  "dirBalanceExcess": "જમા",
+  "dirWageDaily": "દૈનિક",
+  "dirWageHourly": "કલાકીય",
+  "dirWageMonthly": "માસિક",
+  "dirWageTypeDaily": "દૈનિક",
+  "dirWageTypeMonthly": "માસિક",
+  "dirWageTypeHourly": "કલાકીય",
+  "dirRoleEmployee": "કર્મચારી",
+  "dirRoleSupervisor": "સુપરવાઇઝર",
+  "dirFilterByRole": "ભૂમિકાથી ગાળો",
+  "dirFilterByWage": "પગાર પ્રકારથી ગાળો",
+  "dirFilterByDept": "વિભાગથી ગાળો",
+  "dirShowInactive": "નિષ્ક્રિય બતાવો",
+  "dirReset": "રીસેટ",
+  "dirApply": "લાગુ કરો",
+  "profPhotoCamera": "કેમેરાથી કેપ્ચર કરો",
+  "profPhotoGallery": "ગેલેરીમાંથી પસંદ કરો",
+  "profUploadFile": "PDF/ફાઇલ અપલોડ કરો",
+  "profCouldNotPickPhoto": "ફોટો પસંદ કરી શકાયો નહીં",
+  "profCouldNotPickFile": "ફાઇલ પસંદ કરી શકાઈ નહીં",
+  "profPhotoUpdated": "ફોટો અપડેટ થયો",
+  "profDocUploaded": "દસ્તાવેજ અપલોડ થયો",
+  "profDocQueued": "કતારમાં: ઓનલાઇન થતાં દસ્તાવેજ અપલોડ થશે",
+  "profDeleteEmployeeTitle": "કર્મચારી કાઢી નાખો",
+  "profDeleteEmployeeMsg": "{name} કાયમ માટે નિષ્ક્રિય કરાશે? તેઓ હવે લૉગ ઇન કરી શકશે નહીં.",
+  "@profDeleteEmployeeMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "profTabAudit": "ઓડિટ",
+  "profSettleTitle": "ખાતું સેટલ કરો",
+  "profSettleMsg": "આથી બાકી બેલેન્સ શૂન્ય થઈ જશે. આ ક્રિયા પાછી ફેરવી શકાય નહીં.",
+  "profSettleConfirm": "સેટલ કરો",
+  "profAccountSettled": "ખાતું સેટલ થયું",
+  "profFFSettle": "F&F સેટલ",
+  "profPayslipOpened": "પગાર સ્લિપ ખૂલી",
+  "profPayslipSaved": "પગાર સ્લિપ સાચવાઈ. આપોઆપ ખૂલી શકી નહીં.",
+  "profGenerateSlip": "સ્લિપ બનાવો",
+  "profTooltipCall": "કૉલ",
+  "profTooltipWhatsapp": "WhatsApp",
+  "profKycPan": "PAN નંબર",
+  "profKycAadhaar": "આધાર નંબર",
+  "profKycPf": "PF / UAN",
+  "profKycBank": "બેંક ખાતું",
+  "profKycIfsc": "IFSC",
+  "profKycUpi": "UPI ID",
+  "profKycEmergency": "ઇમર્જન્સી સંપર્ક",
+  "profKycEmergencyPhone": "ઇમર્જન્સી ફોન",
+  "profKycAddress": "વર્તમાન સરનામું",
+  "profKycPermanentAddress": "કાયમી સરનામું",
+  "profKycHealth": "આરોગ્ય નોંધ",
+  "profBlockEmployment": "રોજગાર વિગતો",
+  "profBlockFinancial": "નાણાકીય કન્ફિગ",
+  "profBlockKyc": "KYC અને ઓળખ",
+  "profDesignation": "હોદ્દો",
+  "profShift": "શિફ્ટ",
+  "profManager": "મેનેજર",
+  "profWageType": "પગાર પ્રકાર",
+  "profWageDaily": "દૈનિક પગાર",
+  "profWageMonthly": "માસિક",
+  "profWageHourly": "કલાકીય",
+  "profBaseRate": "આધાર દર",
+  "profPerDay": " / દિવસ",
+  "profPerHr": " / કલાક",
+  "profKycDocs": "KYC દસ્તાવેજો",
+  "profDocAadhaar": "આધાર કાર્ડ",
+  "profDocPan": "PAN કાર્ડ",
+  "profDocBank": "બેંક પાસબુક",
+  "profDocUploadedStatus": "અપલોડ અને ચકાસાયેલ",
+  "profDocActionRequired": "કાર્યવાહી જરૂરી",
+  "profDocDeleteTitle": "દસ્તાવેજ કાઢી નાખો",
+  "profDocDeleteMsg": "આ દસ્તાવેજ કાઢી નાખો? આ પાછું ફેરવી શકાય નહીં.",
+  "profDocsFailed": "દસ્તાવેજો લોડ થઈ શક્યા નહીં",
+  "profCouldNotOpenDoc": "દસ્તાવેજ ખૂલી શક્યો નહીં",
+  "profDocument": "દસ્તાવેજ",
+  "profDocumentPreview": "દસ્તાવેજ પૂર્વદર્શન",
+  "profOpenDocument": "દસ્તાવેજ ખોલો",
+  "profPresent": "હાજર",
+  "profAbsent": "ગેરહાજર",
+  "profHalf": "અર્ધ",
+  "profHalfDay": "અર્ધો દિવસ",
+  "profPaidLeave": "પેઇડ રજા",
+  "profWeekOff": "સાપ્તાહિક રજા",
+  "profRecentLogs": "તાજેતરની લૉગ્સ",
+  "profNoAtt": "આ મહિનાની કોઈ હાજરી નોંધ નથી",
+  "profNetOutstanding": "કુલ બાકી",
+  "profPayableByEmployee": "કર્મચારી દ્વારા ચૂકવવાનું",
+  "profRecentEntries": "તાજેતરની નોંધો",
+  "profNoLedger": "આ મહિનાની કોઈ ખાતા નોંધ નથી",
+  "profWageAdded": "પગાર ઉમેરાયો",
+  "profAdvanceTaken": "એડવાન્સ લીધો",
+  "profNoAudit": "કોઈ ઓડિટ પ્રવૃત્તિ નોંધાઈ નથી",
+  "formErrNameRequired": "કર્મચારીનું નામ જરૂરી છે",
+  "formErrPhoneRequired": "ફોન નંબર જરૂરી છે",
+  "formErrPhoneInvalid": "માન્ય 10-અંકનો ફોન નંબર દાખલ કરો",
+  "formErrWageRequired": "પગારની રકમ જરૂરી છે",
+  "formErrWageInvalid": "પગાર માન્ય સંખ્યા હોવો જોઈએ",
+  "formErrIfsc": "અમાન્ય IFSC કોડ ફોર્મેટ (દા.ત., SBIN0001234)",
+  "formErrEnterName": "કર્મચારીનું નામ દાખલ કરો",
+  "formErrAmountInvalid": "માન્ય રકમ દાખલ કરો",
+  "formErrPan": "માન્ય PAN દાખલ કરો (દા.ત. ABCDE1234F)",
+  "formErrAadhaar": "આધાર ચોક્કસ 12 અંકનો હોવો જોઈએ",
+  "formDiscardTitle": "ફેરફારો રદ કરશો?",
+  "formDiscardMsg": "તમારી પાસે સાચવાયેલા ન હોય તે ફેરફારો છે. છતાં બહાર જશો?",
+  "formLeave": "બહાર જાઓ",
+  "formEditProfile": "પ્રોફાઇલ સંપાદિત કરો",
+  "formOnboardStaff": "સ્ટાફ ઉમેરો",
+  "formSectionCore": "મુખ્ય ઓળખ",
+  "formSectionComp": "પારિશ્રમિક અને ભૂમિકા",
+  "formSectionKyc": "KYC અને નાણાકીય",
+  "formSectionEmergency": "ઇમર્જન્સી અને સરનામું",
+  "formFullName": "પૂરું નામ *",
+  "formPhone": "ફોન નંબર *",
+  "formEmail": "ઇમેઇલ (વૈકલ્પિક)",
+  "formDesignation": "હોદ્દો / શીર્ષક (વૈકલ્પિક)",
+  "formDepartment": "વિભાગ (વૈકલ્પિક)",
+  "formWageFixedMonthly": "નિશ્ચિત માસિક",
+  "formWageAmount": "પગાર રકમ (₹) *",
+  "formDoj": "જોડાયાની તારીખ (વૈકલ્પિક)",
+  "formDojHint": "તારીખ પસંદ કરવા ટૅપ કરો",
+  "formPan": "PAN નંબર (વૈકલ્પિક)",
+  "formAadhaar": "આધાર નંબર (વૈકલ્પિક)",
+  "formPf": "PF / UAN નંબર (વૈકલ્પિક)",
+  "formBank": "બેંક ખાતા નંબર (વૈકલ્પિક)",
+  "formIfsc": "બેંક IFSC (વૈકલ્પિક)",
+  "formUpi": "UPI ID (વૈકલ્પિક)",
+  "formEmergencyName": "ઇમર્જન્સી સંપર્ક નામ (વૈકલ્પિક)",
+  "formEmergencyPhone": "ઇમર્જન્સી સંપર્ક ફોન (વૈકલ્પિક)",
+  "formCurrentAddress": "વર્તમાન સરનામું (વૈકલ્પિક)",
+  "formPermanentAddress": "કાયમી સરનામું (વૈકલ્પિક)",
+  "formHealthNotes": "આરોગ્ય નોંધ (વૈકલ્પિક)",
+  "formUpdateProfile": "પ્રોફાઇલ અપડેટ કરો",
+  "formOnboardEmployee": "કર્મચારી ઉમેરો",
+  "formPhotoSaveFailed": "કર્મચારી સાચવાયો પણ ફોટો અપલોડ નિષ્ફળ ગયો. {error}",
+  "@formPhotoSaveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "formDefaultShift": "ડિફૉલ્ટ શિફ્ટ (વૈકલ્પિક)",
+  "formCouldNotLoadShifts": "શિફ્ટ લોડ થઈ શકી નહીં",
+  "formAssignShift": "શિફ્ટ ફાળવો",
+  "formAccessLevel": "સિસ્ટમ એક્સેસ સ્તર",
+  "formRoleEmployee": "સામાન્ય કર્મચારી",
+  "formRoleSupervisor": "મેનેજર / સુપરવાઇઝર",
+  "formReportingManager": "રિપોર્ટિંગ મેનેજર",
+  "formNoSupervisors": "કોઈ સુપરવાઇઝર ઉપલબ્ધ નથી",
+  "formSelectDots": "પસંદ કરો…",
+  "formNone": "કોઈ નહીં",
+  "ledgerHub": "લેજર હબ",
+  "ledgerSearchHint": "નામ કે નોંધથી શોધો...",
+  "ledgerFailedEntries": "એન્ટ્રીઓ લોડ થઈ શકી નહીં",
+  "ledgerRecentTxns": "તાજેતરના વ્યવહારો",
+  "ledgerNoEntries": "કોઈ એન્ટ્રી મળી નહીં",
+  "ledgerNoEntriesHint": "બીજો શોધ શબ્દ કે તારીખ શ્રેણી અજમાવો.",
+  "ledgerNewEntry": "નવી એન્ટ્રી",
+  "ledgerNetBalanceMtd": "ચોખ્ખું બાકી (આ મહિના સુધી)",
+  "ledgerTotalJama": "કુલ જમા",
+  "ledgerTotalUdhaar": "કુલ ઉધાર",
+  "ledgerJama": "જમા",
+  "ledgerUdhaar": "ઉધાર",
+  "ledgerDeleteEntryTitle": "એન્ટ્રી કાઢી નાખો",
+  "ledgerDeleteEntryMsg": "₹{amount} {type} એન્ટ્રી {name} માટે કાઢી નાખશો?",
+  "@ledgerDeleteEntryMsg": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ledgerEdit": "સંપાદિત કરો",
+  "ledgerRaiseDispute": "વિવાદ ઉઠાવો",
+  "commonFailedLoad": "લોડ થઈ શક્યું નહીં",
+  "balanceNoData": "કોઈ બાકી ડેટા નથી",
+  "balanceNoDataHint": "કર્મચારીઓનું કોઈ બાકી મળ્યું નહીં.",
+  "balanceEmployeeCount": "{count, plural, =1{{count} કર્મચારી} other{{count} કર્મચારી}}",
+  "@balanceEmployeeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "balanceTotalOutstanding": "કુલ બાકી",
+  "balanceSettled": "પૂર્ણ",
+  "ledgerErrSelectEmployee": "કૃપા કરીને એક કર્મચારી પસંદ કરો",
+  "ledgerErrEnterAmount": "કૃપા કરીને રકમ દાખલ કરો",
+  "ledgerErrInvalidAmount": "કૃપા કરીને માન્ય રકમ દાખલ કરો",
+  "ledgerDiscardTitle": "એન્ટ્રી રદ કરો",
+  "ledgerDiscardMsg": "તમારી પાસે સાચવાયેલા ન હોય તે ફેરફારો છે. તે રદ કરશો?",
+  "ledgerDiscardConfirm": "રદ કરો",
+  "ledgerEditEntry": "એન્ટ્રી સંપાદિત કરો",
+  "ledgerGiveAdvance": "એડવાન્સ આપો",
+  "ledgerDeduct": "કપાત કરો",
+  "ledgerSelectEmployee": "કર્મચારી પસંદ કરો",
+  "ledgerNotesOptional": "નોંધ (વૈકલ્પિક)",
+  "ledgerUpdateEntry": "એન્ટ્રી અપડેટ કરો",
+  "ledgerSaveEntry": "એન્ટ્રી સાચવો",
+  "ledgerTransactionDate": "વ્યવહારની તારીખ",
+  "ledgerTodayDate": "આજે, {date}",
+  "@ledgerTodayDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ledgerNoEmployees": "કોઈ કર્મચારી મળ્યો નહીં",
+  "leaveRequestSubmitted": "રજા વિનંતી સબમિટ થઈ",
+  "leaveRequestTitle": "રજા વિનંતી કરો",
+  "leaveUnpaid": "વેતન વગરની રજા",
+  "leavePickRange": "તારીખ શ્રેણી પસંદ કરવા ટૅપ કરો",
+  "leaveReasonOptional": "કારણ (વૈકલ્પિક)",
+  "commonSubmitting": "સબમિટ થઈ રહ્યું છે…",
+  "leaveSubmitRequest": "વિનંતી સબમિટ કરો",
+  "myAttTitle": "મારી હાજરી",
+  "myAttRecordSubject": "હાજરી રેકોર્ડ",
+  "myAttMonthlyLog": "માસિક લોગ",
+  "myAttNoRecords": "કોઈ રેકોર્ડ નથી",
+  "myAttNoRecordsHint": "આ મહિના માટે કોઈ હાજરી રેકોર્ડ નથી.",
+  "myAttReportError": "ભૂલની જાણ કરો",
+  "myAttOt": "OT {hours}કલાક",
+  "@myAttOt": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "myLedgerNoEntries": "કોઈ એન્ટ્રી નથી",
+  "myLedgerNoEntriesHint": "આ મહિના માટે કોઈ લેજર એન્ટ્રી નથી.",
+  "myLedgerWagesEarned": "કમાયેલા વેતન",
+  "myLedgerAdvancesTaken": "લીધેલા એડવાન્સ",
+  "myLedgerNetPosition": "ચોખ્ખી સ્થિતિ"
+}

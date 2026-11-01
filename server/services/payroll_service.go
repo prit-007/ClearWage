@@ -3,17 +3,23 @@ package services
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/clearwage/clearwage/repositories"
 	"github.com/jung-kurt/gofpdf"
-	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/rs/zerolog/log"
+	"github.com/shopspring/decimal"
 )
 
 type PayrollEntry struct {
 	EmployeeID    string  `json:"employee_id"`
 	Name          string  `json:"name"`
+	PhotoURL      *string `json:"photo_url"`
 	WageType      string  `json:"wage_type"`
 	WageAmount    float64 `json:"wage_amount"`
 	DaysPresent   int     `json:"days_present"`
@@ -32,12 +38,27 @@ type PayrollResult struct {
 	TotalWage float64        `json:"total_wage"`
 }
 
+type PayrollAdjustment struct {
+	EmployeeID string
+	NetPay     float64
+}
+
 type PayrollService struct {
-	querier repositories.Querier
+	querier  repositories.Querier
+	triggers *NotificationTriggers
+	mailer   *MailService
 }
 
 func NewPayrollService(querier repositories.Querier) *PayrollService {
 	return &PayrollService{querier: querier}
+}
+
+func (s *PayrollService) SetTriggers(t *NotificationTriggers) {
+	s.triggers = t
+}
+
+func (s *PayrollService) SetMailer(m *MailService) {
+	s.mailer = m
 }
 
 func payrollMonth(startDate string) string {
@@ -48,27 +69,36 @@ func payrollMonth(startDate string) string {
 }
 
 func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, endDate string) (PayrollResult, error) {
-	tc, _ := s.querier.GetTenantConfig(ctx, tenantID)
+	tc, err := s.querier.GetTenantConfig(ctx, tenantID)
+	if err != nil && !errors.Is(err, repositories.ErrNotFound) {
+		return PayrollResult{}, fmt.Errorf("get tenant config: %w", err)
+	}
 	if tc.WageBasis == "" {
 		tc.WageBasis = "attendance"
 	}
 	if tc.OTTrigger == "" {
 		tc.OTTrigger = "after_threshold"
 	}
-	if tc.OTMultiplierDefault == 0 {
-		tc.OTMultiplierDefault = 1.5
+	if tc.OTMultiplierDefault.Equal(decimal.Zero) {
+		tc.OTMultiplierDefault = decimal.NewFromFloat(1.5)
 	}
 
 	employees, err := s.querier.ListEmployeesByTenant(ctx, repositories.ListEmployeesByTenantParams{
 		TenantID: tenantID,
-		Limit:    10000,
+		Limit:    listAll,
 		Offset:   0,
 	})
 	if err != nil {
 		return PayrollResult{}, err
 	}
 
-	attendance, err := s.querier.ListAttendanceByDateRange(ctx, tenantID, startDate, endDate)
+	attendance, err := s.querier.ListAttendanceByDateRange(ctx, repositories.ListAttendanceByDateRangeParams{
+		TenantID:  tenantID,
+		StartDate: startDate,
+		EndDate:   endDate,
+		Limit:     listAll,
+		Offset:    0,
+	})
 	if err != nil {
 		return PayrollResult{}, err
 	}
@@ -77,12 +107,18 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 		TenantID:  tenantID,
 		StartDate: startDate,
 		EndDate:   endDate,
+		Limit:     listAll,
+		Offset:    0,
 	})
 	if err != nil {
 		return PayrollResult{}, err
 	}
 
-	holidays, err := s.querier.ListHolidaysByTenant(ctx, tenantID)
+	holidays, err := s.querier.ListHolidaysByTenant(ctx, repositories.ListHolidaysByTenantParams{
+		TenantID: tenantID,
+		Limit:    listAll,
+		Offset:   0,
+	})
 	if err != nil {
 		return PayrollResult{}, err
 	}
@@ -95,7 +131,7 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 	udhaarMap := make(map[string]float64)
 	for _, l := range ledgerEntries {
 		if l.Type == "udhaar" {
-			udhaarMap[l.EmployeeID] += l.Amount
+			udhaarMap[l.EmployeeID] += l.Amount.InexactFloat64()
 		}
 	}
 
@@ -113,11 +149,27 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 		dailyWageRate := 0.0
 		switch emp.WageType {
 		case "daily":
-			dailyWageRate = emp.WageAmount
+			dailyWageRate = emp.WageAmount.InexactFloat64()
 		case "monthly":
-			dailyWageRate = emp.WageAmount / 30.0
+			switch tc.WageBasis {
+			case "fixed_26":
+				dailyWageRate = emp.WageAmount.InexactFloat64() / 26.0
+			case "calendar":
+				startParsed, pe := time.Parse("2006-01-02", startDate)
+				endParsed, ee := time.Parse("2006-01-02", endDate)
+				if pe == nil && ee == nil {
+					days := int(endParsed.Sub(startParsed).Hours()/24) + 1
+					if days > 0 {
+						dailyWageRate = emp.WageAmount.InexactFloat64() / float64(days)
+					}
+				} else {
+					dailyWageRate = emp.WageAmount.InexactFloat64() / 30.0
+				}
+			default: // fixed_30 or empty
+				dailyWageRate = emp.WageAmount.InexactFloat64() / 30.0
+			}
 		case "hourly":
-			dailyWageRate = emp.WageAmount * 8.0
+			dailyWageRate = emp.WageAmount.InexactFloat64() * 8.0
 		}
 
 		present := 0
@@ -153,52 +205,42 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 
 				var computedOTHours float64
 				switch tc.OTTrigger {
-				case "all_working":
+				case "after_daily_hours":
 					computedOTHours = otHours
-				case "after_threshold":
+				case "after_shift_end":
 					fallthrough
 				default:
-					if otHours > tc.OTThresholdHours {
-						computedOTHours = otHours - tc.OTThresholdHours
+					if otHours > tc.OTThresholdHours.InexactFloat64() {
+						computedOTHours = otHours - tc.OTThresholdHours.InexactFloat64()
 					}
+				}
+
+				if computedOTHours > 0 {
+					hourlyRate := dailyWageRate / 8.0
+					otPay = computedOTHours * hourlyRate * tc.OTMultiplierDefault.InexactFloat64()
 				}
 
 				if tc.OTRounding > 0 && computedOTHours > 0 {
 					minutes := computedOTHours * 60.0
 					rounded := math.Round(minutes/float64(tc.OTRounding)) * float64(tc.OTRounding)
 					computedOTHours = rounded / 60.0
+					hourlyRate := dailyWageRate / 8.0
+					otPay = computedOTHours * hourlyRate * tc.OTMultiplierDefault.InexactFloat64()
 				}
-
-				hourlyRate := dailyWageRate / 8.0
-				otPay = computedOTHours * hourlyRate * tc.OTMultiplierDefault
 			}
 
 			computedWage := dayWage + otPay
 			grossWages += computedWage
 			totalOT += a.OvertimeHours
-
-			s.querier.UpdateAttendance(ctx, repositories.UpdateAttendanceParams{
-				ID:                     a.ID,
-				TenantID:               a.TenantID,
-				ShiftID:                a.ShiftID,
-				Status:                 a.Status,
-				CheckInTime:            a.CheckInTime,
-				CheckOutTime:           a.CheckOutTime,
-				OvertimeHours:          a.OvertimeHours,
-				OvertimeRateMultiplier: a.OvertimeRateMultiplier,
-				UnitsProduced:          a.UnitsProduced,
-				EditedBy:               a.EditedBy,
-				ComputedWage:           &computedWage,
-			})
 		}
 
 		if tc.WeekOffPaid {
 			start, parseErr := time.Parse("2006-01-02", startDate)
-			end, _ := time.Parse("2006-01-02", endDate)
-			if parseErr == nil {
-				for d := start; d.Before(end); d = d.AddDate(0, 0, 1) {
+			end, endErr := time.Parse("2006-01-02", endDate)
+			if parseErr == nil && endErr == nil {
+				for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
 					dateStr := d.Format("2006-01-02")
-					if !employeeDates[dateStr] && (d.Weekday() == time.Sunday || holidayMap[dateStr]) {
+					if !employeeDates[dateStr] && (isWeeklyOffDay(tc.WeeklyOffs, d.Weekday()) || holidayMap[dateStr]) {
 						dayWage := dailyWageRate
 						grossWages += dayWage
 						present++
@@ -216,8 +258,9 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 		entries = append(entries, PayrollEntry{
 			EmployeeID:    emp.ID,
 			Name:          emp.Name,
+			PhotoURL:      emp.PhotoUrl,
 			WageType:      emp.WageType,
-			WageAmount:    emp.WageAmount,
+			WageAmount:    emp.WageAmount.InexactFloat64(),
 			DaysPresent:   present,
 			TotalOvertime: totalOT,
 			GrossWages:    grossWages,
@@ -238,30 +281,123 @@ func (s *PayrollService) Calculate(ctx context.Context, tenantID, startDate, end
 }
 
 func (s *PayrollService) FinalizePayroll(ctx context.Context, tenantID, startDate, endDate string) error {
+	return s.FinalizeAndLock(ctx, tenantID, startDate, endDate, nil)
+}
+
+func (s *PayrollService) FinalizeAndLock(ctx context.Context, tenantID, startDate, endDate string, adjustments []PayrollAdjustment) error {
 	result, err := s.Calculate(ctx, tenantID, startDate, endDate)
 	if err != nil {
 		return err
 	}
 
-	month := payrollMonth(startDate)
-
-	for _, entry := range result.Entries {
-		_, err := s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
-			TenantID:           tenantID,
-			EmployeeID:         entry.EmployeeID,
-			Date:               endDate,
-			Type:               "wage",
-			Amount:             entry.NetPayable,
-			Note:               nil,
-			LinkedPayrollMonth: &month,
-			CreatedBy:          "system",
-		})
-		if err != nil {
-			return err
+	adjustByEmployee := make(map[string]float64, len(adjustments))
+	for _, a := range adjustments {
+		if a.EmployeeID != "" {
+			adjustByEmployee[a.EmployeeID] = a.NetPay
 		}
 	}
 
-	return s.LockMonth(ctx, tenantID, startDate, endDate)
+	month := payrollMonth(startDate)
+
+	ts, ok := s.querier.(txStarter)
+	if !ok {
+		log.Warn().Msg("querier does not support transactions; payroll finalization running without atomic guarantees")
+		return s.finalizeAndLockNoTx(ctx, result, adjustByEmployee, tenantID, startDate, endDate, month)
+	}
+	txQuerier, tx, err := ts.BeginTx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	for _, entry := range result.Entries {
+		amount := entry.NetPayable
+		if adj, ok := adjustByEmployee[entry.EmployeeID]; ok {
+			amount = adj
+		}
+		note := fmt.Sprintf("Wage for %s", month)
+		_, createErr := txQuerier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
+			TenantID:           tenantID,
+			EmployeeID:         entry.EmployeeID,
+			Date:               endDate,
+			Type:               "jama",
+			Amount:             amount,
+			Note:               &note,
+			LinkedPayrollMonth: &month,
+			CreatedBy:          "system",
+		})
+		if createErr != nil {
+			return createErr
+		}
+	}
+
+	err = txQuerier.LockAttendanceMonth(ctx, repositories.LockAttendanceMonthParams{
+		TenantID:  tenantID,
+		StartDate: startDate,
+		EndDate:   endDate,
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+
+	if s.triggers != nil {
+		s.triggers.NotifyPayrollLocked(ctx, tenantID, startDate, endDate)
+	}
+	s.mailPayrollSummary(ctx, tenantID, result, month)
+	return nil
+}
+
+func (s *PayrollService) finalizeAndLockNoTx(ctx context.Context, result PayrollResult, adjustByEmployee map[string]float64, tenantID, startDate, endDate, month string) error {
+	for _, entry := range result.Entries {
+		amount := entry.NetPayable
+		if adj, ok := adjustByEmployee[entry.EmployeeID]; ok {
+			amount = adj
+		}
+		note := fmt.Sprintf("Wage for %s", month)
+		_, createErr := s.querier.CreateLedgerEntry(ctx, repositories.CreateLedgerEntryParams{
+			TenantID:           tenantID,
+			EmployeeID:         entry.EmployeeID,
+			Date:               endDate,
+			Type:               "jama",
+			Amount:             amount,
+			Note:               &note,
+			LinkedPayrollMonth: &month,
+			CreatedBy:          "system",
+		})
+		if createErr != nil {
+			return createErr
+		}
+	}
+
+	err := s.LockMonth(ctx, tenantID, startDate, endDate)
+	if err == nil && s.triggers != nil {
+		s.triggers.NotifyPayrollLocked(ctx, tenantID, startDate, endDate)
+	}
+	return err
+}
+
+func (s *PayrollService) mailPayrollSummary(ctx context.Context, tenantID string, result PayrollResult, month string) {
+	if s.mailer == nil {
+		return
+	}
+	tenant, err := s.querier.FindTenantByID(ctx, tenantID)
+	if err != nil || tenant.Email == nil || *tenant.Email == "" {
+		return
+	}
+	html := BrandedMail(MailData{
+		Preheader: "Payroll for " + month + " has been finalized",
+		Title:     "Payroll Finalized — " + month,
+		Greeting:  fmt.Sprintf("Hello %s,", tenant.Name),
+		Body:      []string{"Your payroll for the month has been finalized and locked. Attendance for this period is now locked for payroll."},
+		Facts:     []MailFact{{Label: "Month", Value: month}, {Label: "Total Wage Bill", Value: "₹ " + fmt.Sprintf("%.2f", result.TotalWage)}},
+		Status:    "Completed",
+		Note:      "Payslips are available for each employee from their profile.",
+	})
+	s.mailer.SendAsync(ctx, tenantID, *tenant.Email, "Payroll finalized — "+month, html)
 }
 
 func (s *PayrollService) GeneratePayslip(ctx context.Context, tenantID, employeeID, startDate, endDate string) ([]byte, string, error) {
@@ -334,4 +470,17 @@ func (s *PayrollService) LockMonth(ctx context.Context, tenantID, startDate, end
 		StartDate: startDate,
 		EndDate:   endDate,
 	})
+}
+
+func isWeeklyOffDay(weeklyOffs string, day time.Weekday) bool {
+	if weeklyOffs == "" {
+		return false
+	}
+	target := strconv.Itoa(int(day))
+	for _, s := range strings.Split(weeklyOffs, ",") {
+		if strings.TrimSpace(s) == target {
+			return true
+		}
+	}
+	return false
 }

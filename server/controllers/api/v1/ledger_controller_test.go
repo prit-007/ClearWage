@@ -8,12 +8,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/mocks"
+	"github.com/clearwage/clearwage/repositories"
+	"github.com/clearwage/clearwage/services"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/mocks"
-	"github.com/vivek-app/vivek_app/repositories"
-	"github.com/vivek-app/vivek_app/services"
+	"github.com/shopspring/decimal"
 	"go.uber.org/mock/gomock"
 )
 
@@ -21,6 +22,7 @@ func setupLedgerTest(t *testing.T) (*LedgerController, *mocks.MockQuerier, func(
 	t.Helper()
 	mockCtrl := gomock.NewController(t)
 	mockQuerier := mocks.NewMockQuerier(mockCtrl)
+	mockQuerier.EXPECT().CreateActivityLog(gomock.Any(), gomock.Any()).Return(repositories.ActivityLog{}, nil).AnyTimes()
 	logger := zerolog.Nop()
 	svc := services.NewLedgerService(mockQuerier)
 	ctrl := NewLedgerController(svc, &logger, config.AppConfig{})
@@ -82,7 +84,7 @@ func TestLedgerGetBalance_Success(t *testing.T) {
 
 	mockQuerier.EXPECT().
 		GetBalanceByEmployee(gomock.Any(), gomock.Any()).
-		Return(int32(1500), nil)
+		Return(float64(1500), nil)
 
 	r := chi.NewRouter()
 	r.Get("/api/v1/ledger/{id}/balance", ctrl.GetBalance)
@@ -97,7 +99,7 @@ func TestLedgerGetBalance_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	if resp["status"] != "success" {
 		t.Errorf("expected success, got %v", resp["status"])
 	}
@@ -204,7 +206,7 @@ func TestLedgerListByEmployee_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	if resp["status"] != "success" {
 		t.Errorf("expected success, got %v", resp["status"])
 	}
@@ -270,7 +272,7 @@ func TestLedgerGetBalance_DBError(t *testing.T) {
 
 	mockQuerier.EXPECT().
 		GetBalanceByEmployee(gomock.Any(), gomock.Any()).
-		Return(int32(0), errors.New("db error"))
+		Return(float64(0), errors.New("db error"))
 
 	r := chi.NewRouter()
 	r.Get("/api/v1/ledger/{id}/balance", ctrl.GetBalance)
@@ -298,5 +300,115 @@ func TestLedgerGetBalance_Unauthorized(t *testing.T) {
 
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("expected 401, got %d", rec.Code)
+	}
+}
+
+func TestLedgerSummary_Success(t *testing.T) {
+	ctrl, mockQuerier, cleanup := setupLedgerTest(t)
+	defer cleanup()
+
+	mockQuerier.EXPECT().
+		GetLedgerSummaryRange(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(repositories.LedgerSummaryRange{JamaTotal: decimal.NewFromInt(100), UdhaarTotal: decimal.NewFromInt(40), EntryCount: 3}, nil)
+	mockQuerier.EXPECT().
+		GetTotalOutstanding(gomock.Any(), gomock.Any()).
+		Return(25.0, nil)
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/ledger/summary", ctrl.Summary)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ledger/summary?start_date=2025-01-01&end_date=2025-01-31", nil)
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var resp map[string]interface{}
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
+	data := resp["data"].(map[string]interface{})
+	netBalance := data["net_balance"]
+	nb := 0.0
+	switch v := netBalance.(type) {
+	case float64:
+		nb = v
+	case string:
+		d, _ := decimal.NewFromString(v)
+		nb = d.InexactFloat64()
+	}
+	if nb != 60 {
+		t.Errorf("expected net_balance 60, got %v", netBalance)
+	}
+}
+
+func TestLedgerSummary_MissingDates(t *testing.T) {
+	ctrl, _, cleanup := setupLedgerTest(t)
+	defer cleanup()
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/ledger/summary", ctrl.Summary)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ledger/summary?start_date=2025-01-01", nil)
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestLedgerSummary_EmployeeRole(t *testing.T) {
+	ctrl, _, cleanup := setupLedgerTest(t)
+	defer cleanup()
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/ledger/summary", ctrl.Summary)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ledger/summary?start_date=2025-01-01&end_date=2025-01-31", nil)
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "employee"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("expected 403, got %d", rec.Code)
+	}
+}
+
+func TestLedgerSummary_Unauthorized(t *testing.T) {
+	ctrl, _, cleanup := setupLedgerTest(t)
+	defer cleanup()
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/ledger/summary", ctrl.Summary)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ledger/summary?start_date=2025-01-01&end_date=2025-01-31", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d", rec.Code)
+	}
+}
+
+func TestLedgerSummary_DBError(t *testing.T) {
+	ctrl, mockQuerier, cleanup := setupLedgerTest(t)
+	defer cleanup()
+
+	mockQuerier.EXPECT().
+		GetLedgerSummaryRange(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(repositories.LedgerSummaryRange{}, errors.New("db error"))
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/ledger/summary", ctrl.Summary)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ledger/summary?start_date=2025-01-01&end_date=2025-01-31", nil)
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500, got %d", rec.Code)
 	}
 }

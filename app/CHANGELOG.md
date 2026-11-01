@@ -1,0 +1,727 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.2.2] - 2026-10-13
+
+### Fixed
+
+- **Attendance audit trail**: mark/update/bulk events are now keyed by
+  `employee_id` (they used the attendance id, so the Audit Log tab never
+  showed attendance activity).
+- **Per-employee audit trail**: activity logs are now linked to the employee
+  for ledger, advance, dispute, and leave actions.
+- **Sync reliability**: offline writes are flushed serially, and the offline
+  KYC document queue also auto-syncs on reconnect.
+- **Bulk attendance mode** now refreshes the roster on return.
+- The dashboard pending-sync chip waits for connectivity instead of
+  attempting an offline flush.
+
+### Changed
+
+- `leave` push notifications deep-link to My Leave Requests.
+
+### Notes
+
+- Postgres RLS (`#71`) is documented as dormant defense-in-depth; it takes
+  effect only when the app connects with a non-owner role that sets
+  `app.tenant_id` per connection.
+
+## [1.2.1] - 2026-10-12
+
+### Changed
+
+- **Branded email templates**: every transactional mail (welcome, advance,
+  dispute, leave, payroll) now renders as a polished, inline-CSS ClearWage
+  template with header, summary facts, status badge, and footer.
+- Email sending is now **asynchronous** — API handlers never block on the
+  Brevo round-trip.
+
+### Fixed
+
+- Tenant Brevo API key is **masked** in `GET /settings/mail`.
+- Approving a leave request no longer **overwrites locked attendance**
+  (payroll-finalized months).
+- Offline ledger re-sync is **idempotent** via a stable `client_id`
+  (no duplicate Jama/Udhaar entries after reconnection).
+- Sends using the **platform key** are bounded by a shared 300/day counter
+  across all tenants.
+
+### Added
+
+- Employee **My Leave Requests** page (status list with deny reason).
+
+## [1.2.0] - 2026-10-12
+
+### Added
+
+- **WhatsApp dispatch** (`#54`): Send salary/greeting messages from employee
+  profiles, payroll rows, and a dashboard broadcast sheet.
+- **Staff balance indicators** (`#55`): DUE/EXCESS chips on the directory.
+- **Quick ledger entry** (`#56`): "Add Jama/Udhaar" dashboard action.
+- **Wage bill trends report** (`#57`): month-over-month chart + CSV export.
+- **Reporting managers** (`#58`): manager picker in the employee form.
+- **Animated splash** (`#59`): pulsing logo on startup.
+- **Attendance calendar** (`#60`): employee month grid + Report Error
+  (attendance disputes, nullable `ledger_disputes.attendance_id`).
+- **Bulk attendance grid** (`#61`): select-all / mark remaining present.
+- **Audit log tab** (`#62`): per-employee `GET /staff/{id}/audit`.
+- **KYC hardening** (`#63`): image compression + offline upload retry queue.
+- **PIN lock fallback** (`#64`): 4-digit PIN in addition to biometrics.
+- **Department** (`#65`): optional field + directory filter.
+- **Offline sync** (`#66`/`#67`): offline attendance/ledger queue,
+  auto-sync on reconnect, and a Sync Center page.
+- **Super-admin tenant management** (`#68`): list + suspend/activate workspaces.
+- **i18n** (`#69`): English / हिन्दी / ગુજરાતી language toggle (persisted).
+- **Leave requests** (`#70`): employee apply → owner approve/deny
+  (approval marks days as paid leave + notify/email).
+- **Postgres RLS** (`#71`): tenant row-level security policies.
+- **Brevo email service**: transactional mail with platform key, 300/day
+  quota, per-tenant API key/sender/quota, account email; sent on welcome,
+  advance approval, dispute resolution, leave status, and payroll lock.
+
+### Changed
+
+- `tenants.email`, `employees.email`, `tenants.is_active` columns added.
+- `background:sync` and `mail` settings under Settings.
+- `flutter_localizations` + gen-l10n localization pipeline.
+
+## [1.1.5] - 2026-09-16
+
+### Fixed
+
+- **Attendance creation 500 error**: Fixed ambiguous `is_locked` column
+  reference in upsert queries that caused individual attendance creation
+  to fail with `SQLSTATE 42702`.
+
+## [1.1.0] - 2026-09-15
+
+### Added
+
+- **Ledger Hub search** (`#37`): Client-side search by employee name and note
+  on the Ledger Hub page, with debounced input and filtered results.
+- **Daily summary share** (`#40`): Share button on the Daily Summary page
+  exports the report as a text file and shares via SharePlus.
+- **Biometric auth + inactivity lock** (`#43`): Fingerprint/face unlock
+  via `local_auth`, 5-minute inactivity timeout with configurable lock,
+  `AppLockOverlay` in MainShell.
+
+### Changed
+
+- **CI secrets context fix**: Android signing and Google Services config
+  steps now use job-level `env` vars for `HAS_KEYSTORE` conditions instead
+  of raw `secrets` context in step `if` expressions.
+- **Android signing config**: `build.gradle.kts` now defines a proper
+  `signingConfigs.release` block with fallback to debug key.
+- **CI workflow**: Added `master` branch to push/PR triggers (was only `main`).
+- **Windows build**: Added `_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS`
+  to CMakeLists.txt to fix MSVC 14.51+ `local_auth_windows` build error.
+
+## [1.0.0] - 2026-09-15
+
+### Fixed
+
+- **FCM token not removed on logout** (`#25`): `removeToken()` now sends the
+  token in the request body as the server requires.
+- **Sign-out doesn't clear storage or Firebase** (`#26`): Sign-out now calls
+  `AuthService.logout()` which clears `TokenStorage`, deregisters FCM tokens,
+  and signs out from Firebase.
+- **401 token refresh doesn't retry original request** (`#27`): `ApiClient`
+  now transparently retries the failed request after a successful token
+  refresh, eliminating flash errors on every token expiry cycle.
+- **`postMultipart` bypasses 401 refresh** (`#28`): File uploads now route
+  401 responses through the token refresh flow.
+- **Server URL config lost on restart** (`#30`): Server URL now persists to
+  `FlutterSecureStorage` across app restarts.
+- **Update service hardcoded old repo name** (`#29`): GitHub repo updated
+  from `vivek-app` to `ClearWage` for in-app update checks.
+- **Ledger tab badge shows disputes count** (`#31`): Removed misleading
+  disputes badge from the Ledger navigation tab.
+- **Employee route guards create dead-ends** (`#32`): Admin-only report items
+  (Daily Summary, Defaulters, Payroll) are now hidden from employees in the
+  More hub. Employees see "My Reports" instead.
+- **Onboarding navigates away on partial failure** (`#33`): Factory setup
+  wizard now only navigates to dashboard if the entire setup succeeds.
+
+### Added
+
+- **Dark Mode support** (`#34`): Full dark theme with Light/Dark/System toggle
+  in the More hub. Preference persists across restarts.
+- **Offline connectivity banner** (`#36`): Uses `connectivity_plus` to monitor
+  network state. Shows a persistent orange banner when offline.
+- **Employee dispute raising** (`#39`): Employees can now long-press any
+  ledger entry to raise a dispute, wired to the existing `DisputeService`.
+- **API request retry** (`#44`): All HTTP methods (`get`, `post`, `put`,
+  `delete`, `getRaw`, `postRaw`, `postMultipart`) now retry once after a
+  transparent token refresh on 401 responses.
+- **New dependencies**: `connectivity_plus` for network monitoring, `share_plus`
+  for report sharing, `local_auth` for future biometric support.
+- **New files**: `core/theme_provider.dart`, `core/services/connectivity_service.dart`,
+  `core/widgets/offline_banner.dart`.
+
+### Changed
+
+- `ApiClient.delete()` now accepts an optional `body` parameter for endpoints
+  that require a request body on DELETE.
+- Test mock classes updated to match the new `delete()` signature.
+
+## [0.9.3] - 2026-09-08
+
+### Fixed
+
+- **Server `log.Printf` in JSON responses**: Replaced with structured zerolog
+  global logger for consistent log output.
+- **CSRF `Secure` flag broken behind reverse proxies**: Now checks
+  `X-Forwarded-Proto` / `X-Forwarded-Scheme` headers to detect TLS in
+  load-balanced deployments.
+- **HTTP request log missing tenant context**: Request logger now includes
+  `tenant_id` field for correlation.
+- **Server DB connection not drained on shutdown**: HTTP server now explicitly
+  closes the database pool after listeners stop.
+- **Payroll transaction fallback silent**: Warning logged when transaction-
+  based payroll falls back to non-transactional path.
+- **Staff overview fetch sequential**: `fetchOverview` now runs 6 queries
+  concurrently (was sequential), reducing latency.
+- **Dashboard fetch sequential**: `fetchDashboard` now runs activity and
+  balance queries concurrently.
+- **Upload controller stale permission check**: Removed redundant
+  `employeeId != claims.EmployeeID` guard in `UploadPhoto`.
+- **App silent `catch (_) {}` blocks**: 10 files now log via
+  `AppLogger.warn()` instead of swallowing errors silently.
+- **App raw `$e` in user-facing errors**: 15+ screens now use `friendlyError()`
+  for safe, user-readable error messages.
+- **My Ledger missing retry on error**: Added retry button when ledger
+  fetch fails.
+- **Server settings controller missing tests**: Added tests for
+  `GetPayrollSettings` and `UpsertPayrollSettings` (validation, auth,
+  error paths).
+- **Server advance request controller missing tests**: Added tests for
+  `Create`, `List`, and `Deny` endpoints (auth, validation, success).
+
+### Added
+
+- **Server config options**: `PprofPassword`, `ReadTimeoutSeconds`,
+  `WriteTimeoutSeconds`, `IdleTimeoutSeconds`, `ReadHeaderTimeoutSeconds`,
+  `BodyLimitMB`, `UploadLimitMB`, `RateLimitPerMinute`,
+  `AuthRateLimitPerMinute`, `MetricsEnabled` env vars.
+- **Server pprof basic auth**: `/debug/pprof/` gated behind
+  `PPROF_PASSWORD` (no auth in development).
+- **Server `/metrics` endpoint**: Gated behind `METRICS_ENABLED` env var
+  (disabled by default).
+- **Server tests**: 7 new test files covering utils (json_response,
+  validation, timezone), middlewares (csrf, ratelimit), and controllers
+  (settings, advance_request).
+- **App tests**: 2 new test files covering `MyLedgerPage` and
+  `MyAdvanceRequestsPage` (loading, error, retry, empty, data display).
+
+## [0.9.2] - 2026-09-08
+
+### Fixed
+
+- **Raw database errors exposed to clients**: Login and registration endpoints
+  returned internal error messages. Now returns safe generic messages.
+- **Activity audit logging silently discarded**: `SetActivityLogger` was never
+  called at startup, so all audit logs were lost.
+- **No readiness health check**: Added `GET /ready` endpoint that verifies
+  database connectivity for orchestrator probes.
+- **Auth endpoints not rate-limited separately**: Auth routes now have a stricter
+  20 req/min limit (vs 100 global) to mitigate brute-force attacks.
+- **Rate limiter broken behind reverse proxies**: Now supports
+  `TRUSTED_PROXY_COUNT` env var and reads `X-Forwarded-For` / `X-Real-IP`.
+- **JWT secret minimum too weak**: Raised minimum from 16 to 32 characters.
+- **No HSTS header**: Added `Strict-Transport-Security` in non-development mode.
+- **Advance amount unbounded**: Added ₹1,00,000 server-side cap.
+- **Bulk attendance upsert unbounded**: Added 500-record per-request limit.
+- **Ledger note and dispute reason unbounded**: Added 500 / 1000 character caps.
+- **Payslip filename not sanitized**: Filenames now stripped of special characters.
+- **Server URL editable in production**: Login gear icon now only visible in
+  debug builds.
+- **Badge/notification counts silently wrong on error**: Providers now log errors
+  instead of returning 0.
+- **debugPrint invisible in release logs**: Replaced with structured `AppLogger`.
+- **FluidSlideIn timer leak**: Delay timer now stored and cancelled on dispose.
+- **IFSC code format not validated**: Employee form now validates IFSC pattern.
+- **Missing request ID correlation**: Added per-request UUID middleware with
+  `X-Request-ID` header and log correlation.
+
+## [0.9.1] - 2026-08-30
+
+### Fixed
+
+- **Document viewer broken on Android 11+**: External PDF/image opening failed
+  silently due to missing `<queries>` declaration in AndroidManifest.xml and
+  unauthenticated server URLs. Documents now download with auth token, save
+  locally, and open via `open_filex`. Payslip opening also migrated from
+  `url_launcher` to `open_filex` for reliability.
+- **Onboarding shift times ignored**: Time picker selections in the onboarding
+  wizard were discarded; hardcoded `08:00`/`17:00`/`22:00`/`06:00` always sent
+  to server. Parent widget now receives selected times via callbacks.
+- **FCM notification tap does nothing**: Tapping push notifications from
+  background/killed state only printed debug logs. Now navigates to the relevant
+  screen based on `entity_type` (attendance, ledger, disputes, etc.).
+- **FCM token not removed on logout**: Server continued sending push
+  notifications to de-registered devices. `removeToken()` now called before
+  Firebase sign-out.
+- **`LedgerService.getBalanceSummary()` runtime crash**: Unsafe `.cast()` on
+  JSON list threw `TypeError` if server returned unexpected types. Replaced with
+  safe `.map()`.
+- **`PayrollEntry.toJson()` drops `photoUrl`**: Serialization silently lost the
+  photo URL field. Added to `toJson()`.
+- **`DailySummaryData` missing `date` field**: Server's `date` value was
+  silently discarded during deserialization. Added `date` field.
+- **`AppUser.isAdmin` security**: Blocklist (`role != 'employee'`) granted admin
+  access to any typo'd role. Changed to allowlist (`admin`/`owner`/`supervisor`).
+- **Staff update rejects empty phone**: `StaffController.Update` validated phone
+  length unconditionally, blocking partial updates. Now guarded with
+  `req.Phone != ""`.
+- **ExportCSV corrupt responses on error**: CSV headers were written before data
+  fetch; on failure, JSON error was appended to CSV-headed response. Now buffers
+  CSV in memory first.
+- **Settings endpoint leaks raw errors**: `err.Error()` sent directly to client,
+  exposing internal details. Replaced with safe message.
+- **`Attendance.toJson()` type inconsistency**: `overtime_hours` was serialized
+  as `String` instead of `double` like all other numeric fields. Fixed.
+
+### Added
+
+- **`DocumentService.downloadDocument()`**: New method to download document
+  bytes with authentication for local file opening.
+- **`Dispute.toJson()`**: Added missing serialization method for consistency
+  with all other models.
+- **Notification service centralization**: `NotificationApiService` provider
+  moved to `core/providers/services.dart` (consistent with all 16 other
+  services).
+- **Sync queue RBAC**: All 3 sync queue endpoints now enforce non-employee role
+  checks.
+- **Dispute ownership check**: Employees can now only file disputes for
+  themselves (previously could file for any employee).
+- **Notifications mounted guard**: `markAllRead` now checks `context.mounted`
+  after async operation before invalidating providers.
+
+### Changed
+
+- `BulkUpsert` doc comment corrected: operation is not actually atomic;
+  previously upserted records are not rolled back on failure.
+- Removed orphaned `reports_hub_page.dart` and its test (dead code, no route).
+- Removed dead `onBackgroundMessage` function from `fcm_service.dart`.
+
+## [0.9.0] - 2026-08-30
+
+### Added
+
+- **In-app notifications system**: Server-side notification storage with 30-day
+  auto-cleanup, paginated listing, read/unread tracking, mark-all-read.
+- **Device push notifications**: FCM HTTP v1 API integration (no Firebase Go SDK
+  required). Go server sends push directly via OAuth2-authenticated HTTP POST.
+- **Notification triggers wired**: All 12 notification triggers now fire from
+  actual service methods (attendance, advances, ledger, disputes, payroll, staff).
+  Nil-safe: gracefully disabled if FCM is not configured.
+- **Notification bell in AppBar**: Animated unread badge counter visible to both
+  admin and employee roles.
+- **Notifications page**: Full notification list with type-specific icons, time-ago
+  display, pull-to-refresh, and tap-to-navigate to related entity.
+- **FCM token management**: Device token registration on every app foreground,
+  automatic refresh on token rotation, stale token cleanup on UNREGISTERED.
+- **Server endpoints**: `GET /notifications`, `GET /notifications/unread-count`,
+  `PUT /notifications/{id}/read`, `PUT /notifications/read-all`,
+  `POST /me/fcm-token`, `DELETE /me/fcm-token`.
+- **Database migrations**: `notifications` table (00025) and `fcm_tokens` table
+  (00026) with performance indexes. Applied to database.
+- **Server tests**: 11 new tests covering notification triggers (nil-safety,
+  construction), notification service (invalid UUID handling), and controller
+  endpoints (auth, validation, missing params).
+- **Flutter tests**: 29 new tests covering notification model (fromJson, timeAgo),
+  notification API service (list, markRead, registerToken), notification badge
+  widget (zero/unread/max counts), notifications page (empty state, list, mark
+  all read, time ago), and auth service (signIn, register, logout, phone/OTP
+  validation with test number 9426284943).
+
+### Changed
+
+- Bumped version to 0.9.0+11.
+
+## [0.8.4] - 2026-08-30
+
+### Fixed
+
+- **Attendance `toJson` type mismatch**: `overtime_hours` now sent as string
+  (server expects string, not number). Added `version` field for optimistic
+  locking on updates.
+- **Dispute service invalid Dart syntax**: `?resolutionNote` inline syntax
+  replaced with proper conditional map building.
+- **Attendance `fromJson` dangerous default**: Status default changed from
+  `'present'` to `'absent'` — missing status no longer inflates attendance.
+- **Ledger `getBalanceSummary` ignored params**: Removed unused `start_date`/`end_date`
+  query params that the server endpoint ignores.
+- **Version string hardcoded**: Popup menu now reads version from `appInfoProvider`
+  instead of hardcoded `v0.7.0`.
+- **TextEditingController leaks**: Controllers now disposed after dialogs close
+  in dispute and advance-request dialogs.
+- **`_listenerRegistered` anti-pattern**: Removed unnecessary boolean flag guard
+  on `ref.listen` in ledger pages.
+- **Edit employee navigation**: Edit button now uses `context.push` (go_router)
+  instead of `Navigator.push` with `MaterialPageRoute`.
+- **Employee dashboard "More" button**: Now uses `goBranch` (shell tab) instead
+  of `context.push('/more')` which stacked on top of the shell.
+- **PayrollSettings `weeklyOffs` default**: No longer defaults to Monday (`[1]`)
+  when server returns null/empty — defaults to empty list.
+- **LeavePolicyService fragile error handling**: Replaced string-based exception
+  inspection (`toString().contains('401')`) with typed `ApiException`/`AuthException`
+  catching.
+- **PayrollService sensitive data logging**: Removed per-employee wage logging
+  that leaked financial data in production logs.
+
+### Removed
+
+- Unused `ApiResponse<T>` model and its test file.
+
+## [0.8.3] - 2026-08-30
+
+### Changed
+
+- **Full rebrand: Factory Workforce → ClearWage** across all code, configs,
+  docs, CI, Fastlane metadata, and window titles.
+- Dart package renamed `vivek_app` → `clearwage` (all imports updated).
+- Bundle IDs changed to `com.devparadise.clearwage` (Android, iOS, macOS, Linux).
+- Go module renamed `github.com/vivek-app/vivek_app` → `github.com/clearwage/clearwage`.
+- Binary names changed to `clearwage` (was `factory_workforce`).
+- JWT issuer changed to `clearwage` (was `vivek-app`).
+- CI artifact names changed to `clearwage-*` (was `vivek-app-*`).
+
+### Added
+
+- About developers page (`/settings/about`) with glassmorphic design,
+  version badge, and tech stack — accessible to all roles via More hub.
+- `package_info_plus` for runtime version display (single source of truth).
+
+## [0.8.2] - 2026-08-30
+
+### Added
+
+- **Firebase multi-platform config** — `firebase_options.dart` generated by
+  FlutterFire CLI with real app IDs for Android, iOS, macOS, Windows, and web.
+  Linux falls back to web config (no official Firebase Linux SDK).
+- **Windows Inno Setup installer** — `tool/build_installer.dart` builds a
+  signed Windows installer from release artifacts.
+- **Full platform CI builds** — GitHub Actions now builds Android APK/AAB,
+  iOS (no signing), Windows, macOS, and Linux in separate jobs.
+- **Linux CI deps** — `flutter-prep` action installs `ninja-build` and
+  `libgtk-3-dev` on Linux runners.
+
+### Changed
+
+- Platform binary names updated to `clearwage` (was `vivek_app`).
+  Windows `Runner.rc` product metadata updated to "ClearWage".
+- `main.dart` uses `DefaultFirebaseOptions.currentPlatform` for Firebase
+  initialization (wrapped in try/catch for graceful degradation).
+- Widget smoke test fixed (was referencing non-existent `MyApp` class).
+
+## [0.8.0] - 2026-08-25
+
+### Fixed
+
+- **CRITICAL: Attendance lock bypass** — `CreateAttendance`, `BulkUpsertAttendance`,
+  and `UpdateAttendance` now enforce `is_locked`. Locked months can no longer be
+  silently modified. Returns HTTP 409 on locked records.
+- **CRITICAL: Settlement TOCTOU race** — Replaced read-create-read with
+  `SettleEmployeeAtomic` (single SQL CTE) so concurrent settlements cannot
+  both succeed.
+- **CRITICAL: wage_basis ignored** — Payroll now respects `fixed_26` (/26),
+  `fixed_30` (/30), and `calendar` (period days) settings. Was always dividing
+  by 30.
+- **CRITICAL: defaulters_count missing** — Dashboard now populates
+  `defaulters_count` from employee balance data.
+- **CRITICAL: Week-off pay off-by-one** — Loop now includes the end date of
+  the pay period (`!d.After(end)` instead of `d.Before(end)`).
+- **HIGH: Rate limiter IP spoofing** — Uses `r.RemoteAddr` (trusted) instead
+  of spoofable `X-Forwarded-For` / `X-Real-IP` headers.
+- **HIGH: Rate limiter unbounded memory** — Visitor map bounded to 10,000
+  entries; stale entries cleaned up every minute.
+- **HIGH: No RBAC on dispute Resolve/Reject** — Now requires non-employee role.
+- **HIGH: Nil-claims auth bypass** — Created `RequireClaims`/`RequireNonEmployee`
+  helpers; refactored all 9 controller files (25+ instances).
+- **HIGH: Onboarding navigates on failure** — Added `.catchError` to show
+  SnackBar on setup failure instead of navigating away.
+- **HIGH: Debug logs accessible to all** — `/debug/logs` restricted to owner
+  role via router redirect guard.
+- **HIGH: Dashboard total_staff undercounts** — Removed `IS NOT NULL` filter
+  on `default_shift_id` so employees without shifts are counted.
+- **HIGH: AllowCredentials mismatch** — CORS `AllowCredentials` set to `true`
+  to match the cookie auth model.
+- **HIGH: Ledger UpdateEntry no optimistic locking** — Added `version` column
+  check to `UpdateLedgerEntry` with HTTP 409 on concurrent modification.
+- **MEDIUM: Silent token refresh swallowing** — Token refresh errors now logged.
+- **MEDIUM: LeavePolicyService swallows errors** — 401/500 errors now re-thrown.
+- **MEDIUM: Fire-and-forget TokenStorage.clear()** — Now awaited properly.
+- **MEDIUM: Flutter PayrollEntry drops fields** — Now parses `days_present`,
+  `total_overtime`, `wage_type`, `wage_amount`, `wage_basis`.
+- **MEDIUM: Employee fields dropped** — Now parses `version`,
+  `piece_rate_item_name`, `piece_rate_per_unit`, `daily_target_units`.
+- **MEDIUM: OT multiplier validation** — Upper bound enforced (1.0–2.0) to
+  match DB CHECK constraint.
+- **MEDIUM: Advance request loads all pending** — Now uses `COUNT` query
+  instead of loading up to 10K records.
+- **MEDIUM: IsHoliday loads 1000 holidays** — Now uses `COUNT` query.
+- **MEDIUM: listAll = 1,000,000** — Capped to 10,000 across all services.
+- **MEDIUM: Staff list limit=100000** — Capped at 100.
+- **MEDIUM: Missing security headers** — Added `X-Content-Type-Options`,
+  `X-Frame-Options`, `X-XSS-Protection`.
+- **MEDIUM: JWT missing claims** — Added `iss` (vivek-app) and `sub`
+  (employee_id) claims for token revocation support.
+- **MEDIUM: GetClaims nil bypass** — All controllers now reject nil claims
+  via `RequireClaims`/`RequireNonEmployee` helpers.
+- **MEDIUM: Create vs Update wage types** — Create now accepts `piece_rate`
+  via shared `ValidateWageType`.
+- **MEDIUM: OT validation mismatch** — Controller and DB constraint now aligned.
+- **MEDIUM: Advance request dialog** — Amount validated (0 < x <= 100,000).
+- **MEDIUM: Payroll preview _pickDates** — Logs after `setState`.
+- **LOW: Roster cache stale on write** — Cache invalidated on attendance
+  create and bulk upsert.
+- **LOW: log.Printf in activity service** — Replaced with zerolog.
+- **LOW: Shift form start == end** — Validates start time != end time.
+- **LOW: Disputes sequential fetch** — Now uses `Future.wait` for parallel.
+- **LOW: _PremiumSearchBar no-op listener** — Fixed listener removal.
+
+### Added
+
+- **CSRF protection** — New middleware generates random tokens, validates
+  `X-CSRF-Token` header against `csrf_token` cookie on state-changing methods.
+  Bearer-only requests skip CSRF.
+- **`RequireClaims`/`RequireNonEmployee` helpers** — Centralized auth-check
+  helpers in `middlewares/auth.go` replacing ad-hoc nil-checking.
+- **`SettleEmployeeAtomic`** — Single SQL CTE that computes balance and
+  inserts settlement entry atomically, eliminating TOCTOU races.
+- **`HasPendingAdvanceRequest` / `CountHolidaysByDate`** — Efficient COUNT
+  queries replacing full-table scans.
+- **`PaginatedList<T>` helper** — Reusable pagination mixin for Flutter
+  list screens, reducing ~300 lines of duplicated boilerplate.
+- **Global `ErrorWidget.builder`** — User-friendly error screen replaces
+  red screen of death on uncaught Flutter errors.
+- **Role-based route guards** — Admin-only routes (`/staff`, `/shifts`,
+  `/payroll/*`, etc.) redirect employees to `/home`.
+- **Deep link return after login** — `redirectLocationProvider` stores
+  intended URL; redirects back after successful login.
+- **Onboarding shift time pickers** — Time picker dialogs now open on tap.
+- Migration `00024` (empty, version column already existed from `00022`).
+
+## [0.7.0] - 2026-08-20
+
+### Fixed
+
+- Hourly wage badge in Staff Directory now shows "HOURLY" in purple instead of
+  incorrectly displaying "MONTHLY". Filter sheet also includes hourly option.
+- Route naming normalized to kebab-case: `/new_ledger` → `/new-ledger`,
+  `/add_employee` → `/add-employee`.
+- Employee Profile tab renamed from "Logs" to "Attendance" to match content.
+- Delete Account button demoted to outlined style; Sign Out promoted to solid
+  red FilledButton for correct destructive-action hierarchy.
+- Duplicate phone number during registration now shows a friendly error message
+  instead of a raw exception.
+
+### Added
+
+- `design_tokens.dart` — centralized design system: `AppRadius` (sm/md/lg),
+  `AppColors` (success/danger/warning/info/purple), `AppBlur` (sigma 15).
+- All color literals replaced with semantic tokens across 22 files.
+- All glassmorphism blur standardized to sigma 15 for consistent visual depth.
+- `empty_state.dart` — shared EmptyState widget replacing 32 ad-hoc empty
+  states across 17 pages for consistent empty-state UX.
+- `currency_format.dart` — Indian numeral grouping via `AppCurrency.format()`
+  (e.g., ₹1,00,000 instead of ₹100000).
+- OTP SMS auto-fill hints on Pinput and phone field for faster login.
+- Session expiry dialog now warns about unsaved changes before redirect.
+- Payroll Preview shows a pencil indicator on manually overridden net pay rows.
+- Advance deny action now captures an optional reason/note.
+- Employee nav now includes My Ledger tab (3 tabs: Home, My Attendance,
+  My Ledger) for quicker access to financial data.
+- Disputes page upgraded with FluidSlideIn animations, glassmorphism cards,
+  and semantic status badge colors.
+
+### Changed
+
+- `app.dart` theme card radius updated to 16px (was 12px) for consistency.
+- All currency displays use Indian grouping format (₹1,00,000).
+
+## [0.6.0] - 2026-08-18
+
+### Added
+
+- Employee dashboard using `/me/overview` — employees no longer get 403 on Home.
+  Shows attendance summary, outstanding balance, and 7 quick-action cards:
+  My Attendance, My Payslip, Request Advance, My Ledger, My Advance Requests,
+  My Reports, Shift Timings.
+- Employee-facing pages: My Attendance (with month picker), My Advance Requests
+  (read-only status view), My Shifts (read-only), My Holidays (read-only),
+  My Reports, My Ledger (with monthly summary card).
+- Owner Balance Sheet (`/balance-sheet`) — per-employee balance breakdown with
+  color-coded amounts, drill-down to individual ledgers.
+- Employee monthly ledger summary — "Wages Earned", "Advances Taken", "Net
+  Position" card on My Ledger page.
+- Admin advance request creation removed — employees create their own requests
+  via the dashboard; admins only approve/deny.
+- CSV export button on Reports Hub (placeholder).
+- Employee settings menu: My Profile, Shift Timings, Holidays, My Advance
+  Requests, My Reports.
+- Server: `GET /api/v1/ledger/balance-summary` endpoint for per-employee balance
+  breakdown.
+- Server: Migration 00023 — ledger CHECK constraint now includes `wage` type,
+  performance indexes added.
+- 462 tests total (80+ new widget tests across 11 new test files).
+
+### Changed
+
+- Payroll finalization now writes `type='jama'` ledger entries (was `'wage'`),
+  so the balance equation `net = udhaar - jama` is complete. After payroll,
+  employee balance correctly reflects wages paid.
+- Dashboard `wage_bill_mtd` SQL now includes `wage` type entries — shows true
+  wage bill, not just advances given.
+- Advance approval auto-dates to today when date not provided.
+- Employee bottom nav: Home + My Attendance (2 tabs). Disputes removed from
+  bottom nav, moved to admin settings menu.
+- Roster OT entry: inline 76px TextField replaced with clock icon button that
+  opens a proper AlertDialog with TextField + Save.
+- Employee shifts and holidays pages are now read-only (no create/edit/delete).
+
+### Fixed
+
+- Employee Home tab no longer returns 403 (was calling admin-only dashboard
+  endpoint).
+- Ledger balance now correctly accounts for wages paid (was invisible before).
+
+## [0.5.7] - 2026-08-18
+
+### Added
+
+- Responsive layout foundation: `AppBreakpoints`, `ResponsiveContent`,
+  `AppScrollPhysics`, `showAdaptiveSheet`, and `ResponsiveStatRow` in
+  `core/responsive.dart` for desktop/tablet adaptive UI.
+- NavigationRail on wide screens (≥ 900 px) in `main_shell.dart`; bottom
+  NavigationBar kept for phones.
+- Daily Summary now has a date picker to view any day's report.
+- Visible dispute icon on every ledger row (previously long-press only).
+- Comprehensive test coverage: 22 new test files covering all untested
+  models, services, and core helpers (380 total tests, up from ~138).
+
+### Changed
+
+- All 11 bottom sheets now use `showAdaptiveSheet` — centered dialog on
+  desktop (≥ 900 px), bottom sheet on phones.
+- All 19 screens with hardcoded `BouncingScrollPhysics` now use
+  `AppScrollPhysics.physics()` — platform-adaptive (Bouncing on iOS/macOS,
+  Clamping on desktop/web).
+- Dashboard, Daily Summary, Ledger, and Payroll stat grids use
+  `ResponsiveStatRow` — `Wrap` on wide screens, `Row` on phones.
+- `wage_amount` sent as raw string to match Go's `string` field
+  (`staff_controller.go`).
+- Role vocabulary aligned to DB enum: Flutter sends `supervisor` instead of
+  `manager`; server accepts both and maps legacy `manager` → `supervisor`.
+- Onboarding OT trigger fixed: `after_threshold` → `after_daily_hours`.
+- Payroll settings: `ot_rounding` constrained to 15/30/60, OT multiplier
+  replaced with 1.0/1.5/2.0 segmented selector, default `otTrigger` in
+  `PayrollSettings` model fixed to `after_daily_hours`.
+- Employee role no longer sees Attendance, Reports, Staff, Ledger, or
+  Disputes tabs — Home only.
+- Debug logs menu item gated behind `kDebugMode`.
+- Orientation lock now only applies on Android/iOS (skipped on web/desktop).
+- `web/manifest.json` orientation changed from `portrait-primary` to `any`.
+- `web/index.html` now has viewport meta tag, proper title and description.
+- Dead `AppTheme` class and `core/theme/` directory removed.
+
+### Fixed
+
+- `POST /api/v1/staff` no longer fails with "invalid request body" (wage
+  amount sent as string).
+- `role: supervisor` no longer triggers DB CHECK violation (was sending
+  `manager` which isn't in the enum).
+- Onboarding `/setup` no longer 500s on `ot_trigger` (was sending invalid
+  enum value).
+- Payroll settings save no longer 500s on `ot_rounding: 0` or invalid
+  `ot_multiplier_default`.
+
+## [0.5.6] - 2026-08-18
+
+### Fixed
+
+- App startup no longer triggers a Flutter zone-mismatch warning: binding
+  initialization and `runApp` now run inside the same guarded zone.
+- Closing the login screen's server-config sheet no longer crashes
+  (`TextEditingController` used after dispose) or overflows when the keyboard is
+  open; the sheet now owns its controller and scrolls.
+- The ledger "New Entry" employee picker had the same disposed-controller crash
+  after the sheet closed; it now owns its search controller.
+
+### Changed
+
+- Attendance edits are now conflict-safe against the server's optimistic
+  locking: the app sends each row's `version` with updates, and a stale save
+  (HTTP 409) auto-refreshes the roster and prompts a retry. The roster API now
+  returns the attendance `version`.
+
+## [0.5.5] - 2026-08-18
+
+### Added
+
+- Offline log viewer built on Talker: `AppLogger` now writes to an in-memory
+  Talker history, and a themed `/debug/logs` screen (Settings → App Logs) shows
+  live info/warning/error/HTTP/route logs with level filters, actions and
+  share/save.
+- Page-transition animations: pushed screens slide up from the bottom with a
+  fade (~300 ms, easeOutCubic); boot/auth/top-level routes cross-fade.
+- Ledger disputes: raise a dispute from a ledger entry and review/resolve open
+  disputes in a new Disputes tab (server-backed `ledger_disputes` table).
+- Tenant timezone support on the server: reports and payroll use the tenant's
+  configured timezone (`tenants.timezone`).
+
+### Changed
+
+- Attendance, employee and ledger rows now carry a `version` column for
+  optimistic locking (concurrent writes are detected server-side).
+- Shell tabs (Home/Staff/Attendance/Ledger/Reports/Disputes) no longer show a
+  back button; pushed screens pop via go_router `context.pop()`.
+
+### Fixed
+
+- Payroll Summary page no longer blank when data loads (layout overflow in the
+  summary stat cards); row controllers are initialized before rebuild.
+
+## [0.5.0] - 2026-08-15
+
+Baseline release. First tagged version of the ClearWage app, aligned
+with the repo-wide structure conventions (docs pyramid, release pipeline, lint
+contract).
+
+### Added
+
+- `lib/` reorganized into four top-level domains: `core/` (plumbing, theme,
+  shared providers), `data/` (models + services), `features/` (screens), and
+  `features/<f>/providers/` for feature-scoped state.
+- `go_router` routing extracted to `lib/core/router.dart`; app entry is now
+  `main.dart → app.dart → core/router.dart`.
+- Test tree mirrors `lib/` 1:1 under `test/`; `ApiClient` is injectable for
+  testing (`test/core/api_client_test.dart`).
+- Opinionated lint contract in `analysis_options.yaml`
+  (`prefer_single_quotes`, `always_declare_return_types`, `avoid_print`,
+  `prefer_const_constructors`, `sort_child_properties_last`,
+  `unawaited_futures`).
+- Flutter CI pipeline: shared `flutter-prep` action, format/analyze/test gate
+  with `-x network`, and a tag-triggered release job that attaches APKs and the
+  CHANGELOG body.
+- Android release signing via CI secrets (`android/key.properties`, debug
+  fallback locally) and the AGP dependency-metadata signing block disabled for
+  store/repoducible builds.
+- `fastlane/metadata/android/en-US/` store listing text and per-versionCode
+  changelog.
+
+### Changed
+
+- `pubspec.yaml` is the single source of version (`0.5.0+1`); `versionCode`
+  bumps monotonically for build-only fixes.
+- `pubspec.lock` is committed (never gitignored) for reproducible builds.
+
+### Notes
+
+- First tag: `v0.5.0`. The CHANGELOG entry for a release lives in the tagged
+  commit (the release job extracts it via `awk`).

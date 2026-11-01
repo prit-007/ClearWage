@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -57,7 +58,7 @@ func NewTestDB(ctx context.Context) (*TestDB, error) {
 
 	cleanup := func() {
 		pool.Close()
-		container.Terminate(ctx)
+		_ = container.Terminate(ctx)
 	}
 
 	return &TestDB{
@@ -72,7 +73,7 @@ func (tdb *TestDB) RunMigrations(dir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open db for migration: %w", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err

@@ -1,0 +1,2028 @@
+import 'dart:io';
+import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/services/document_upload_queue.dart';
+import '../../core/services/media_service.dart';
+import '../../core/providers/app_providers.dart';
+import '../../core/providers/services.dart';
+import '../dashboard/providers/dashboard_providers.dart';
+import '../ledger/providers/ledger_providers.dart';
+import 'providers/staff_providers.dart';
+import '../../data/models/employee_model.dart';
+import '../../core/app_config.dart';
+import '../../core/helpers.dart';
+import '../../core/logger.dart';
+import '../../core/api_exceptions.dart';
+import '../../core/widgets/bottom_blur_bar.dart';
+import '../../core/responsive.dart';
+import '../../core/design_tokens.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
+import '../../core/currency_format.dart';
+import '../../l10n/app_localizations.dart';
+
+class EmployeeProfileScreen extends ConsumerStatefulWidget {
+  final String employeeId;
+  const EmployeeProfileScreen({super.key, required this.employeeId});
+  @override
+  ConsumerState<EmployeeProfileScreen> createState() =>
+      _EmployeeProfileScreenState();
+}
+
+class _EmployeeProfileScreenState extends ConsumerState<EmployeeProfileScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabCtrl;
+  Map<String, dynamic>? _profile;
+  List<Map<String, dynamic>>? _attendance;
+  Map<String, dynamic>? _attSummary;
+  List<Map<String, dynamic>>? _ledger;
+  double? _balance;
+  bool _loading = true;
+  List<Map<String, dynamic>> _auditLogs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    final isAdmin = ref.read(userInfoProvider)?.isAdmin ?? false;
+    _tabCtrl = TabController(length: isAdmin ? 4 : 3, vsync: this);
+    _tabCtrl.addListener(() {
+      if (!_tabCtrl.indexIsChanging) HapticFeedback.selectionClick();
+    });
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final svc = ref.read(staffServiceProvider);
+
+    final overview = await _fetch(() => svc.getOverview(widget.employeeId));
+    if (overview == null) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+
+    final profile = (overview['profile'] as Map<String, dynamic>?)
+        ?.cast<String, dynamic>();
+    final ledger =
+        (overview['ledger'] as Map<String, dynamic>?)
+            ?.cast<String, dynamic>() ??
+        {};
+    final attendanceData =
+        (overview['attendance'] as Map<String, dynamic>?)
+            ?.cast<String, dynamic>() ??
+        {};
+    final attSummary =
+        (attendanceData['summary'] as Map<String, dynamic>?)
+            ?.cast<String, dynamic>() ??
+        {};
+    final attList = ((attendanceData['recent'] as List<dynamic>?) ?? [])
+        .map((e) => (e as Map).cast<String, dynamic>())
+        .toList();
+    final ledgerList = ((ledger['recent'] as List<dynamic>?) ?? [])
+        .map((e) => (e as Map).cast<String, dynamic>())
+        .toList();
+    final bal = safeToDouble(ledger['balance']);
+
+    if (mounted) {
+      setState(() {
+        _profile = profile;
+        _attendance = attList;
+        _attSummary = attSummary;
+        _ledger = ledgerList;
+        _balance = bal;
+        _loading = false;
+      });
+    }
+    if (mounted && (ref.read(userInfoProvider)?.isAdmin ?? false)) {
+      unawaited(_loadAudit());
+    }
+  }
+
+  Future<void> _loadAudit() async {
+    final logs = await _fetch(
+      () => ref.read(staffServiceProvider).getAuditLogs(widget.employeeId),
+    );
+    if (logs != null && mounted) {
+      setState(() => _auditLogs = logs);
+    }
+  }
+
+  Future<T?> _fetch<T>(Future<T> Function() fn) async {
+    try {
+      return await fn();
+    } catch (e, st) {
+      AppLogger.error('Profile fetch failed', e, st);
+      return null;
+    }
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    unawaited(HapticFeedback.selectionClick());
+    final source = await showAdaptiveSheet<String>(
+      context: context,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: PhosphorIcon(
+                  PhosphorIconsDuotone.camera,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: Text(
+                  AppLocalizations.of(context).profPhotoCamera,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                onTap: () => Navigator.pop(ctx, 'camera'),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: PhosphorIcon(
+                  PhosphorIconsDuotone.image,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: Text(
+                  AppLocalizations.of(context).profPhotoGallery,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                onTap: () => Navigator.pop(ctx, 'gallery'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    String? path;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
+        imageQuality: 70,
+        maxWidth: 1200,
+        maxHeight: 1200,
+      );
+      path = picked?.path;
+    } catch (_) {
+      if (mounted) {
+        showError(context, AppLocalizations.of(context).profCouldNotPickPhoto);
+      }
+      return;
+    }
+    if (path == null || !mounted) return;
+
+    try {
+      final url = await ref
+          .read(staffServiceProvider)
+          .uploadPhoto(widget.employeeId, path);
+      if (mounted) {
+        setState(() => _profile?['photo_url'] = url);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).profPhotoUpdated),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
+
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: cs.surfaceContainerLowest,
+        appBar: AppBar(
+          backgroundColor: cs.surfaceContainerLowest,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(PhosphorIconsRegular.arrowLeft, color: cs.onSurface),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: CustomScrollView(
+          physics: AppScrollPhysics.physics(),
+          slivers: [const ShimmerLoading(itemCount: 4, height: 100)],
+        ),
+      );
+    }
+
+    final name =
+        _profile?['name'] as String? ??
+        AppLocalizations.of(context).commonEmployee;
+    final role = _profile?['role'] as String? ?? '';
+    final designation = _profile?['designation'] as String? ?? role;
+    final phone = _profile?['phone'] as String? ?? '';
+    final initials = getInitials(name);
+
+    return Scaffold(
+      backgroundColor: cs.surfaceContainerLowest,
+      body: Stack(
+        children: [
+          NestedScrollView(
+            physics: AppScrollPhysics.physics(),
+            headerSliverBuilder: (_, _) => [
+              SliverAppBar(
+                backgroundColor: cs.surfaceContainerLowest,
+                elevation: 0,
+                pinned: true,
+                leading: IconButton(
+                  icon: Icon(
+                    PhosphorIconsRegular.arrowLeft,
+                    color: cs.onSurface,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                actions: [
+                  if (isAdmin) ...[
+                    IconButton(
+                      icon: Icon(
+                        PhosphorIconsRegular.pencilSimple,
+                        color: cs.onSurfaceVariant,
+                      ),
+                      onPressed: () async {
+                        final emp = _profile;
+                        if (emp == null || emp['id'] == null) return;
+                        final result = await context.push<bool>(
+                          '/add-employee',
+                          extra: Employee.fromJson(emp),
+                        );
+                        if (result == true && mounted) {
+                          unawaited(_loadProfile());
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(PhosphorIconsRegular.trash, color: cs.error),
+                      onPressed: () async {
+                        final emp = _profile;
+                        if (emp == null || emp['id'] == null) return;
+                        final confirmed = await showConfirmDialog(
+                          context,
+                          title: AppLocalizations.of(
+                            context,
+                          ).profDeleteEmployeeTitle,
+                          message: AppLocalizations.of(context)
+                              .profDeleteEmployeeMsg(
+                                emp['name']?.toString() ?? '',
+                              ),
+                          confirmLabel: AppLocalizations.of(
+                            context,
+                          ).commonDelete,
+                          icon: PhosphorIconsRegular.trash,
+                          isDestructive: true,
+                        );
+                        if (confirmed == true && mounted) {
+                          try {
+                            await ref
+                                .read(staffServiceProvider)
+                                .delete(widget.employeeId);
+                            ref.invalidate(employeeListProvider);
+                            if (context.mounted) Navigator.pop(context);
+                          } catch (e) {
+                            if (context.mounted) showError(context, e);
+                          }
+                        }
+                      },
+                    ),
+                  ],
+                ],
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 8,
+                  ),
+                  child: _EditorialProfileHeader(
+                    cs: cs,
+                    tt: tt,
+                    name: name,
+                    initials: initials,
+                    designation: designation,
+                    phone: phone,
+                    photoUrl: resolveMediaUrl(
+                      _profile?['photo_url'] as String? ?? '',
+                      ref.read(serverUrlProvider),
+                    ),
+                    canEditPhoto: isAdmin,
+                    onEditPhoto: _pickAndUploadPhoto,
+                    onMessage: (phone.isEmpty)
+                        ? null
+                        : () => unawaited(
+                            ref
+                                .read(whatsappServiceProvider)
+                                .launch(phone: phone, text: 'નમસ્તે $name!')
+                                .then((ok) {
+                                  if (!ok && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          AppLocalizations.of(
+                                            context,
+                                          ).broadcastNoWhatsapp,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }),
+                          ),
+                    onCall: (phone.isEmpty)
+                        ? null
+                        : () => unawaited(
+                            launchUrl(Uri(scheme: 'tel', path: phone)),
+                          ),
+                  ),
+                ),
+              ),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _PremiumTabBarDelegate(
+                  Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: TabBar(
+                      controller: _tabCtrl,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      indicator: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: cs.surface,
+                        boxShadow: [
+                          BoxShadow(
+                            color: cs.shadow.withValues(alpha: 0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      labelColor: cs.primary,
+                      unselectedLabelColor: cs.onSurfaceVariant,
+                      labelStyle: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                      dividerColor: Colors.transparent,
+                      tabs: [
+                        Tab(text: AppLocalizations.of(context).profile),
+                        Tab(text: AppLocalizations.of(context).attendance),
+                        Tab(text: AppLocalizations.of(context).ledger),
+                        if (isAdmin)
+                          Tab(text: AppLocalizations.of(context).profTabAudit),
+                      ],
+                    ),
+                  ),
+                  cs.surfaceContainerLowest,
+                ),
+              ),
+            ],
+            body: TabBarView(
+              controller: _tabCtrl,
+              physics: AppScrollPhysics.physics(),
+              children: [
+                _InfoTab(
+                  cs: cs,
+                  tt: tt,
+                  profile: _profile,
+                  employeeId: widget.employeeId,
+                  canEdit: isAdmin,
+                ),
+                _AttendanceTab(
+                  cs: cs,
+                  tt: tt,
+                  attendanceList: _attendance,
+                  summary: _attSummary,
+                ),
+                _LedgerTab(
+                  cs: cs,
+                  tt: tt,
+                  ledgerList: _ledger,
+                  balance: _balance,
+                ),
+                if (isAdmin) _AuditTab(cs: cs, tt: tt, logs: _auditLogs),
+              ],
+            ),
+          ),
+
+          if (isAdmin)
+            BottomBlurBar(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () async {
+                        final confirmed = await showConfirmDialog(
+                          context,
+                          title: AppLocalizations.of(context).profSettleTitle,
+                          message: AppLocalizations.of(context).profSettleMsg,
+                          confirmLabel: AppLocalizations.of(
+                            context,
+                          ).profSettleConfirm,
+                          icon: PhosphorIconsRegular.currencyCircleDollar,
+                        );
+                        if (confirmed != true) return;
+                        unawaited(HapticFeedback.lightImpact());
+                        try {
+                          await ref
+                              .read(ledgerServiceProvider)
+                              .settleAccount(widget.employeeId);
+                          ref.invalidate(dashboardDataProvider);
+                          ref.read(ledgerRefreshProvider.notifier).state++;
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  ).profAccountSettled,
+                                ),
+                              ),
+                            );
+                          }
+                          if (mounted) unawaited(_loadProfile());
+                        } catch (e) {
+                          if (context.mounted) showError(context, e);
+                        }
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        side: BorderSide(color: cs.outlineVariant),
+                      ),
+                      child: Text(
+                        AppLocalizations.of(context).profFFSettle,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () async {
+                        unawaited(HapticFeedback.heavyImpact());
+                        try {
+                          final now = DateTime.now();
+                          final start =
+                              '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
+                          final end =
+                              '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+                          final pdf = await ref
+                              .read(payrollServiceProvider)
+                              .generatePayslip(
+                                employeeId: widget.employeeId,
+                                startDate: start,
+                                endDate: end,
+                              );
+                          final dir = await getTemporaryDirectory();
+                          final file = File(
+                            '${dir.path}/payslip_${widget.employeeId}_${start}_$end.pdf',
+                          );
+                          await file.writeAsBytes(pdf);
+                          if (context.mounted) {
+                            final result = await OpenFilex.open(file.path);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    result.type == ResultType.done
+                                        ? AppLocalizations.of(
+                                            context,
+                                          ).profPayslipOpened
+                                        : AppLocalizations.of(
+                                            context,
+                                          ).profPayslipSaved,
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        } catch (e) {
+                          if (context.mounted) showError(context, e);
+                        }
+                      },
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        AppLocalizations.of(context).profGenerateSlip,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EditorialProfileHeader extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final String name, initials, designation, phone;
+  final String photoUrl;
+  final bool canEditPhoto;
+  final VoidCallback onEditPhoto;
+  final VoidCallback? onMessage;
+  final VoidCallback? onCall;
+  const _EditorialProfileHeader({
+    required this.cs,
+    required this.tt,
+    required this.name,
+    required this.initials,
+    required this.designation,
+    required this.phone,
+    required this.photoUrl,
+    required this.canEditPhoto,
+    required this.onEditPhoto,
+    this.onMessage,
+    this.onCall,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: cs.primary.withValues(alpha: 0.2),
+              width: 3,
+            ),
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              CircleAvatar(
+                radius: 52,
+                backgroundColor: cs.primaryContainer.withValues(alpha: 0.4),
+                backgroundImage: photoUrl.isNotEmpty
+                    ? NetworkImage(photoUrl)
+                    : null,
+                child: photoUrl.isNotEmpty
+                    ? null
+                    : Text(
+                        initials,
+                        style: tt.headlineMedium?.copyWith(
+                          color: cs.primary,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1.0,
+                        ),
+                      ),
+              ),
+              if (canEditPhoto)
+                Positioned(
+                  right: -4,
+                  bottom: -4,
+                  child: GestureDetector(
+                    onTap: onEditPhoto,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: cs.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: cs.surfaceContainerLowest,
+                          width: 3,
+                        ),
+                      ),
+                      child: Icon(
+                        PhosphorIconsFill.camera,
+                        size: 16,
+                        color: cs.onPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          name,
+          style: tt.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1.0,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            designation.toUpperCase(),
+            style: tt.labelSmall?.copyWith(
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.0,
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        if (onCall != null || onMessage != null) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (onCall != null) ...[
+                _ContactActionButton(
+                  cs: cs,
+                  icon: PhosphorIconsFill.phone,
+                  tooltip: AppLocalizations.of(context).profTooltipCall,
+                  onTap: onCall!,
+                ),
+                const SizedBox(width: 16),
+              ],
+              if (onMessage != null) ...[
+                _ContactActionButton(
+                  cs: cs,
+                  icon: PhosphorIconsFill.whatsappLogo,
+                  tooltip: AppLocalizations.of(context).profTooltipWhatsapp,
+                  onTap: onMessage!,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 24),
+        ],
+      ],
+    );
+  }
+}
+
+class _ContactActionButton extends StatelessWidget {
+  final ColorScheme cs;
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _ContactActionButton({
+    required this.cs,
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: cs.primaryContainer.withValues(alpha: 0.4),
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Icon(icon, color: cs.primary, size: 20),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PremiumTabBarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget tabBar;
+  final Color bgColor;
+  _PremiumTabBarDelegate(this.tabBar, this.bgColor);
+
+  @override
+  Widget build(BuildContext context, _, _) =>
+      Container(color: bgColor, child: tabBar);
+  @override
+  double get maxExtent => 64;
+  @override
+  double get minExtent => 64;
+  @override
+  bool shouldRebuild(_) => false;
+}
+
+class _InfoTab extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final Map<String, dynamic>? profile;
+  final String employeeId;
+  final bool canEdit;
+  const _InfoTab({
+    required this.cs,
+    required this.tt,
+    this.profile,
+    required this.employeeId,
+    required this.canEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final wageType = profile?['wage_type'] as String? ?? '';
+    final wageAmount = profile?['wage_amount']?.toString() ?? '0';
+    final designation =
+        profile?['designation'] as String? ?? profile?['role'] as String? ?? '';
+    final manager =
+        profile?['manager_name'] as String? ??
+        AppLocalizations.of(context).commonNotAssigned;
+    final shiftName = profile?['shift_name'] as String?;
+    final shiftStart = profile?['shift_start_time'] as String?;
+    final shiftEnd = profile?['shift_end_time'] as String?;
+    final shiftLabel = shiftName != null && shiftName.isNotEmpty
+        ? (shiftStart != null && shiftStart.isNotEmpty
+              ? '$shiftName (${formatTime(shiftStart)}–${formatTime(shiftEnd)})'
+              : shiftName)
+        : AppLocalizations.of(context).commonNotAssigned;
+
+    final l = AppLocalizations.of(context);
+    final kyc = <String, String>{
+      l.profKycPan: profile?['pan_number'] as String? ?? '—',
+      l.profKycAadhaar: profile?['aadhaar_number'] as String? ?? '—',
+      l.profKycPf: profile?['pf_number'] as String? ?? '—',
+      l.profKycBank: profile?['bank_account_number'] as String? ?? '—',
+      l.profKycIfsc: profile?['bank_ifsc'] as String? ?? '—',
+      l.profKycUpi: profile?['upi_id'] as String? ?? '—',
+      l.profKycEmergency: profile?['emergency_contact_name'] as String? ?? '—',
+      l.profKycEmergencyPhone:
+          profile?['emergency_contact_phone'] as String? ?? '—',
+      l.profKycAddress: profile?['current_address'] as String? ?? '—',
+      l.profKycPermanentAddress:
+          profile?['permanent_address'] as String? ?? '—',
+      l.profKycHealth: profile?['health_notes'] as String? ?? '—',
+    };
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 160),
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        _EditorialInfoBlock(
+          cs: cs,
+          tt: tt,
+          title: l.profBlockEmployment,
+          data: {
+            l.profDesignation: designation,
+            l.profShift: shiftLabel,
+            l.profManager: manager,
+          },
+        ),
+        _EditorialInfoBlock(
+          cs: cs,
+          tt: tt,
+          title: l.profBlockFinancial,
+          data: {
+            l.profWageType: wageType == 'daily'
+                ? l.profWageDaily
+                : wageType == 'monthly'
+                ? l.profWageMonthly
+                : wageType == 'hourly'
+                ? l.profWageHourly
+                : wageType,
+            l.profBaseRate:
+                '${AppCurrency.format(double.tryParse(wageAmount) ?? 0)}${wageType == 'daily'
+                    ? l.profPerDay
+                    : wageType == 'hourly'
+                    ? l.profPerHr
+                    : ''}',
+          },
+        ),
+        _EditorialInfoBlock(cs: cs, tt: tt, title: l.profBlockKyc, data: kyc),
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            l.profKycDocs,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.0,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _DocumentVault(employeeId: employeeId, canEdit: canEdit),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class _DocumentVault extends ConsumerStatefulWidget {
+  final String employeeId;
+  final bool canEdit;
+  const _DocumentVault({required this.employeeId, required this.canEdit});
+
+  @override
+  ConsumerState<_DocumentVault> createState() => _DocumentVaultState();
+}
+
+class _DocumentVaultState extends ConsumerState<_DocumentVault> {
+  List<Map<String, dynamic>> _docs = [];
+  bool _loading = true;
+  String? _error;
+  String? _uploadingType;
+
+  static const _types = [
+    ('aadhaar', 'profDocAadhaar', PhosphorIconsDuotone.fingerprint),
+    ('pan', 'profDocPan', PhosphorIconsDuotone.identificationCard),
+    ('bank', 'profDocBank', PhosphorIconsDuotone.bank),
+  ];
+
+  String _label(String key, AppLocalizations l) => switch (key) {
+    'profDocAadhaar' => l.profDocAadhaar,
+    'profDocPan' => l.profDocPan,
+    'profDocBank' => l.profDocBank,
+    _ => key,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final docs = await ref
+          .read(documentServiceProvider)
+          .listDocuments(widget.employeeId);
+      if (mounted) {
+        setState(() {
+          _docs = docs.map((d) => d.toJson()).toList();
+          _loading = false;
+        });
+      }
+      unawaited(_flushPendingUploads());
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = friendlyError(e);
+        });
+      }
+    }
+  }
+
+  bool _isConnectivityError(Object e) =>
+      e is SocketException ||
+      e is http.ClientException ||
+      e is TimeoutException ||
+      (e is ApiException && e.statusCode == null);
+
+  Future<void> _flushPendingUploads() async {
+    try {
+      final queue = ref.read(documentUploadQueueProvider);
+      final pending = await queue.pending();
+      for (final item in pending) {
+        if (item.employeeId != widget.employeeId) continue;
+        try {
+          await ref
+              .read(documentServiceProvider)
+              .uploadDocument(
+                employeeId: item.employeeId,
+                docType: item.docType,
+                filePath: item.filePath,
+              );
+          await queue.remove(item.employeeId, item.docType);
+        } catch (_) {
+          // Leave queued; it will retry on the next open.
+        }
+      }
+    } catch (_) {}
+  }
+
+  Map<String, dynamic>? _docFor(String type) {
+    for (final d in _docs) {
+      if (d['doc_type'] == type) return d;
+    }
+    return null;
+  }
+
+  Future<void> _upload(String type) async {
+    unawaited(HapticFeedback.selectionClick());
+    final source = await showAdaptiveSheet<String>(
+      context: context,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: PhosphorIcon(
+                  PhosphorIconsDuotone.camera,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: Text(
+                  AppLocalizations.of(context).profPhotoCamera,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                onTap: () => Navigator.pop(ctx, 'camera'),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: PhosphorIcon(
+                  PhosphorIconsDuotone.image,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: Text(
+                  AppLocalizations.of(context).profPhotoGallery,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                onTap: () => Navigator.pop(ctx, 'gallery'),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: PhosphorIcon(
+                  PhosphorIconsDuotone.filePdf,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: Text(
+                  AppLocalizations.of(context).profUploadFile,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                onTap: () => Navigator.pop(ctx, 'file'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    String? path;
+    try {
+      if (source == 'camera' || source == 'gallery') {
+        final picker = ImagePicker();
+        final picked = await picker.pickImage(
+          source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
+          imageQuality: 70,
+          maxWidth: 1600,
+        );
+        path = picked?.path;
+      } else {
+        final result = await FilePicker.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['pdf'],
+        );
+        path = result?.files.single.path;
+      }
+    } catch (_) {
+      if (mounted) {
+        showError(context, AppLocalizations.of(context).profCouldNotPickFile);
+      }
+      return;
+    }
+    if (path == null || !mounted) return;
+
+    var uploadPath = path;
+    if (source == 'camera' || source == 'gallery') {
+      if (MediaService.needsCompression(path)) {
+        final compressed = await MediaService.compressImage(path);
+        if (compressed != null) uploadPath = compressed;
+      }
+    }
+
+    setState(() => _uploadingType = type);
+    try {
+      await ref
+          .read(documentServiceProvider)
+          .uploadDocument(
+            employeeId: widget.employeeId,
+            docType: type,
+            filePath: uploadPath,
+          );
+      await ref
+          .read(documentUploadQueueProvider)
+          .remove(widget.employeeId, type);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).profDocUploaded)),
+        );
+        unawaited(_load());
+      }
+    } catch (e) {
+      if (_isConnectivityError(e)) {
+        await ref
+            .read(documentUploadQueueProvider)
+            .enqueue(
+              PendingDocument(
+                employeeId: widget.employeeId,
+                docType: type,
+                filePath: uploadPath,
+              ),
+            );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).profDocQueued)),
+          );
+        }
+      } else if (mounted) {
+        showError(context, e);
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingType = null);
+    }
+  }
+
+  Future<void> _view(Map<String, dynamic> doc) async {
+    final docType = doc['doc_type'] as String? ?? '';
+    if (docType.isEmpty) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _DocumentViewerPage(
+          employeeId: widget.employeeId,
+          docType: docType,
+          isPdf: (doc['original_name'] as String? ?? '').toLowerCase().endsWith(
+            '.pdf',
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _delete(String type) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: AppLocalizations.of(context).profDocDeleteTitle,
+      message: AppLocalizations.of(context).profDocDeleteMsg,
+      confirmLabel: AppLocalizations.of(context).commonDelete,
+      icon: PhosphorIconsRegular.trash,
+      isDestructive: true,
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await ref
+          .read(documentServiceProvider)
+          .deleteDocument(employeeId: widget.employeeId, docType: type);
+      if (mounted) unawaited(_load());
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    if (_loading) {
+      return const CustomScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        slivers: [ShimmerLoading(itemCount: 4, height: 100)],
+      );
+    }
+
+    if (_error != null) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.errorContainer.withValues(alpha: 0.4)),
+        ),
+        child: Column(
+          children: [
+            Icon(PhosphorIconsFill.warningCircle, size: 40, color: cs.error),
+            const SizedBox(height: 12),
+            Text(
+              AppLocalizations.of(context).profDocsFailed,
+              style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '$_error',
+              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonalIcon(
+              onPressed: _load,
+              icon: const Icon(PhosphorIconsFill.arrowClockwise, size: 18),
+              label: Text(AppLocalizations.of(context).commonRetry),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        for (final (type, label, icon) in _types)
+          _DocumentCard(
+            cs: cs,
+            tt: tt,
+            type: type,
+            label: _label(label, AppLocalizations.of(context)),
+            icon: icon,
+            doc: _docFor(type),
+            uploading: _uploadingType == type,
+            canEdit: widget.canEdit,
+            baseUrl: ref.watch(serverUrlProvider),
+            onUpload: () => _upload(type),
+            onView: _docFor(type) == null ? null : () => _view(_docFor(type)!),
+            onDelete: _docFor(type) == null ? null : () => _delete(type),
+          ),
+      ],
+    );
+  }
+}
+
+class _DocumentCard extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final String type;
+  final String label;
+  final Object icon;
+  final Map<String, dynamic>? doc;
+  final bool uploading;
+  final bool canEdit;
+  final String baseUrl;
+  final VoidCallback onUpload;
+  final VoidCallback? onView;
+  final VoidCallback? onDelete;
+
+  const _DocumentCard({
+    required this.cs,
+    required this.tt,
+    required this.type,
+    required this.label,
+    required this.icon,
+    required this.doc,
+    required this.uploading,
+    required this.canEdit,
+    required this.baseUrl,
+    required this.onUpload,
+    this.onView,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isPdf = (doc?['original_name'] as String? ?? '')
+        .toLowerCase()
+        .endsWith('.pdf');
+    final filePath = doc?['file_path'] as String? ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          if (doc != null && !isPdf)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                resolveMediaUrl(filePath, baseUrl),
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) =>
+                    PhosphorIcon(icon, size: 28, color: cs.onSurfaceVariant),
+              ),
+            )
+          else
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: cs.primaryContainer.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: PhosphorIcon(
+                isPdf ? PhosphorIconsDuotone.filePdf : icon,
+                size: 28,
+                color: isPdf ? cs.error : cs.primary,
+              ),
+            ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: tt.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  doc != null
+                      ? AppLocalizations.of(context).profDocUploadedStatus
+                      : AppLocalizations.of(context).profDocActionRequired,
+                  style: tt.bodySmall?.copyWith(
+                    color: doc != null ? AppColors.success : cs.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (uploading)
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else if (doc != null) ...[
+            IconButton(
+              onPressed: onView,
+              icon: Icon(PhosphorIconsRegular.eye, color: cs.onSurfaceVariant),
+            ),
+            if (canEdit)
+              IconButton(
+                onPressed: onDelete,
+                icon: Icon(PhosphorIconsRegular.trash, color: cs.error),
+              ),
+          ] else if (canEdit)
+            FilledButton.tonal(
+              onPressed: onUpload,
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(AppLocalizations.of(context).commonUpload),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DocumentViewerPage extends ConsumerStatefulWidget {
+  final String employeeId;
+  final String docType;
+  final bool isPdf;
+  const _DocumentViewerPage({
+    required this.employeeId,
+    required this.docType,
+    required this.isPdf,
+  });
+
+  @override
+  ConsumerState<_DocumentViewerPage> createState() =>
+      _DocumentViewerPageState();
+}
+
+class _DocumentViewerPageState extends ConsumerState<_DocumentViewerPage> {
+  bool _loading = true;
+  String? _error;
+  File? _file;
+
+  @override
+  void initState() {
+    super.initState();
+    _download();
+  }
+
+  Future<void> _download() async {
+    try {
+      final svc = ref.read(documentServiceProvider);
+      final bytes = await svc.downloadDocument(
+        employeeId: widget.employeeId,
+        docType: widget.docType,
+      );
+      final dir = await getTemporaryDirectory();
+      final ext = widget.isPdf ? '.pdf' : '.jpg';
+      final file = File('${dir.path}/doc_${widget.docType}$ext');
+      await file.writeAsBytes(bytes);
+      if (mounted) {
+        setState(() {
+          _file = file;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = friendlyError(e);
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _openExternally() async {
+    if (_file == null) return;
+    final result = await OpenFilex.open(_file!.path);
+    if (mounted && result.type != ResultType.done) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.message.isNotEmpty
+                ? result.message
+                : AppLocalizations.of(context).profCouldNotOpenDoc,
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text(
+          widget.isPdf
+              ? AppLocalizations.of(context).profDocument
+              : AppLocalizations.of(context).profDocumentPreview,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        centerTitle: true,
+      ),
+      body: Center(
+        child: _loading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : _error != null
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const PhosphorIcon(
+                    PhosphorIconsRegular.warningCircle,
+                    size: 48,
+                    color: Colors.white54,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '$_error',
+                    style: const TextStyle(color: Colors.white70),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _loading = true;
+                        _error = null;
+                      });
+                      _download();
+                    },
+                    icon: const Icon(PhosphorIconsBold.arrowClockwise),
+                    label: Text(AppLocalizations.of(context).commonRetry),
+                  ),
+                ],
+              )
+            : widget.isPdf
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const PhosphorIcon(
+                    PhosphorIconsDuotone.filePdf,
+                    size: 96,
+                    color: Colors.white70,
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: _openExternally,
+                    icon: const Icon(PhosphorIconsRegular.arrowSquareOut),
+                    label: Text(
+                      AppLocalizations.of(context).profOpenDocument,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              )
+            : InteractiveViewer(
+                child: _file != null
+                    ? Image.file(_file!, fit: BoxFit.contain)
+                    : const SizedBox.shrink(),
+              ),
+      ),
+    );
+  }
+}
+
+class _EditorialInfoBlock extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final String title;
+  final Map<String, String> data;
+
+  const _EditorialInfoBlock({
+    required this.cs,
+    required this.tt,
+    required this.title,
+    required this.data,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = data.entries.toList();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: tt.labelSmall?.copyWith(
+              color: cs.primary,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: cs.outlineVariant.withValues(alpha: 0.3),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: cs.shadow.withValues(alpha: 0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                for (int i = 0; i < entries.length; i++)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: i < entries.length - 1 ? 16 : 0,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            entries[i].key,
+                            style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            entries[i].value,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttendanceTab extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final List<Map<String, dynamic>>? attendanceList;
+  final Map<String, dynamic>? summary;
+  const _AttendanceTab({
+    required this.cs,
+    required this.tt,
+    this.attendanceList,
+    this.summary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final list = attendanceList ?? [];
+    final s = summary ?? const {};
+    final present = summary != null
+        ? safeToInt(s['present'])
+        : list.where((a) => a['status'] == 'present').length;
+    final absent = summary != null
+        ? safeToInt(s['absent'])
+        : list.where((a) => a['status'] == 'absent').length;
+    final halfDay = summary != null
+        ? safeToInt(s['half_day'])
+        : list.where((a) => a['status'] == 'half_day').length;
+    final total = summary != null
+        ? safeToInt(s['total']) != 0
+              ? safeToInt(s['total'])
+              : (present + absent + halfDay)
+        : (list.isNotEmpty ? list.length : 1);
+    final pct = total > 0 ? present / total : 0.0;
+    final recent = list.take(5).toList();
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 160),
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _AttMacroStat(
+              tt: tt,
+              label: AppLocalizations.of(context).profPresent,
+              value: '$present',
+              color: AppColors.success,
+            ),
+            _AttMacroStat(
+              tt: tt,
+              label: AppLocalizations.of(context).profAbsent,
+              value: '$absent',
+              color: AppColors.danger,
+            ),
+            _AttMacroStat(
+              tt: tt,
+              label: AppLocalizations.of(context).profHalf,
+              value: '$halfDay',
+              color: AppColors.warning,
+            ),
+          ],
+        ),
+        const SizedBox(height: 32),
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: pct),
+          duration: const Duration(milliseconds: 1000),
+          curve: Curves.easeOutExpo,
+          builder: (context, val, _) => LinearProgressIndicator(
+            value: val.clamp(0.0, 1.0),
+            backgroundColor: cs.surfaceContainerHighest,
+            color: AppColors.success,
+            minHeight: 12,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+        const SizedBox(height: 48),
+        Text(
+          AppLocalizations.of(context).profRecentLogs,
+          style: tt.labelSmall?.copyWith(
+            color: cs.primary,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
+          ),
+        ),
+        const SizedBox(height: 24),
+        if (recent.isEmpty)
+          EmptyState(
+            icon: PhosphorIconsRegular.calendarBlank,
+            title: AppLocalizations.of(context).profNoAtt,
+          )
+        else
+          ...recent.map(
+            (a) => _TimelineRow(
+              cs: cs,
+              status: a['status'] as String? ?? 'present',
+              date: a['date'] as String? ?? '',
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _AttMacroStat extends StatelessWidget {
+  final TextTheme tt;
+  final String label, value;
+  final Color color;
+  const _AttMacroStat({
+    required this.tt,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          value,
+          style: tt.displayLarge?.copyWith(
+            fontWeight: FontWeight.w900,
+            color: color,
+            letterSpacing: -2.0,
+            height: 1.0,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label.toUpperCase(),
+          style: tt.labelSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: color.withValues(alpha: 0.8),
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TimelineRow extends StatelessWidget {
+  final ColorScheme cs;
+  final String status;
+  final String date;
+
+  const _TimelineRow({
+    required this.cs,
+    required this.status,
+    required this.date,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color, icon) = switch (status) {
+      'present' => (
+        AppLocalizations.of(context).profPresent,
+        AppColors.success,
+        PhosphorIconsBold.check,
+      ),
+      'half_day' => (
+        AppLocalizations.of(context).profHalfDay,
+        AppColors.warning,
+        PhosphorIconsBold.minus,
+      ),
+      'paid_leave' => (
+        AppLocalizations.of(context).profPaidLeave,
+        AppColors.info,
+        PhosphorIconsBold.calendar,
+      ),
+      'week_off' => (
+        AppLocalizations.of(context).profWeekOff,
+        cs.onSurfaceVariant,
+        PhosphorIconsBold.moon,
+      ),
+      _ => (
+        AppLocalizations.of(context).profAbsent,
+        AppColors.danger,
+        PhosphorIconsBold.x,
+      ),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 16, color: color),
+          ),
+          const SizedBox(width: 16),
+          Text(
+            formatDate(date),
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
+          const Spacer(),
+          Text(
+            label,
+            style: TextStyle(color: color, fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LedgerTab extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final List<Map<String, dynamic>>? ledgerList;
+  final double? balance;
+  const _LedgerTab({
+    required this.cs,
+    required this.tt,
+    this.ledgerList,
+    this.balance,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final list = ledgerList ?? [];
+    final bal = balance ?? 0;
+    final isNegative = bal < 0;
+    final balColor = isNegative ? AppColors.danger : cs.primary;
+    final recent = list.take(5).toList();
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 160),
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        Text(
+          AppLocalizations.of(context).profNetOutstanding,
+          style: tt.labelSmall?.copyWith(
+            color: cs.onSurfaceVariant,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          AppCurrency.format(bal.abs()),
+          style: tt.displayLarge?.copyWith(
+            fontWeight: FontWeight.w900,
+            color: balColor,
+            letterSpacing: -2.0,
+          ),
+        ),
+        if (isNegative)
+          Text(
+            AppLocalizations.of(context).profPayableByEmployee,
+            style: tt.labelSmall?.copyWith(
+              color: balColor,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        const SizedBox(height: 48),
+        Text(
+          AppLocalizations.of(context).profRecentEntries,
+          style: tt.labelSmall?.copyWith(
+            color: cs.primary,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
+          ),
+        ),
+        const SizedBox(height: 24),
+        if (recent.isEmpty)
+          EmptyState(
+            icon: PhosphorIconsRegular.receipt,
+            title: AppLocalizations.of(context).profNoLedger,
+          )
+        else
+          ...recent.map(
+            (e) => _LedgerEntryRow(
+              cs: cs,
+              isJama: e['type'] == 'jama',
+              amount: safeToDouble(e['amount']),
+              date: e['date'] as String? ?? '',
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _LedgerEntryRow extends StatelessWidget {
+  final ColorScheme cs;
+  final bool isJama;
+  final double amount;
+  final String date;
+
+  const _LedgerEntryRow({
+    required this.cs,
+    required this.isJama,
+    required this.amount,
+    required this.date,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isJama ? AppColors.success : AppColors.danger;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isJama
+                  ? PhosphorIconsBold.arrowUpRight
+                  : PhosphorIconsBold.arrowDownLeft,
+              size: 20,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isJama
+                    ? AppLocalizations.of(context).profWageAdded
+                    : AppLocalizations.of(context).profAdvanceTaken,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                formatDate(date),
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            '${isJama ? '+' : '-'}${AppCurrency.format(amount)}',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuditTab extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final List<Map<String, dynamic>> logs;
+
+  const _AuditTab({required this.cs, required this.tt, required this.logs});
+
+  String _when(String? iso) {
+    if (iso == null || iso.isEmpty) return '';
+    final dt = DateTime.tryParse(iso);
+    if (dt == null) return iso;
+    final d = dt.toLocal();
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')} '
+        '${d.hour.toString().padLeft(2, '0')}:'
+        '${d.minute.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (logs.isEmpty) {
+      return Center(child: Text(AppLocalizations.of(context).profNoAudit));
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 160),
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: logs.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final log = logs[index];
+        final action = (log['action'] as String? ?? 'action')
+            .replaceAll('_', ' ')
+            .toUpperCase();
+        final entity = log['entity_type'] as String? ?? '';
+        final when = _when(log['created_at'] as String?);
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: cs.primaryContainer.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  PhosphorIconsRegular.clockCounterClockwise,
+                  size: 18,
+                  color: cs.primary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      action,
+                      style: tt.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      [entity, when].where((s) => s.isNotEmpty).join(' · '),
+                      style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

@@ -1,0 +1,1 @@
+Initial release of ClearWage: attendance, staff, payroll, ledger, advances and reports.

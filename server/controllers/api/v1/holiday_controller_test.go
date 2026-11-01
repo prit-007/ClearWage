@@ -10,10 +10,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/mocks"
-	"github.com/vivek-app/vivek_app/repositories"
-	"github.com/vivek-app/vivek_app/services"
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/mocks"
+	"github.com/clearwage/clearwage/repositories"
+	"github.com/clearwage/clearwage/services"
 	"go.uber.org/mock/gomock"
 )
 
@@ -146,7 +146,7 @@ func TestHolidayList_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	if resp["status"] != "success" {
 		t.Errorf("expected success status, got %v", resp["status"])
 	}

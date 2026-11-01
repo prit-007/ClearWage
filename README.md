@@ -1,231 +1,450 @@
-# Vivek App - Workforce Management SaaS
+# ClearWage
 
-A multi-tenant workforce management platform built for factory-floor realities. Includes a **Owner/Supervisor Engine** (full CRUD, payroll, reporting) and an **Employee Read-Only App** (attendance view, payslips, advance requests).
+**Factory workforce management, without the register, the spreadsheet, or the monthly bill.**
 
-## Architecture
+ClearWage marks attendance, runs payroll, tracks every advance, and lets a
+worker check their own payslip — all from a phone, and all on infrastructure
+you own. It's also a full-stack, open-source platform a developer can deploy
+or build on.
+
+[![CI](https://github.com/prit-007/ClearWage/actions/workflows/ci.yml/badge.svg)](https://github.com/prit-007/ClearWage/actions)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
+[![Flutter](https://img.shields.io/badge/Flutter-3.44+-02569B?logo=flutter)](https://flutter.dev)
+[![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go)](https://go.dev)
+
+**[Website](https://prit-007.github.io/ClearWage)** · **[Download the latest build](https://github.com/prit-007/ClearWage/releases/latest)** · **[All releases](https://github.com/prit-007/ClearWage/releases)**
+
+---
+
+## The problem it solves
+
+Attendance gets marked on paper. Payroll gets worked out on a spreadsheet
+only one person really understands. Advances get lent out on trust and
+half-remembered by payday. And when a worker questions a deduction, there's
+nothing to point to except "trust me."
+
+ClearWage puts attendance, payroll, and the advance ledger in one place, and
+lets workers see their own record instead of asking the office. Because it
+runs on your own server, none of it depends on a subscription you could lose
+access to.
+
+---
+
+## A day with ClearWage
+
+**For the owner / admin**
+- **Mark** — bulk-mark the day's roster in a couple of minutes; OT and holidays are worked out automatically.
+- **Lend** — log an advance against a worker's ledger the moment you hand it over, not from memory later.
+- **Run** — process payroll for the period and get PDF payslips, without a spreadsheet formula in sight.
+- **Resolve** — when a worker flags a deduction, the dispute arrives with the record attached, not a guessing game.
+
+**For the worker**
+- **Check** — see this month's attendance and OT as it's marked, not only at month-end.
+- **Download** — pull last month's payslip themselves, any time.
+- **Ask** — request an advance from inside the app, and see where it stands.
+- **Flag** — raise a dispute on a deduction that doesn't look right, and get a real answer.
+
+---
+
+## What's inside
+
+Two roles: the **Admin/Owner**, who gets full access to attendance, payroll,
+ledger, staff management, reports, and settings; and the **Employee**, who
+gets a read-only view of their own attendance, payslips, advance requests,
+and profile.
+
+| Capability | Details |
+|-----------|---------|
+| **Attendance** | Daily roster with bulk mark, status toggles (P/HD/L/A), OT calculation, holiday detection, weekly-off awareness |
+| **Payroll** | Period-based processing, configurable wage basis (calendar/fixed-26/fixed-30), OT multiplier, deductions, PDF payslips |
+| **Ledger** | Employee credit/debit tracking, advance requests with approval workflow, balance sheets |
+| **Disputes** | Employee-initiated ledger disputes with admin resolve/reject workflow |
+| **Staff** | Directory, profiles, document uploads (KYC), onboarding wizard |
+| **Shifts** | Configurable shift timings per tenant, employee shift assignment |
+| **Holidays** | Tenant holiday calendar, recurring holiday support, attendance integration |
+| **Reports** | Daily summary, defaulters, payroll summary with charts and date range filters |
+| **Dashboard** | Real-time KPIs, attendance trends, staff breakdown, quick actions |
+
+---
+
+## Platforms
+
+| Platform | Build | Status |
+|----------|-------|--------|
+| Android | APK (split-per-ABI + universal), AAB | Production |
+| iOS | unsigned archive | Production-ready |
+| Windows | EXE + Inno Setup installer | Production-ready |
+| macOS | .app bundle | Production-ready |
+| Linux | bundle (tar.gz) | Production-ready |
+| Web | SPA | Firebase config ready |
+
+---
+
+## How it compares to a typical paid platform
+
+|  | ClearWage | Typical paid SaaS |
+|---|---|---|
+| Pricing | Free, GPL-3.0 | Per-worker, monthly |
+| Where your data lives | Your own server | The vendor's cloud |
+| Source code | Fully open, readable | Closed |
+| If the company shuts down | You still have everything | You lose access |
+| Setup | You (or a developer) deploy it | Vendor onboarding call |
+| Platforms | Android, iOS, Windows, macOS, Linux, Web | Usually app + web only |
+
+---
+
+## FAQ
+
+**Do I need a developer to set this up?**
+For the first deploy, yes — you're standing up a Postgres database, the Go
+API (Docker or bare metal), and a free Firebase project for phone-OTP login.
+Once that's running, day-to-day use needs no technical knowledge at all.
+
+**What happens if the internet goes down on the shop floor?**
+ClearWage is REST-driven, so reading data needs a connection — an offline
+banner shows when you've lost signal. However, offline writes *are* wired up:
+attendance marks, ledger entries, and KYC document uploads are staged locally
+and flushed to the server automatically when the connection returns (there's
+also a manual "Force Sync Now" in Settings → Sync Center). Reads still require
+a connection; full offline-first with a local database is on the roadmap, and
+the database already has a `sync_queue` table reserved for it.
+
+**Is it actually finished, or still in progress?**
+Core features — attendance, payroll, ledger, staff management, and
+reporting — are production-ready. The project is under active development;
+check the [changelog](app/CHANGELOG.md) for what's shipped in each release.
+
+**What does it cost to run?**
+The software is free under GPL-3.0. You pay for whatever you host it on — a
+small Linux server or a Docker host — and Firebase's free tier covers
+phone-auth OTP for most factories' worker counts.
+
+**Can I customize it for my factory's specific rules?**
+Payroll wage basis, OT multipliers, leave policies, and shift timings are
+already configurable per tenant in Settings; anything beyond that is a code
+change away, and the code is yours to change.
+
+---
+
+## For developers
+
+The rest of this document is for whoever is deploying, extending, or
+contributing to ClearWage.
+
+### Architecture
 
 ```
-vivek_app/
-├── .github/workflows/   # CI pipelines (lint, test, build)
-├── .kilo/               # Kilo agent/command configs
-├── server/              # Golang REST API backend
-│   ├── cli/             # Cobra CLI commands (api, migrate)
-│   ├── config/          # Env config loading (envconfig)
-│   ├── constants/       # App-wide constants
-│   ├── controllers/api/v1/  # HTTP handlers
-│   ├── database/        # Goose migrations + test containers
-│   ├── middlewares/      # Auth, tenant, logging
-│   ├── mocks/           # Generated mocks (GoMock)
-│   ├── models/          # Domain models
-│   ├── repositories/    # goqu queries, querier interface
-│   ├── scripts/         # Seed/bootstrap scripts
-│   ├── services/        # Business logic layer
-│   ├── tests/           # Integration test helpers
-│   └── uploads/         # File storage directory
-└── plan.md              # V1 architecture & page blueprint
+┌──────────────────────────────────────────────────────────┐
+│                    ClearWage Platform                     │
+├──────────────────────┬───────────────────────────────────┤
+│   Flutter Client     │        Go REST API                │
+│   (Mobile + Desktop) │        (server/)                  │
+│                      │                                   │
+│  lib/core/           │  controllers/api/v1/              │
+│    router, theme,    │    → services/                    │
+│    api_client,       │      → repositories/ (goqu+sqlc) │
+│    logger, tokens    │        → models/                  │
+│  lib/data/           │                                   │
+│    models/           │  middlewares/                      │
+│    services/         │    auth, tenant, CSRF, ratelimit  │
+│  lib/features/       │                                   │
+│    screens + state   │  database/ (goose migrations)     │
+│    (Riverpod)        │                                   │
+├──────────────────────┴───────────────────────────────────┤
+│                    PostgreSQL 16                          │
+├──────────────────────────────────────────────────────────┤
+│                    Firebase                              │
+│              Phone Auth + Admin SDK                      │
+└──────────────────────────────────────────────────────────┘
 ```
 
-## Technology Stack
+### Design principles
 
-### Backend
+- **Clean architecture** — controllers → services → repositories → models; no God objects
+- **Multi-tenancy** — JWT `tenant_id` scoping + middleware; isolated data per factory
+- **Optimistic locking** — `version` columns on employees/attendance/ledger; HTTP 409 on conflict
+- **Firebase Auth** — OTP handled by Firebase; no SMS costs or OTP secrets server-side
+- **REST-driven app** — no local DB; ApiClient normalizes errors across platforms
+- **Offline-first logging** — Talker in-memory history inspectable on-device at `/debug/logs`
+- **Zero vendor lock-in** — open-source, deploys to any Linux host with Docker or bare metal
 
-| Layer | Technology |
-|-------|-----------|
-| Language | Go 1.26+ |
-| Routing | go-chi/chi v5 |
-| DB Query Builder | goqu v9 (type-safe SQL) |
-| Database | PostgreSQL 16 |
-| DB Migrations | pressly/goose v3 |
-| Auth | golang-jwt/jwt v5 |
+### Tech stack
+
+#### Backend
+
+| Component | Technology |
+|-----------|-----------|
+| Language | Go 1.26 |
+| Router | go-chi/chi v5 |
+| SQL builder | goqu v9 (type-safe, matches sqlc philosophy) |
+| Codegen | sqlc (type-safe query → Go) |
+| Migrations | pressly/goose v3 |
+| Auth | Firebase Phone Auth + golang-jwt |
 | Logging | rs/zerolog |
 | CLI | spf13/cobra |
 | Testing | testify, GoMock, testcontainers-go |
-| PDF | gofpdf |
 
-### Patterns
+#### Frontend
 
-- **Clean architecture**: controllers → services → repositories → models
-- **Multi-tenancy**: JWT-based `tenant_id` scoping + Row-Level Security (RLS)
-- **Offline sync**: Flutter `workmanager` flushes queued records to this API
-- **TDD-first**: unit tests + integration tests with ephemeral Postgres via testcontainers-go
+| Component | Technology |
+|-----------|-----------|
+| Framework | Flutter 3.44+ (Dart 3.12+) |
+| State | Riverpod |
+| Auth | firebase_core + firebase_auth |
+| UI | Material Design 3, google_fonts, phosphoricons |
+| Routing | go_router (slide-up + fade transitions) |
+| Charts | fl_chart |
+| Logging | Talker (AppLogger facade) |
+| OTP | pinput |
 
-## Environment Variables
+#### Infrastructure
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `APP_PORT` | Server bind address | `127.0.0.1:8081` |
-| `APP_ENV` | Environment (local/prod) | `local` |
-| `DB_DIALECT` | Driver name | `postgres` |
-| `DB_HOST` | Postgres host | `localhost` |
-| `DB_PORT` | Postgres port | `5432` |
-| `DB_USERNAME` | DB user | `vivek` |
-| `DB_PASSWORD` | DB password | `vivek_password` |
-| `DB_NAME` | Database name | `vivek_db` |
-| `DB_QUERYSTRING` | Extra DSN params | `sslmode=disable` |
-| `JWT_SECRET` | HMAC signing secret | *(required)* |
-| `MIGRATION_DIR` | Migration path | `database/migrations` |
+| Component | Technology |
+|-----------|-----------|
+| Database | PostgreSQL 16 |
+| CI/CD | GitHub Actions (5-platform builds) |
+| Firebase | Phone Auth, Admin SDK |
+| Store | Fastlane (Android), manual (iOS) |
+| Installer | Inno Setup (Windows) |
 
-Copy `.env.example` to `.env` and fill in the values.
+### Project structure
 
-## Database Schema
+```
+clearwage/
+├── .github/
+│   ├── workflows/ci.yml          CI + tag-triggered release pipeline
+│   └── actions/flutter-prep/     Shared Flutter build preparation
+├── server/                       Go REST API backend
+│   ├── controllers/api/v1/       HTTP handlers (one per resource)
+│   ├── services/                 Business logic (one per resource)
+│   ├── repositories/             Data access (goqu + sqlc)
+│   ├── middlewares/              Auth, tenant, CSRF, rate limiting
+│   ├── database/
+│   │   ├── migrations/           Goose SQL migrations
+│   │   └── queries/              sqlc query definitions
+│   ├── pkg/                      JWT, utilities
+│   ├── cli/                      Cobra CLI (api, migrate, etc.)
+│   ├── mocks/                    GoMock generated mocks
+│   ├── tests/                    Integration tests (testcontainers)
+│   └── docs/                     Swagger UI
+├── app/                          Flutter client
+│   ├── lib/
+│   │   ├── core/                 Router, theme, API client, logger, providers
+│   │   ├── data/                 Models (typed JSON) + services (HTTP)
+│   │   └── features/             Screens + per-feature Riverpod providers
+│   ├── test/                     Mirrors lib/ 1:1
+│   ├── tool/                     Build utilities (Inno Setup builder)
+│   ├── android/                  Android platform config
+│   ├── ios/                      iOS platform config
+│   ├── macos/                    macOS platform config
+│   ├── windows/                  Windows platform config
+│   ├── linux/                    Linux platform config
+│   ├── web/                      Web platform config
+│   └── fastlane/                 Store metadata + changelogs
+├── docs/
+│   ├── ARCHITECTURE.md           Code map + "where to change"
+│   ├── API.md                    Full REST API reference
+│   ├── adr/                      Architecture Decision Records (0001–0012)
+│   ├── planning/                 Product blueprint + optimization plans
+│   └── IMPLEMENTATION-CHECKLIST.md
+├── AGENTS.md                     Editor/agent operating contract
+├── CONTRIBUTING.md               Contributor onboarding
+└── README.md                     This file
+```
 
-Managed via Goose migrations:
+### Quick start
 
-`# | Table | Purpose |
-|--------------|--------------|---------|
-| `tenants` | Companies/tenants |
-| `employees` | Staff with wage config, default shift, KYC |
-| `shifts` | Configurable factory shifts (start/end time, grace period) |
-| `attendance` | Per-employee daily records (status, OT, piece rate units) |
-| `ledgers` | Jama/ Udhaar entries per employee |
-| `holidays` | Pre-marked closures for auto-leave |
-| `leave_policies` | Annual quota config per tenant |
-| `sync_queue` | Offline flush queue for Flutter clients |
-| `activity_logs` | Audit trail for edits |
-| `advance_requests` | Employee advance request queue |
-| `tenant_config` | Per-tenant settings |
-
-### Domain Entities
-
-**Employee**
-
-- `wage_type`: `monthly` | `daily` | `hourly` | `piece_rate`
-- `wage_amount`: decimal
-- `default_shift_id` → `shifts`
-- `piece_rate_item`: optional (name + rate per unit)
-
-**Shift**
-
-- `name`: "General", "Shift A", "Night Shift"
-- `start_time` / `end_time`
-- `grace_period_minutes`
-- `crosses_midnight`: bool (for overnight shifts)
-
-**AttendanceRecord**
-
-- `date`, `shift_id`, `status`: Present / Absent / Half-Day / Paid-Leave / Week-Off
-- `check_in_time`, `check_out_time`
-- `overtime_hours`, `overtime_rate_multiplier`
-- `units_produced` (piece rate mode)
-- `is_locked`: bool (set after payroll generation)
-- `edited_by`, `edited_at` (audit)
-
-**LedgerEntry**
-
-- `employee_id`, `date`, `type`: Jama | Udhaar, `amount`, `note`, `created_by`
-
-## API Reference
-
-Base path: `/api/v1`
-
-### Core Endpoints
-
-| Resource | Controller |
-|----------|-----------|
-| Auth (OTP / JWT) | `auth_controller.go` |
-| Staff / Employees | `staff_controller.go` |
-| Attendance | `attendance_controller.go` |
-| Shifts | `shift_controller.go` |
-| Ledger (Jama/Udhaar) | `ledger_controller.go` |
-| Dashboard | `dashboard_controller.go` |
-| Reports (wage trends, defaulters) | `report_controller.go` |
-| Sync Queue | `sync_queue_controller.go` |
-| Advance Requests | `advance_request_controller.go` |
-| Holidays | `holiday_controller.go` |
-| Leave Policies | `leave_policy_controller.go` |
-| Settings | `settings_controller.go` |
-| Uploads (KYC docs) | `upload_controller.go` |
-| Me / Profile | `me_controller.go` |
-
-Swagger UI: `http://localhost:8080/swagger` (auto-generated via annotations in `app.go`).
-
-## Setup
-
-### Prerequisites
+#### Prerequisites
 
 - Go 1.26+
 - PostgreSQL 16 (or Docker)
-- Docker & Docker Compose (for local DB)
+- Flutter 3.44+ / Dart 3.12+
+- Firebase project with Phone Auth enabled
 
-### 1. Clone & Install
+#### Server
 
 ```bash
-git clone <repo-url> && cd vivek_app/server
-cp .env.example .env
-# Edit .env with your local config
+cd server
+cp .env.example .env        # edit DB + Firebase values
 go mod download
-```
-
-### 2. Start PostgreSQL
-
-```bash
-# Option A: Docker Compose (from repo root)
-docker compose up -d postgresdb
-
-# Option B: Local installation
-#   CREATE DATABASE vivek_db;
-```
-
-### 3. Run Migrations
-
-```bash
 make migrate-up
+make start-api              # http://127.0.0.1:8080
 ```
 
-### 4. Start Server
+#### Flutter app
 
 ```bash
-make start-api
+cd app
+flutter pub get
+flutter run
 ```
 
-Server listens on `http://127.0.0.1:8081` (configurable).
+#### Firebase config files (gitignored — never commit)
 
-## Testing
+| File | Location |
+|------|----------|
+| `google-services.json` | `app/android/app/` |
+| `GoogleService-Info.plist` | `app/ios/Runner/` |
+| `firebase-credentials.json` | `server/` |
+
+### Environment variables
+
+See `server/.env.example`. Key variables:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | Postgres DSN (overrides `DB_*` fields) | — |
+| `DB_HOST` / `DB_PORT` / `DB_USERNAME` / `DB_PASSWORD` / `DB_NAME` | Individual DSN parts | — |
+| `MIGRATION_DIR` | Goose migration path | `database/migrations` |
+| `APP_PORT` | Server bind address | `:8080` |
+| `JWT_SECRET` | HMAC signing secret | *(required)* |
+| `TOKEN_TTL` | JWT expiry in minutes | `720` |
+| `FIREBASE_CRED_BASE64` / `FIREBASE_CREDENTIALS_PATH` | Firebase Admin SDK credentials | — |
+| `CLOUDINARY_*` | Optional profile/KYC asset storage | — |
+
+### Database
+
+Managed via goose migrations (`server/database/migrations/`). Core tables:
+
+| Table | Purpose |
+|-------|---------|
+| `tenants` | Factory accounts (incl. timezone) |
+| `employees` | Staff records (incl. `version` for optimistic locking) |
+| `shifts` | Shift timing configurations |
+| `attendance` | Daily records (incl. `version`, OT, status) |
+| `ledger_entries` | Credit/debit records (incl. `version`) |
+| `holidays` | Tenant holiday calendar |
+| `leave_policies` | Leave rules per tenant |
+| `advance_requests` | Employee advance requests with approval |
+| `employee_documents` | KYC/document uploads |
+| `ledger_disputes` | Employee dispute resolution |
+| `sync_queue` | Offline sync queue |
+| `tenant_config` | Per-tenant settings (payroll, OT, weekly offs) |
 
 ```bash
-# Unit tests (services, controllers, middlewares)
-make test
-
-# Or verbose
-go test -v -count=1 ./pkg/ ./middlewares/ ./services/ ./controllers/api/v1/
-
-# Clean cache and re-run
-make clean-test-cache
-make test-wo-cache
+cd server && make migrate-up      # apply all pending goose migrations
 ```
 
-### Integration Tests
+### Testing
 
-Spin up ephemeral Postgres containers via `testcontainers-go`:
+#### Server
 
 ```bash
-go test -v ./tests/
+cd server
+make test                  # unit + integration tests (testcontainers-go)
+make lint                  # golangci-lint
+go build ./...             # compile check
 ```
 
-## CI/CD
+#### Flutter
+
+```bash
+cd app
+dart format --set-exit-if-changed lib test
+flutter analyze            # must be zero issues
+flutter test --coverage -x network    # 543+ tests
+```
+
+#### What we test
+
+| Layer | Technique | Coverage |
+|-------|-----------|----------|
+| Data models | Table-driven unit tests | 100% |
+| Services | Mocked ApiClient / fake services | High |
+| Core plumbing | Injectable http.Client mock | High |
+| Widgets | flutter_test + ProviderScope overrides | Per-feature |
+| App entry | Router redirect tests | Auth flows |
+| Go backend | Unit + integration (testcontainers) | All packages |
+
+### CI/CD
 
 GitHub Actions (`.github/workflows/ci.yml`):
 
-1. **Lint** — `golangci-lint` with 5m timeout
-2. **Test** — `go test -v -count=1` across unit test packages
-3. **Build** — `go build -v ./...`
+```
+┌─────────────────┐
+│  sqlc-check     │  Verify generated code is up to date
+├─────────────────┤
+│  lint           │  golangci-lint (Go)
+├─────────────────┤
+│  test           │  go test (server)
+├─────────────────┤
+│  build          │  go build (server)
+├─────────────────┤
+│  flutter-       │  format → analyze → test
+│  analyze-test   │
+├─────────────────┤
+│  build-android  │  APK (split-per-ABI + universal)
+│  build-ios      │  unsigned iOS archive
+│  build-windows  │  EXE + Inno Setup installer
+│  build-macos    │  .app bundle
+│  build-linux    │  tar.gz bundle
+├─────────────────┤
+│  release        │  Tag-triggered: attach artifacts to GitHub Release
+└─────────────────┘
+```
 
-PR merges are blocked unless all jobs pass.
+All platform builds run in parallel after `flutter-analyze-and-test` passes.
 
-## Key Design Decisions
+### API
 
-- **No ORM bloat**: `goqu` generates type-safe SQL from Go structs, matching `sqlc` philosophy
-- **Multi-tenant isolation**: `tenant_id` is scoped at the JWT + middleware layer
-- **Offline-first**: `sync_queue` table + `workmanager` background sync architecture
-- **Financial accuracy**: TDD enforced ledger + payroll services with decimal precision
-- **Zero vendor lock-in**: All software is open-source; deploys to any Linux host via Docker
+Full REST API reference: [docs/API.md](docs/API.md)
 
-## Roadmap
+Swagger UI: `server/docs/` (generated from Go annotations in `server/app.go`)
 
-See `plan.md` for the full V1 blueprint including:
-- Flutter frontend (Riverpod + Isar)
-- WhatsApp dispatch via `url_launcher`
-- KYC document vault with offline image compression
-- Bulk attendance grid mode
-- Advance (Udhaar) approval queue
-- Super Admin portal for SaaS tenant management
+#### Key endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/v1/auth/firebase-login` | Firebase OTP → JWT |
+| `POST` | `/api/v1/auth/register` | Create tenant + owner |
+| `GET` | `/api/v1/dashboard` | KPI summary |
+| `GET` | `/api/v1/attendance/roster` | Daily roster with search |
+| `POST` | `/api/v1/attendance/bulk` | Bulk mark attendance |
+| `POST` | `/api/v1/payroll/run` | Process payroll |
+| `GET` | `/api/v1/ledger` | Employee ledger entries |
+| `POST` | `/api/v1/advance-requests` | Request advance |
+
+### Key design decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| No ORM | goqu generates type-safe SQL matching sqlc's philosophy |
+| Firebase Auth | OTP handled by Firebase; no SMS costs server-side |
+| REST-driven app | No local DB; ApiClient normalizes errors across platforms |
+| Optimistic locking | Concurrent edits detected, not silently lost |
+| Offline logging | Talker history inspectable on-device via Settings → App Logs |
+| Monorepo | Single repo for server + app + docs; atomic releases |
+| Zero vendor lock-in | Open-source, deploys to any Linux host |
+
+Full rationale: [docs/adr/](docs/adr/)
+
+### Documentation
+
+| Document | Audience | Contents |
+|----------|----------|----------|
+| [README.md](README.md) | Everyone | Project overview, setup, architecture |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributors | Dev loop, code style, testing, releasing |
+| [AGENTS.md](AGENTS.md) | Editors/agents | Commands, gotchas, release checklist |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | All | Code map, patterns, ADR index |
+| [API.md](docs/API.md) | Integrators | Full REST API reference |
+| [adr/](docs/adr/) | All | Architecture Decision Records (0001–0012) |
+| [planning/](docs/planning/) | Product | V1 blueprint + optimization plans |
+| [IMPLEMENTATION-CHECKLIST.md](docs/IMPLEMENTATION-CHECKLIST.md) | All | Task tracker (52+ audit items, 11 phases) |
+| [CHANGELOG.md](app/CHANGELOG.md) | Release | Keep-a-Changelog, one entry per tag |
+
+---
+
+## License
+
+This project is licensed under the **GNU General Public License v3.0** — see
+the [LICENSE](LICENSE) file for details.
+
+---
+
+## Built by
+
+**Developer's Paradise** — engineered in Rajkot, Gujarat.
+
+ClearWage is built on a foundation of open-source technologies, driven by a
+relentless pursuit of reliability, performance, and thoughtful design for
+factory workforce management.

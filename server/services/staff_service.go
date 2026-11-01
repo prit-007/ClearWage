@@ -2,30 +2,124 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"strconv"
+	"sync"
+	"time"
 
-	"github.com/vivek-app/vivek_app/repositories"
+	"github.com/clearwage/clearwage/pkg/cache"
+	"github.com/clearwage/clearwage/repositories"
+	"github.com/clearwage/clearwage/utils"
+	"github.com/shopspring/decimal"
+	"golang.org/x/sync/singleflight"
 )
 
 type StaffService struct {
-	querier repositories.Querier
+	querier  repositories.Querier
+	cache    *cache.TTL
+	sf       singleflight.Group
+	triggers *NotificationTriggers
+	mailer   *MailService
 }
 
 func NewStaffService(querier repositories.Querier) *StaffService {
-	return &StaffService{querier: querier}
+	return &StaffService{
+		querier: querier,
+		cache:   cache.New(10 * time.Second),
+	}
 }
 
-func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, wageType, wageAmount, tenantID, employeeID string, dailyTargetUnits *int32) (repositories.Employee, error) {
-	wageAmt, _ := strconv.ParseFloat(wageAmount, 64)
-	return s.querier.CreateEmployee(ctx, repositories.CreateEmployeeParams{
-		TenantID:         tenantID,
-		Name:             name,
-		Phone:            phone,
-		WageType:         wageType,
-		WageAmount:       wageAmt,
-		DailyTargetUnits: dailyTargetUnits,
-		Role:             "employee",
+func (s *StaffService) SetTriggers(t *NotificationTriggers) {
+	s.triggers = t
+}
+
+func (s *StaffService) SetMailer(m *MailService) {
+	s.mailer = m
+}
+
+// EmployeeProfileDetails carries optional KYC/personal fields for an employee.
+// On update, nil fields leave the existing value untouched.
+type EmployeeProfileDetails struct {
+	Email                 *string
+	DateOfJoining         *string
+	PanNumber             *string
+	AadhaarNumber         *string
+	PfNumber              *string
+	BankAccountNumber     *string
+	BankIfsc              *string
+	UpiID                 *string
+	EmergencyContactName  *string
+	EmergencyContactPhone *string
+	HealthNotes           *string
+	CurrentAddress        *string
+	PermanentAddress      *string
+}
+
+func (s *StaffService) CreateEmployee(ctx context.Context, name, phone, designation, department, wageType, wageAmount, role, tenantID, employeeID string, dailyTargetUnits *int32, kyc EmployeeProfileDetails) (repositories.Employee, error) {
+	wageAmt, err := strconv.ParseFloat(wageAmount, 64)
+	if err != nil {
+		return repositories.Employee{}, fmt.Errorf("invalid wage_amount: %w", err)
+	}
+	var desig *string
+	if designation != "" {
+		desig = &designation
+	}
+	var dep *string
+	if department != "" {
+		dep = &department
+	}
+	if role == "" {
+		role = "employee"
+	}
+	emp, err := s.querier.CreateEmployee(ctx, repositories.CreateEmployeeParams{
+		TenantID:              tenantID,
+		Name:                  name,
+		Phone:                 phone,
+		Designation:           desig,
+		Department:            dep,
+		Email:                 kyc.Email,
+		WageType:              wageType,
+		WageAmount:            wageAmt,
+		DailyTargetUnits:      dailyTargetUnits,
+		DateOfJoining:         kyc.DateOfJoining,
+		PanNumber:             kyc.PanNumber,
+		AadhaarNumber:         kyc.AadhaarNumber,
+		PfNumber:              kyc.PfNumber,
+		BankAccountNumber:     kyc.BankAccountNumber,
+		BankIfsc:              kyc.BankIfsc,
+		UpiID:                 kyc.UpiID,
+		EmergencyContactName:  kyc.EmergencyContactName,
+		EmergencyContactPhone: kyc.EmergencyContactPhone,
+		HealthNotes:           kyc.HealthNotes,
+		CurrentAddress:        kyc.CurrentAddress,
+		PermanentAddress:      kyc.PermanentAddress,
+		Role:                  role,
 	})
+	if err == nil {
+		logActivity(ctx, s.querier, tenantID, employeeID, "created_employee", "employee", &emp.ID, nil)
+		if s.triggers != nil {
+			tenant, tenantErr := s.querier.FindTenantByID(ctx, tenantID)
+			tenantName := "ClearWage"
+			if tenantErr == nil {
+				tenantName = tenant.Name
+			}
+			s.triggers.NotifyWelcome(ctx, tenantID, emp.ID, tenantName)
+		}
+		if s.mailer != nil && emp.Email != nil && *emp.Email != "" {
+			html := BrandedMail(MailData{
+				Preheader: "Your ClearWage account is ready to use",
+				Title:     "Welcome to ClearWage",
+				Greeting:  fmt.Sprintf("નમસ્તે %s,", emp.Name),
+				Body: []string{
+					"Your ClearWage employee account is ready. Connect with your supervisor to start using the app — view your schedule, track attendance, and stay on top of your wages.",
+				},
+				Note: "We're here to help. Ask your supervisor if you have any questions.",
+			})
+			s.mailer.SendAsync(ctx, tenantID, *emp.Email, "Welcome to ClearWage", html)
+		}
+	}
+	return emp, err
 }
 
 func (s *StaffService) GetEmployee(ctx context.Context, employeeID, tenantID string) (repositories.Employee, error) {
@@ -35,22 +129,139 @@ func (s *StaffService) GetEmployee(ctx context.Context, employeeID, tenantID str
 	})
 }
 
-func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID, name, phone, designation, wageType, wageAmount string, dailyTargetUnits *int32) (repositories.Employee, error) {
+func (s *StaffService) UpdateEmployee(ctx context.Context, employeeID, tenantID, name, phone, designation, department, wageType, wageAmount, role string, dailyTargetUnits *int32, kyc EmployeeProfileDetails) (repositories.Employee, error) {
+	existing, err := s.querier.FindEmployeeByID(ctx, repositories.FindEmployeeByIDParams{
+		ID:       employeeID,
+		TenantID: tenantID,
+	})
+	if err != nil {
+		return repositories.Employee{}, err
+	}
+
+	if name == "" {
+		name = existing.Name
+	}
+	if phone == "" {
+		phone = existing.Phone
+	}
+	if wageType == "" {
+		wageType = existing.WageType
+	}
+	wageAmt, parseErr := strconv.ParseFloat(wageAmount, 64)
+	if parseErr != nil || wageAmount == "" {
+		wageAmt = existing.WageAmount.InexactFloat64()
+	}
+
 	var desig *string
 	if designation != "" {
 		desig = &designation
+	} else {
+		desig = existing.Designation
 	}
-	wageAmt, _ := strconv.ParseFloat(wageAmount, 64)
-	return s.querier.UpdateEmployee(ctx, repositories.UpdateEmployeeParams{
-		ID:               employeeID,
-		TenantID:         tenantID,
-		Name:             name,
-		Phone:            phone,
-		Designation:      desig,
-		WageType:         wageType,
-		WageAmount:       wageAmt,
-		DailyTargetUnits: dailyTargetUnits,
+
+	var dep *string
+	if department != "" {
+		dep = &department
+	} else {
+		dep = existing.Department
+	}
+
+	if dailyTargetUnits == nil {
+		dailyTargetUnits = existing.DailyTargetUnits
+	}
+
+	if role == "" {
+		role = existing.Role
+	}
+
+	dateOfJoining := existing.DateOfJoining
+	if kyc.DateOfJoining != nil {
+		dateOfJoining = kyc.DateOfJoining
+	}
+	email := existing.Email
+	if kyc.Email != nil {
+		email = kyc.Email
+	}
+	panNumber := existing.PanNumber
+	if kyc.PanNumber != nil {
+		panNumber = kyc.PanNumber
+	}
+	aadhaarNumber := existing.AadhaarNumber
+	if kyc.AadhaarNumber != nil {
+		aadhaarNumber = kyc.AadhaarNumber
+	}
+	pfNumber := existing.PfNumber
+	if kyc.PfNumber != nil {
+		pfNumber = kyc.PfNumber
+	}
+	bankAccountNumber := existing.BankAccountNumber
+	if kyc.BankAccountNumber != nil {
+		bankAccountNumber = kyc.BankAccountNumber
+	}
+	bankIfsc := existing.BankIfsc
+	if kyc.BankIfsc != nil {
+		bankIfsc = kyc.BankIfsc
+	}
+	upiID := existing.UpiID
+	if kyc.UpiID != nil {
+		upiID = kyc.UpiID
+	}
+	emergencyContactName := existing.EmergencyContactName
+	if kyc.EmergencyContactName != nil {
+		emergencyContactName = kyc.EmergencyContactName
+	}
+	emergencyContactPhone := existing.EmergencyContactPhone
+	if kyc.EmergencyContactPhone != nil {
+		emergencyContactPhone = kyc.EmergencyContactPhone
+	}
+	healthNotes := existing.HealthNotes
+	if kyc.HealthNotes != nil {
+		healthNotes = kyc.HealthNotes
+	}
+	currentAddress := existing.CurrentAddress
+	if kyc.CurrentAddress != nil {
+		currentAddress = kyc.CurrentAddress
+	}
+	permanentAddress := existing.PermanentAddress
+	if kyc.PermanentAddress != nil {
+		permanentAddress = kyc.PermanentAddress
+	}
+
+	emp, err := s.querier.UpdateEmployee(ctx, repositories.UpdateEmployeeParams{
+		ID:                    employeeID,
+		TenantID:              tenantID,
+		Name:                  name,
+		Phone:                 phone,
+		Designation:           desig,
+		Department:            dep,
+		Email:                 email,
+		WageType:              wageType,
+		WageAmount:            wageAmt,
+		DefaultShiftID:        existing.DefaultShiftID,
+		PieceRateItemName:     existing.PieceRateItemName,
+		PieceRatePerUnit:      decimalPtrToFloat(existing.PieceRatePerUnit),
+		DailyTargetUnits:      dailyTargetUnits,
+		DateOfJoining:         dateOfJoining,
+		PanNumber:             panNumber,
+		AadhaarNumber:         aadhaarNumber,
+		PfNumber:              pfNumber,
+		PhotoUrl:              existing.PhotoUrl,
+		BankAccountNumber:     bankAccountNumber,
+		BankIfsc:              bankIfsc,
+		UpiID:                 upiID,
+		EmergencyContactName:  emergencyContactName,
+		EmergencyContactPhone: emergencyContactPhone,
+		HealthNotes:           healthNotes,
+		CurrentAddress:        currentAddress,
+		PermanentAddress:      permanentAddress,
+		Role:                  role,
+		IsActive:              existing.IsActive,
+		ExpectedVersion:       existing.Version,
 	})
+	if err == nil {
+		logActivity(ctx, s.querier, tenantID, employeeID, "updated_employee", "employee", &employeeID, nil)
+	}
+	return emp, err
 }
 
 func (s *StaffService) ListEmployees(ctx context.Context, tenantID string, limit, offset int32, query, status string) ([]repositories.Employee, error) {
@@ -79,10 +290,275 @@ func (s *StaffService) UpdatePhotoURL(ctx context.Context, employeeID, tenantID,
 	})
 }
 
+func (s *StaffService) SaveDocument(ctx context.Context, tenantID, employeeID, docType, filePath string, publicID *string, originalName *string) (repositories.EmployeeDocument, error) {
+	return s.querier.CreateEmployeeDocument(ctx, repositories.CreateEmployeeDocumentParams{
+		TenantID:     tenantID,
+		EmployeeID:   employeeID,
+		DocType:      docType,
+		FilePath:     filePath,
+		PublicID:     publicID,
+		OriginalName: originalName,
+	})
+}
+
+func (s *StaffService) GetDocumentByType(ctx context.Context, tenantID, employeeID, docType string) (repositories.EmployeeDocument, error) {
+	return s.querier.GetEmployeeDocumentByType(ctx, repositories.GetEmployeeDocumentByTypeParams{
+		TenantID:   tenantID,
+		EmployeeID: employeeID,
+		DocType:    docType,
+	})
+}
+
+func (s *StaffService) ListDocuments(ctx context.Context, tenantID, employeeID string) ([]repositories.EmployeeDocument, error) {
+	return s.querier.ListEmployeeDocumentsByEmployee(ctx, repositories.ListEmployeeDocumentsByEmployeeParams{
+		TenantID:   tenantID,
+		EmployeeID: employeeID,
+	})
+}
+
+func (s *StaffService) DeleteDocument(ctx context.Context, tenantID, employeeID, docType string) error {
+	return s.querier.DeleteEmployeeDocument(ctx, repositories.DeleteEmployeeDocumentParams{
+		TenantID:   tenantID,
+		EmployeeID: employeeID,
+		DocType:    docType,
+	})
+}
+
 func (s *StaffService) GetProfile(ctx context.Context, employeeID, tenantID string) (repositories.StaffProfile, error) {
 	return s.querier.GetStaffProfile(ctx, repositories.GetStaffProfileParams{
 		ID:       employeeID,
 		TenantID: tenantID,
+	})
+}
+
+func (s *StaffService) GetTenant(ctx context.Context, tenantID string) (repositories.Tenant, error) {
+	return s.querier.FindTenantByID(ctx, tenantID)
+}
+
+type EmployeeLedgerOverview struct {
+	Balance     float64               `json:"balance"`
+	JamaTotal   decimal.Decimal       `json:"jama_total"`
+	UdhaarTotal decimal.Decimal       `json:"udhaar_total"`
+	Recent      []repositories.Ledger `json:"recent"`
+}
+
+type EmployeeAttendanceOverview struct {
+	Summary repositories.EmployeeAttendanceSummary `json:"summary"`
+	Recent  []repositories.Attendance              `json:"recent"`
+}
+
+type EmployeeOverview struct {
+	Profile    repositories.StaffProfile       `json:"profile"`
+	Ledger     EmployeeLedgerOverview          `json:"ledger"`
+	Attendance EmployeeAttendanceOverview      `json:"attendance"`
+	Documents  []repositories.EmployeeDocument `json:"documents"`
+}
+
+func (s *StaffService) GetOverview(ctx context.Context, employeeID, tenantID string) (EmployeeOverview, error) {
+	cacheKey := fmt.Sprintf("overview:%s:%s", tenantID, employeeID)
+	if cached, ok := s.cache.Get(cacheKey); ok {
+		return cached.(EmployeeOverview), nil
+	}
+
+	v, err, _ := s.sf.Do(cacheKey, func() (interface{}, error) {
+		return s.fetchOverview(ctx, employeeID, tenantID)
+	})
+	if err != nil {
+		return EmployeeOverview{}, err
+	}
+
+	result := v.(EmployeeOverview)
+	s.cache.Set(cacheKey, result)
+	return result, nil
+}
+
+func (s *StaffService) fetchOverview(ctx context.Context, employeeID, tenantID string) (EmployeeOverview, error) {
+	profile, err := s.querier.GetStaffProfile(ctx, repositories.GetStaffProfileParams{
+		ID:       employeeID,
+		TenantID: tenantID,
+	})
+	if err != nil {
+		return EmployeeOverview{}, err
+	}
+
+	now := utils.TenantNow(s.getTimezone(ctx, tenantID))
+	startDate := fmt.Sprintf("%d-01-01", now.Year())
+	endDate := now.Format("2006-01-02")
+
+	type balanceResult struct {
+		v float64
+		e error
+	}
+	type ledgerSummaryResult struct {
+		v repositories.LedgerSummaryRange
+		e error
+	}
+	type recentLedgerResult struct {
+		v []repositories.Ledger
+		e error
+	}
+	type attSummaryResult struct {
+		v repositories.EmployeeAttendanceSummary
+		e error
+	}
+	type recentAttendanceResult struct {
+		v []repositories.Attendance
+		e error
+	}
+	type documentsResult struct {
+		v []repositories.EmployeeDocument
+		e error
+	}
+
+	var (
+		balanceCh   chan balanceResult
+		ledgerSumCh chan ledgerSummaryResult
+		recentLedCh chan recentLedgerResult
+		attSumCh    chan attSummaryResult
+		recentAttCh chan recentAttendanceResult
+		documentsCh chan documentsResult
+		wg          sync.WaitGroup
+	)
+
+	balanceCh = make(chan balanceResult, 1)
+	ledgerSumCh = make(chan ledgerSummaryResult, 1)
+	recentLedCh = make(chan recentLedgerResult, 1)
+	attSumCh = make(chan attSummaryResult, 1)
+	recentAttCh = make(chan recentAttendanceResult, 1)
+	documentsCh = make(chan documentsResult, 1)
+
+	wg.Add(6)
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.GetBalanceByEmployee(ctx, repositories.GetBalanceByEmployeeParams{
+			EmployeeID: employeeID,
+			TenantID:   tenantID,
+		})
+		balanceCh <- balanceResult{v, e}
+	}()
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.GetEmployeeLedgerSummary(ctx, repositories.GetEmployeeLedgerSummaryParams{
+			TenantID:   tenantID,
+			EmployeeID: employeeID,
+			StartDate:  startDate,
+			EndDate:    endDate,
+		})
+		ledgerSumCh <- ledgerSummaryResult{v, e}
+	}()
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.ListLedgerByEmployeeMonth(ctx, repositories.ListLedgerByEmployeeMonthParams{
+			EmployeeID: employeeID,
+			TenantID:   tenantID,
+			StartDate:  startDate,
+			EndDate:    endDate,
+			Limit:      5,
+			Offset:     0,
+		})
+		recentLedCh <- recentLedgerResult{v, e}
+	}()
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.GetEmployeeAttendanceSummary(ctx, repositories.GetEmployeeAttendanceSummaryParams{
+			TenantID:   tenantID,
+			EmployeeID: employeeID,
+			StartDate:  startDate,
+			EndDate:    endDate,
+		})
+		attSumCh <- attSummaryResult{v, e}
+	}()
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.ListAttendanceByEmployeeMonth(ctx, repositories.ListAttendanceByEmployeeMonthParams{
+			EmployeeID: employeeID,
+			TenantID:   tenantID,
+			StartDate:  startDate,
+			EndDate:    endDate,
+			Limit:      5,
+			Offset:     0,
+		})
+		recentAttCh <- recentAttendanceResult{v, e}
+	}()
+
+	go func() {
+		defer wg.Done()
+		v, e := s.querier.ListEmployeeDocumentsByEmployee(ctx, repositories.ListEmployeeDocumentsByEmployeeParams{
+			TenantID:   tenantID,
+			EmployeeID: employeeID,
+		})
+		documentsCh <- documentsResult{v, e}
+	}()
+
+	wg.Wait()
+	close(balanceCh)
+	close(ledgerSumCh)
+	close(recentLedCh)
+	close(attSumCh)
+	close(recentAttCh)
+	close(documentsCh)
+
+	balanceRes := <-balanceCh
+	if balanceRes.e != nil {
+		return EmployeeOverview{}, balanceRes.e
+	}
+
+	ledgerSumRes := <-ledgerSumCh
+	if ledgerSumRes.e != nil {
+		return EmployeeOverview{}, ledgerSumRes.e
+	}
+
+	recentLedRes := <-recentLedCh
+	if recentLedRes.e != nil {
+		return EmployeeOverview{}, recentLedRes.e
+	}
+
+	attSumRes := <-attSumCh
+	if attSumRes.e != nil {
+		return EmployeeOverview{}, attSumRes.e
+	}
+
+	recentAttRes := <-recentAttCh
+	if recentAttRes.e != nil {
+		return EmployeeOverview{}, recentAttRes.e
+	}
+
+	documentsRes := <-documentsCh
+	if documentsRes.e != nil {
+		return EmployeeOverview{}, documentsRes.e
+	}
+
+	attSummary := attSumRes.v
+	if attSummary.Total > 0 {
+		attSummary.Percent = math.Round(float64(attSummary.Present) / float64(attSummary.Total) * 100)
+	}
+
+	return EmployeeOverview{
+		Profile: profile,
+		Ledger: EmployeeLedgerOverview{
+			Balance:     balanceRes.v,
+			JamaTotal:   ledgerSumRes.v.JamaTotal,
+			UdhaarTotal: ledgerSumRes.v.UdhaarTotal,
+			Recent:      recentLedRes.v,
+		},
+		Attendance: EmployeeAttendanceOverview{
+			Summary: attSummary,
+			Recent:  recentAttRes.v,
+		},
+		Documents: documentsRes.v,
+	}, nil
+}
+
+func (s *StaffService) AssignDefaultShift(ctx context.Context, employeeID, shiftID, tenantID string) (repositories.Employee, error) {
+	return s.querier.UpdateEmployeeDefaultShift(ctx, repositories.UpdateEmployeeDefaultShiftParams{
+		DefaultShiftID: shiftID,
+		ID:             employeeID,
+		TenantID:       tenantID,
 	})
 }
 
@@ -95,8 +571,28 @@ func (s *StaffService) AssignManager(ctx context.Context, employeeID, tenantID s
 }
 
 func (s *StaffService) DeleteEmployee(ctx context.Context, employeeID, tenantID string) error {
-	return s.querier.SoftDeleteEmployee(ctx, repositories.SoftDeleteEmployeeParams{
+	err := s.querier.SoftDeleteEmployee(ctx, repositories.SoftDeleteEmployeeParams{
 		ID:       employeeID,
 		TenantID: tenantID,
 	})
+	if err == nil {
+		logActivity(ctx, s.querier, tenantID, employeeID, "deleted_employee", "employee", &employeeID, nil)
+	}
+	return err
+}
+
+func decimalPtrToFloat(d *decimal.Decimal) *float64 {
+	if d == nil {
+		return nil
+	}
+	v := d.InexactFloat64()
+	return &v
+}
+
+func (s *StaffService) getTimezone(ctx context.Context, tenantID string) string {
+	t, err := s.querier.FindTenantByID(ctx, tenantID)
+	if err != nil {
+		return utils.DefaultTimezone
+	}
+	return t.Timezone
 }

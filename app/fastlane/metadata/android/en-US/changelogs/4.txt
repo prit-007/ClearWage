@@ -1,0 +1,3 @@
+Employee dashboard, balance sheet, ledger business logic overhaul, and 462 tests.
+
+Employees get their own home screen with attendance, payslip, advance requests, ledger, and reports. Owners see a per-employee balance sheet. Payroll now posts proper jama entries so the ledger balance equation is complete.

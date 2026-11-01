@@ -4,13 +4,13 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
-	"github.com/vivek-app/vivek_app/config"
+	"github.com/clearwage/clearwage/config"
 )
 
 func Init(cfg config.AppConfig, logger *zerolog.Logger) error {
 	migrationCmd := GetMigrationCommandDef(cfg)
 	apiCmd := GetAPICommandDef(cfg, logger)
-	rootCmd := &cobra.Command{Use: "vivek-app"}
+	rootCmd := &cobra.Command{Use: "clearwage"}
 	rootCmd.AddCommand(&migrationCmd, &apiCmd)
 	return rootCmd.Execute()
 }

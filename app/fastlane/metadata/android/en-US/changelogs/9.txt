@@ -1,0 +1,9 @@
+- Fixed attendance type mismatch with server (overtime_hours sent as string)
+- Fixed dispute service invalid Dart syntax for optional fields
+- Fixed dangerous attendance default status (was 'present', now 'absent')
+- Fixed version string in popup menu (now reads from runtime metadata)
+- Fixed TextEditingController leaks in dialogs
+- Fixed ledger summary ignoring date params
+- Fixed navigation inconsistencies (edit employee, employee dashboard)
+- Removed sensitive wage data from production logs
+- Removed unused ApiResponse model

@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/vivek-app/vivek_app/utils"
+	"github.com/clearwage/clearwage/utils"
 )
 
 // TenantKey is the context key used to store the tenant ID in the request context.
@@ -19,7 +19,7 @@ func TenantMiddleware() func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			claims := GetClaims(r.Context())
 			if claims == nil {
-				utils.JSONFail(w, http.StatusUnauthorized, "unauthenticated")
+				utils.JSONFail(w, http.StatusForbidden, "forbidden")
 				return
 			}
 

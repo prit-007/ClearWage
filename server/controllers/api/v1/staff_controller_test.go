@@ -9,15 +9,17 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
 
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/middlewares"
+	"github.com/clearwage/clearwage/mocks"
+	"github.com/clearwage/clearwage/pkg"
+	"github.com/clearwage/clearwage/repositories"
+	"github.com/clearwage/clearwage/services"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/middlewares"
-	"github.com/vivek-app/vivek_app/mocks"
-	"github.com/vivek-app/vivek_app/pkg"
-	"github.com/vivek-app/vivek_app/repositories"
-	"github.com/vivek-app/vivek_app/services"
+	"github.com/shopspring/decimal"
 	"go.uber.org/mock/gomock"
 )
 
@@ -46,7 +48,7 @@ func reposEmployee(t *testing.T, name, wageType, wageAmount string) repositories
 		Phone:       "+91-9876543210",
 		Designation: &designation,
 		WageType:    wageType,
-		WageAmount:  wageAmt,
+		WageAmount:  decimal.NewFromFloat(wageAmt),
 	}
 }
 
@@ -57,7 +59,7 @@ func setupStaffTest(t *testing.T) (*StaffController, *mocks.MockQuerier, func())
 	logger := zerolog.Nop()
 	cfg := config.AppConfig{Secret: "test-secret"}
 	svc := services.NewStaffService(mockQuerier)
-	staffCtrl := NewStaffController(svc, &logger, cfg)
+	staffCtrl := NewStaffController(svc, services.NewActivityService(mockQuerier), &logger, cfg)
 	return staffCtrl, mockQuerier, ctrl.Finish
 }
 
@@ -68,6 +70,9 @@ func TestStaffCreate_Success(t *testing.T) {
 	mockQuerier.EXPECT().
 		CreateEmployee(gomock.Any(), gomock.Any()).
 		Return(reposEmployee(t, "John Doe", "daily", "500"), nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	body, _ := json.Marshal(map[string]interface{}{
 		"name":        "John Doe",
@@ -123,7 +128,7 @@ func TestStaffList_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	if resp["status"] != "success" {
 		t.Errorf("expected success status, got %v", resp["status"])
 	}
@@ -157,6 +162,9 @@ func TestStaffDelete_Success(t *testing.T) {
 	mockQuerier.EXPECT().
 		SoftDeleteEmployee(gomock.Any(), gomock.Any()).
 		Return(nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	r := chi.NewRouter()
 	r.Delete("/api/v1/staff/{id}", staffCtrl.Delete)
@@ -193,8 +201,14 @@ func TestStaffUpdate_Success(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
+		FindEmployeeByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Employee{WageType: "daily", WageAmount: decimal.NewFromInt(500)}, nil)
+	mockQuerier.EXPECT().
 		UpdateEmployee(gomock.Any(), gomock.Any()).
 		Return(reposEmployee(t, "John Updated", "monthly", "600"), nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
 
 	r := chi.NewRouter()
 	r.Put("/api/v1/staff/{id}", staffCtrl.Update)
@@ -217,7 +231,7 @@ func TestStaffUpdate_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	if resp["status"] != "success" {
 		t.Errorf("expected success status, got %v", resp["status"])
 	}
@@ -362,6 +376,7 @@ func TestStaffCreate_Unauthorized(t *testing.T) {
 	})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/staff", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))
 	rec := httptest.NewRecorder()
 
 	staffCtrl.Create(rec, req)
@@ -375,6 +390,9 @@ func TestStaffUpdate_DBError(t *testing.T) {
 	staffCtrl, mockQuerier, cleanup := setupStaffTest(t)
 	defer cleanup()
 
+	mockQuerier.EXPECT().
+		FindEmployeeByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Employee{WageType: "daily", WageAmount: decimal.NewFromInt(500)}, nil)
 	mockQuerier.EXPECT().
 		UpdateEmployee(gomock.Any(), gomock.Any()).
 		Return(repositories.Employee{}, errors.New("db connection error"))
@@ -466,6 +484,7 @@ func TestStaffList_Unauthorized(t *testing.T) {
 		Return(nil, errors.New("db error"))
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff?limit=20&offset=0", nil)
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "e1", "owner"))
 	rec := httptest.NewRecorder()
 
 	staffCtrl.List(rec, req)
@@ -487,6 +506,7 @@ func TestStaffGet_Unauthorized(t *testing.T) {
 	r.Get("/api/v1/staff/{id}", staffCtrl.Get)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff/00000000-0000-0000-0000-000000000002", nil)
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "e1", "owner"))
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
@@ -516,6 +536,9 @@ func TestStaffUpdate_Unauthorized(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
+		FindEmployeeByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Employee{WageType: "daily", WageAmount: decimal.NewFromInt(500)}, nil)
+	mockQuerier.EXPECT().
 		UpdateEmployee(gomock.Any(), gomock.Any()).
 		Return(repositories.Employee{}, errors.New("db error"))
 
@@ -529,11 +552,272 @@ func TestStaffUpdate_Unauthorized(t *testing.T) {
 		"wage_amount": "500",
 	})
 	req := httptest.NewRequest(http.MethodPut, "/api/v1/staff/00000000-0000-0000-0000-000000000002", bytes.NewReader(body))
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "e1", "owner"))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("expected 500, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestStaffOverview_Success(t *testing.T) {
+	staffCtrl, mockQuerier, cleanup := setupStaffTest(t)
+	defer cleanup()
+
+	mockQuerier.EXPECT().
+		FindTenantByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Tenant{Timezone: "Asia/Kolkata"}, nil)
+	mockQuerier.EXPECT().
+		GetStaffProfile(gomock.Any(), gomock.Any()).
+		Return(repositories.StaffProfile{}, nil)
+	mockQuerier.EXPECT().
+		GetBalanceByEmployee(gomock.Any(), gomock.Any()).
+		Return(500.0, nil)
+	mockQuerier.EXPECT().
+		GetEmployeeLedgerSummary(gomock.Any(), gomock.Any()).
+		Return(repositories.LedgerSummaryRange{JamaTotal: decimal.NewFromInt(9000)}, nil)
+	mockQuerier.EXPECT().
+		ListLedgerByEmployeeMonth(gomock.Any(), gomock.Any()).
+		Return([]repositories.Ledger{}, nil)
+	mockQuerier.EXPECT().
+		GetEmployeeAttendanceSummary(gomock.Any(), gomock.Any()).
+		Return(repositories.EmployeeAttendanceSummary{Total: 10, Present: 8}, nil)
+	mockQuerier.EXPECT().
+		ListAttendanceByEmployeeMonth(gomock.Any(), gomock.Any()).
+		Return([]repositories.Attendance{}, nil)
+	mockQuerier.EXPECT().
+		ListEmployeeDocumentsByEmployee(gomock.Any(), gomock.Any()).
+		Return([]repositories.EmployeeDocument{}, nil)
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/staff/{id}/overview", staffCtrl.Overview)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff/00000000-0000-0000-0000-000000000002/overview", nil)
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000004", "owner"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var resp map[string]interface{}
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
+	if resp["status"] != "success" {
+		t.Errorf("expected success, got %v", resp["status"])
+	}
+}
+
+func TestStaffOverview_EmployeeCanViewSelf(t *testing.T) {
+	staffCtrl, mockQuerier, cleanup := setupStaffTest(t)
+	defer cleanup()
+
+	mockQuerier.EXPECT().
+		FindTenantByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Tenant{Timezone: "Asia/Kolkata"}, nil)
+	mockQuerier.EXPECT().
+		GetStaffProfile(gomock.Any(), gomock.Any()).
+		Return(repositories.StaffProfile{}, nil)
+	mockQuerier.EXPECT().
+		GetBalanceByEmployee(gomock.Any(), gomock.Any()).
+		Return(0.0, nil)
+	mockQuerier.EXPECT().
+		GetEmployeeLedgerSummary(gomock.Any(), gomock.Any()).
+		Return(repositories.LedgerSummaryRange{}, nil)
+	mockQuerier.EXPECT().
+		ListLedgerByEmployeeMonth(gomock.Any(), gomock.Any()).
+		Return([]repositories.Ledger{}, nil)
+	mockQuerier.EXPECT().
+		GetEmployeeAttendanceSummary(gomock.Any(), gomock.Any()).
+		Return(repositories.EmployeeAttendanceSummary{}, nil)
+	mockQuerier.EXPECT().
+		ListAttendanceByEmployeeMonth(gomock.Any(), gomock.Any()).
+		Return([]repositories.Attendance{}, nil)
+	mockQuerier.EXPECT().
+		ListEmployeeDocumentsByEmployee(gomock.Any(), gomock.Any()).
+		Return([]repositories.EmployeeDocument{}, nil)
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/staff/{id}/overview", staffCtrl.Overview)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff/00000000-0000-0000-0000-000000000002/overview", nil)
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002", "employee"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestStaffOverview_EmployeeCannotViewOther(t *testing.T) {
+	staffCtrl, _, cleanup := setupStaffTest(t)
+	defer cleanup()
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/staff/{id}/overview", staffCtrl.Overview)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff/00000000-0000-0000-0000-000000000002/overview", nil)
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000004", "employee"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("expected 403, got %d", rec.Code)
+	}
+}
+
+func TestStaffOverview_ProfileError(t *testing.T) {
+	staffCtrl, mockQuerier, cleanup := setupStaffTest(t)
+	defer cleanup()
+
+	mockQuerier.EXPECT().
+		GetStaffProfile(gomock.Any(), gomock.Any()).
+		Return(repositories.StaffProfile{}, errors.New("not found"))
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/staff/{id}/overview", staffCtrl.Overview)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff/00000000-0000-0000-0000-000000000002/overview", nil)
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000004", "owner"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestStaffOverview_Unauthorized(t *testing.T) {
+	staffCtrl, _, cleanup := setupStaffTest(t)
+	defer cleanup()
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/staff/{id}/overview", staffCtrl.Overview)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff/00000000-0000-0000-0000-000000000002/overview", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d", rec.Code)
+	}
+}
+
+func TestStaffCreate_WithDefaultShift(t *testing.T) {
+	staffCtrl, mockQuerier, cleanup := setupStaffTest(t)
+	defer cleanup()
+
+	mockQuerier.EXPECT().
+		CreateEmployee(gomock.Any(), gomock.Any()).
+		Return(repositories.Employee{ID: "00000000-0000-0000-0000-000000000002"}, nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
+	mockQuerier.EXPECT().
+		UpdateEmployeeDefaultShift(gomock.Any(), gomock.Any()).
+		Return(repositories.Employee{}, nil)
+
+	body, _ := json.Marshal(map[string]interface{}{
+		"name":             "John",
+		"phone":            "+91-9876543210",
+		"wage_type":        "daily",
+		"wage_amount":      "500",
+		"default_shift_id": "00000000-0000-0000-0000-000000000003",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/staff", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000004", "owner"))
+	rec := httptest.NewRecorder()
+
+	staffCtrl.Create(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestStaffUpdate_WithDefaultShift(t *testing.T) {
+	staffCtrl, mockQuerier, cleanup := setupStaffTest(t)
+	defer cleanup()
+
+	mockQuerier.EXPECT().
+		FindEmployeeByID(gomock.Any(), gomock.Any()).
+		Return(repositories.Employee{}, nil)
+	mockQuerier.EXPECT().
+		UpdateEmployee(gomock.Any(), gomock.Any()).
+		Return(repositories.Employee{}, nil)
+	mockQuerier.EXPECT().
+		CreateActivityLog(gomock.Any(), gomock.Any()).
+		Return(repositories.ActivityLog{}, nil)
+	mockQuerier.EXPECT().
+		UpdateEmployeeDefaultShift(gomock.Any(), gomock.Any()).
+		Return(repositories.Employee{}, nil)
+
+	r := chi.NewRouter()
+	r.Put("/api/v1/staff/{id}", staffCtrl.Update)
+
+	body, _ := json.Marshal(map[string]interface{}{
+		"name":             "John",
+		"phone":            "+91-9876543210",
+		"wage_type":        "daily",
+		"wage_amount":      "500",
+		"default_shift_id": "00000000-0000-0000-0000-000000000003",
+	})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/staff/00000000-0000-0000-0000-000000000002", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000004", "owner"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestStaffAudit_ListsActivityForAdmin(t *testing.T) {
+	staffCtrl, mockQuerier, cleanup := setupStaffTest(t)
+	defer cleanup()
+
+	mockQuerier.EXPECT().
+		ListActivityLogsByEmployee(gomock.Any(), gomock.Any()).
+		Return([]repositories.ActivityLog{
+			{ID: "a1", TenantID: "t1", Action: "attendance_updated", EntityType: "attendance", CreatedBy: "00000000-0000-0000-0000-000000000001", CreatedAt: time.Now()},
+		}, nil)
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/staff/{id}/audit", staffCtrl.Audit)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff/00000000-0000-0000-0000-000000000002/audit", nil)
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "e1", "owner"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var resp map[string]interface{}
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
+	items, ok := resp["data"].([]interface{})
+	if !ok || len(items) != 1 {
+		t.Errorf("expected 1 audit log, got %v", resp["data"])
+	}
+}
+
+func TestStaffAudit_ForbiddenForEmployee(t *testing.T) {
+	staffCtrl, _, cleanup := setupStaffTest(t)
+	defer cleanup()
+
+	r := chi.NewRouter()
+	r.Get("/api/v1/staff/{id}/audit", staffCtrl.Audit)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff/00000000-0000-0000-0000-000000000002/audit", nil)
+	req = req.WithContext(withClaims(req.Context(), "00000000-0000-0000-0000-000000000001", "e1", "employee"))
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("expected 403, got %d", rec.Code)
 	}
 }

@@ -1,0 +1,777 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+
+import '../../core/design_tokens.dart';
+import '../../core/providers/app_providers.dart';
+import '../../core/responsive.dart';
+import '../../core/services/locale_service.dart';
+import '../../core/theme_provider.dart';
+import '../../core/widgets/fluid_slide_in.dart';
+import '../../l10n/app_localizations.dart';
+
+class _HubItem {
+  final IconData icon;
+  final String title;
+  final String route;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _HubItem({
+    required this.icon,
+    required this.title,
+    required this.route,
+    required this.color,
+    this.onTap,
+  });
+}
+
+class _HubSection {
+  final String label;
+  final List<_HubItem> items;
+
+  const _HubSection({required this.label, required this.items});
+}
+
+class MoreHubPage extends ConsumerStatefulWidget {
+  const MoreHubPage({super.key});
+
+  @override
+  ConsumerState<MoreHubPage> createState() => _MoreHubPageState();
+}
+
+class _MoreHubPageState extends ConsumerState<MoreHubPage> {
+  String _query = '';
+  final List<String> _recentRoutes = [];
+
+  void _trackRecent(String route) {
+    _recentRoutes.remove(route);
+    _recentRoutes.insert(0, route);
+    if (_recentRoutes.length > 3) _recentRoutes.removeLast();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final isAdmin = ref.watch(userInfoProvider)?.isAdmin ?? false;
+
+    final allItems = _buildItems(isAdmin);
+    final filtered = _query.isEmpty
+        ? allItems
+        : allItems
+              .where(
+                (s) => s.items.any(
+                  (i) => i.title.toLowerCase().contains(_query.toLowerCase()),
+                ),
+              )
+              .map(
+                (s) => _HubSection(
+                  label: s.label,
+                  items: s.items
+                      .where(
+                        (i) => i.title.toLowerCase().contains(
+                          _query.toLowerCase(),
+                        ),
+                      )
+                      .toList(),
+                ),
+              )
+              .where((s) => s.items.isNotEmpty)
+              .toList();
+
+    final recentItems = _recentRoutes
+        .map((r) => allItems.expand((s) => s.items).where((i) => i.route == r))
+        .expand((i) => i)
+        .toList();
+
+    return Scaffold(
+      backgroundColor: cs.surface,
+      body: SafeArea(
+        child: CustomScrollView(
+          physics: AppScrollPhysics.physics(),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+              sliver: SliverToBoxAdapter(
+                child: Text(
+                  AppLocalizations.of(context).more,
+                  style: tt.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+              sliver: SliverToBoxAdapter(
+                child: TextField(
+                  onChanged: (v) => setState(() => _query = v),
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context).commonSearch,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _query.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () => setState(() => _query = ''),
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: cs.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (_query.isEmpty && recentItems.isNotEmpty) ...[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                sliver: SliverToBoxAdapter(
+                  child: Text(
+                    AppLocalizations.of(context).hubRecentlyUsed,
+                    style: tt.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                sliver: SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 80,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: recentItems.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 12),
+                      itemBuilder: (_, i) {
+                        final item = recentItems[i];
+                        return _RecentChip(
+                          cs: cs,
+                          tt: tt,
+                          item: item,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            _trackRecent(item.route);
+                            context.push(item.route);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate((context, sectionIdx) {
+                  final section = filtered[sectionIdx];
+                  return _HubSectionWidget(
+                    cs: cs,
+                    tt: tt,
+                    section: section,
+                    onItemTap: (item) {
+                      HapticFeedback.lightImpact();
+                      if (item.onTap != null) {
+                        item.onTap!();
+                        return;
+                      }
+                      _trackRecent(item.route);
+                      context.push(item.route);
+                    },
+                  );
+                }, childCount: filtered.length),
+              ),
+            ),
+            if (_query.isEmpty)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                sliver: SliverToBoxAdapter(
+                  child: _ThemeToggleCard(cs: cs, tt: tt),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<_HubSection> _buildItems(bool isAdmin) {
+    final l = AppLocalizations.of(context);
+    final sections = <_HubSection>[
+      _HubSection(
+        label: l.hubReports,
+        items: [
+          if (isAdmin)
+            _HubItem(
+              icon: PhosphorIconsFill.chartLineUp,
+              title: l.hubDailySummary,
+              route: '/reports/daily-summary',
+              color: AppColors.info,
+            ),
+          if (isAdmin)
+            _HubItem(
+              icon: PhosphorIconsFill.warningCircle,
+              title: l.hubDefaulters,
+              route: '/reports/defaulters',
+              color: AppColors.danger,
+            ),
+          if (isAdmin)
+            _HubItem(
+              icon: PhosphorIconsFill.chartLineUp,
+              title: l.hubWageBillTrends,
+              route: '/reports/wage-bill-trends',
+              color: AppColors.purple,
+            ),
+          if (isAdmin)
+            _HubItem(
+              icon: PhosphorIconsFill.wallet,
+              title: l.hubPayrollSummary,
+              route: '/reports/payroll',
+              color: AppColors.success,
+            ),
+          if (!isAdmin)
+            _HubItem(
+              icon: PhosphorIconsFill.chartLineUp,
+              title: l.hubMyReports,
+              route: '/my-reports',
+              color: AppColors.info,
+            ),
+        ],
+      ),
+      _HubSection(
+        label: l.hubWorkforce,
+        items: [
+          _HubItem(
+            icon: PhosphorIconsFill.clock,
+            title: l.hubShiftTimings,
+            route: isAdmin ? '/shifts' : '/my-shifts',
+            color: AppColors.info,
+          ),
+          _HubItem(
+            icon: PhosphorIconsFill.calendarCheck,
+            title: l.hubHolidays,
+            route: isAdmin ? '/holidays' : '/my-holidays',
+            color: AppColors.success,
+          ),
+          if (isAdmin)
+            _HubItem(
+              icon: PhosphorIconsFill.scroll,
+              title: l.hubLeavePolicy,
+              route: '/leave-policy',
+              color: AppColors.purple,
+            ),
+          if (isAdmin)
+            _HubItem(
+              icon: PhosphorIconsFill.calendarX,
+              title: l.hubLeaveRequests,
+              route: '/leave-requests',
+              color: AppColors.danger,
+            ),
+          if (!isAdmin)
+            _HubItem(
+              icon: PhosphorIconsRegular.calendarX,
+              title: l.hubMyLeaveRequests,
+              route: '/my-leave-requests',
+              color: AppColors.danger,
+            ),
+        ],
+      ),
+      _HubSection(
+        label: l.hubFinancial,
+        items: [
+          _HubItem(
+            icon: PhosphorIconsFill.handCoins,
+            title: isAdmin ? l.hubAdvanceRequests : l.hubMyAdvanceRequests,
+            route: isAdmin ? '/advance-requests' : '/my-advance-requests',
+            color: AppColors.warning,
+          ),
+          if (isAdmin)
+            _HubItem(
+              icon: PhosphorIconsFill.gear,
+              title: l.hubPayrollSettings,
+              route: '/payroll-settings',
+              color: AppColors.info,
+            ),
+        ],
+      ),
+      if (isAdmin)
+        _HubSection(
+          label: l.hubRequests,
+          items: [
+            _HubItem(
+              icon: PhosphorIconsFill.warningCircle,
+              title: l.hubDisputes,
+              route: '/disputes',
+              color: AppColors.danger,
+            ),
+          ],
+        ),
+      _HubSection(
+        label: l.hubActivity,
+        items: [
+          _HubItem(
+            icon: PhosphorIconsFill.bell,
+            title: l.hubNotifications,
+            route: '/notifications',
+            color: AppColors.info,
+          ),
+        ],
+      ),
+    ];
+
+    if (isAdmin) {
+      sections.add(
+        _HubSection(
+          label: l.hubDebug,
+          items: [
+            _HubItem(
+              icon: PhosphorIconsFill.terminal,
+              title: l.hubAppLogs,
+              route: '/debug/logs',
+              color: csDebugLogColor,
+            ),
+          ],
+        ),
+      );
+    }
+
+    sections.add(
+      _HubSection(
+        label: l.hubApp,
+        items: [
+          _HubItem(
+            icon: PhosphorIconsFill.translate,
+            title: l.language,
+            route: '',
+            color: AppColors.info,
+            onTap: () => _showLanguageSheet(context),
+          ),
+          _HubItem(
+            icon: PhosphorIconsFill.key,
+            title: l.hubAppPin,
+            route: '/settings/pin',
+            color: AppColors.warning,
+          ),
+          _HubItem(
+            icon: PhosphorIconsFill.cloudArrowUp,
+            title: l.hubSyncCenter,
+            route: '/settings/sync',
+            color: AppColors.success,
+          ),
+          _HubItem(
+            icon: PhosphorIconsFill.envelope,
+            title: l.hubEmailSettings,
+            route: '/settings/mail',
+            color: AppColors.purple,
+          ),
+          _HubItem(
+            icon: PhosphorIconsFill.info,
+            title: l.hubAbout,
+            route: '/settings/about',
+            color: AppColors.info,
+          ),
+        ],
+      ),
+    );
+
+    return sections.where((s) => s.items.isNotEmpty).toList();
+  }
+
+  Future<void> _showLanguageSheet(BuildContext context) {
+    return showAdaptiveSheet<String>(
+      context: context,
+      builder: (ctx) => const _LanguageSheet(),
+    );
+  }
+}
+
+String _renderLanguageName(String code) {
+  switch (code) {
+    case 'hi':
+      return 'हिन्दी';
+    case 'gu':
+      return 'ગુજરાતી';
+    default:
+      return 'English';
+  }
+}
+
+class _LanguageSheet extends ConsumerStatefulWidget {
+  const _LanguageSheet();
+
+  @override
+  ConsumerState<_LanguageSheet> createState() => _LanguageSheetState();
+}
+
+class _LanguageSheetState extends ConsumerState<_LanguageSheet> {
+  late String _code = ref.read(localeCodeProvider);
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: cs.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              AppLocalizations.of(context).languageSelect,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            RadioGroup<String>(
+              groupValue: _code,
+              onChanged: (v) async {
+                if (v == null) return;
+                setState(() => _code = v);
+                await setLocale(ref, v);
+                if (context.mounted) Navigator.pop(context, v);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final code in const ['en', 'hi', 'gu'])
+                    RadioListTile<String>(
+                      value: code,
+                      title: Text(
+                        _renderLanguageName(code),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+const csDebugLogColor = Color(0xFF6B7280);
+
+class _HubSectionWidget extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final _HubSection section;
+  final ValueChanged<_HubItem> onItemTap;
+
+  const _HubSectionWidget({
+    required this.cs,
+    required this.tt,
+    required this.section,
+    required this.onItemTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              section.label,
+              style: tt.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+          ),
+          ...section.items.asMap().entries.map(
+            (entry) => FluidSlideIn(
+              delay: entry.key * 50,
+              child: _HubCard(
+                cs: cs,
+                tt: tt,
+                item: entry.value,
+                onTap: () => onItemTap(entry.value),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HubCard extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final _HubItem item;
+  final VoidCallback onTap;
+
+  const _HubCard({
+    required this.cs,
+    required this.tt,
+    required this.item,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: item.color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(item.icon, color: item.color, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    item.title,
+                    style: tt.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+                Icon(
+                  PhosphorIconsRegular.caretRight,
+                  color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeToggleCard extends ConsumerWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+
+  const _ThemeToggleCard({required this.cs, required this.tt});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentMode = ref.watch(themeModeProvider);
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Appearance',
+            style: tt.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _ThemeOption(
+                  cs: cs,
+                  icon: PhosphorIconsFill.sun,
+                  label: 'Light',
+                  isSelected: currentMode == ThemeMode.light,
+                  onTap: () => ref
+                      .read(themeModeProvider.notifier)
+                      .setThemeMode(ThemeMode.light),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ThemeOption(
+                  cs: cs,
+                  icon: PhosphorIconsFill.moon,
+                  label: 'Dark',
+                  isSelected: currentMode == ThemeMode.dark,
+                  onTap: () => ref
+                      .read(themeModeProvider.notifier)
+                      .setThemeMode(ThemeMode.dark),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ThemeOption(
+                  cs: cs,
+                  icon: PhosphorIconsFill.monitor,
+                  label: 'System',
+                  isSelected: currentMode == ThemeMode.system,
+                  onTap: () => ref
+                      .read(themeModeProvider.notifier)
+                      .setThemeMode(ThemeMode.system),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  final ColorScheme cs;
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ThemeOption({
+    required this.cs,
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? cs.primaryContainer.withValues(alpha: 0.3)
+              : cs.surfaceContainerHighest.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? cs.primary
+                : cs.outlineVariant.withValues(alpha: 0.3),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? cs.primary : cs.onSurfaceVariant,
+              size: 22,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                color: isSelected ? cs.primary : cs.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecentChip extends StatelessWidget {
+  final ColorScheme cs;
+  final TextTheme tt;
+  final _HubItem item;
+  final VoidCallback onTap;
+
+  const _RecentChip({
+    required this.cs,
+    required this.tt,
+    required this.item,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          width: 80,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(item.icon, color: item.color, size: 24),
+              const SizedBox(height: 6),
+              Text(
+                item.title.split(' ').first,
+                style: tt.labelSmall?.copyWith(fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

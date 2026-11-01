@@ -6,10 +6,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/middlewares"
-	"github.com/vivek-app/vivek_app/services"
-	"github.com/vivek-app/vivek_app/utils"
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/middlewares"
+	"github.com/clearwage/clearwage/services"
+	"github.com/clearwage/clearwage/utils"
 )
 
 type HolidayController struct {
@@ -27,29 +27,45 @@ func NewHolidayController(holidayService *services.HolidayService, logger *zerol
 }
 
 type createHolidayRequest struct {
-	Name string `json:"name"`
-	Date string `json:"date"`
+	Name        string `json:"name"`
+	Date        string `json:"date"`
+	IsRecurring bool   `json:"is_recurring"`
 }
 
 func (c *HolidayController) Create(w http.ResponseWriter, r *http.Request) {
 	var req createHolidayRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.JSONError(w, http.StatusBadRequest, "Invalid JSON")
+		utils.JSONFail(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 
 	if req.Name == "" || req.Date == "" {
-		utils.JSONError(w, http.StatusBadRequest, "Name and date are required")
+		utils.JSONFail(w, http.StatusBadRequest, "Name and date are required")
 		return
 	}
 
-	holiday, err := c.holidayService.CreateHoliday(r.Context(), tenantID, req.Name, req.Date)
+	if !utils.ValidateDate(req.Date) {
+		utils.JSONFail(w, http.StatusBadRequest, "date must be in YYYY-MM-DD format")
+		return
+	}
+
+	if len(req.Name) > 50 {
+		utils.JSONFail(w, http.StatusBadRequest, "name must be at most 50 characters")
+		return
+	}
+
+	holiday, err := c.holidayService.CreateHoliday(r.Context(), tenantID, req.Name, req.Date, req.IsRecurring)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to create holiday")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to create holiday")
@@ -62,11 +78,16 @@ func (c *HolidayController) Create(w http.ResponseWriter, r *http.Request) {
 func (c *HolidayController) List(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
-	holidays, err := c.holidayService.ListHolidays(r.Context(), tenantID)
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	holidays, err := c.holidayService.ListHolidays(r.Context(), tenantID, limit, offset)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("failed to list holidays")
 		utils.JSONError(w, http.StatusInternalServerError, "Failed to list holidays")
@@ -79,7 +100,12 @@ func (c *HolidayController) List(w http.ResponseWriter, r *http.Request) {
 func (c *HolidayController) Delete(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	if tenantID == "" {
-		utils.JSONError(w, http.StatusUnauthorized, "Unauthorized")
+		utils.JSONFail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	claims := middlewares.RequireNonEmployee(w, r.Context())
+	if claims == nil {
 		return
 	}
 

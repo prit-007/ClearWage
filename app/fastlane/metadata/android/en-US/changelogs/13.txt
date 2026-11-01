@@ -1,0 +1,14 @@
+- Fix raw database errors exposed to clients
+- Add request ID correlation for debugging
+- Add readiness health check endpoint
+- Tighten auth endpoint rate limits
+- Fix rate limiter behind reverse proxies
+- Raise JWT secret minimum to 32 characters
+- Add HSTS header in production
+- Add input validation bounds (advance amount, bulk upsert, note lengths)
+- Sanitize payslip filenames
+- Hide server URL config in release builds
+- Fix silent error swallowing in providers
+- Replace debugPrint with structured logging
+- Fix FluidSlideIn timer leak
+- Add IFSC code format validation

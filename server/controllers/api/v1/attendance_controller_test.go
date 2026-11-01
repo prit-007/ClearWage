@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/mocks"
+	"github.com/clearwage/clearwage/repositories"
+	"github.com/clearwage/clearwage/services"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/mocks"
-	"github.com/vivek-app/vivek_app/repositories"
-	"github.com/vivek-app/vivek_app/services"
 	"go.uber.org/mock/gomock"
 )
 
@@ -23,6 +23,7 @@ func setupAttendanceTest(t *testing.T) (*AttendanceController, *mocks.MockQuerie
 	t.Helper()
 	mockCtrl := gomock.NewController(t)
 	mockQuerier := mocks.NewMockQuerier(mockCtrl)
+	mockQuerier.EXPECT().CreateActivityLog(gomock.Any(), gomock.Any()).Return(repositories.ActivityLog{}, nil).AnyTimes()
 	logger := zerolog.Nop()
 	svc := services.NewAttendanceService(mockQuerier)
 	ctrl := NewAttendanceController(svc, &logger, config.AppConfig{})
@@ -34,6 +35,12 @@ func TestAttendanceCreate_Success(t *testing.T) {
 	defer cleanup()
 
 	now := time.Now()
+	mockQuerier.EXPECT().
+		CountHolidaysByDate(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
+	mockQuerier.EXPECT().
+		GetTenantConfig(gomock.Any(), gomock.Any()).
+		Return(repositories.TenantConfig{WeeklyOffs: "0"}, nil)
 	mockQuerier.EXPECT().
 		CreateAttendance(gomock.Any(), gomock.Any()).
 		Return(repositories.Attendance{Status: "present"}, nil)
@@ -177,7 +184,7 @@ func TestAttendanceListByDate_Success(t *testing.T) {
 	}
 
 	var resp map[string]interface{}
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 	if resp["status"] != "success" {
 		t.Errorf("expected success status, got %v", resp["status"])
 	}
@@ -260,6 +267,12 @@ func TestAttendanceBulkUpsert_Success(t *testing.T) {
 	defer cleanup()
 
 	mockQuerier.EXPECT().
+		CountHolidaysByDate(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
+	mockQuerier.EXPECT().
+		GetTenantConfig(gomock.Any(), gomock.Any()).
+		Return(repositories.TenantConfig{WeeklyOffs: "0"}, nil)
+	mockQuerier.EXPECT().
 		BulkUpsertAttendance(gomock.Any(), gomock.Any()).
 		Return([]repositories.Attendance{{Status: "present"}}, nil)
 
@@ -317,6 +330,12 @@ func TestAttendanceBulkUpsert_DBError(t *testing.T) {
 	ctrl, mockQuerier, cleanup := setupAttendanceTest(t)
 	defer cleanup()
 
+	mockQuerier.EXPECT().
+		CountHolidaysByDate(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
+	mockQuerier.EXPECT().
+		GetTenantConfig(gomock.Any(), gomock.Any()).
+		Return(repositories.TenantConfig{WeeklyOffs: "0"}, nil)
 	mockQuerier.EXPECT().
 		BulkUpsertAttendance(gomock.Any(), gomock.Any()).
 		Return(nil, errors.New("db connection error"))
@@ -423,6 +442,12 @@ func TestAttendanceCreate_DBError(t *testing.T) {
 	ctrl, mockQuerier, cleanup := setupAttendanceTest(t)
 	defer cleanup()
 
+	mockQuerier.EXPECT().
+		CountHolidaysByDate(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
+	mockQuerier.EXPECT().
+		GetTenantConfig(gomock.Any(), gomock.Any()).
+		Return(repositories.TenantConfig{WeeklyOffs: "0"}, nil)
 	mockQuerier.EXPECT().
 		CreateAttendance(gomock.Any(), gomock.Any()).
 		Return(repositories.Attendance{}, errors.New("db error"))
@@ -661,5 +686,108 @@ func TestAttendanceLockMonth_Unauthorized(t *testing.T) {
 
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("expected 401, got %d", rec.Code)
+	}
+}
+
+func TestAttendanceRoster_Success(t *testing.T) {
+	ctrl, mockQuerier, cleanup := setupAttendanceTest(t)
+	defer cleanup()
+
+	present := "present"
+	mockQuerier.EXPECT().
+		ListRosterByDate(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return([]repositories.RosterRow{{EmployeeID: "e1", Name: "Rahul", Status: &present}}, nil)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/attendance/roster?date=2025-01-15", nil)
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))
+	rec := httptest.NewRecorder()
+
+	ctrl.Roster(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var resp map[string]interface{}
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
+	if resp["status"] != "success" {
+		t.Errorf("expected success, got %v", resp["status"])
+	}
+}
+
+func TestAttendanceRoster_MissingDate(t *testing.T) {
+	ctrl, _, cleanup := setupAttendanceTest(t)
+	defer cleanup()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/attendance/roster", nil)
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))
+	rec := httptest.NewRecorder()
+
+	ctrl.Roster(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestAttendanceRoster_InvalidDate(t *testing.T) {
+	ctrl, _, cleanup := setupAttendanceTest(t)
+	defer cleanup()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/attendance/roster?date=15-01-2025", nil)
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))
+	rec := httptest.NewRecorder()
+
+	ctrl.Roster(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestAttendanceRoster_Unauthorized(t *testing.T) {
+	ctrl, _, cleanup := setupAttendanceTest(t)
+	defer cleanup()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/attendance/roster?date=2025-01-15", nil)
+	rec := httptest.NewRecorder()
+
+	ctrl.Roster(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d", rec.Code)
+	}
+}
+
+func TestAttendanceRoster_EmployeeRole(t *testing.T) {
+	ctrl, _, cleanup := setupAttendanceTest(t)
+	defer cleanup()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/attendance/roster?date=2025-01-15", nil)
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "employee"))
+	rec := httptest.NewRecorder()
+
+	ctrl.Roster(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("expected 403, got %d", rec.Code)
+	}
+}
+
+func TestAttendanceRoster_DBError(t *testing.T) {
+	ctrl, mockQuerier, cleanup := setupAttendanceTest(t)
+	defer cleanup()
+
+	mockQuerier.EXPECT().
+		ListRosterByDate(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil, errors.New("db error"))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/attendance/roster?date=2025-01-15", nil)
+	req = req.WithContext(withClaims(req.Context(), "t1", "e1", "owner"))
+	rec := httptest.NewRecorder()
+
+	ctrl.Roster(rec, req)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500, got %d", rec.Code)
 	}
 }

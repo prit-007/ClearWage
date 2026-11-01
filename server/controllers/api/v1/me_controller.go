@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/rs/zerolog"
-	"github.com/vivek-app/vivek_app/config"
-	"github.com/vivek-app/vivek_app/middlewares"
-	"github.com/vivek-app/vivek_app/services"
-	"github.com/vivek-app/vivek_app/utils"
+	"github.com/clearwage/clearwage/config"
+	"github.com/clearwage/clearwage/middlewares"
+	"github.com/clearwage/clearwage/services"
+	"github.com/clearwage/clearwage/utils"
 )
 
 type MeController struct {
@@ -60,6 +62,40 @@ func (ctrl *MeController) Profile(w http.ResponseWriter, r *http.Request) {
 	utils.JSONSuccess(w, http.StatusOK, profile)
 }
 
+// Overview returns the authenticated employee's aggregated dashboard: staff profile,
+// ledger summary, attendance summary, documents, and the tenant name.
+//
+// Success (200): utils.Response with map{overview, tenant}
+// Failure (401): utils.Response — missing or invalid JWT / tenant context
+// Failure (500): utils.Response — database or service error
+func (ctrl *MeController) Overview(w http.ResponseWriter, r *http.Request) {
+	tenantID := middlewares.GetTenantID(r.Context())
+	claims := middlewares.GetClaims(r.Context())
+	if claims == nil || claims.EmployeeID == "" {
+		utils.JSONFail(w, http.StatusUnauthorized, "employee claims not found")
+		return
+	}
+
+	overview, err := ctrl.staffSvc.GetOverview(r.Context(), claims.EmployeeID, tenantID)
+	if err != nil {
+		ctrl.logger.Error().Err(err).Msg("failed to get my overview")
+		utils.JSONError(w, http.StatusInternalServerError, "failed to get overview")
+		return
+	}
+
+	tenant, err := ctrl.staffSvc.GetTenant(r.Context(), tenantID)
+	if err != nil {
+		ctrl.logger.Error().Err(err).Msg("failed to get tenant")
+		utils.JSONError(w, http.StatusInternalServerError, "failed to get tenant")
+		return
+	}
+
+	utils.JSONSuccess(w, http.StatusOK, map[string]interface{}{
+		"overview": overview,
+		"tenant":   tenant,
+	})
+}
+
 func (ctrl *MeController) Attendance(w http.ResponseWriter, r *http.Request) {
 	tenantID := middlewares.GetTenantID(r.Context())
 	claims := middlewares.GetClaims(r.Context())
@@ -70,8 +106,23 @@ func (ctrl *MeController) Attendance(w http.ResponseWriter, r *http.Request) {
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
+	if startDate == "" || endDate == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date are required")
+		return
+	}
 
-	records, err := ctrl.attendanceSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate)
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	records, err := ctrl.attendanceSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate, limit, offset)
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("failed to get my attendance")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to get attendance")
@@ -91,8 +142,23 @@ func (ctrl *MeController) Ledger(w http.ResponseWriter, r *http.Request) {
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
+	if startDate == "" || endDate == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date are required")
+		return
+	}
 
-	entries, err := ctrl.ledgerSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate)
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	limit, offset, err := parseAllLimitOffset(r)
+	if err != nil {
+		utils.JSONFail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	entries, err := ctrl.ledgerSvc.ListByEmployeeMonth(r.Context(), claims.EmployeeID, tenantID, startDate, endDate, limit, offset)
 	if err != nil {
 		ctrl.logger.Error().Err(err).Msg("failed to get my ledger")
 		utils.JSONError(w, http.StatusInternalServerError, "failed to get ledger")
@@ -121,6 +187,15 @@ func (ctrl *MeController) Payslip(w http.ResponseWriter, r *http.Request) {
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
+	if startDate == "" || endDate == "" {
+		utils.JSONFail(w, http.StatusBadRequest, "start_date and end_date are required")
+		return
+	}
+
+	if !utils.ValidateDate(startDate) || !utils.ValidateDate(endDate) {
+		utils.JSONFail(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
 
 	pdfBytes, filename, err := ctrl.payrollSvc.GeneratePayslip(r.Context(), tenantID, claims.EmployeeID, startDate, endDate)
 	if err != nil {
@@ -129,10 +204,18 @@ func (ctrl *MeController) Payslip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	safeFilename := filename
+	if safeFilename == "" {
+		safeFilename = "payslip.pdf"
+	}
+	safeFilename = sanitizeFilename(safeFilename)
+
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+	w.Header().Set("Content-Disposition", `attachment; filename="`+safeFilename+`"`)
 	w.WriteHeader(http.StatusOK)
-	w.Write(pdfBytes)
+	if _, err := w.Write(pdfBytes); err != nil {
+		ctrl.logger.Error().Err(err).Msg("failed to write payslip PDF to response")
+	}
 }
 
 type meAdvanceRequest struct {
@@ -168,4 +251,21 @@ func (ctrl *MeController) RequestAdvance(w http.ResponseWriter, r *http.Request)
 	}
 
 	utils.JSONSuccess(w, http.StatusOK, result)
+}
+
+// sanitizeFilename removes or replaces characters that are unsafe in
+// Content-Disposition headers and filesystem paths.
+func sanitizeFilename(name string) string {
+	var b strings.Builder
+	for _, r := range name {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '.' || r == '-' || r == '_' {
+			b.WriteRune(r)
+		} else if r == ' ' {
+			b.WriteRune('_')
+		}
+	}
+	if b.Len() == 0 {
+		return "payslip.pdf"
+	}
+	return b.String()
 }

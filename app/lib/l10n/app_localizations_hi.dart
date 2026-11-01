@@ -691,6 +691,27 @@ class AppLocalizationsHi extends AppLocalizations {
   String get profWageHourly => 'प्रति घंटा';
 
   @override
+  String get profWagePieceRate => 'Piece Rate';
+
+  @override
+  String get formPieceRateItem => 'Piece Rate Item';
+
+  @override
+  String get formPieceRateItemLabel => 'Item / Output Name *';
+
+  @override
+  String get formPieceRateUnit => 'Rate Per Unit (₹) *';
+
+  @override
+  String get formErrPieceRateItemRequired => 'Piece rate item is required';
+
+  @override
+  String get formErrPieceRateUnitRequired => 'Rate per unit is required';
+
+  @override
+  String get formErrPieceRateUnitInvalid => 'Rate must be a valid number';
+
+  @override
   String get profBaseRate => 'आधार दर';
 
   @override

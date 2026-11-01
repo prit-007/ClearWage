@@ -6,6 +6,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/helpers.dart';
 import '../../core/providers/services.dart';
 import '../../core/responsive.dart';
+import '../../core/widgets/shimmer_loading.dart';
 
 class MailSettingsPage extends ConsumerStatefulWidget {
   const MailSettingsPage({super.key});
@@ -121,7 +122,13 @@ class _MailSettingsPageState extends ConsumerState<MailSettingsPage> {
       ),
       body: SafeArea(
         child: _loading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(
+                child: ShimmerLoading(
+                  useSliver: false,
+                  itemCount: 3,
+                  height: 80,
+                ),
+              )
             : SingleChildScrollView(
                 physics: AppScrollPhysics.physics(),
                 padding: const EdgeInsets.all(24),

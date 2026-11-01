@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/api_client.dart';
 import 'package:clearwage/core/providers/services.dart';
+import 'package:clearwage/core/widgets/shimmer_loading.dart';
 import 'package:clearwage/data/services/settings_service.dart';
 import 'package:clearwage/features/settings/mail_settings_page.dart';
 
@@ -71,7 +72,7 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(ShimmerLoading), findsOneWidget);
 
     svc.completeSlow();
     await tester.pumpAndSettle();

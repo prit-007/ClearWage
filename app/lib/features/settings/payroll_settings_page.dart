@@ -9,6 +9,7 @@ import '../../core/widgets/premium_macro_field.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/bottom_blur_bar.dart';
 import '../../core/widgets/loading_button.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import 'dart:async';
@@ -152,7 +153,9 @@ class _PayrollSettingsScreenState extends ConsumerState<PayrollSettingsScreen> {
 
     final Widget bodyWidget;
     if (!_loaded) {
-      bodyWidget = const Center(child: CircularProgressIndicator());
+      bodyWidget = const Center(
+        child: ShimmerLoading(useSliver: false, itemCount: 3, height: 80),
+      );
     } else if (_loadError != null) {
       bodyWidget = Center(
         child: Padding(

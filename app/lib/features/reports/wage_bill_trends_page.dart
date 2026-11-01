@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../core/providers/services.dart';
 import '../../core/helpers.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
@@ -114,7 +115,11 @@ class WageBillTrendsScreen extends ConsumerWidget {
               data: (items) {
                 if (items.isEmpty) {
                   return const SliverFillRemaining(
-                    child: Center(child: Text('No trend data yet')),
+                    child: EmptyState(
+                      icon: PhosphorIconsRegular.chartLineUp,
+                      title: 'No trend data yet',
+                      subtitle: 'Wage trends will appear after payroll runs.',
+                    ),
                   );
                 }
                 final total = items.fold<double>(0, (s, i) => s + i.totalWages);

@@ -12,6 +12,7 @@ import '../staff/providers/staff_providers.dart';
 import '../../core/helpers.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
@@ -660,8 +661,51 @@ class _EmployeePickerSheetState extends ConsumerState<_EmployeePickerSheet> {
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.55,
             child: asyncData.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text(friendlyError(e))),
+              loading: () => const Center(
+                child: ShimmerLoading(
+                  useSliver: false,
+                  itemCount: 3,
+                  height: 80,
+                ),
+              ),
+              error: (e, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        PhosphorIconsFill.warningCircle,
+                        size: 48,
+                        color: cs.error,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Something went wrong',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        friendlyError(e),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton.icon(
+                        icon: const Icon(PhosphorIconsBold.arrowClockwise),
+                        label: const Text(
+                          'Retry',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        onPressed: () => setState(() {}),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               data: (employees) {
                 final filtered = query.isEmpty
                     ? employees

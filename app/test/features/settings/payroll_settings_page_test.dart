@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/api_client.dart';
 import 'package:clearwage/core/providers/services.dart';
+import 'package:clearwage/core/widgets/shimmer_loading.dart';
 import 'package:clearwage/data/models/payroll_models.dart';
 import 'package:clearwage/data/services/settings_service.dart';
 import 'package:clearwage/features/settings/payroll_settings_page.dart';
@@ -63,7 +64,7 @@ void main() {
 
     testWidgets('shows loading indicator initially', (tester) async {
       await tester.pumpWidget(_buildApp(fakeService));
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(ShimmerLoading), findsOneWidget);
     });
 
     testWidgets('shows settings display after load', (tester) async {

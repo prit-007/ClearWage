@@ -14,6 +14,7 @@ import '../../core/design_tokens.dart';
 import '../../data/models/attendance_model.dart';
 import '../disputes/raise_dispute_dialog.dart';
 import 'request_leave_sheet.dart';
+import '../../l10n/app_localizations.dart';
 
 class MyAttendancePage extends ConsumerStatefulWidget {
   const MyAttendancePage({super.key});
@@ -130,7 +131,7 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
                     ),
                     centerTitle: true,
                     title: Text(
-                      'My Attendance',
+                      AppLocalizations.of(context).myAttTitle,
                       style: tt.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.5,
@@ -141,7 +142,7 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
               ),
               actions: [
                 IconButton(
-                  tooltip: 'Request Leave',
+                  tooltip: AppLocalizations.of(context).leaveRequestTitle,
                   icon: Icon(
                     PhosphorIconsRegular.calendarPlus,
                     color: cs.onSurfaceVariant,
@@ -224,7 +225,7 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
                       disputeService: ref.read(disputeServiceProvider),
                       attendanceId: selectedRecord.id,
                       employeeId: selectedRecord.employeeId,
-                      subject: 'attendance record',
+                      subject: AppLocalizations.of(context).myAttRecordSubject,
                     ),
                   ),
                 ),
@@ -233,7 +234,7 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
                 child: Text(
-                  'Monthly Log',
+                  AppLocalizations.of(context).myAttMonthlyLog,
                   style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
@@ -253,7 +254,10 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
                         color: cs.error,
                       ),
                       const SizedBox(height: 16),
-                      Text('Failed to load', style: tt.titleMedium),
+                      Text(
+                        AppLocalizations.of(context).commonFailedLoad,
+                        style: tt.titleMedium,
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         '$_error',
@@ -265,13 +269,13 @@ class _MyAttendancePageState extends ConsumerState<MyAttendancePage> {
                 ),
               )
             else if (_records.isEmpty)
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(24, 40, 24, 40),
+                  padding: const EdgeInsets.fromLTRB(24, 40, 24, 40),
                   child: EmptyState(
                     icon: PhosphorIconsRegular.calendarBlank,
-                    title: 'No Records',
-                    subtitle: 'No attendance records for this month.',
+                    title: AppLocalizations.of(context).myAttNoRecords,
+                    subtitle: AppLocalizations.of(context).myAttNoRecordsHint,
                   ),
                 ),
               )
@@ -469,14 +473,14 @@ class _DayDetailCard extends StatelessWidget {
     required this.onReportError,
   });
 
-  String _statusLabel() {
+  String _statusLabel(AppLocalizations l) {
     switch (attendance.status) {
       case 'present':
-        return 'Present';
+        return l.profPresent;
       case 'absent':
-        return 'Absent';
+        return l.profAbsent;
       case 'half_day':
-        return 'Half Day';
+        return l.profHalfDay;
       default:
         return attendance.status;
     }
@@ -484,6 +488,7 @@ class _DayDetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final color = _dayColor(attendance.status, cs);
     return Container(
       padding: const EdgeInsets.all(16),
@@ -504,8 +509,8 @@ class _DayDetailCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${_statusLabel()} · ${attendance.shiftName ?? 'No shift'}'
-                  '${attendance.overtimeHours > 0 ? ' · OT ${attendance.overtimeHours}h' : ''}',
+                  '${_statusLabel(l)} · ${attendance.shiftName ?? l.rosterNoShift}'
+                  '${attendance.overtimeHours > 0 ? ' · ${l.myAttOt(attendance.overtimeHours.toString())}' : ''}',
                   style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ],
@@ -524,7 +529,7 @@ class _DayDetailCard extends StatelessWidget {
               size: 16,
               color: cs.primary,
             ),
-            label: const Text('Report Error'),
+            label: Text(AppLocalizations.of(context).myAttReportError),
           ),
         ],
       ),
@@ -572,14 +577,14 @@ class _AttendanceRecordTile extends StatelessWidget {
     }
   }
 
-  String _statusLabel() {
+  String _statusLabel(AppLocalizations l) {
     switch (attendance.status) {
       case 'present':
-        return 'Present';
+        return l.profPresent;
       case 'absent':
-        return 'Absent';
+        return l.profAbsent;
       case 'half_day':
-        return 'Half Day';
+        return l.profHalfDay;
       default:
         return attendance.status;
     }
@@ -587,6 +592,7 @@ class _AttendanceRecordTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final color = _statusColor();
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -629,7 +635,7 @@ class _AttendanceRecordTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  attendance.shiftName ?? 'No shift',
+                  attendance.shiftName ?? l.rosterNoShift,
                   style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ],
@@ -642,7 +648,7 @@ class _AttendanceRecordTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              _statusLabel(),
+              _statusLabel(l),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
@@ -659,7 +665,7 @@ class _AttendanceRecordTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'OT ${attendance.overtimeHours}h',
+                l.myAttOt(attendance.overtimeHours.toString()),
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,

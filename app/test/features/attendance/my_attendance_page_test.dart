@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
@@ -9,6 +10,8 @@ import 'package:clearwage/data/models/attendance_model.dart';
 import 'package:clearwage/data/services/profile_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:clearwage/features/attendance/my_attendance_page.dart';
+import 'package:clearwage/core/services/locale_service.dart';
+import 'package:clearwage/l10n/app_localizations.dart';
 
 class _NoOpApiClient extends ApiClient {
   _NoOpApiClient() : super(baseUrl: 'http://localhost');
@@ -33,10 +36,23 @@ class FakeProfileService extends ProfileService {
   }
 }
 
-Widget _buildApp(FakeProfileService fakeService) {
+Widget _buildApp(
+  FakeProfileService fakeService, {
+  Locale locale = const Locale('en'),
+}) {
   return ProviderScope(
     overrides: [profileServiceProvider.overrideWithValue(fakeService)],
-    child: const MaterialApp(home: MyAttendancePage()),
+    child: MaterialApp(
+      locale: locale,
+      supportedLocales: supportedLocales,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: const MyAttendancePage(),
+    ),
   );
 }
 
@@ -242,6 +258,16 @@ void main() {
       expect(find.byType(TableCalendar), findsOneWidget);
       expect(find.text('Report Error'), findsOneWidget);
       expect(find.textContaining('Present · Morning'), findsOneWidget);
+    });
+
+    testWidgets('renders Hindi labels when locale is hi', (tester) async {
+      await tester.pumpWidget(
+        _buildApp(fakeService, locale: const Locale('hi')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('मेरी उपस्थिति'), findsOneWidget);
+      expect(find.text('कोई रिकॉर्ड नहीं'), findsOneWidget);
     });
   });
 }

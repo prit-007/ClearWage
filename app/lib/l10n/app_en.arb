@@ -506,5 +506,31 @@
       }
     }
   },
-  "ledgerNoEmployees": "No employees found"
+  "ledgerNoEmployees": "No employees found",
+  "leaveRequestSubmitted": "Leave request submitted",
+  "leaveRequestTitle": "Request Leave",
+  "leaveUnpaid": "Unpaid Leave",
+  "leavePickRange": "Tap to pick date range",
+  "leaveReasonOptional": "Reason (optional)",
+  "commonSubmitting": "Submitting…",
+  "leaveSubmitRequest": "Submit Request",
+  "myAttTitle": "My Attendance",
+  "myAttRecordSubject": "attendance record",
+  "myAttMonthlyLog": "Monthly Log",
+  "myAttNoRecords": "No Records",
+  "myAttNoRecordsHint": "No attendance records for this month.",
+  "myAttReportError": "Report Error",
+  "myAttOt": "OT {hours}h",
+  "@myAttOt": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "myLedgerNoEntries": "No entries",
+  "myLedgerNoEntriesHint": "No ledger entries for this month.",
+  "myLedgerWagesEarned": "Wages Earned",
+  "myLedgerAdvancesTaken": "Advances Taken",
+  "myLedgerNetPosition": "Net Position"
 }

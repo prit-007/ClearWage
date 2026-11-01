@@ -506,5 +506,31 @@
       }
     }
   },
-  "ledgerNoEmployees": "કોઈ કર્મચારી મળ્યો નહીં"
+  "ledgerNoEmployees": "કોઈ કર્મચારી મળ્યો નહીં",
+  "leaveRequestSubmitted": "રજા વિનંતી સબમિટ થઈ",
+  "leaveRequestTitle": "રજા વિનંતી કરો",
+  "leaveUnpaid": "વેતન વગરની રજા",
+  "leavePickRange": "તારીખ શ્રેણી પસંદ કરવા ટૅપ કરો",
+  "leaveReasonOptional": "કારણ (વૈકલ્પિક)",
+  "commonSubmitting": "સબમિટ થઈ રહ્યું છે…",
+  "leaveSubmitRequest": "વિનંતી સબમિટ કરો",
+  "myAttTitle": "મારી હાજરી",
+  "myAttRecordSubject": "હાજરી રેકોર્ડ",
+  "myAttMonthlyLog": "માસિક લોગ",
+  "myAttNoRecords": "કોઈ રેકોર્ડ નથી",
+  "myAttNoRecordsHint": "આ મહિના માટે કોઈ હાજરી રેકોર્ડ નથી.",
+  "myAttReportError": "ભૂલની જાણ કરો",
+  "myAttOt": "OT {hours}કલાક",
+  "@myAttOt": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "myLedgerNoEntries": "કોઈ એન્ટ્રી નથી",
+  "myLedgerNoEntriesHint": "આ મહિના માટે કોઈ લેજર એન્ટ્રી નથી.",
+  "myLedgerWagesEarned": "કમાયેલા વેતન",
+  "myLedgerAdvancesTaken": "લીધેલા એડવાન્સ",
+  "myLedgerNetPosition": "ચોખ્ખી સ્થિતિ"
 }

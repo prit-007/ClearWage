@@ -1069,4 +1069,63 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get ledgerNoEmployees => 'कोई कर्मचारी नहीं मिला';
+
+  @override
+  String get leaveRequestSubmitted => 'अवकाश अनुरोध सबमिट हुआ';
+
+  @override
+  String get leaveRequestTitle => 'अवकाश का अनुरोध करें';
+
+  @override
+  String get leaveUnpaid => 'अवैतनिक अवकाश';
+
+  @override
+  String get leavePickRange => 'तारीख सीमा चुनने के लिए टैप करें';
+
+  @override
+  String get leaveReasonOptional => 'कारण (वैकल्पिक)';
+
+  @override
+  String get commonSubmitting => 'सबमिट हो रहा है…';
+
+  @override
+  String get leaveSubmitRequest => 'अनुरोध सबमिट करें';
+
+  @override
+  String get myAttTitle => 'मेरी उपस्थिति';
+
+  @override
+  String get myAttRecordSubject => 'उपस्थिति रिकॉर्ड';
+
+  @override
+  String get myAttMonthlyLog => 'मासिक लॉग';
+
+  @override
+  String get myAttNoRecords => 'कोई रिकॉर्ड नहीं';
+
+  @override
+  String get myAttNoRecordsHint => 'इस माह के लिए कोई उपस्थिति रिकॉर्ड नहीं।';
+
+  @override
+  String get myAttReportError => 'त्रुटि की रिपोर्ट करें';
+
+  @override
+  String myAttOt(String hours) {
+    return 'OT $hoursघं';
+  }
+
+  @override
+  String get myLedgerNoEntries => 'कोई प्रविष्टि नहीं';
+
+  @override
+  String get myLedgerNoEntriesHint => 'इस माह के लिए कोई लेजर प्रविष्टि नहीं।';
+
+  @override
+  String get myLedgerWagesEarned => 'अर्जित मजदूरी';
+
+  @override
+  String get myLedgerAdvancesTaken => 'लिए गए अग्रिम';
+
+  @override
+  String get myLedgerNetPosition => 'शुद्ध स्थिति';
 }

@@ -2085,6 +2085,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No employees found'**
   String get ledgerNoEmployees;
+
+  /// No description provided for @leaveRequestSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave request submitted'**
+  String get leaveRequestSubmitted;
+
+  /// No description provided for @leaveRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Leave'**
+  String get leaveRequestTitle;
+
+  /// No description provided for @leaveUnpaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpaid Leave'**
+  String get leaveUnpaid;
+
+  /// No description provided for @leavePickRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to pick date range'**
+  String get leavePickRange;
+
+  /// No description provided for @leaveReasonOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get leaveReasonOptional;
+
+  /// No description provided for @commonSubmitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting…'**
+  String get commonSubmitting;
+
+  /// No description provided for @leaveSubmitRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Request'**
+  String get leaveSubmitRequest;
+
+  /// No description provided for @myAttTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Attendance'**
+  String get myAttTitle;
+
+  /// No description provided for @myAttRecordSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'attendance record'**
+  String get myAttRecordSubject;
+
+  /// No description provided for @myAttMonthlyLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly Log'**
+  String get myAttMonthlyLog;
+
+  /// No description provided for @myAttNoRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'No Records'**
+  String get myAttNoRecords;
+
+  /// No description provided for @myAttNoRecordsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No attendance records for this month.'**
+  String get myAttNoRecordsHint;
+
+  /// No description provided for @myAttReportError.
+  ///
+  /// In en, this message translates to:
+  /// **'Report Error'**
+  String get myAttReportError;
+
+  /// No description provided for @myAttOt.
+  ///
+  /// In en, this message translates to:
+  /// **'OT {hours}h'**
+  String myAttOt(String hours);
+
+  /// No description provided for @myLedgerNoEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries'**
+  String get myLedgerNoEntries;
+
+  /// No description provided for @myLedgerNoEntriesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No ledger entries for this month.'**
+  String get myLedgerNoEntriesHint;
+
+  /// No description provided for @myLedgerWagesEarned.
+  ///
+  /// In en, this message translates to:
+  /// **'Wages Earned'**
+  String get myLedgerWagesEarned;
+
+  /// No description provided for @myLedgerAdvancesTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'Advances Taken'**
+  String get myLedgerAdvancesTaken;
+
+  /// No description provided for @myLedgerNetPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Net Position'**
+  String get myLedgerNetPosition;
 }
 
 class _AppLocalizationsDelegate

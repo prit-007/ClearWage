@@ -1068,4 +1068,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ledgerNoEmployees => 'No employees found';
+
+  @override
+  String get leaveRequestSubmitted => 'Leave request submitted';
+
+  @override
+  String get leaveRequestTitle => 'Request Leave';
+
+  @override
+  String get leaveUnpaid => 'Unpaid Leave';
+
+  @override
+  String get leavePickRange => 'Tap to pick date range';
+
+  @override
+  String get leaveReasonOptional => 'Reason (optional)';
+
+  @override
+  String get commonSubmitting => 'Submitting…';
+
+  @override
+  String get leaveSubmitRequest => 'Submit Request';
+
+  @override
+  String get myAttTitle => 'My Attendance';
+
+  @override
+  String get myAttRecordSubject => 'attendance record';
+
+  @override
+  String get myAttMonthlyLog => 'Monthly Log';
+
+  @override
+  String get myAttNoRecords => 'No Records';
+
+  @override
+  String get myAttNoRecordsHint => 'No attendance records for this month.';
+
+  @override
+  String get myAttReportError => 'Report Error';
+
+  @override
+  String myAttOt(String hours) {
+    return 'OT ${hours}h';
+  }
+
+  @override
+  String get myLedgerNoEntries => 'No entries';
+
+  @override
+  String get myLedgerNoEntriesHint => 'No ledger entries for this month.';
+
+  @override
+  String get myLedgerWagesEarned => 'Wages Earned';
+
+  @override
+  String get myLedgerAdvancesTaken => 'Advances Taken';
+
+  @override
+  String get myLedgerNetPosition => 'Net Position';
 }

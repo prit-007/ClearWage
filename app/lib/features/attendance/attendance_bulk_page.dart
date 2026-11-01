@@ -10,6 +10,7 @@ import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/widgets/employee_avatar.dart';
 import '../../core/widgets/loading_button.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../data/models/roster_model.dart';
 import 'attendance_roster_page.dart';
 
@@ -133,14 +134,51 @@ class _AttendanceBulkScreenState extends ConsumerState<AttendanceBulkScreen> {
       ),
       body: SafeArea(
         child: rosterAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => CustomScrollView(
+            physics: AppScrollPhysics.physics(),
+            slivers: const [
+              SliverPadding(
+                padding: EdgeInsets.all(24),
+                sliver: ShimmerLoading(itemCount: 3, height: 80),
+              ),
+            ],
+          ),
           error: (e, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
-              child: Text(
-                friendlyError(e),
-                style: tt.bodySmall,
-                textAlign: TextAlign.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    PhosphorIconsFill.warningCircle,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Something went wrong',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    friendlyError(e),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    icon: const Icon(PhosphorIconsBold.arrowClockwise),
+                    label: const Text(
+                      'Retry',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    onPressed: () => setState(() {}),
+                  ),
+                ],
               ),
             ),
           ),

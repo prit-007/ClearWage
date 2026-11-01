@@ -20,6 +20,7 @@ import '../../core/services/connectivity_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'employee_dashboard.dart';
 import 'broadcast_sheet.dart';
+import '../../core/providers/badge_providers.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -62,6 +63,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final tt = Theme.of(context).textTheme;
     final l = AppLocalizations.of(context);
     final asyncData = ref.watch(dashboardDataProvider);
+    final pendingAdvances = ref.watch(pendingAdvancesCountProvider);
+    final openDisputes = ref.watch(openDisputesCountProvider);
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -283,6 +286,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     onTap: () {
                                       HapticFeedback.lightImpact();
                                       context.push('/new-ledger');
+                                    },
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              ResponsiveStatRow(
+                                children: [
+                                  _QuickActionTile(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsRegular.handCoins,
+                                    label: l.hubAdvanceRequests,
+                                    badgeCount: pendingAdvances.valueOrNull,
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      context.push('/advance-requests');
+                                    },
+                                  ),
+                                  _QuickActionTile(
+                                    cs: cs,
+                                    tt: tt,
+                                    icon: PhosphorIconsRegular.flag,
+                                    label: l.hubDisputes,
+                                    badgeCount: openDisputes.valueOrNull,
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      context.push('/disputes');
                                     },
                                   ),
                                 ],
@@ -556,6 +586,7 @@ class _QuickActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final int? badgeCount;
 
   const _QuickActionTile({
     required this.cs,
@@ -563,25 +594,57 @@ class _QuickActionTile extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.badgeCount,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasBadge = (badgeCount ?? 0) > 0;
     return Column(
       children: [
-        Material(
-          color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-          shape: const CircleBorder(),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            splashColor: cs.primary.withValues(alpha: 0.2),
-            highlightColor: cs.primary.withValues(alpha: 0.1),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Icon(icon, color: cs.onSurface, size: 24),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Material(
+              color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                splashColor: cs.primary.withValues(alpha: 0.2),
+                highlightColor: cs.primary.withValues(alpha: 0.1),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Icon(icon, color: cs.onSurface, size: 24),
+                ),
+              ),
             ),
-          ),
+            if (hasBadge)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: AppColors.danger,
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  child: Text(
+                    badgeCount! > 99 ? '99+' : badgeCount.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w800,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 8),
         Text(

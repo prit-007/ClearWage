@@ -8,6 +8,7 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/fluid_slide_in.dart';
 import '../../core/design_tokens.dart';
 import '../../core/logger.dart';
+import 'request_advance_sheet.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/responsive.dart';
 
@@ -208,6 +209,10 @@ class _MyAdvanceRequestsPageState extends ConsumerState<MyAdvanceRequestsPage> {
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showRequestAdvanceSheet(context),
+        child: const Icon(PhosphorIconsBold.handCoins),
       ),
     );
   }

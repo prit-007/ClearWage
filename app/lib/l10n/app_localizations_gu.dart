@@ -303,6 +303,27 @@ class AppLocalizationsGu extends AppLocalizations {
   String get advanceSubmitted => 'એડવાન્સ વિનંતી સબમિટ કરાઈ';
 
   @override
+  String get advanceAmountRequired => 'Amount is required';
+
+  @override
+  String get advanceAmountInvalid => 'Amount must be a valid number';
+
+  @override
+  String get advanceRequestTitle => 'Request Advance';
+
+  @override
+  String get advanceAmountLabel => 'Amount (₹) *';
+
+  @override
+  String get advanceNoteLabel => 'Note';
+
+  @override
+  String get advanceNoteHint => 'Reason for the advance (optional)';
+
+  @override
+  String get advanceSubmitRequest => 'Request Advance';
+
+  @override
   String get broadcastTitle => 'પ્રસારણ સંદેશ';
 
   @override

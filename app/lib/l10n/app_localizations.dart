@@ -1360,6 +1360,48 @@ abstract class AppLocalizations {
   /// **'Hourly'**
   String get profWageHourly;
 
+  /// No description provided for @profWagePieceRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Piece Rate'**
+  String get profWagePieceRate;
+
+  /// No description provided for @formPieceRateItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Piece Rate Item'**
+  String get formPieceRateItem;
+
+  /// No description provided for @formPieceRateItemLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Item / Output Name *'**
+  String get formPieceRateItemLabel;
+
+  /// No description provided for @formPieceRateUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate Per Unit (₹) *'**
+  String get formPieceRateUnit;
+
+  /// No description provided for @formErrPieceRateItemRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Piece rate item is required'**
+  String get formErrPieceRateItemRequired;
+
+  /// No description provided for @formErrPieceRateUnitRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate per unit is required'**
+  String get formErrPieceRateUnitRequired;
+
+  /// No description provided for @formErrPieceRateUnitInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate must be a valid number'**
+  String get formErrPieceRateUnitInvalid;
+
   /// No description provided for @profBaseRate.
   ///
   /// In en, this message translates to:

@@ -35,6 +35,8 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   final _wageCtrl = TextEditingController();
   final _dojCtrl = TextEditingController();
   final _panCtrl = TextEditingController();
+  final _pieceRateItemCtrl = TextEditingController();
+  final _pieceRateUnitCtrl = TextEditingController();
   final _aadhaarCtrl = TextEditingController();
   final _pfCtrl = TextEditingController();
   final _bankCtrl = TextEditingController();
@@ -85,6 +87,11 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       _role = e.role;
       _selectedShiftId = e.defaultShiftId;
       _managerId = e.managerId;
+      if (_wageType == 'piece_rate') {
+        _pieceRateItemCtrl.text = e.pieceRateItemName ?? '';
+        final unit = e.pieceRatePerUnit ?? 0.0;
+        _pieceRateUnitCtrl.text = unit == 0 ? '' : unit.toStringAsFixed(0);
+      }
     } else {
       _wageType = 'daily';
       _role = 'employee';
@@ -129,6 +136,8 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     _wageCtrl.dispose();
     _dojCtrl.dispose();
     _panCtrl.dispose();
+    _pieceRateItemCtrl.dispose();
+    _pieceRateUnitCtrl.dispose();
     _aadhaarCtrl.dispose();
     _pfCtrl.dispose();
     _bankCtrl.dispose();
@@ -155,6 +164,13 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     if (wage.isEmpty) return l.formErrWageRequired;
     final wageVal = double.tryParse(wage);
     if (wageVal == null || wageVal <= 0) return l.formErrWageInvalid;
+    if (_wageType == 'piece_rate') {
+      final item = _pieceRateItemCtrl.text.trim();
+      final unit = _pieceRateUnitCtrl.text.trim();
+      if (item.isEmpty) return l.formErrPieceRateItemRequired;
+      final unitVal = double.tryParse(unit);
+      if (unitVal == null || unitVal <= 0) return l.formErrPieceRateUnitInvalid;
+    }
     final ifsc = _ifscCtrl.text.trim();
     if (ifsc.isNotEmpty && !RegExp(r'^[A-Z]{4}0[A-Z0-9]{6}$').hasMatch(ifsc)) {
       return l.formErrIfsc;
@@ -263,6 +279,13 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
         'role': _role,
         'default_shift_id': _selectedShiftId,
         'manager_id': _managerId,
+        if (_wageType == 'piece_rate') ...{
+          'piece_rate_item_name': _pieceRateItemCtrl.text.trim().isEmpty
+              ? null
+              : _pieceRateItemCtrl.text.trim(),
+          'piece_rate_per_unit':
+              double.tryParse(_pieceRateUnitCtrl.text.trim()) ?? 0.0,
+        },
         'date_of_joining': _dojCtrl.text.trim().isEmpty
             ? null
             : _dojCtrl.text.trim(),
@@ -363,6 +386,8 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
           _bankCtrl.text.isNotEmpty ||
           _ifscCtrl.text.isNotEmpty ||
           _upiCtrl.text.isNotEmpty ||
+          _pieceRateItemCtrl.text.isNotEmpty ||
+          _pieceRateUnitCtrl.text.isNotEmpty ||
           _emergencyNameCtrl.text.isNotEmpty ||
           _emergencyPhoneCtrl.text.isNotEmpty ||
           _healthCtrl.text.isNotEmpty ||
@@ -389,6 +414,13 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
         differs(_bankCtrl.text, e.bankAccountNumber) ||
         differs(_ifscCtrl.text, e.bankIfsc) ||
         differs(_upiCtrl.text, e.upiId) ||
+        differs(_pieceRateItemCtrl.text, e.pieceRateItemName) ||
+        differs(
+          _pieceRateUnitCtrl.text,
+          e.pieceRatePerUnit == null || e.pieceRatePerUnit == 0
+              ? ''
+              : e.pieceRatePerUnit!.toStringAsFixed(0),
+        ) ||
         differs(_emergencyNameCtrl.text, e.emergencyContactName) ||
         differs(_emergencyPhoneCtrl.text, e.emergencyContactPhone) ||
         differs(_healthCtrl.text, e.healthNotes) ||
@@ -668,9 +700,72 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                           isSelected: _wageType == 'hourly',
                           onTap: () => _updateWage('hourly'),
                         ),
+                        const SizedBox(width: 16),
+                        _TactileWageCard(
+                          cs: cs,
+                          label: AppLocalizations.of(context).profWagePieceRate,
+                          icon: PhosphorIconsFill.tag,
+                          isSelected: _wageType == 'piece_rate',
+                          onTap: () => _updateWage('piece_rate'),
+                        ),
                       ],
                     ),
                   ),
+                  if (_wageType == 'piece_rate') ...[
+                    FluidSlideIn(
+                      delay: 390,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppLocalizations.of(context).formPieceRateItem,
+                            style: tt.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: cs.primary,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          FluidSlideIn(
+                            delay: 400,
+                            child: ValidatedField(
+                              controller: _pieceRateItemCtrl,
+                              label: AppLocalizations.of(
+                                context,
+                              ).formPieceRateItemLabel,
+                              prefixIcon: PhosphorIconsDuotone.tag,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          FluidSlideIn(
+                            delay: 420,
+                            child: ValidatedField(
+                              controller: _pieceRateUnitCtrl,
+                              label: AppLocalizations.of(
+                                context,
+                              ).formPieceRateUnit,
+                              prefixIcon: PhosphorIconsDuotone.coins,
+                              keyboardType: TextInputType.number,
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return AppLocalizations.of(
+                                    context,
+                                  ).formErrPieceRateUnitRequired;
+                                }
+                                final unitVal = double.tryParse(v.trim());
+                                if (unitVal == null || unitVal <= 0) {
+                                  return AppLocalizations.of(
+                                    context,
+                                  ).formErrPieceRateUnitInvalid;
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   FluidSlideIn(
                     delay: 400,

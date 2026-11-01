@@ -44,4 +44,16 @@ class AdvanceRequestService {
       },
     );
   }
+
+  /// Employee requests a new advance (POST /advance-request).
+  Future<AdvanceRequest> requestAdvance({
+    required double amount,
+    required String note,
+  }) async {
+    final res = await _client.post(
+      '/advance-request',
+      body: {'amount': amount.toString(), 'note': note},
+    );
+    return AdvanceRequest.fromJson(res['data'] as Map<String, dynamic>? ?? {});
+  }
 }

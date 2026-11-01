@@ -120,8 +120,8 @@ void main() {
       expect(find.text('Employee Breakdown'), findsOneWidget);
       expect(find.text('Rahul'), findsOneWidget);
       expect(find.text('Priya'), findsOneWidget);
-      expect(find.text('Gross: ₹50,000'), findsOneWidget);
-      expect(find.text('Gross: ₹40,000'), findsOneWidget);
+      expect(find.text('Gross: ₹50,000.00'), findsOneWidget);
+      expect(find.text('Gross: ₹40,000.00'), findsOneWidget);
       expect(find.text('Lock Payroll'), findsWidgets);
     });
 

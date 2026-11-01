@@ -798,7 +798,12 @@ Offline-sync infrastructure for mobile workers. Not yet used from Flutter.
 | `GET` | `/api/v1/sync/pending` | `syncCtrl.ListPending` |
 | `PUT` | `/api/v1/sync/status` | `syncCtrl.UpdateStatus` |
 
-**Frontend**: No wiring (future: offline-first sync feature).
+**Frontend**: Flutter stages offline attendance/ledger writes locally
+(`lib/core/services/sync_service.dart`, `pending_sync_store.dart`) and flushes
+them via the regular attendance/ledger endpoints on reconnect
+(`lib/features/shell/main_shell.dart` auto-flush; Settings → Sync Center).
+The `/api/v1/sync` endpoints above are server-side infrastructure not yet
+consumed by Flutter.
 
 ---
 

@@ -259,7 +259,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
             ? null
             : _deptCtrl.text.trim(),
         'wage_type': _wageType,
-        'wage_amount': _wageCtrl.text.trim(),
+        'wage_amount': double.tryParse(_wageCtrl.text.trim()) ?? 0.0,
         'role': _role,
         'default_shift_id': _selectedShiftId,
         'manager_id': _managerId,
@@ -304,20 +304,27 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       } else {
         final created = await ref.read(staffServiceProvider).create(body);
         savedId = created.id;
-      }
-      if (_photoPath != null) {
-        try {
-          await ref
-              .read(staffServiceProvider)
-              .uploadPhoto(savedId, _photoPath!);
-        } catch (photoError) {
-          if (mounted) {
-            showError(
-              context,
-              AppLocalizations.of(
+        final photoPath = _photoPath;
+        if (photoPath != null) {
+          try {
+            await ref
+                .read(staffServiceProvider)
+                .uploadPhoto(savedId, photoPath);
+          } catch (photoError) {
+            // Roll back the partial employee record so a failed photo upload
+            // does not leave a duplicate employee behind.
+            try {
+              await ref.read(staffServiceProvider).delete(savedId);
+            } catch (_) {}
+            if (mounted) {
+              showError(
                 context,
-              ).formPhotoSaveFailed(friendlyError(photoError)),
-            );
+                AppLocalizations.of(
+                  context,
+                ).formPhotoSaveFailed(friendlyError(photoError)),
+              );
+            }
+            rethrow;
           }
         }
       }

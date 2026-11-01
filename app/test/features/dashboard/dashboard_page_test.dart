@@ -353,6 +353,11 @@ void main() {
         scrollable: find.byType(Scrollable),
       );
       expect(find.text('त्वरित क्रियाएँ'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('हाल की गतिविधि'),
+        500,
+        scrollable: find.byType(Scrollable),
+      );
       expect(find.text('हाल की गतिविधि'), findsOneWidget);
     });
   });

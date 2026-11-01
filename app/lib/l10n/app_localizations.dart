@@ -646,6 +646,48 @@ abstract class AppLocalizations {
   /// **'Advance request submitted'**
   String get advanceSubmitted;
 
+  /// No description provided for @advanceAmountRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount is required'**
+  String get advanceAmountRequired;
+
+  /// No description provided for @advanceAmountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount must be a valid number'**
+  String get advanceAmountInvalid;
+
+  /// No description provided for @advanceRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Advance'**
+  String get advanceRequestTitle;
+
+  /// No description provided for @advanceAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount (₹) *'**
+  String get advanceAmountLabel;
+
+  /// No description provided for @advanceNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get advanceNoteLabel;
+
+  /// No description provided for @advanceNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason for the advance (optional)'**
+  String get advanceNoteHint;
+
+  /// No description provided for @advanceSubmitRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Advance'**
+  String get advanceSubmitRequest;
+
   /// No description provided for @broadcastTitle.
   ///
   /// In en, this message translates to:

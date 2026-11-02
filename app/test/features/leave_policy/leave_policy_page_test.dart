@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:clearwage/core/api_client.dart';
 import 'package:clearwage/core/providers/services.dart';
+import 'package:clearwage/core/widgets/shimmer_loading.dart';
 import 'package:clearwage/data/models/leave_policy_model.dart';
 import 'package:clearwage/data/services/leave_policy_service.dart';
 import 'package:clearwage/features/leave_policy/leave_policy_page.dart';
@@ -57,7 +58,7 @@ void main() {
 
     testWidgets('shows loading indicator initially', (tester) async {
       await tester.pumpWidget(_buildApp(fakeService));
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(ShimmerLoading), findsOneWidget);
     });
 
     testWidgets('shows policy display after load', (tester) async {

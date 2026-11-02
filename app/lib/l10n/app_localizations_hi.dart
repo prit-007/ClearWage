@@ -304,6 +304,27 @@ class AppLocalizationsHi extends AppLocalizations {
   String get advanceSubmitted => 'अग्रिम राशि का अनुरोध भेजा गया';
 
   @override
+  String get advanceAmountRequired => 'Amount is required';
+
+  @override
+  String get advanceAmountInvalid => 'Amount must be a valid number';
+
+  @override
+  String get advanceRequestTitle => 'Request Advance';
+
+  @override
+  String get advanceAmountLabel => 'Amount (₹) *';
+
+  @override
+  String get advanceNoteLabel => 'Note';
+
+  @override
+  String get advanceNoteHint => 'Reason for the advance (optional)';
+
+  @override
+  String get advanceSubmitRequest => 'Request Advance';
+
+  @override
   String get broadcastTitle => 'प्रसारण संदेश';
 
   @override
@@ -689,6 +710,27 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get profWageHourly => 'प्रति घंटा';
+
+  @override
+  String get profWagePieceRate => 'Piece Rate';
+
+  @override
+  String get formPieceRateItem => 'Piece Rate Item';
+
+  @override
+  String get formPieceRateItemLabel => 'Item / Output Name *';
+
+  @override
+  String get formPieceRateUnit => 'Rate Per Unit (₹) *';
+
+  @override
+  String get formErrPieceRateItemRequired => 'Piece rate item is required';
+
+  @override
+  String get formErrPieceRateUnitRequired => 'Rate per unit is required';
+
+  @override
+  String get formErrPieceRateUnitInvalid => 'Rate must be a valid number';
 
   @override
   String get profBaseRate => 'आधार दर';

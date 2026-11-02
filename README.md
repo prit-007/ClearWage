@@ -101,10 +101,13 @@ API (Docker or bare metal), and a free Firebase project for phone-OTP login.
 Once that's running, day-to-day use needs no technical knowledge at all.
 
 **What happens if the internet goes down on the shop floor?**
-Right now, ClearWage needs a connection — it's REST-driven with no local
-database, and an offline banner shows when you've lost signal. Offline
-queuing for attendance is on the roadmap; the database already has a
-`sync_queue` table reserved for it, it's just not wired up to the app yet.
+ClearWage is REST-driven, so reading data needs a connection — an offline
+banner shows when you've lost signal. However, offline writes *are* wired up:
+attendance marks, ledger entries, and KYC document uploads are staged locally
+and flushed to the server automatically when the connection returns (there's
+also a manual "Force Sync Now" in Settings → Sync Center). Reads still require
+a connection; full offline-first with a local database is on the roadmap, and
+the database already has a `sync_queue` table reserved for it.
 
 **Is it actually finished, or still in progress?**
 Core features — attendance, payroll, ledger, staff management, and

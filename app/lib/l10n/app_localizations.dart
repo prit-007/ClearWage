@@ -646,6 +646,48 @@ abstract class AppLocalizations {
   /// **'Advance request submitted'**
   String get advanceSubmitted;
 
+  /// No description provided for @advanceAmountRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount is required'**
+  String get advanceAmountRequired;
+
+  /// No description provided for @advanceAmountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount must be a valid number'**
+  String get advanceAmountInvalid;
+
+  /// No description provided for @advanceRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Advance'**
+  String get advanceRequestTitle;
+
+  /// No description provided for @advanceAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount (₹) *'**
+  String get advanceAmountLabel;
+
+  /// No description provided for @advanceNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get advanceNoteLabel;
+
+  /// No description provided for @advanceNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason for the advance (optional)'**
+  String get advanceNoteHint;
+
+  /// No description provided for @advanceSubmitRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Advance'**
+  String get advanceSubmitRequest;
+
   /// No description provided for @broadcastTitle.
   ///
   /// In en, this message translates to:
@@ -1359,6 +1401,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hourly'**
   String get profWageHourly;
+
+  /// No description provided for @profWagePieceRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Piece Rate'**
+  String get profWagePieceRate;
+
+  /// No description provided for @formPieceRateItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Piece Rate Item'**
+  String get formPieceRateItem;
+
+  /// No description provided for @formPieceRateItemLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Item / Output Name *'**
+  String get formPieceRateItemLabel;
+
+  /// No description provided for @formPieceRateUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate Per Unit (₹) *'**
+  String get formPieceRateUnit;
+
+  /// No description provided for @formErrPieceRateItemRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Piece rate item is required'**
+  String get formErrPieceRateItemRequired;
+
+  /// No description provided for @formErrPieceRateUnitRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate per unit is required'**
+  String get formErrPieceRateUnitRequired;
+
+  /// No description provided for @formErrPieceRateUnitInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate must be a valid number'**
+  String get formErrPieceRateUnitInvalid;
 
   /// No description provided for @profBaseRate.
   ///

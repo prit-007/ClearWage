@@ -168,7 +168,7 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
     _rowControllers = List.generate(emps.length, (i) {
       final emp = emps[i] as Map<String, dynamic>;
       return TextEditingController(
-        text: safeToDouble(emp['net_payable']).toStringAsFixed(0),
+        text: safeToDouble(emp['net_payable']).toStringAsFixed(2),
       );
     });
   }
@@ -389,8 +389,8 @@ class _PayrollPreviewScreenState extends ConsumerState<PayrollPreviewScreen> {
                             tt: tt,
                             name: emp['name'] as String? ?? '',
                             photoUrl: emp['photo_url'] as String?,
-                            gross: AppCurrency.format(
-                              safeToInt(emp['gross_wages']),
+                            gross: AppCurrency.formatDecimal(
+                              safeToDouble(emp['gross_wages']),
                             ),
                             controller: _rowControllers[index],
                             calculatedNet: safeToDouble(emp['net_payable']),

@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+
 import '../../core/helpers.dart';
 import '../../core/providers/services.dart';
 import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../data/models/leave_request_model.dart';
 
 class LeaveRequestsScreen extends ConsumerStatefulWidget {
@@ -102,20 +105,63 @@ class _LeaveRequestsScreenState extends ConsumerState<LeaveRequestsScreen> {
             const SizedBox(height: 12),
             Expanded(
               child: async.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => CustomScrollView(
+                  physics: AppScrollPhysics.physics(),
+                  slivers: const [
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(24, 16, 24, 40),
+                      sliver: ShimmerLoading(itemCount: 4, height: 100),
+                    ),
+                  ],
+                ),
                 error: (e, _) => Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
-                    child: Text(
-                      friendlyError(e),
-                      style: tt.bodySmall,
-                      textAlign: TextAlign.center,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          PhosphorIconsFill.warningCircle,
+                          size: 48,
+                          color: cs.error,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Something went wrong',
+                          style: tt.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          friendlyError(e),
+                          style: tt.bodySmall?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        FilledButton.icon(
+                          icon: const Icon(PhosphorIconsBold.arrowClockwise),
+                          label: const Text(
+                            'Retry',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          onPressed: () => setState(() {}),
+                        ),
+                      ],
                     ),
                   ),
                 ),
                 data: (items) {
                   if (items.isEmpty) {
-                    return const Center(child: Text('No leave requests'));
+                    return const Center(
+                      child: EmptyState(
+                        icon: PhosphorIconsRegular.calendarX,
+                        title: 'No leave requests',
+                        subtitle: 'Pending requests will appear here.',
+                      ),
+                    );
                   }
                   return ListView.separated(
                     physics: AppScrollPhysics.physics(),
